@@ -26,6 +26,14 @@ var shoot_speed_multiplier: float = 1.0
 var pickup_range_bonus: float = 0.0
 var armor: float = 0.0
 
+func get_total_damage_multiplier() -> float:
+	## 获取总伤害倍率（包含狂战士之血效果）
+	var total := damage_multiplier
+	# 狂战士之血：生命值低于30%时增加伤害
+	if berserker_bonus > 0 and current_hp / max_hp < 0.3:
+		total += berserker_bonus
+	return total
+
 # === 被动道具 ===
 var passive_items: Array = []
 var magnet_multiplier: float = 1.0
@@ -34,6 +42,12 @@ var shield_cooldown: float = 30.0
 var shield_timer: float = 0.0
 var regen_rate: float = 0.0
 var regen_timer: float = 0.0
+# 新被动道具
+var xp_bonus_multiplier: float = 0.0  # 贪婪戒指
+var berserker_bonus: float = 0.0  # 狂战士之血
+var freeze_chance: float = 0.0  # 冰冻之心
+var lightning_retaliate_damage: float = 0.0  # 闪电护符
+var dodge_chance: float = 0.0  # 影子披风
 
 # === 信号 ===
 signal hp_changed(current: float, maximum: float)
@@ -83,7 +97,9 @@ func _handle_rotation() -> void:
 
 # === 经验值相关 ===
 func gain_xp(amount: int) -> void:
-	current_xp += amount
+	# 应用贪婪戒指加成
+	var final_amount := int(amount * (1.0 + xp_bonus_multiplier))
+	current_xp += final_amount
 	while current_xp >= xp_to_next_level:
 		current_xp -= xp_to_next_level
 		_level_up()
@@ -131,17 +147,62 @@ func take_damage(amount: float) -> void:
 		_flash_damage()
 		return
 	
+	# 影子披风闪避检查
+	if dodge_chance > 0 and randf() < dodge_chance:
+		print("🌑 闪避成功!")
+		# 闪避视觉效果
+		var vfx := get_node_or_null("/root/VFXManager")
+		if vfx:
+			vfx.spawn_dodge_effect(global_position)
+		return
+	
 	var actual_damage := maxf(amount - armor, 1.0)
 	current_hp = clampf(current_hp - actual_damage, 0.0, max_hp)
 	hp_changed.emit(current_hp, max_hp)
 	_start_invincibility()
 	_flash_damage()
+	
+	# 闪电护符反击
+	if lightning_retaliate_damage > 0:
+		_lightning_retaliate()
+	
 	# 受击屏幕震动
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
 		vfx.screen_shake(3.0, 0.1)
 	if current_hp <= 0:
 		_die()
+
+func _lightning_retaliate() -> void:
+	## 闪电护符反击
+	var enemies := get_tree().get_nodes_in_group("enemies")
+	if enemies.is_empty():
+		return
+	
+	# 找到最近的敌人
+	var nearest_enemy = null
+	var nearest_dist: float = INF
+	for enemy in enemies:
+		if not is_instance_valid(enemy):
+			continue
+		var dist := global_position.distance_squared_to(enemy.global_position)
+		if dist < nearest_dist:
+			nearest_dist = dist
+			nearest_enemy = enemy
+	
+	if nearest_enemy and nearest_dist < 300 * 300:  # 300范围内
+		# 创建闪电效果
+		var lightning := preload("res://scenes/player/lightning_chain.tscn").instantiate()
+		lightning.global_position = global_position
+		lightning.base_damage = lightning_retaliate_damage
+		lightning.damage_multiplier = 1.0
+		lightning.max_jumps = 1
+		lightning._current_damage = lightning_retaliate_damage
+		get_tree().current_scene.add_child(lightning)
+		
+		# 播放音效
+		var audio_lib := AudioLibraryScript.new()
+		AudioManager.play_sfx(audio_lib.get_sound("shoot_magic"))
 
 func heal(amount: float) -> void:
 	current_hp = clampf(current_hp + amount, 0.0, max_hp)
@@ -230,6 +291,16 @@ func _apply_passive_effect(item) -> void:
 			shield_timer = 0.0
 		2:  # REGENERATION
 			regen_rate = item.get_scaled_value()
+		3:  # GREED
+			xp_bonus_multiplier = item.get_scaled_value()
+		4:  # BERSERKER
+			berserker_bonus = item.get_scaled_value()
+		5:  # FROZEN
+			freeze_chance = item.get_scaled_value()
+		6:  # LIGHTNING_SHIELD
+			lightning_retaliate_damage = item.get_scaled_value()
+		7:  # SHADOW
+			dodge_chance = item.get_scaled_value()
 
 func get_owned_passive_items() -> Array[String]:
 	## 获取已拥有的被动道具ID列表

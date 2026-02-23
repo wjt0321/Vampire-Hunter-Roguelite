@@ -8,7 +8,7 @@ extends Resource
 @export var icon_emoji: String = "📦"
 
 # 效果类型
-enum EffectType { MAGNET, SHIELD, REGENERATION }
+enum EffectType { MAGNET, SHIELD, REGENERATION, GREED, BERSERKER, FROZEN, LIGHTNING_SHIELD, SHADOW }
 @export var effect_type: EffectType = EffectType.MAGNET
 
 # 基础数值
@@ -64,4 +64,64 @@ static func create_regeneration() -> Resource:
 	item.effect_type = EffectType.REGENERATION
 	item.base_value = 0.01  # 基础1%生命恢复
 	item.value_per_level = 0.01  # 每级增加1%
+	return item
+
+static func create_greed_ring() -> Resource:
+	var script = preload("res://scripts/player/passive_item_data.gd")
+	var item = script.new()
+	item.item_id = "greed_ring"
+	item.item_name = "贪婪戒指"
+	item.description = "增加经验获取量"
+	item.icon_emoji = "💍"
+	item.effect_type = EffectType.GREED
+	item.base_value = 0.2  # 基础20%经验加成
+	item.value_per_level = 0.1  # 每级增加10%
+	return item
+
+static func create_berserker_blood() -> Resource:
+	var script = preload("res://scripts/player/passive_item_data.gd")
+	var item = script.new()
+	item.item_id = "berserker_blood"
+	item.item_name = "狂战士之血"
+	item.description = "生命值低于30%时攻击力大幅提升"
+	item.icon_emoji = "🩸"
+	item.effect_type = EffectType.BERSERKER
+	item.base_value = 0.5  # 基础50%伤害加成
+	item.value_per_level = 0.1  # 每级增加10%
+	return item
+
+static func create_frozen_heart() -> Resource:
+	var script = preload("res://scripts/player/passive_item_data.gd")
+	var item = script.new()
+	item.item_id = "frozen_heart"
+	item.item_name = "冰冻之心"
+	item.description = "攻击有几率冻结敌人"
+	item.icon_emoji = "❄️"
+	item.effect_type = EffectType.FROZEN
+	item.base_value = 0.1  # 基础10%冻结几率
+	item.value_per_level = 0.05  # 每级增加5%
+	return item
+
+static func create_lightning_shield() -> Resource:
+	var script = preload("res://scripts/player/passive_item_data.gd")
+	var item = script.new()
+	item.item_id = "lightning_shield"
+	item.item_name = "闪电护符"
+	item.description = "受到伤害时释放闪电反击"
+	item.icon_emoji = "⚡"
+	item.effect_type = EffectType.LIGHTNING_SHIELD
+	item.base_value = 20.0  # 基础20点伤害
+	item.value_per_level = 10.0  # 每级增加10点
+	return item
+
+static func create_shadow_cloak() -> Resource:
+	var script = preload("res://scripts/player/passive_item_data.gd")
+	var item = script.new()
+	item.item_id = "shadow_cloak"
+	item.item_name = "影子披风"
+	item.description = "增加闪避几率"
+	item.icon_emoji = "🌑"
+	item.effect_type = EffectType.SHADOW
+	item.base_value = 0.05  # 基础5%闪避
+	item.value_per_level = 0.03  # 每级增加3%
 	return item

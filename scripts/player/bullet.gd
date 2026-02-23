@@ -39,7 +39,27 @@ func _on_body_entered(body: Node2D) -> void:
 	# 碰到敌人
 	if body.has_method("take_damage"):
 		body.take_damage(get_damage())
+		# 冰冻之心效果：检查是否冻结敌人
+		_check_freeze(body)
 	queue_free()
+
+func _check_freeze(enemy: Node2D) -> void:
+	## 检查是否触发冰冻效果
+	var player := get_tree().get_first_node_in_group("player")
+	if player and player.has_method("get_owned_passive_items"):
+		# 检查是否有冰冻之心
+		for item in player.passive_items:
+			if item.item_id == "frozen_heart":
+				if randf() < player.freeze_chance:
+					# 冻结敌人
+					if enemy.has_method("freeze"):
+						enemy.freeze(2.0)  # 冻结2秒
+						print("❄️ 敌人被冻结!")
+					# 冰冻视觉效果
+					var vfx := get_node_or_null("/root/VFXManager")
+					if vfx:
+						vfx.spawn_freeze_effect(enemy.global_position)
+				break
 
 func _on_area_entered(area: Area2D) -> void:
 	# 碰到墙壁等

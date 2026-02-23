@@ -15,6 +15,10 @@ var current_hp: float
 var player: CharacterBody2D = null
 var is_dead: bool = false
 
+# 冻结状态
+var is_frozen: bool = false
+var freeze_timer: float = 0.0
+
 # === 信号 ===
 signal enemy_died(enemy: Node2D)
 
@@ -46,6 +50,14 @@ func _find_player() -> void:
 func _physics_process(delta: float) -> void:
 	if is_dead or player == null or not is_instance_valid(player):
 		return
+	
+	# 处理冻结状态
+	if is_frozen:
+		freeze_timer -= delta
+		if freeze_timer <= 0:
+			_unfreeze()
+		return  # 冻结时不能移动
+	
 	_move_towards_player(delta)
 
 func _move_towards_player(_delta: float) -> void:
@@ -115,6 +127,31 @@ func _record_kill_for_achievement() -> void:
 func _get_enemy_type() -> String:
 	## 子类覆写此方法返回敌人类型
 	return "unknown"
+
+func freeze(duration: float) -> void:
+	## 冻结敌人
+	if is_frozen:
+		# 如果已经在冻结中，延长冻结时间
+		freeze_timer = maxf(freeze_timer, duration)
+		return
+	
+	is_frozen = true
+	freeze_timer = duration
+	
+	# 视觉冻结效果
+	if sprite:
+		sprite.modulate = Color(0.5, 0.8, 1.0, 1.0)  # 蓝色调
+		# 冻结粒子效果
+		var vfx := get_node_or_null("/root/VFXManager")
+		if vfx:
+			vfx.spawn_freeze_particles(global_position)
+
+func _unfreeze() -> void:
+	## 解除冻结
+	is_frozen = false
+	freeze_timer = 0.0
+	if sprite:
+		sprite.modulate = Color.WHITE
 
 func _drop_xp_gem() -> void:
 	var gem_scene := preload("res://scenes/player/xp_gem.tscn")

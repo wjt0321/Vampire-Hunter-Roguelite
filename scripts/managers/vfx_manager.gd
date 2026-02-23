@@ -119,3 +119,35 @@ func _create_ring(pos: Vector2, color: Color, radius: float) -> Node2D:
 	
 	get_tree().current_scene.add_child(ring)
 	return ring
+
+# ========== 新被动道具效果 ==========
+
+func spawn_dodge_effect(pos: Vector2) -> void:
+	## 闪避效果
+	var p := _create_particle_node(pos, Color(0.3, 0.3, 0.3, 0.8), 8.0)
+	var tween := p.create_tween()
+	tween.tween_property(p, "modulate:a", 0.0, 0.3)
+	tween.parallel().tween_property(p, "scale", Vector2(2, 2), 0.3)
+	tween.tween_callback(p.queue_free)
+
+func spawn_freeze_effect(pos: Vector2) -> void:
+	## 冰冻效果
+	for i in 8:
+		var angle := TAU * float(i) / 8.0
+		var p := _create_particle_node(pos, Color(0.5, 0.8, 1.0, 0.8), 6.0)
+		var dir := Vector2(cos(angle), sin(angle))
+		var target := pos + dir * 30.0
+		
+		var tween := p.create_tween()
+		tween.tween_property(p, "global_position", target, 0.3).set_ease(Tween.EASE_OUT)
+		tween.parallel().tween_property(p, "modulate:a", 0.0, 0.3)
+		tween.tween_callback(p.queue_free)
+
+func spawn_freeze_particles(pos: Vector2) -> void:
+	## 冻结粒子
+	for i in 6:
+		var p := _create_particle_node(pos, Color(0.6, 0.9, 1.0, 0.9), randf_range(2, 4))
+		var tween := p.create_tween()
+		tween.tween_property(p, "modulate:a", 0.0, 1.0)
+		tween.parallel().tween_property(p, "position:y", p.position.y - 20, 1.0)
+		tween.tween_callback(p.queue_free)

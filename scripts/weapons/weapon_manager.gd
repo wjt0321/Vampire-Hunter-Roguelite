@@ -239,7 +239,11 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 			room_size = room.get_room_size()
 	# 子弹射程不超过房间对角线的一半
 	bullet.max_range = minf(weapon.bullet_range, room_size * 0.6)
-	bullet.damage_multiplier = player.damage_multiplier if player else 1.0
+	# 使用玩家的总伤害倍率（包含狂战士之血等被动效果）
+	if player and player.has_method("get_total_damage_multiplier"):
+		bullet.damage_multiplier = player.get_total_damage_multiplier()
+	else:
+		bullet.damage_multiplier = player.damage_multiplier if player else 1.0
 	get_tree().current_scene.add_child(bullet)
 	
 	# 播放射击音效

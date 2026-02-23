@@ -16,6 +16,11 @@ const PASSIVE_UPGRADES: Array = [
 	{"id": "magnet", "name": "经验磁铁", "desc": "经验吸附范围 +30%", "icon": "🧲", "type": "passive"},
 	{"id": "shield", "name": "能量护盾", "desc": "定期生成护盾", "icon": "🛡️", "type": "passive"},
 	{"id": "regeneration", "name": "生命恢复", "desc": "每5秒恢复生命", "icon": "💚", "type": "passive"},
+	{"id": "greed_ring", "name": "贪婪戒指", "desc": "经验获取 +20%", "icon": "💍", "type": "passive"},
+	{"id": "berserker_blood", "name": "狂战士之血", "desc": "低血量时伤害 +50%", "icon": "🩸", "type": "passive"},
+	{"id": "frozen_heart", "name": "冰冻之心", "desc": "10%几率冻结敌人", "icon": "❄️", "type": "passive"},
+	{"id": "lightning_shield", "name": "闪电护符", "desc": "受击时闪电反击", "icon": "⚡", "type": "passive"},
+	{"id": "shadow_cloak", "name": "影子披风", "desc": "闪避几率 +5%", "icon": "🌑", "type": "passive"},
 ]
 
 const WEAPON_UPGRADES: Array = [
@@ -116,4 +121,14 @@ func _create_passive_by_id(passive_id: String):
 			return preload("res://scripts/player/passive_item_data.gd").create_shield()
 		"regeneration":
 			return preload("res://scripts/player/passive_item_data.gd").create_regeneration()
+		"greed_ring":
+			return preload("res://scripts/player/passive_item_data.gd").create_greed_ring()
+		"berserker_blood":
+			return preload("res://scripts/player/passive_item_data.gd").create_berserker_blood()
+		"frozen_heart":
+			return preload("res://scripts/player/passive_item_data.gd").create_frozen_heart()
+		"lightning_shield":
+			return preload("res://scripts/player/passive_item_data.gd").create_lightning_shield()
+		"shadow_cloak":
+			return preload("res://scripts/player/passive_item_data.gd").create_shadow_cloak()
 	return null
