@@ -7,7 +7,7 @@ extends Resource
 @export var description: String = "基础手枪"
 @export var icon_emoji: String = "🔫"
 
-@export var base_damage: float = 10.0
+@export var base_damage: float = 8.0  # 降低20% (原10.0)
 @export var fire_rate: float = 0.3
 @export var bullet_speed: float = 500.0
 @export var bullet_range: float = 800.0
@@ -29,7 +29,8 @@ var current_level: int = 1
 @export var lightning_jumps: int = 3
 
 func get_scaled_damage() -> float:
-	return base_damage * (1.0 + (current_level - 1) * 0.3)
+	# 每级提升20% (原30%)，降低10%
+	return base_damage * (1.0 + (current_level - 1) * 0.2)
 
 func get_scaled_fire_rate() -> float:
 	return fire_rate * (1.0 - (current_level - 1) * 0.08)

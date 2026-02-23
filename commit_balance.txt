@@ -1,0 +1,1 @@
+Balance game parameters: XP threshold -30%, volume 10%, boss HP +30%, weapon damage -20%

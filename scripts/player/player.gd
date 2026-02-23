@@ -17,7 +17,7 @@ var is_invincible: bool = false
 # === 经验与升级 ===
 var current_xp: int = 0
 var current_level: int = 1
-var xp_to_next_level: int = 20
+var xp_to_next_level: int = 14  # 降低30% (原20)
 
 # === 战斗属性（可被升级修改） ===
 var damage_multiplier: float = 1.0
@@ -91,7 +91,7 @@ func gain_xp(amount: int) -> void:
 
 func _level_up() -> void:
 	current_level += 1
-	xp_to_next_level = 20 + (current_level - 1) * 10
+	xp_to_next_level = 14 + (current_level - 1) * 7  # 降低30% (原20+10)
 	level_up.emit(current_level)
 	# 升级光效
 	var vfx := get_node_or_null("/root/VFXManager")

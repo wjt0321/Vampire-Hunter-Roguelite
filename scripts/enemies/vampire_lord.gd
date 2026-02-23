@@ -32,7 +32,7 @@ signal boss_phase_changed(phase: int)
 
 func _ready() -> void:
 	# 覆写基类属性
-	max_hp = 500.0
+	max_hp = 650.0  # 增加30% (原500)
 	move_speed = 60.0
 	contact_damage = 20.0
 	xp_value = 100

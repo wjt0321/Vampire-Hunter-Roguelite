@@ -3,8 +3,8 @@ extends Node
 ## 管理 BGM 和 SFX 的播放、音量控制
 
 # ========== 音量设置 ==========
-var music_volume: float = 1.0  # 0.0 - 1.0
-var sfx_volume: float = 1.0    # 0.0 - 1.0
+var music_volume: float = 0.1  # 0.0 - 1.0 (默认10%)
+var sfx_volume: float = 0.1    # 0.0 - 1.0 (默认10%)
 
 # ========== 音频播放器 ==========
 var _bgm_player: AudioStreamPlayer = null
