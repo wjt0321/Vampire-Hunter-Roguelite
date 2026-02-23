@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://knife_bullet_scene"]
+
+[ext_resource type="Script" path="res://scripts/player/knife_bullet.gd" id="1_knife"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_knife"]
+size = Vector2(16, 4)
+
+[node name="KnifeBullet" type="Area2D"]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_knife")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0.8, 0.8, 0.9, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_knife")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="area_entered" from="." to="." method="_on_area_entered"]

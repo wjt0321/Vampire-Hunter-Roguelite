@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3 uid="uid://skeleton_archer_enemy"]
+
+[ext_resource type="Script" path="res://scripts/enemies/skeleton_archer.gd" id="1_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_archer"]
+size = Vector2(14, 20)
+
+[node name="SkeletonArcher" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("1_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0.7, 0.7, 0.6, 1.0)
+scale = Vector2(1.5, 2.2)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_archer")
+
+[node name="ContactArea" type="Area2D" parent="."]
+collision_layer = 2
+collision_mask = 1
+
+[node name="ContactShape" type="CollisionShape2D" parent="ContactArea"]
+shape = SubResource("RectangleShape2D_archer")
+
+[connection signal="body_entered" from="ContactArea" to="." method="_on_contact_area_body_entered"]
