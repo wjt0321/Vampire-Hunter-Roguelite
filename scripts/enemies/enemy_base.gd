@@ -85,6 +85,8 @@ func _die() -> void:
 		return
 	is_dead = true
 	enemy_died.emit(self)
+	# 记录击杀成就
+	_record_kill_for_achievement()
 	# 死亡粒子
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
@@ -102,6 +104,17 @@ func _die() -> void:
 	tween.tween_property(sprite, "modulate:a", 0.0, 0.2)
 	tween.tween_property(sprite, "scale", Vector2.ZERO, 0.2)
 	tween.tween_callback(queue_free)
+
+func _record_kill_for_achievement() -> void:
+	## 子类覆写此方法返回敌人类型
+	var enemy_type := _get_enemy_type()
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr:
+		ach_mgr.record_kill(enemy_type)
+
+func _get_enemy_type() -> String:
+	## 子类覆写此方法返回敌人类型
+	return "unknown"
 
 func _drop_xp_gem() -> void:
 	var gem_scene := preload("res://scenes/player/xp_gem.tscn")

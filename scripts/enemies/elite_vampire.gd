@@ -18,7 +18,7 @@ func _ready() -> void:
 	affix = Affix.values().pick_random()
 	
 	# 基础属性提升
-	max_hp = 60.0
+	max_hp = 66.0  # 增加10% (原60.0)
 	move_speed = 80.0
 	contact_damage = 15.0
 	xp_value = 25
@@ -120,3 +120,6 @@ func get_affix_name() -> String:
 		Affix.SPLIT:
 			return "分裂"
 	return "未知"
+
+func _get_enemy_type() -> String:
+	return "elite"

@@ -7,7 +7,7 @@ extends Resource
 @export var description: String = "基础手枪"
 @export var icon_emoji: String = "🔫"
 
-@export var base_damage: float = 8.0  # 降低20% (原10.0)
+@export var base_damage: float = 7.2  # 降低10% (原8.0)
 @export var fire_rate: float = 0.3
 @export var bullet_speed: float = 500.0
 @export var bullet_range: float = 800.0

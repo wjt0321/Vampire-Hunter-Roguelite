@@ -17,7 +17,7 @@ var is_invincible: bool = false
 # === 经验与升级 ===
 var current_xp: int = 0
 var current_level: int = 1
-var xp_to_next_level: int = 14  # 降低30% (原20)
+var xp_to_next_level: int = 10  # 降低30% (原14)
 
 # === 战斗属性（可被升级修改） ===
 var damage_multiplier: float = 1.0
@@ -91,7 +91,7 @@ func gain_xp(amount: int) -> void:
 
 func _level_up() -> void:
 	current_level += 1
-	xp_to_next_level = 14 + (current_level - 1) * 7  # 降低30% (原20+10)
+	xp_to_next_level = 10 + (current_level - 1) * 5  # 降低30% (原14+7)
 	level_up.emit(current_level)
 	# 升级光效
 	var vfx := get_node_or_null("/root/VFXManager")
@@ -230,3 +230,10 @@ func _apply_passive_effect(item) -> void:
 			shield_timer = 0.0
 		2:  # REGENERATION
 			regen_rate = item.get_scaled_value()
+
+func get_owned_passive_items() -> Array[String]:
+	## 获取已拥有的被动道具ID列表
+	var items: Array[String] = []
+	for item in passive_items:
+		items.append(item.item_id)
+	return items

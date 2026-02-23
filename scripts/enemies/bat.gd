@@ -7,7 +7,7 @@ var sine_amplitude: float = 50.0
 var sine_frequency: float = 4.0
 
 func _ready() -> void:
-	max_hp = 15.0
+	max_hp = 16.5  # 增加10% (原15.0)
 	move_speed = 140.0
 	contact_damage = 5.0
 	xp_value = 3
@@ -29,3 +29,6 @@ func _move_towards_player(_delta: float) -> void:
 		sprite.flip_h = true
 	else:
 		sprite.flip_h = false
+
+func _get_enemy_type() -> String:
+	return "bat"

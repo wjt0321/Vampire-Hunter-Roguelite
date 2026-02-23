@@ -19,10 +19,33 @@ const BGM_FADE_DURATION: float = 1.0
 signal music_volume_changed(volume: float)
 signal sfx_volume_changed(volume: float)
 
+# ========== 存档引用 ==========
+var save_mgr: Node = null
+
 func _ready() -> void:
+	save_mgr = get_node_or_null("/root/SaveManager")
+	_load_volume_settings()
 	_setup_bgm_player()
 	_setup_sfx_players()
 	print("🎵 AudioManager 已初始化")
+
+func _load_volume_settings() -> void:
+	## 从存档加载音量设置
+	if save_mgr and save_mgr.save_data.has("audio_settings"):
+		var audio_settings: Dictionary = save_mgr.save_data["audio_settings"]
+		music_volume = audio_settings.get("music_volume", 0.1)
+		sfx_volume = audio_settings.get("sfx_volume", 0.1)
+		print("🎵 音量设置已加载: 音乐 %.0f%%, 音效 %.0f%%" % [music_volume * 100, sfx_volume * 100])
+
+func _save_volume_settings() -> void:
+	## 保存音量设置到存档
+	if save_mgr:
+		if not save_mgr.save_data.has("audio_settings"):
+			save_mgr.save_data["audio_settings"] = {}
+		save_mgr.save_data["audio_settings"]["music_volume"] = music_volume
+		save_mgr.save_data["audio_settings"]["sfx_volume"] = sfx_volume
+		save_mgr.save_game()
+		print("🎵 音量设置已保存")
 
 func _setup_bgm_player() -> void:
 	_bgm_player = AudioStreamPlayer.new()
@@ -122,15 +145,19 @@ func _get_available_sfx_player() -> AudioStreamPlayer:
 
 # ========== 音量控制 ==========
 
-func set_music_volume(volume: float) -> void:
+func set_music_volume(volume: float, save: bool = true) -> void:
 	music_volume = clampf(volume, 0.0, 1.0)
 	if _bgm_player.playing:
 		_bgm_player.volume_db = linear_to_db(music_volume)
 	music_volume_changed.emit(music_volume)
+	if save:
+		_save_volume_settings()
 
-func set_sfx_volume(volume: float) -> void:
+func set_sfx_volume(volume: float, save: bool = true) -> void:
 	sfx_volume = clampf(volume, 0.0, 1.0)
 	sfx_volume_changed.emit(sfx_volume)
+	if save:
+		_save_volume_settings()
 
 func get_music_volume() -> float:
 	return music_volume

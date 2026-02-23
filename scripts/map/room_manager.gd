@@ -4,9 +4,9 @@ class_name RoomManager
 ## 管理房间切换、传送门逻辑、特殊房间生成
 
 const ROOM_TEMPLATES: Array = [
-	{"width": 40, "height": 24, "name": "标准竞技场", "obstacles": "none"},
-	{"width": 50, "height": 30, "name": "宽阔大厅", "obstacles": "pillars"},
-	{"width": 30, "height": 30, "name": "方形密室", "obstacles": "walls"},
+	{"width": 52, "height": 31, "name": "标准竞技场", "obstacles": "none"},
+	{"width": 65, "height": 39, "name": "宽阔大厅", "obstacles": "pillars"},
+	{"width": 39, "height": 39, "name": "方形密室", "obstacles": "walls"},
 ]
 
 # 特殊房间概率

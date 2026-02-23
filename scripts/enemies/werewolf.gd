@@ -10,7 +10,7 @@ var is_charging: bool = false
 var charge_elapsed: float = 0.0
 
 func _ready() -> void:
-	max_hp = 80.0
+	max_hp = 88.0  # 增加10% (原80.0)
 	move_speed = 60.0
 	contact_damage = 20.0
 	xp_value = 15
@@ -42,3 +42,6 @@ func _move_towards_player(_delta: float) -> void:
 		sprite.flip_h = true
 	else:
 		sprite.flip_h = false
+
+func _get_enemy_type() -> String:
+	return "werewolf"

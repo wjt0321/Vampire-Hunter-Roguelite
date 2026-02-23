@@ -25,6 +25,7 @@ config/icon="res://icon.svg"
 SaveManager="*res://scripts/managers/save_manager.gd"
 VFXManager="*res://scripts/managers/vfx_manager.gd"
 AudioManager="*res://scripts/managers/audio_manager.gd"
+AchievementManager="*res://scripts/managers/achievement_manager.gd"
 
 [display]
 

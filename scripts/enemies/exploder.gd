@@ -13,7 +13,7 @@ var detonation_timer: float = 0.0
 var blink_timer: float = 0.0
 
 func _ready() -> void:
-	max_hp = 40.0
+	max_hp = 44.0  # 增加10% (原40.0)
 	move_speed = 120.0
 	contact_damage = 5.0
 	xp_value = 12
@@ -88,6 +88,8 @@ func _explode() -> void:
 	# 自爆者死亡（不触发正常死亡流程，避免重复音效）
 	is_dead = true
 	enemy_died.emit(self)
+	# 记录击杀成就
+	_record_kill_for_achievement()
 	
 	# 禁用碰撞
 	collision_shape.set_deferred("disabled", true)
@@ -95,6 +97,9 @@ func _explode() -> void:
 	
 	# 立即消失
 	queue_free()
+
+func _get_enemy_type() -> String:
+	return "exploder"
 
 func take_damage(amount: float) -> void:
 	if is_dead:

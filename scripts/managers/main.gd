@@ -51,15 +51,24 @@ func _ready() -> void:
 	# 播放战斗 BGM
 	var audio_lib := AudioLibraryScript.new()
 	AudioManager.play_bgm(audio_lib.get_battle_bgm())
+	
+	# 初始化成就系统
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr:
+		ach_mgr.start_new_run()
 
 func _connect_signals() -> void:
 	player.hp_changed.connect(hud.update_hp)
+	player.hp_changed.connect(_on_player_hp_changed)
 	player.xp_changed.connect(hud.update_xp)
 	player.level_up.connect(_on_player_level_up)
 	player.player_died.connect(_on_player_died)
 	wave_manager.wave_started.connect(hud.update_wave)
+	wave_manager.wave_started.connect(_on_wave_started)
 	wave_manager.enemy_killed.connect(hud.update_kills)
+	wave_manager.enemy_killed.connect(_on_enemy_killed)
 	wave_manager.wave_completed.connect(_on_wave_completed)
+	weapon_manager.weapon_evolved.connect(_on_weapon_evolved)
 	game_over_ui.restart_requested.connect(_on_restart)
 	game_over_ui.menu_requested.connect(_on_return_to_menu)
 
@@ -88,8 +97,8 @@ func _create_room(width: float, height: float, room_type: String) -> void:
 			if rooms_cleared > 1:
 				current_room.add_pillars(randi_range(2, 4))
 		"boss":
-			current_room.room_width = 1600.0
-			current_room.room_height = 960.0
+			current_room.room_width = 2080.0
+			current_room.room_height = 1248.0
 
 func _setup_camera_limits() -> void:
 	if current_room == null:
@@ -119,6 +128,10 @@ func _on_wave_completed(wave_number: int) -> void:
 
 func _on_portal_entered() -> void:
 	rooms_cleared += 1
+	# 记录房间成就
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr:
+		ach_mgr.update_rooms(rooms_cleared)
 	_transition_to_next_room()
 
 func _transition_to_next_room() -> void:
@@ -232,6 +245,11 @@ func _on_boss_defeated() -> void:
 	boss_hp_bar.hide_boss_bar()
 	print("👑 Boss 被击败! 获得丰厚奖励!")
 	
+	# 记录Boss击杀成就
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr:
+		ach_mgr.record_boss_kill(int(ach_mgr.run_stats.get("damage_taken", 0)))
+	
 	# 切换回战斗 BGM
 	var audio_lib := AudioLibraryScript.new()
 	AudioManager.play_bgm(audio_lib.get_battle_bgm())
@@ -247,6 +265,55 @@ func _on_boss_defeated() -> void:
 # === 现有回调 ===
 func _on_player_level_up(new_level: int) -> void:
 	upgrade_ui.show_upgrade(player, weapon_manager)
+	# 记录等级成就
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr:
+		ach_mgr.update_level(new_level)
+
+func _on_player_hp_changed(current: float, _max: float) -> void:
+	# 记录受到伤害（用于无伤通关成就）
+	var damage_taken: float = _max - current
+	if damage_taken > 0:
+		var ach_mgr := get_node_or_null("/root/AchievementManager")
+		if ach_mgr:
+			ach_mgr.record_damage_taken(damage_taken)
+
+func _on_wave_started(wave: int) -> void:
+	# 记录波次成就
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr:
+		ach_mgr.update_wave(wave)
+
+func _on_enemy_killed(_kill_count: int = 0) -> void:
+	# 检查武器进化条件
+	_check_weapon_evolutions()
+
+func _check_weapon_evolutions() -> void:
+	## 检查是否有武器满足进化条件
+	if weapon_manager == null:
+		return
+	
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr == null:
+		return
+	
+	var kill_count: int = ach_mgr.run_stats.get("kills", 0)
+	var owned_passives: Array = []
+	
+	# 获取玩家拥有的被动道具
+	if player and player.has_method("get_owned_passive_items"):
+		owned_passives = player.get_owned_passive_items()
+	
+	weapon_manager.check_evolution_conditions(kill_count, owned_passives)
+
+func _on_weapon_evolved(weapon, evolution) -> void:
+	## 武器进化回调
+	print("✨ 武器进化: %s -> %s" % [weapon.weapon_name, evolution.evolution_name])
+	
+	# 记录武器大师成就
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr:
+		ach_mgr.record_weapon_maxed(weapon.weapon_name)
 
 func _on_player_died() -> void:
 	wave_manager.stop()

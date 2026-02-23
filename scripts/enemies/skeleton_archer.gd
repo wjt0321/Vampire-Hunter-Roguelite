@@ -11,7 +11,7 @@ var attack_timer: float = 0.0
 var projectile_scene: PackedScene = preload("res://scenes/enemies/enemy_projectile.tscn")
 
 func _ready() -> void:
-	max_hp = 25.0
+	max_hp = 27.5  # 增加10% (原25.0)
 	move_speed = 70.0
 	contact_damage = 5.0
 	xp_value = 8
@@ -69,3 +69,6 @@ func _attack() -> void:
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", Color(1.5, 1.5, 1.5, 1.0), 0.1)
 	tween.tween_property(sprite, "modulate", Color.WHITE, 0.1)
+
+func _get_enemy_type() -> String:
+	return "skeleton"

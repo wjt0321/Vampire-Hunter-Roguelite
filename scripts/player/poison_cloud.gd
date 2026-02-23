@@ -21,9 +21,11 @@ func _ready() -> void:
 		img.fill(Color(0.2, 0.8, 0.2, 0.5))
 		sprite.texture = ImageTexture.create_from_image(img)
 	
-	# 连接信号
-	body_entered.connect(_on_body_entered)
-	body_exited.connect(_on_body_exited)
+	# 连接信号（使用一次性连接避免重复）
+	if not body_entered.is_connected(_on_body_entered):
+		body_entered.connect(_on_body_entered)
+	if not body_exited.is_connected(_on_body_exited):
+		body_exited.connect(_on_body_exited)
 
 func _physics_process(delta: float) -> void:
 	_timer += delta

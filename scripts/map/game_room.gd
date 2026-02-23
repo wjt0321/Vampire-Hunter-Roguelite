@@ -96,6 +96,10 @@ func get_room_bounds() -> Rect2:
 func get_center() -> Vector2:
 	return Vector2(room_width / 2.0, room_height / 2.0)
 
+func get_room_size() -> float:
+	## 返回房间对角线长度，用于限制子弹射程等
+	return sqrt(room_width * room_width + room_height * room_height)
+
 func get_random_interior_position() -> Vector2:
 	var bounds := get_room_bounds()
 	var margin := 48.0

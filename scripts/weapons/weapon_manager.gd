@@ -3,16 +3,88 @@ class_name WeaponManager
 ## 武器管理器
 
 const WeaponDataScript = preload("res://scripts/weapons/weapon_data.gd")
+const WeaponEvolutionScript = preload("res://scripts/weapons/weapon_evolution.gd")
 const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
 
 var weapons: Array = []
+var weapon_evolutions: Dictionary = {}  # weapon_id -> WeaponEvolution
 var shoot_timers: Dictionary = {}
 var player: CharacterBody2D = null
 var bullet_scene: PackedScene = preload("res://scenes/player/bullet.tscn")
 
 signal weapon_added(weapon: Resource)
 signal weapon_leveled_up(weapon: Resource)
-signal weapon_evolved(weapon: Resource)
+signal weapon_evolved(weapon: Resource, evolution: WeaponEvolution)
+
+# 进化条件配置
+const EVOLUTION_CONFIG: Dictionary = {
+	"pistol": {
+		"evolution_name": "神圣手枪",
+		"evolution_description": "发射神圣光芒，伤害大幅提升",
+		"evolution_icon": "✨",
+		"required_passive_items": [],
+		"required_kill_count": 50,
+		"damage_multiplier": 3.0,
+		"fire_rate_multiplier": 0.3,
+		"size_multiplier": 1.5,
+		"special_effect": "神圣光芒",
+	},
+	"shotgun": {
+		"evolution_name": "毁灭者",
+		"evolution_description": "散射更多子弹，覆盖更广范围",
+		"evolution_icon": "💥",
+		"required_passive_items": [],
+		"required_kill_count": 50,
+		"damage_multiplier": 2.5,
+		"fire_rate_multiplier": 0.4,
+		"size_multiplier": 1.3,
+		"special_effect": "额外散射",
+	},
+	"magic_book": {
+		"evolution_name": "大魔导书",
+		"evolution_description": "同时追踪多个敌人",
+		"evolution_icon": "📚",
+		"required_passive_items": [],
+		"required_kill_count": 50,
+		"damage_multiplier": 2.5,
+		"fire_rate_multiplier": 0.4,
+		"size_multiplier": 1.4,
+		"special_effect": "多重追踪",
+	},
+	"throwing_knife": {
+		"evolution_name": "刀阵旋风",
+		"evolution_description": "飞刀围绕玩家旋转",
+		"evolution_icon": "🌪️",
+		"required_passive_items": [],
+		"required_kill_count": 50,
+		"damage_multiplier": 2.0,
+		"fire_rate_multiplier": 0.5,
+		"size_multiplier": 1.5,
+		"special_effect": "刀阵环绕",
+	},
+	"poison_cloud": {
+		"evolution_name": "瘟疫之源",
+		"evolution_description": "更大范围的致命毒雾",
+		"evolution_icon": "☣️",
+		"required_passive_items": [],
+		"required_kill_count": 50,
+		"damage_multiplier": 2.5,
+		"fire_rate_multiplier": 0.5,
+		"size_multiplier": 2.0,
+		"special_effect": "范围扩大",
+	},
+	"lightning_chain": {
+		"evolution_name": "雷神之怒",
+		"evolution_description": "全屏闪电链",
+		"evolution_icon": "🌩️",
+		"required_passive_items": [],
+		"required_kill_count": 50,
+		"damage_multiplier": 3.0,
+		"fire_rate_multiplier": 0.4,
+		"size_multiplier": 1.5,
+		"special_effect": "全屏连锁",
+	},
+}
 
 func setup(player_node: CharacterBody2D) -> void:
 	player = player_node
@@ -36,7 +108,8 @@ func add_weapon(weapon_data) -> void:
 			if existing.level_up():
 				weapon_leveled_up.emit(existing)
 				if existing.is_max_level():
-					weapon_evolved.emit(existing)
+					# 满级时创建进化数据
+					_create_weapon_evolution(existing)
 				print("武器升级: %s Lv.%d" % [existing.weapon_name, existing.current_level])
 			return
 	weapons.append(weapon_data)
@@ -47,6 +120,71 @@ func add_weapon(weapon_data) -> void:
 	shoot_timers[weapon_data.weapon_id] = timer
 	weapon_added.emit(weapon_data)
 	print("获得武器: %s" % weapon_data.weapon_name)
+
+func _create_weapon_evolution(weapon) -> void:
+	## 为满级武器创建进化数据
+	if weapon_evolutions.has(weapon.weapon_id):
+		return
+	
+	var config: Dictionary = EVOLUTION_CONFIG.get(weapon.weapon_id, {})
+	if config.is_empty():
+		return
+	
+	var evolution := WeaponEvolutionScript.new()
+	evolution.evolution_name = config.get("evolution_name", "进化武器")
+	evolution.evolution_description = config.get("evolution_description", "")
+	evolution.evolution_icon = config.get("evolution_icon", "✨")
+	evolution.required_passive_items = config.get("required_passive_items", [])
+	evolution.required_kill_count = config.get("required_kill_count", 50)
+	evolution.damage_multiplier = config.get("damage_multiplier", 2.0)
+	evolution.fire_rate_multiplier = config.get("fire_rate_multiplier", 0.5)
+	evolution.size_multiplier = config.get("size_multiplier", 1.5)
+	evolution.special_effect = config.get("special_effect", "")
+	
+	weapon_evolutions[weapon.weapon_id] = evolution
+	print("⚔️ %s 已达到满级，满足条件后可进化为 %s" % [weapon.weapon_name, evolution.evolution_name])
+
+func check_evolution_conditions(kill_count: int, owned_passives: Array) -> void:
+	## 检查是否有武器可以进化
+	for weapon_id in weapon_evolutions:
+		var evolution: WeaponEvolution = weapon_evolutions[weapon_id]
+		if evolution.can_evolve(kill_count, owned_passives):
+			_evolve_weapon(weapon_id, evolution)
+
+func _evolve_weapon(weapon_id: String, evolution: WeaponEvolution) -> void:
+	## 执行武器进化
+	evolution.evolve()
+	
+	# 找到对应的武器
+	for weapon in weapons:
+		if weapon.weapon_id == weapon_id:
+			# 更新武器属性
+			weapon.base_damage = evolution.get_evolved_damage(weapon.base_damage)
+			weapon.fire_rate = evolution.get_evolved_fire_rate(weapon.fire_rate)
+			# 更新武器显示名称
+			weapon.weapon_name = evolution.evolution_name
+			weapon.description = evolution.evolution_description
+			weapon.icon_emoji = evolution.evolution_icon
+			
+			# 更新计时器
+			if shoot_timers.has(weapon_id):
+				shoot_timers[weapon_id].wait_time = weapon.get_scaled_fire_rate()
+			
+			weapon_evolved.emit(weapon, evolution)
+			print("✨ %s 已进化为 %s!" % [weapon_id, evolution.evolution_name])
+			
+			# 播放进化音效
+			var audio_lib := AudioLibraryScript.new()
+			AudioManager.play_sfx(audio_lib.get_sound("level_up"))
+			break
+
+func get_weapon_evolution(weapon_id: String) -> WeaponEvolution:
+	return weapon_evolutions.get(weapon_id, null)
+
+func is_weapon_evolved(weapon_id: String) -> bool:
+	if weapon_evolutions.has(weapon_id):
+		return weapon_evolutions[weapon_id].is_evolved
+	return false
 
 func _fire_weapon(weapon) -> void:
 	if player == null or not is_instance_valid(player):
@@ -93,7 +231,14 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 	bullet.direction = direction
 	bullet.speed = weapon.bullet_speed
 	bullet.base_damage = weapon.get_scaled_damage()
-	bullet.max_range = weapon.bullet_range
+	# 根据房间大小限制子弹射程，避免穿越房间
+	var room_size: float = 800.0
+	if player and is_instance_valid(player):
+		var room := player.get_parent()
+		if room and room.has_method("get_room_size"):
+			room_size = room.get_room_size()
+	# 子弹射程不超过房间对角线的一半
+	bullet.max_range = minf(weapon.bullet_range, room_size * 0.6)
 	bullet.damage_multiplier = player.damage_multiplier if player else 1.0
 	get_tree().current_scene.add_child(bullet)
 	
