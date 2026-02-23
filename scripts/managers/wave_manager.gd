@@ -12,6 +12,10 @@ var enemy_scenes: Dictionary = {
 	"skeleton_archer": preload("res://scenes/enemies/skeleton_archer.tscn"),
 	"exploder": preload("res://scenes/enemies/exploder.tscn"),
 	"elite_vampire": preload("res://scenes/enemies/elite_vampire.tscn"),
+	"summoner": preload("res://scenes/enemies/summoner.tscn"),
+	"vampire_mage": preload("res://scenes/enemies/vampire_mage.tscn"),
+	"gargoyle": preload("res://scenes/enemies/gargoyle.tscn"),
+	"vampire_prince": preload("res://scenes/enemies/vampire_prince.tscn"),
 }
 
 # === 波次配置 ===
@@ -116,6 +120,15 @@ func _pick_enemy_type() -> String:
 		available_types.append("exploder")
 	if current_wave >= 8:
 		available_types.append("elite_vampire")
+	# 新敌人解锁
+	if current_wave >= 10:
+		available_types.append("summoner")
+	if current_wave >= 12:
+		available_types.append("vampire_mage")
+	if current_wave >= 15:
+		available_types.append("gargoyle")
+	if current_wave >= 18:
+		available_types.append("vampire_prince")
 	
 	# 每种类型权重不同
 	var weights: Array[float] = []
@@ -135,6 +148,14 @@ func _pick_enemy_type() -> String:
 				weights.append(2.0)
 			"elite_vampire":
 				weights.append(1.0)
+			"summoner":
+				weights.append(1.5)
+			"vampire_mage":
+				weights.append(1.2)
+			"gargoyle":
+				weights.append(0.8)
+			"vampire_prince":
+				weights.append(0.3)
 	
 	# 加权随机选择
 	var total_weight: float = 0.0
