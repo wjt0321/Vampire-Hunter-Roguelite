@@ -35,7 +35,7 @@ func _ready() -> void:
 	max_hp = 845.0  # 增加30% (原650)
 	move_speed = 60.0
 	contact_damage = 20.0
-	xp_value = 100
+	xp_value = 50  # 降低50% (原100)
 	
 	current_hp = max_hp
 	add_to_group("enemies")

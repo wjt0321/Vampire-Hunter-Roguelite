@@ -48,13 +48,17 @@ func show_upgrade(player_node: Node, weapon_mgr: Node = null) -> void:
 	weapon_manager = weapon_mgr
 	visible = true
 	get_tree().paused = true
-	var pool: Array = STAT_UPGRADES.duplicate()
-	for wo in WEAPON_UPGRADES:
-		pool.append(wo)
-	for po in PASSIVE_UPGRADES:
-		pool.append(po)
-	pool.shuffle()
-	var selected := pool.slice(0, 3)
+	
+	# 构建可用选项池
+	var available_options := _get_available_options()
+	
+	# 如果没有可用选项，提供基础奖励
+	if available_options.is_empty():
+		available_options = _get_basic_rewards()
+	
+	available_options.shuffle()
+	var selected := available_options.slice(0, mini(3, available_options.size()))
+	
 	for child in options_container.get_children():
 		child.queue_free()
 	await get_tree().process_frame
@@ -67,6 +71,51 @@ func show_upgrade(player_node: Node, weapon_mgr: Node = null) -> void:
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	tween.tween_property(panel, "modulate:a", 1.0, 0.2)
 	tween.parallel().tween_property(panel, "scale", Vector2.ONE, 0.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+
+func _get_available_options() -> Array:
+	## 获取可用的升级选项
+	var available: Array = []
+	
+	# 添加属性升级（总是可用）
+	available.append_array(STAT_UPGRADES.duplicate())
+	
+	# 添加武器选项（排除已进化的）
+	for weapon_opt in WEAPON_UPGRADES:
+		if not _is_weapon_evolved(weapon_opt["id"]):
+			available.append(weapon_opt)
+	
+	# 添加被动道具选项（排除已满级的）
+	for passive_opt in PASSIVE_UPGRADES:
+		if not _is_passive_maxed(passive_opt["id"]):
+			available.append(passive_opt)
+	
+	return available
+
+func _is_weapon_evolved(weapon_id: String) -> bool:
+	## 检查武器是否已进化
+	if weapon_manager == null:
+		return false
+	return weapon_manager.is_weapon_evolved(weapon_id)
+
+func _is_passive_maxed(passive_id: String) -> bool:
+	## 检查被动道具是否已满级
+	if player == null or not player.has_method("get_owned_passive_items"):
+		return false
+	
+	var owned_passives = player.get_owned_passive_items()
+	for item in player.passive_items:
+		if item.item_id == passive_id:
+			# 检查是否达到最大堆叠（假设最大5级）
+			return item.current_stack >= 5
+	return false
+
+func _get_basic_rewards() -> Array:
+	## 当所有武器和被动都满级/进化后，提供基础奖励
+	return [
+		{"id": "heal", "name": "生命恢复", "desc": "恢复30%最大生命", "icon": "❤️", "type": "basic"},
+		{"id": "gold", "name": "金币奖励", "desc": "获得100血晶", "icon": "💰", "type": "basic"},
+		{"id": "damage_boost", "name": "伤害提升", "desc": "攻击力+10%（本局）", "icon": "⚔️", "type": "basic"},
+	]
 
 func _create_option_button(option: Dictionary) -> Button:
 	var btn := Button.new()
@@ -90,6 +139,8 @@ func _on_option_selected(option: Dictionary) -> void:
 			var passive_data = _create_passive_by_id(option["id"])
 			if passive_data:
 				player.add_passive_item(passive_data)
+	elif option_type == "basic":
+		_apply_basic_reward(option["id"])
 	var tween := create_tween()
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	tween.tween_property(panel, "modulate:a", 0.0, 0.15)
@@ -98,6 +149,24 @@ func _on_option_selected(option: Dictionary) -> void:
 		get_tree().paused = false
 		upgrade_selected.emit()
 	)
+
+func _apply_basic_reward(reward_id: String) -> void:
+	## 应用基础奖励
+	match reward_id:
+		"heal":
+			if player != null and player.has_method("heal"):
+				var heal_amount := player.max_hp * 0.3
+				player.heal(heal_amount)
+				print("❤️ 恢复 %.0f 生命" % heal_amount)
+		"gold":
+			var save_mgr := get_node_or_null("/root/SaveManager")
+			if save_mgr:
+				save_mgr.add_blood_crystals(100)
+				print("💰 获得 100 血晶")
+		"damage_boost":
+			if player != null:
+				player.damage_multiplier += 0.1
+				print("⚔️ 攻击力 +10%")
 
 func _create_weapon_by_id(weapon_id: String):
 	match weapon_id:

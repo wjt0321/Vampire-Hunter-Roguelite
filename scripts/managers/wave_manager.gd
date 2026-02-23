@@ -67,8 +67,21 @@ func _start_next_wave() -> void:
 	current_wave += 1
 	wave_timer = 0.0
 	spawn_timer = 0.0
+	
+	# 清除所有经验宝石
+	_clear_xp_gems()
+	
 	wave_started.emit(current_wave)
 	print("=== Wave %d 开始! ===" % current_wave)
+
+func _clear_xp_gems() -> void:
+	## 清除所有经验宝石
+	var gems := get_tree().get_nodes_in_group("xp_gems")
+	for gem in gems:
+		if is_instance_valid(gem):
+			gem.queue_free()
+	if gems.size() > 0:
+		print("💎 清除了 %d 个经验宝石" % gems.size())
 
 func _end_current_wave() -> void:
 	wave_completed.emit(current_wave)
@@ -172,10 +185,20 @@ func _pick_enemy_type() -> String:
 	return available_types[0]
 
 func _get_spawn_position() -> Vector2:
-	## 在玩家周围的圆圈外随机位置生成
+	## 在玩家周围的圆圈外随机位置生成，但限制在房间范围内
 	var angle := randf() * TAU
 	var offset := Vector2(cos(angle), sin(angle)) * spawn_distance
-	return player.global_position + offset
+	var spawn_pos := player.global_position + offset
+	
+	# 获取房间边界并限制生成位置
+	var room := player.get_parent()
+	if room and room.has_method("get_room_bounds"):
+		var bounds: Rect2 = room.get_room_bounds()
+		var margin := 50.0
+		spawn_pos.x = clampf(spawn_pos.x, bounds.position.x + margin, bounds.end.x - margin)
+		spawn_pos.y = clampf(spawn_pos.y, bounds.position.y + margin, bounds.end.y - margin)
+	
+	return spawn_pos
 
 func _on_enemy_died(enemy: Node2D) -> void:
 	enemies_alive -= 1

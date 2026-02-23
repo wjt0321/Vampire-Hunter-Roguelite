@@ -48,7 +48,7 @@ func _physics_process(delta: float) -> void:
 	# 移动逻辑：保持距离
 	_move_maintain_distance(delta, distance_to_player)
 
-func _move_maintain_distance(delta: float, distance: float) -> void:
+func _move_maintain_distance(_delta: float, distance: float) -> void:
 	if is_teleporting:
 		return
 	
@@ -89,8 +89,10 @@ func _teleport() -> void:
 	# 确保在房间范围内
 	var room := get_parent()
 	if room and room.has_method("get_center"):
-		var room_center := room.get_center()
-		var room_size := Vector2(room.room_width, room_height)
+		var room_center: Vector2 = room.get_center()
+		var room_width: float = room.get("room_width")
+		var room_height: float = room.get("room_height")
+		var room_size := Vector2(room_width, room_height)
 		target_pos.x = clampf(target_pos.x, room_center.x - room_size.x / 2 + 50, room_center.x + room_size.x / 2 - 50)
 		target_pos.y = clampf(target_pos.y, room_center.y - room_size.y / 2 + 50, room_center.y + room_size.y / 2 - 50)
 	
