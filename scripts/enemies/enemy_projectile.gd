@@ -19,9 +19,6 @@ func _ready() -> void:
 	
 	# 设置旋转朝向
 	rotation = direction.angle()
-	
-	# 连接碰撞信号
-	body_entered.connect(_on_body_entered)
 
 func _physics_process(delta: float) -> void:
 	var move_distance := speed * delta

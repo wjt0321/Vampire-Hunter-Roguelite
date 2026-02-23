@@ -101,12 +101,11 @@ func _is_passive_maxed(passive_id: String) -> bool:
 	## 检查被动道具是否已满级
 	if player == null or not player.has_method("get_owned_passive_items"):
 		return false
-	
-	var owned_passives = player.get_owned_passive_items()
+
 	for item in player.passive_items:
 		if item.item_id == passive_id:
-			# 检查是否达到最大堆叠（假设最大5级）
-			return item.current_stack >= 5
+			# 使用 is_max_level() 方法检查是否满级
+			return item.is_max_level()
 	return false
 
 func _get_basic_rewards() -> Array:
@@ -155,7 +154,7 @@ func _apply_basic_reward(reward_id: String) -> void:
 	match reward_id:
 		"heal":
 			if player != null and player.has_method("heal"):
-				var heal_amount := player.max_hp * 0.3
+				var heal_amount: float = player.max_hp * 0.3
 				player.heal(heal_amount)
 				print("❤️ 恢复 %.0f 生命" % heal_amount)
 		"gold":
