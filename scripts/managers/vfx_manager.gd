@@ -2,13 +2,7 @@ extends Node
 ## 视觉效果管理器
 ## 提供粒子特效和屏幕震动功能
 
-# 单例引用 —— 通过 get_tree().current_scene 找到或放在 AutoLoad 中
-static var instance: Node = null
-
 var camera: Camera2D = null
-
-func _ready() -> void:
-	instance = self
 
 # ========== 屏幕震动 ==========
 

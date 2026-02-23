@@ -4,6 +4,10 @@ extends CharacterBody2D
 ## 射击由 WeaponManager 独立处理
 
 const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
+const LightningChainScene = preload("res://scenes/player/lightning_chain.tscn")
+
+# 缓存的 AudioLibrary 实例
+var _audio_lib: AudioLibraryScript = null
 
 # === 移动属性 ===
 @export var move_speed: float = 200.0
@@ -63,6 +67,8 @@ signal player_died
 func _ready() -> void:
 	add_to_group("player")
 	current_hp = max_hp
+	# 初始化 AudioLibrary 缓存
+	_audio_lib = AudioLibraryScript.new()
 	# 自动创建纹理（如果 sprite 没有 texture）
 	if sprite and sprite.texture == null:
 		var img := Image.create(16, 24, false, Image.FORMAT_RGBA8)
@@ -114,8 +120,7 @@ func _level_up() -> void:
 	if vfx:
 		vfx.spawn_levelup_particles(global_position)
 	# 播放升级音效
-	var audio_lib := AudioLibraryScript.new()
-	AudioManager.play_sfx(audio_lib.get_sound("level_up"))
+	AudioManager.play_sfx(_audio_lib.get_sound("level_up"))
 
 # === 升级效果应用 ===
 func apply_upgrade(upgrade_type: String) -> void:
@@ -192,17 +197,16 @@ func _lightning_retaliate() -> void:
 	
 	if nearest_enemy and nearest_dist < 300 * 300:  # 300范围内
 		# 创建闪电效果
-		var lightning := preload("res://scenes/player/lightning_chain.tscn").instantiate()
+		var lightning := LightningChainScene.instantiate()
 		lightning.global_position = global_position
 		lightning.base_damage = lightning_retaliate_damage
 		lightning.damage_multiplier = 1.0
 		lightning.max_jumps = 1
 		lightning._current_damage = lightning_retaliate_damage
 		get_tree().current_scene.add_child(lightning)
-		
+
 		# 播放音效
-		var audio_lib := AudioLibraryScript.new()
-		AudioManager.play_sfx(audio_lib.get_sound("shoot_magic"))
+		AudioManager.play_sfx(_audio_lib.get_sound("shoot_magic"))
 
 func heal(amount: float) -> void:
 	current_hp = clampf(current_hp + amount, 0.0, max_hp)
@@ -260,8 +264,7 @@ func _break_shield() -> void:
 	shield_timer = 0.0
 	print("💥 护盾破碎!")
 	# 播放护盾破碎音效
-	var audio_lib := AudioLibraryScript.new()
-	AudioManager.play_sfx(audio_lib.get_sound("shield_break"))
+	AudioManager.play_sfx(_audio_lib.get_sound("shield_break"))
 
 func _heal_regen() -> void:
 	var heal_amount := max_hp * regen_rate

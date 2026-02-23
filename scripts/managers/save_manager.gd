@@ -59,12 +59,14 @@ func load_game() -> void:
 	var json := JSON.new()
 	var result := json.parse(file.get_as_text())
 	file.close()
-	if result == OK:
-		var loaded: Variant = json.data
-		if loaded is Dictionary:
-			# 合并数据（保留新增字段）
-			_merge_dict(save_data, loaded)
-			print("📂 存档已加载")
+	if result != OK:
+		push_error("JSON 解析失败: %s" % json.get_error_message())
+		return
+	var loaded: Variant = json.data
+	if loaded is Dictionary:
+		# 合并数据（保留新增字段）
+		_merge_dict(save_data, loaded)
+		print("📂 存档已加载")
 
 func _merge_dict(target: Dictionary, source: Dictionary) -> void:
 	for key in source:

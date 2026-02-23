@@ -6,11 +6,19 @@ const WeaponDataScript = preload("res://scripts/weapons/weapon_data.gd")
 const WeaponEvolutionScript = preload("res://scripts/weapons/weapon_evolution.gd")
 const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
 
+# 场景预加载常量
+const KnifeBulletScene = preload("res://scenes/player/knife_bullet.tscn")
+const PoisonCloudScene = preload("res://scenes/player/poison_cloud.tscn")
+const LightningChainScene = preload("res://scenes/player/lightning_chain.tscn")
+
 var weapons: Array = []
 var weapon_evolutions: Dictionary = {}  # weapon_id -> WeaponEvolution
 var shoot_timers: Dictionary = {}
 var player: CharacterBody2D = null
 var bullet_scene: PackedScene = preload("res://scenes/player/bullet.tscn")
+
+# 缓存的 AudioLibrary 实例
+var _audio_lib: AudioLibraryScript = null
 
 signal weapon_added(weapon: Resource)
 signal weapon_leveled_up(weapon: Resource)
@@ -88,6 +96,8 @@ const EVOLUTION_CONFIG: Dictionary = {
 
 func setup(player_node: CharacterBody2D) -> void:
 	player = player_node
+	# 初始化 AudioLibrary 缓存
+	_audio_lib = AudioLibraryScript.new()
 	var pistol := _create_pistol()
 	add_weapon(pistol)
 
@@ -174,8 +184,7 @@ func _evolve_weapon(weapon_id: String, evolution: WeaponEvolution) -> void:
 			print("✨ %s 已进化为 %s!" % [weapon_id, evolution.evolution_name])
 			
 			# 播放进化音效
-			var audio_lib := AudioLibraryScript.new()
-			AudioManager.play_sfx(audio_lib.get_sound("level_up"))
+			AudioManager.play_sfx(_audio_lib.get_sound("level_up"))
 			break
 
 func get_weapon_evolution(weapon_id: String) -> WeaponEvolution:
@@ -220,7 +229,7 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 	# 根据武器类型创建不同的子弹
 	var bullet: Area2D
 	if weapon.weapon_id == "throwing_knife":
-		bullet = preload("res://scenes/player/knife_bullet.tscn").instantiate()
+		bullet = KnifeBulletScene.instantiate()
 		# 设置穿透数
 		if bullet.has_method("set_pierce_count"):
 			bullet.set_pierce_count(weapon.get_scaled_pierce_count())
@@ -310,7 +319,6 @@ static func create_magic_book() -> Resource:
 	return w
 
 func _play_shoot_sound(weapon_id: String) -> void:
-	var audio_lib := AudioLibraryScript.new()
 	var sound_name: String = "shoot_pistol"
 	match weapon_id:
 		"shotgun":
@@ -319,7 +327,7 @@ func _play_shoot_sound(weapon_id: String) -> void:
 			sound_name = "shoot_magic"
 		"throwing_knife":
 			sound_name = "shoot_pistol"  # 飞刀使用相同音效
-	var sound := audio_lib.get_sound(sound_name)
+	var sound := _audio_lib.get_sound(sound_name)
 	AudioManager.play_sfx(sound)
 
 static func create_throwing_knife() -> Resource:
@@ -375,7 +383,7 @@ static func create_lightning_chain() -> Resource:
 	return w
 
 func _spawn_poison_cloud(weapon) -> void:
-	var cloud := preload("res://scenes/player/poison_cloud.tscn").instantiate()
+	var cloud := PoisonCloudScene.instantiate()
 	# 自动瞄准最近的敌人位置投掷
 	var target_pos := _get_nearest_enemy_position(player.global_position)
 	if target_pos == Vector2.ZERO:
@@ -389,7 +397,7 @@ func _spawn_poison_cloud(weapon) -> void:
 	_play_shoot_sound(weapon.weapon_id)
 
 func _spawn_lightning_chain(weapon) -> void:
-	var lightning := preload("res://scenes/player/lightning_chain.tscn").instantiate()
+	var lightning := LightningChainScene.instantiate()
 	lightning.global_position = player.global_position
 	lightning.base_damage = weapon.get_scaled_damage()
 	lightning.damage_multiplier = player.damage_multiplier if player else 1.0

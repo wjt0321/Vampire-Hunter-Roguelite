@@ -2,6 +2,9 @@ extends Area2D
 ## 子弹脚本
 ## 沿指定方向飞行，碰到敌人造成伤害后消失
 
+# 缓存的玩家引用
+var _cached_player: Node = null
+
 # === 属性 ===
 @export var speed: float = 500.0
 @export var base_damage: float = 10.0
@@ -11,6 +14,8 @@ var damage_multiplier: float = 1.0
 var distance_traveled: float = 0.0
 
 func _ready() -> void:
+	# 缓存玩家引用
+	_cached_player = get_tree().get_first_node_in_group("player")
 	# 设置子弹旋转方向
 	rotation = direction.angle()
 	# 自动创建纹理
@@ -45,12 +50,20 @@ func _on_body_entered(body: Node2D) -> void:
 
 func _check_freeze(enemy: Node2D) -> void:
 	## 检查是否触发冰冻效果
-	var player := get_tree().get_first_node_in_group("player")
-	if player and player.has_method("get_owned_passive_items"):
+	# 检查敌人是否有效且存活
+	if not is_instance_valid(enemy):
+		return
+	if "is_dead" in enemy and enemy.is_dead:
+		return
+
+	# 使用缓存的玩家引用，必要时重新获取
+	if _cached_player == null or not is_instance_valid(_cached_player):
+		_cached_player = get_tree().get_first_node_in_group("player")
+	if _cached_player and _cached_player.has_method("get_owned_passive_items"):
 		# 检查是否有冰冻之心
-		for item in player.passive_items:
+		for item in _cached_player.passive_items:
 			if item.item_id == "frozen_heart":
-				if randf() < player.freeze_chance:
+				if randf() < _cached_player.freeze_chance:
 					# 冻结敌人
 					if enemy.has_method("freeze"):
 						enemy.freeze(2.0)  # 冻结2秒

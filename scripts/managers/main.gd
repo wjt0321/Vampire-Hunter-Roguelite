@@ -7,6 +7,9 @@ const RoomManagerScript = preload("res://scripts/map/room_manager.gd")
 const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
 var boss_scene: PackedScene = preload("res://scenes/enemies/vampire_lord.tscn")
 
+# 缓存的 AudioLibrary 实例
+var _audio_lib: AudioLibraryScript = null
+
 @onready var player: CharacterBody2D = $Player
 @onready var camera: Camera2D = $Player/Camera2D
 @onready var wave_manager = $WaveManager
@@ -47,10 +50,10 @@ func _ready() -> void:
 	
 	# 启动波次
 	wave_manager.start(player)
-	
-	# 播放战斗 BGM
-	var audio_lib := AudioLibraryScript.new()
-	AudioManager.play_bgm(audio_lib.get_battle_bgm())
+
+	# 初始化 AudioLibrary 缓存并播放战斗 BGM
+	_audio_lib = AudioLibraryScript.new()
+	AudioManager.play_bgm(_audio_lib.get_battle_bgm())
 	
 	# 初始化成就系统
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
@@ -216,10 +219,9 @@ func _enter_rest_room() -> void:
 
 func _enter_boss_room() -> void:
 	print("💀 Boss 房间! 吸血鬼领主降临!")
-	
+
 	# 切换到 Boss BGM
-	var audio_lib := AudioLibraryScript.new()
-	AudioManager.play_bgm(audio_lib.get_boss_bgm())
+	AudioManager.play_bgm(_audio_lib.get_boss_bgm())
 	
 	# 生成 Boss
 	var boss := boss_scene.instantiate()
@@ -251,8 +253,7 @@ func _on_boss_defeated() -> void:
 		ach_mgr.record_boss_kill(int(ach_mgr.run_stats.get("damage_taken", 0)))
 	
 	# 切换回战斗 BGM
-	var audio_lib := AudioLibraryScript.new()
-	AudioManager.play_bgm(audio_lib.get_battle_bgm())
+	AudioManager.play_bgm(_audio_lib.get_battle_bgm())
 	
 	# 给玩家额外升级
 	if is_instance_valid(player):
