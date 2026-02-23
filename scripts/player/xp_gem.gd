@@ -51,6 +51,9 @@ func _collect() -> void:
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
 		vfx.spawn_xp_particles(global_position)
+	# 播放拾取音效
+	var audio_lib := AudioLibrary.new()
+	AudioManager.play_sfx(audio_lib.get_sound("pickup_xp"))
 	# 拾取特效
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.1)

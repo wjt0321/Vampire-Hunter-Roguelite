@@ -74,6 +74,9 @@ func _flash_hit() -> void:
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
 		vfx.spawn_hit_particles(global_position, sprite.modulate, 4)
+	# 播放受击音效
+	var audio_lib := AudioLibrary.new()
+	AudioManager.play_sfx(audio_lib.get_sound("hit_enemy"))
 
 func _die() -> void:
 	if is_dead:
@@ -84,6 +87,9 @@ func _die() -> void:
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
 		vfx.spawn_death_particles(global_position, sprite.modulate, 10)
+	# 播放死亡音效
+	var audio_lib := AudioLibrary.new()
+	AudioManager.play_sfx(audio_lib.get_sound("enemy_death"))
 	# 掉落经验宝石
 	_drop_xp_gem()
 	# 禁用碰撞

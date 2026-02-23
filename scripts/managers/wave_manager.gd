@@ -9,6 +9,9 @@ var enemy_scenes: Dictionary = {
 	"werewolf": preload("res://scenes/enemies/werewolf.tscn"),
 	"bat": preload("res://scenes/enemies/bat.tscn"),
 	"zombie": preload("res://scenes/enemies/zombie.tscn"),
+	"skeleton_archer": preload("res://scenes/enemies/skeleton_archer.tscn"),
+	"exploder": preload("res://scenes/enemies/exploder.tscn"),
+	"elite_vampire": preload("res://scenes/enemies/elite_vampire.tscn"),
 }
 
 # === 波次配置 ===
@@ -105,8 +108,14 @@ func _pick_enemy_type() -> String:
 		available_types.append("bat")
 	if current_wave >= 3:
 		available_types.append("zombie")
+	if current_wave >= 4:
+		available_types.append("skeleton_archer")
 	if current_wave >= 5:
 		available_types.append("werewolf")
+	if current_wave >= 6:
+		available_types.append("exploder")
+	if current_wave >= 8:
+		available_types.append("elite_vampire")
 	
 	# 每种类型权重不同
 	var weights: Array[float] = []
@@ -118,8 +127,14 @@ func _pick_enemy_type() -> String:
 				weights.append(8.0)
 			"zombie":
 				weights.append(5.0)
+			"skeleton_archer":
+				weights.append(4.0)
 			"werewolf":
 				weights.append(3.0)
+			"exploder":
+				weights.append(2.0)
+			"elite_vampire":
+				weights.append(1.0)
 	
 	# 加权随机选择
 	var total_weight: float = 0.0

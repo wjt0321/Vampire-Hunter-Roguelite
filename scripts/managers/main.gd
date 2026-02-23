@@ -46,6 +46,10 @@ func _ready() -> void:
 	
 	# 启动波次
 	wave_manager.start(player)
+	
+	# 播放战斗 BGM
+	var audio_lib := AudioLibrary.new()
+	AudioManager.play_bgm(audio_lib.get_battle_bgm())
 
 func _connect_signals() -> void:
 	player.hp_changed.connect(hud.update_hp)
@@ -198,6 +202,11 @@ func _enter_rest_room() -> void:
 
 func _enter_boss_room() -> void:
 	print("💀 Boss 房间! 吸血鬼领主降临!")
+	
+	# 切换到 Boss BGM
+	var audio_lib := AudioLibrary.new()
+	AudioManager.play_bgm(audio_lib.get_boss_bgm())
+	
 	# 生成 Boss
 	var boss := boss_scene.instantiate()
 	if current_room:
@@ -221,6 +230,11 @@ func _enter_boss_room() -> void:
 func _on_boss_defeated() -> void:
 	boss_hp_bar.hide_boss_bar()
 	print("👑 Boss 被击败! 获得丰厚奖励!")
+	
+	# 切换回战斗 BGM
+	var audio_lib := AudioLibrary.new()
+	AudioManager.play_bgm(audio_lib.get_battle_bgm())
+	
 	# 给玩家额外升级
 	if is_instance_valid(player):
 		player.heal(player.max_hp)  # 回满血

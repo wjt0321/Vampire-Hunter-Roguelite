@@ -15,6 +15,7 @@ const STAT_UPGRADES: Array = [
 const WEAPON_UPGRADES: Array = [
 	{"id": "shotgun", "name": "散弹枪", "desc": "近距离扇形射击", "icon": "💥", "type": "weapon"},
 	{"id": "magic_book", "name": "魔法书", "desc": "自动追踪敌人", "icon": "📖", "type": "weapon"},
+	{"id": "throwing_knife", "name": "飞刀", "desc": "穿透多个敌人", "icon": "🔪", "type": "weapon"},
 ]
 
 var player: Node = null
@@ -84,4 +85,6 @@ func _create_weapon_by_id(weapon_id: String):
 			return WeaponManagerScript.create_shotgun()
 		"magic_book":
 			return WeaponManagerScript.create_magic_book()
+		"throwing_knife":
+			return WeaponManagerScript.create_throwing_knife()
 	return null

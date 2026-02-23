@@ -85,6 +85,9 @@ func _level_up() -> void:
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
 		vfx.spawn_levelup_particles(global_position)
+	# 播放升级音效
+	var audio_lib := AudioLibrary.new()
+	AudioManager.play_sfx(audio_lib.get_sound("level_up"))
 
 # === 升级效果应用 ===
 func apply_upgrade(upgrade_type: String) -> void:

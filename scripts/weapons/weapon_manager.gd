@@ -68,7 +68,16 @@ func _fire_weapon(weapon) -> void:
 		_spawn_bullet(origin, direction, weapon)
 
 func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
-	var bullet := bullet_scene.instantiate() as Area2D
+	# 根据武器类型创建不同的子弹
+	var bullet: Area2D
+	if weapon.weapon_id == "throwing_knife":
+		bullet = preload("res://scenes/player/knife_bullet.tscn").instantiate()
+		# 设置穿透数
+		if bullet.has_method("set_pierce_count"):
+			bullet.set_pierce_count(weapon.get_scaled_pierce_count())
+	else:
+		bullet = bullet_scene.instantiate()
+	
 	bullet.global_position = origin + direction * 16.0
 	bullet.direction = direction
 	bullet.speed = weapon.bullet_speed
@@ -76,6 +85,9 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 	bullet.max_range = weapon.bullet_range
 	bullet.damage_multiplier = player.damage_multiplier if player else 1.0
 	get_tree().current_scene.add_child(bullet)
+	
+	# 播放射击音效
+	_play_shoot_sound(weapon.weapon_id)
 
 func _get_nearest_enemy_direction(from: Vector2) -> Vector2:
 	var enemies := get_tree().get_nodes_in_group("enemies")
@@ -135,4 +147,34 @@ static func create_magic_book() -> Resource:
 	w.projectile_count = 1
 	w.spread_angle = 0.0
 	w.auto_aim = true
+	return w
+
+func _play_shoot_sound(weapon_id: String) -> void:
+	var audio_lib := AudioLibrary.new()
+	var sound_name: String = "shoot_pistol"
+	match weapon_id:
+		"shotgun":
+			sound_name = "shoot_shotgun"
+		"magic_book":
+			sound_name = "shoot_magic"
+		"throwing_knife":
+			sound_name = "shoot_pistol"  # 飞刀使用相同音效
+	var sound := audio_lib.get_sound(sound_name)
+	AudioManager.play_sfx(sound)
+
+static func create_throwing_knife() -> Resource:
+	var script = preload("res://scripts/weapons/weapon_data.gd")
+	var w = script.new()
+	w.weapon_name = "飞刀"
+	w.weapon_id = "throwing_knife"
+	w.description = "穿透敌人的飞刀"
+	w.icon_emoji = "🔪"
+	w.base_damage = 12.0
+	w.fire_rate = 0.5
+	w.bullet_speed = 450.0
+	w.bullet_range = 500.0
+	w.projectile_count = 1
+	w.spread_angle = 0.0
+	w.auto_aim = true
+	w.pierce_count = 3  # 基础穿透3个
 	return w

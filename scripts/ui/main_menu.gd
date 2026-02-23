@@ -30,6 +30,10 @@ func _ready() -> void:
 	_update_crystals()
 	upgrade_shop.shop_closed.connect(_update_crystals)
 	character_select.selection_closed.connect(_update_crystals)
+	
+	# 播放主菜单 BGM
+	var audio_lib := AudioLibrary.new()
+	AudioManager.play_bgm(audio_lib.get_menu_bgm())
 
 func _update_crystals() -> void:
 	if save_mgr:
@@ -39,6 +43,7 @@ func _setup_button_effects() -> void:
 	for btn in [start_btn, char_btn, shop_btn, settings_btn, quit_btn, back_btn]:
 		btn.mouse_entered.connect(func(): _on_button_hover(btn))
 		btn.mouse_exited.connect(func(): _on_button_unhover(btn))
+		btn.pressed.connect(_on_button_click)
 
 func _on_button_hover(btn: Button) -> void:
 	var tween := create_tween()
@@ -49,6 +54,10 @@ func _on_button_unhover(btn: Button) -> void:
 	var tween := create_tween()
 	tween.tween_property(btn, "scale", Vector2.ONE, 0.15)
 	btn.modulate = Color.WHITE
+
+func _on_button_click() -> void:
+	var audio_lib := AudioLibrary.new()
+	AudioManager.play_sfx(audio_lib.get_sound("button_click"))
 
 func _animate_title() -> void:
 	var tween := create_tween().set_loops()

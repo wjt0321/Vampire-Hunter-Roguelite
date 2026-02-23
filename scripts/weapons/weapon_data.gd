@@ -18,6 +18,9 @@ extends Resource
 @export var max_level: int = 5
 var current_level: int = 1
 
+# 飞刀特有属性
+@export var pierce_count: int = 0  # 0 表示不穿透
+
 func get_scaled_damage() -> float:
 	return base_damage * (1.0 + (current_level - 1) * 0.3)
 
@@ -26,6 +29,12 @@ func get_scaled_fire_rate() -> float:
 
 func get_scaled_projectile_count() -> int:
 	return projectile_count + (current_level - 1) / 2
+
+func get_scaled_pierce_count() -> int:
+	# 飞刀每升1级增加1个穿透
+	if pierce_count > 0:
+		return pierce_count + (current_level - 1)
+	return 0
 
 func level_up() -> bool:
 	if current_level >= max_level:
