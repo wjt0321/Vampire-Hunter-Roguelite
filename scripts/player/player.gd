@@ -24,6 +24,15 @@ var shoot_speed_multiplier: float = 1.0
 var pickup_range_bonus: float = 0.0
 var armor: float = 0.0
 
+# === 被动道具 ===
+var passive_items: Array = []
+var magnet_multiplier: float = 1.0
+var has_shield: bool = false
+var shield_cooldown: float = 30.0
+var shield_timer: float = 0.0
+var regen_rate: float = 0.0
+var regen_timer: float = 0.0
+
 # === 信号 ===
 signal hp_changed(current: float, maximum: float)
 signal xp_changed(current_xp: int, xp_needed: int, level: int)
@@ -49,9 +58,10 @@ func _ready() -> void:
 	hp_changed.emit(current_hp, max_hp)
 	xp_changed.emit(current_xp, xp_to_next_level, current_level)
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	_handle_movement()
 	_handle_rotation()
+	_process_passive_items(delta)
 
 func _handle_movement() -> void:
 	var input_dir := Vector2.ZERO
@@ -149,3 +159,87 @@ func _die() -> void:
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(queue_free)
+
+# === 被动道具处理 ===
+func _process_passive_items(delta: float) -> void:
+	# 护盾计时
+	if shield_cooldown < 30.0:  # 有护盾道具才计时
+		shield_timer += delta
+		if shield_timer >= shield_cooldown and not has_shield:
+			_grant_shield()
+	
+	# 回血计时
+	if regen_rate > 0:
+		regen_timer += delta
+		if regen_timer >= 5.0:  # 每5秒回血
+			regen_timer = 0.0
+			_heal_regen()
+
+func _grant_shield() -> void:
+	has_shield = true
+	shield_timer = 0.0
+	print("🛡️ 护盾生成!")
+	# 护盾视觉效果
+	var tween := create_tween().set_loops()
+	tween.tween_property(sprite, "modulate", Color(0.5, 0.8, 1.0, 1.0), 0.3)
+	tween.tween_property(sprite, "modulate", Color.WHITE, 0.3)
+
+func _break_shield() -> void:
+	has_shield = false
+	shield_timer = 0.0
+	print("💥 护盾破碎!")
+	# 播放护盾破碎音效
+	var audio_lib := AudioLibrary.new()
+	AudioManager.play_sfx(audio_lib.get_sound("shield_break"))
+
+func _heal_regen() -> void:
+	var heal_amount := max_hp * regen_rate
+	heal(heal_amount)
+	print("💚 恢复 %.1f 生命" % heal_amount)
+
+func add_passive_item(item) -> void:
+	# 检查是否已有相同道具
+	for existing in passive_items:
+		if existing.item_id == item.item_id:
+			existing.level_up()
+			_apply_passive_effect(existing)
+			print("被动道具升级: %s Lv.%d" % [existing.item_name, existing.current_level])
+			return
+	
+	passive_items.append(item)
+	_apply_passive_effect(item)
+	print("获得被动道具: %s" % item.item_name)
+
+func _apply_passive_effect(item) -> void:
+	match item.effect_type:
+		0:  # MAGNET
+			magnet_multiplier = item.get_scaled_value()
+			pickup_range_bonus = 50.0 * magnet_multiplier
+		1:  # SHIELD
+			shield_cooldown = item.get_scaled_value()
+			shield_timer = 0.0
+		2:  # REGENERATION
+			regen_rate = item.get_scaled_value()
+
+func take_damage(amount: float) -> void:
+	if is_invincible:
+		return
+	
+	# 护盾抵挡伤害
+	if has_shield:
+		_break_shield()
+		_start_invincibility()
+		_flash_damage()
+		return
+	
+	var actual_damage := maxf(amount - armor, 1.0)
+	current_hp = clampf(current_hp - actual_damage, 0.0, max_hp)
+	hp_changed.emit(current_hp, max_hp)
+	_start_invincibility()
+	_flash_damage()
+	# 受击屏幕震动
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx:
+		vfx.screen_shake(3.0, 0.1)
+	if current_hp <= 0:
+		_die()

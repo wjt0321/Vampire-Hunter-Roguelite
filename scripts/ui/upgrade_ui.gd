@@ -12,10 +12,18 @@ const STAT_UPGRADES: Array = [
 	{"id": "pickup_range", "name": "磁力吸引", "desc": "拾取范围 +30", "icon": "🧲", "type": "stat"},
 ]
 
+const PASSIVE_UPGRADES: Array = [
+	{"id": "magnet", "name": "经验磁铁", "desc": "经验吸附范围 +30%", "icon": "🧲", "type": "passive"},
+	{"id": "shield", "name": "能量护盾", "desc": "定期生成护盾", "icon": "🛡️", "type": "passive"},
+	{"id": "regeneration", "name": "生命恢复", "desc": "每5秒恢复生命", "icon": "💚", "type": "passive"},
+]
+
 const WEAPON_UPGRADES: Array = [
 	{"id": "shotgun", "name": "散弹枪", "desc": "近距离扇形射击", "icon": "💥", "type": "weapon"},
 	{"id": "magic_book", "name": "魔法书", "desc": "自动追踪敌人", "icon": "📖", "type": "weapon"},
 	{"id": "throwing_knife", "name": "飞刀", "desc": "穿透多个敌人", "icon": "🔪", "type": "weapon"},
+	{"id": "poison_cloud", "name": "毒雾瓶", "desc": "持续伤害区域", "icon": "☠️", "type": "weapon"},
+	{"id": "lightning_chain", "name": "闪电法杖", "desc": "闪电链跳跃", "icon": "⚡", "type": "weapon"},
 ]
 
 var player: Node = null
@@ -38,6 +46,8 @@ func show_upgrade(player_node: Node, weapon_mgr: Node = null) -> void:
 	var pool: Array = STAT_UPGRADES.duplicate()
 	for wo in WEAPON_UPGRADES:
 		pool.append(wo)
+	for po in PASSIVE_UPGRADES:
+		pool.append(po)
 	pool.shuffle()
 	var selected := pool.slice(0, 3)
 	for child in options_container.get_children():
@@ -70,6 +80,11 @@ func _on_option_selected(option: Dictionary) -> void:
 			var weapon_data = _create_weapon_by_id(option["id"])
 			if weapon_data:
 				weapon_manager.add_weapon(weapon_data)
+	elif option_type == "passive":
+		if player != null and player.has_method("add_passive_item"):
+			var passive_data = _create_passive_by_id(option["id"])
+			if passive_data:
+				player.add_passive_item(passive_data)
 	var tween := create_tween()
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	tween.tween_property(panel, "modulate:a", 0.0, 0.15)
@@ -87,4 +102,18 @@ func _create_weapon_by_id(weapon_id: String):
 			return WeaponManagerScript.create_magic_book()
 		"throwing_knife":
 			return WeaponManagerScript.create_throwing_knife()
+		"poison_cloud":
+			return WeaponManagerScript.create_poison_cloud()
+		"lightning_chain":
+			return WeaponManagerScript.create_lightning_chain()
+	return null
+
+func _create_passive_by_id(passive_id: String):
+	match passive_id:
+		"magnet":
+			return preload("res://scripts/player/passive_item_data.gd").create_magnet()
+		"shield":
+			return preload("res://scripts/player/passive_item_data.gd").create_shield()
+		"regeneration":
+			return preload("res://scripts/player/passive_item_data.gd").create_regeneration()
 	return null

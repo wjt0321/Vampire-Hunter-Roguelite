@@ -21,6 +21,13 @@ var current_level: int = 1
 # 飞刀特有属性
 @export var pierce_count: int = 0  # 0 表示不穿透
 
+# 毒雾特有属性
+@export var cloud_duration: float = 5.0
+@export var cloud_size: float = 1.0
+
+# 闪电链特有属性
+@export var lightning_jumps: int = 3
+
 func get_scaled_damage() -> float:
 	return base_damage * (1.0 + (current_level - 1) * 0.3)
 
@@ -34,6 +41,24 @@ func get_scaled_pierce_count() -> int:
 	# 飞刀每升1级增加1个穿透
 	if pierce_count > 0:
 		return pierce_count + (current_level - 1)
+	return 0
+
+func get_scaled_cloud_duration() -> float:
+	# 毒雾每升1级增加1秒持续时间
+	if cloud_duration > 0:
+		return cloud_duration + (current_level - 1) * 1.0
+	return 0.0
+
+func get_scaled_cloud_size() -> float:
+	# 毒雾每升1级增加20%范围
+	if cloud_size > 0:
+		return cloud_size * (1.0 + (current_level - 1) * 0.2)
+	return 1.0
+
+func get_scaled_lightning_jumps() -> int:
+	# 闪电每升1级增加1次跳跃
+	if lightning_jumps > 0:
+		return lightning_jumps + (current_level - 1)
 	return 0
 
 func level_up() -> bool:

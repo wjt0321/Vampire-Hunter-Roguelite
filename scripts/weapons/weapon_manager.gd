@@ -50,6 +50,16 @@ func add_weapon(weapon_data) -> void:
 func _fire_weapon(weapon) -> void:
 	if player == null or not is_instance_valid(player):
 		return
+	
+	# 特殊武器类型处理
+	match weapon.weapon_id:
+		"poison_cloud":
+			_spawn_poison_cloud(weapon)
+			return
+		"lightning_chain":
+			_spawn_lightning_chain(weapon)
+			return
+	
 	var origin: Vector2 = player.global_position
 	var base_direction: Vector2
 	if weapon.auto_aim:
@@ -178,3 +188,75 @@ static func create_throwing_knife() -> Resource:
 	w.auto_aim = true
 	w.pierce_count = 3  # 基础穿透3个
 	return w
+
+static func create_poison_cloud() -> Resource:
+	var script = preload("res://scripts/weapons/weapon_data.gd")
+	var w = script.new()
+	w.weapon_name = "毒雾瓶"
+	w.weapon_id = "poison_cloud"
+	w.description = "投掷毒雾造成持续伤害"
+	w.icon_emoji = "☠️"
+	w.base_damage = 5.0
+	w.fire_rate = 1.5
+	w.bullet_speed = 0.0
+	w.bullet_range = 0.0
+	w.projectile_count = 1
+	w.spread_angle = 0.0
+	w.auto_aim = true
+	w.cloud_duration = 5.0
+	w.cloud_size = 1.0
+	return w
+
+static func create_lightning_chain() -> Resource:
+	var script = preload("res://scripts/weapons/weapon_data.gd")
+	var w = script.new()
+	w.weapon_name = "闪电法杖"
+	w.weapon_id = "lightning_chain"
+	w.description = "闪电在敌人之间跳跃"
+	w.icon_emoji = "⚡"
+	w.base_damage = 15.0
+	w.fire_rate = 0.8
+	w.bullet_speed = 0.0
+	w.bullet_range = 0.0
+	w.projectile_count = 1
+	w.spread_angle = 0.0
+	w.auto_aim = true
+	w.lightning_jumps = 3
+	return w
+
+func _spawn_poison_cloud(weapon) -> void:
+	var cloud := preload("res://scenes/player/poison_cloud.tscn").instantiate()
+	# 自动瞄准最近的敌人位置投掷
+	var target_pos := _get_nearest_enemy_position(player.global_position)
+	if target_pos == Vector2.ZERO:
+		target_pos = player.global_position + Vector2(randf_range(-100, 100), randf_range(-100, 100))
+	cloud.global_position = target_pos
+	cloud.base_damage = weapon.get_scaled_damage()
+	cloud.damage_multiplier = player.damage_multiplier if player else 1.0
+	cloud.duration = weapon.get_scaled_cloud_duration()
+	cloud.set_size(weapon.get_scaled_cloud_size())
+	get_tree().current_scene.add_child(cloud)
+	_play_shoot_sound(weapon.weapon_id)
+
+func _spawn_lightning_chain(weapon) -> void:
+	var lightning := preload("res://scenes/player/lightning_chain.tscn").instantiate()
+	lightning.global_position = player.global_position
+	lightning.base_damage = weapon.get_scaled_damage()
+	lightning.damage_multiplier = player.damage_multiplier if player else 1.0
+	lightning.max_jumps = weapon.get_scaled_lightning_jumps()
+	lightning._current_damage = lightning.base_damage
+	get_tree().current_scene.add_child(lightning)
+	_play_shoot_sound(weapon.weapon_id)
+
+func _get_nearest_enemy_position(from: Vector2) -> Vector2:
+	var enemies := get_tree().get_nodes_in_group("enemies")
+	var nearest_pos := Vector2.ZERO
+	var nearest_dist: float = INF
+	for enemy in enemies:
+		if not is_instance_valid(enemy):
+			continue
+		var dist := from.distance_squared_to(enemy.global_position)
+		if dist < nearest_dist:
+			nearest_dist = dist
+			nearest_pos = enemy.global_position
+	return nearest_pos
