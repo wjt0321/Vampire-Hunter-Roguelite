@@ -109,7 +109,8 @@ func _generate_arpeggio(frequencies: Array, duration: float) -> AudioStreamWAV:
 # ========== BGM 生成 ==========
 
 func get_menu_bgm() -> AudioStreamWAV:
-	return _generate_ambient_loop(60.0, [220, 261, 329], 0.3)
+	# 使用更简单的单音，降低音量
+	return _generate_simple_ambient(60.0, 174, 0.15)
 
 func get_battle_bgm() -> AudioStreamWAV:
 	return _generate_ambient_loop(30.0, [146, 174, 220], 0.4)
@@ -135,6 +136,34 @@ func _generate_ambient_loop(duration: float, base_freqs: Array, volume: float) -
 		
 		# 应用缓慢的包络
 		var envelope := 0.8 + 0.2 * sin(t * 0.5 * TAU)
+		value *= envelope
+		
+		data[i] = clampi(int(value * 127.0 + 128.0), 0, 255)
+	
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_8_BITS
+	stream.mix_rate = SAMPLE_RATE
+	stream.stereo = false
+	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	stream.loop_begin = 0
+	stream.loop_end = samples
+	stream.data = data
+	return stream
+
+func _generate_simple_ambient(duration: float, frequency: float, volume: float) -> AudioStreamWAV:
+	## 生成简单的单音环境音乐，更柔和
+	var samples := int(SAMPLE_RATE * duration)
+	var data := PackedByteArray()
+	data.resize(samples)
+	
+	for i in range(samples):
+		var t := float(i) / SAMPLE_RATE
+		
+		# 单一正弦波，非常柔和
+		var value := sin(t * frequency * TAU) * volume
+		
+		# 添加缓慢变化的包络，避免刺耳
+		var envelope := 0.5 + 0.5 * sin(t * 0.2 * TAU)
 		value *= envelope
 		
 		data[i] = clampi(int(value * 127.0 + 128.0), 0, 255)
