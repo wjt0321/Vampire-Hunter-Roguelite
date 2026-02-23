@@ -74,7 +74,7 @@ func _generate_noise_burst(duration: float, start_volume: float, end_volume: flo
 	for i in range(samples):
 		var progress := float(i) / samples
 		var envelope := lerp(start_volume, end_volume, progress)
-		var noise := (randf() * 2.0 - 1.0) * envelope * 127.0 + 128.0
+		var noise: float = (randf() * 2.0 - 1.0) * envelope * 127.0 + 128.0
 		data[i] = clampi(int(noise), 0, 255)
 	
 	var stream := AudioStreamWAV.new()
