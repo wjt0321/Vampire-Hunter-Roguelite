@@ -2,6 +2,8 @@ extends "res://scripts/enemies/enemy_base.gd"
 class_name Exploder
 ## 自爆僵尸 — 快速接近玩家，靠近后爆炸
 
+const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
+
 const EXPLOSION_RANGE: float = 80.0      # 爆炸范围
 const EXPLOSION_DAMAGE: float = 30.0     # 爆炸伤害
 const DETONATION_DISTANCE: float = 60.0  # 引爆距离
@@ -77,7 +79,7 @@ func _explode() -> void:
 				player.take_damage(EXPLOSION_DAMAGE)
 	
 	# 播放爆炸音效
-	var audio_lib := AudioLibrary.new()
+	var audio_lib := AudioLibraryScript.new()
 	AudioManager.play_sfx(audio_lib.get_sound("explosion"))
 	
 	# 爆炸视觉效果

@@ -3,6 +3,8 @@ extends CharacterBody2D
 ## 处理移动、生命值、经验升级等核心逻辑
 ## 射击由 WeaponManager 独立处理
 
+const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
+
 # === 移动属性 ===
 @export var move_speed: float = 200.0
 
@@ -96,7 +98,7 @@ func _level_up() -> void:
 	if vfx:
 		vfx.spawn_levelup_particles(global_position)
 	# 播放升级音效
-	var audio_lib := AudioLibrary.new()
+	var audio_lib := AudioLibraryScript.new()
 	AudioManager.play_sfx(audio_lib.get_sound("level_up"))
 
 # === 升级效果应用 ===
@@ -189,7 +191,7 @@ func _break_shield() -> void:
 	shield_timer = 0.0
 	print("💥 护盾破碎!")
 	# 播放护盾破碎音效
-	var audio_lib := AudioLibrary.new()
+	var audio_lib := AudioLibraryScript.new()
 	AudioManager.play_sfx(audio_lib.get_sound("shield_break"))
 
 func _heal_regen() -> void:

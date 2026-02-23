@@ -2,6 +2,8 @@ extends CanvasLayer
 ## 主菜单
 ## 暗黑哥特风格
 
+const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
+
 @onready var title_label: Label = $CenterContainer/VBoxContainer/TitleLabel
 @onready var subtitle_label: Label = $CenterContainer/VBoxContainer/SubtitleLabel
 @onready var start_btn: Button = $CenterContainer/VBoxContainer/ButtonContainer/StartButton
@@ -32,7 +34,7 @@ func _ready() -> void:
 	character_select.selection_closed.connect(_update_crystals)
 	
 	# 播放主菜单 BGM
-	var audio_lib := AudioLibrary.new()
+	var audio_lib := AudioLibraryScript.new()
 	AudioManager.play_bgm(audio_lib.get_menu_bgm())
 
 func _update_crystals() -> void:
@@ -56,7 +58,7 @@ func _on_button_unhover(btn: Button) -> void:
 	btn.modulate = Color.WHITE
 
 func _on_button_click() -> void:
-	var audio_lib := AudioLibrary.new()
+	var audio_lib := AudioLibraryScript.new()
 	AudioManager.play_sfx(audio_lib.get_sound("button_click"))
 
 func _animate_title() -> void:

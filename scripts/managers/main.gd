@@ -4,6 +4,7 @@ extends Node2D
 
 const GameRoomScript = preload("res://scripts/map/game_room.gd")
 const RoomManagerScript = preload("res://scripts/map/room_manager.gd")
+const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
 var boss_scene: PackedScene = preload("res://scenes/enemies/vampire_lord.tscn")
 
 @onready var player: CharacterBody2D = $Player
@@ -48,7 +49,7 @@ func _ready() -> void:
 	wave_manager.start(player)
 	
 	# 播放战斗 BGM
-	var audio_lib := AudioLibrary.new()
+	var audio_lib := AudioLibraryScript.new()
 	AudioManager.play_bgm(audio_lib.get_battle_bgm())
 
 func _connect_signals() -> void:
@@ -204,7 +205,7 @@ func _enter_boss_room() -> void:
 	print("💀 Boss 房间! 吸血鬼领主降临!")
 	
 	# 切换到 Boss BGM
-	var audio_lib := AudioLibrary.new()
+	var audio_lib := AudioLibraryScript.new()
 	AudioManager.play_bgm(audio_lib.get_boss_bgm())
 	
 	# 生成 Boss
@@ -232,7 +233,7 @@ func _on_boss_defeated() -> void:
 	print("👑 Boss 被击败! 获得丰厚奖励!")
 	
 	# 切换回战斗 BGM
-	var audio_lib := AudioLibrary.new()
+	var audio_lib := AudioLibraryScript.new()
 	AudioManager.play_bgm(audio_lib.get_battle_bgm())
 	
 	# 给玩家额外升级

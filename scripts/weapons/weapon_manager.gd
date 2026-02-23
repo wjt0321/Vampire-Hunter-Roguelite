@@ -3,6 +3,7 @@ class_name WeaponManager
 ## 武器管理器
 
 const WeaponDataScript = preload("res://scripts/weapons/weapon_data.gd")
+const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
 
 var weapons: Array = []
 var shoot_timers: Dictionary = {}
@@ -160,7 +161,7 @@ static func create_magic_book() -> Resource:
 	return w
 
 func _play_shoot_sound(weapon_id: String) -> void:
-	var audio_lib := AudioLibrary.new()
+	var audio_lib := AudioLibraryScript.new()
 	var sound_name: String = "shoot_pistol"
 	match weapon_id:
 		"shotgun":

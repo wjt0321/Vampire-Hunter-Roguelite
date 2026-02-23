@@ -1,3 +1,4 @@
+class_name AudioLibrary
 extends Node
 ## 音频资源库
 ## 提供程序生成的默认音效
