@@ -1,0 +1,47 @@
+extends Area2D
+## 子弹脚本
+## 沿指定方向飞行，碰到敌人造成伤害后消失
+
+# === 属性 ===
+@export var speed: float = 500.0
+@export var base_damage: float = 10.0
+@export var max_range: float = 800.0
+var direction: Vector2 = Vector2.RIGHT
+var damage_multiplier: float = 1.0
+var distance_traveled: float = 0.0
+
+func _ready() -> void:
+	# 设置子弹旋转方向
+	rotation = direction.angle()
+	# 自动创建纹理
+	var spr := $Sprite2D as Sprite2D
+	if spr and spr.texture == null:
+		var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)
+		img.fill(Color.WHITE)
+		spr.texture = ImageTexture.create_from_image(img)
+
+func _physics_process(delta: float) -> void:
+	var move_distance := speed * delta
+	position += direction * move_distance
+	distance_traveled += move_distance
+	# 子弹拖尾
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx and Engine.get_physics_frames() % 3 == 0:
+		vfx.spawn_bullet_trail(global_position)
+	# 超出射程后销毁
+	if distance_traveled >= max_range:
+		queue_free()
+
+func get_damage() -> float:
+	return base_damage * damage_multiplier
+
+func _on_body_entered(body: Node2D) -> void:
+	# 碰到敌人
+	if body.has_method("take_damage"):
+		body.take_damage(get_damage())
+	queue_free()
+
+func _on_area_entered(area: Area2D) -> void:
+	# 碰到墙壁等
+	if area.is_in_group("walls"):
+		queue_free()

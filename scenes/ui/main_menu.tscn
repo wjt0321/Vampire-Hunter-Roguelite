@@ -1,0 +1,156 @@
+[gd_scene load_steps=4 format=3 uid="uid://main_menu"]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://upgrade_shop" path="res://scenes/ui/upgrade_shop.tscn" id="2_shop"]
+[ext_resource type="PackedScene" uid="uid://character_select" path="res://scenes/ui/character_select.tscn" id="3_charsel"]
+
+[node name="MainMenu" type="CanvasLayer"]
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.05, 0.02, 0.08, 1.0)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+text = "🧛 吸血鬼猎人 🧛"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 48
+theme_override_colors/font_color = Color(0.8, 0.15, 0.2, 1.0)
+
+[node name="SubtitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+text = "Vampire Hunter Roguelite"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.6, 0.4, 0.5, 1.0)
+
+[node name="CrystalsLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+text = "💎 血晶: 0"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.5, 0.3, 1.0, 1.0)
+
+[node name="Spacer" type="Control" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 20)
+
+[node name="ButtonContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StartButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 45)
+text = "⚔ 开始游戏"
+pivot_offset = Vector2(140, 22)
+theme_override_font_sizes/font_size = 18
+
+[node name="CharButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 45)
+text = "🧛 角色选择"
+pivot_offset = Vector2(140, 22)
+theme_override_font_sizes/font_size = 18
+
+[node name="ShopButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 45)
+text = "🏪 升级商店"
+pivot_offset = Vector2(140, 22)
+theme_override_font_sizes/font_size = 18
+
+[node name="SettingsButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 45)
+text = "⚙ 设置"
+pivot_offset = Vector2(140, 22)
+theme_override_font_sizes/font_size = 18
+
+[node name="QuitButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 45)
+text = "🚪 退出"
+pivot_offset = Vector2(140, 22)
+theme_override_font_sizes/font_size = 18
+
+[node name="SettingsPanel" type="PanelContainer" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SettingsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="SettingsTitle" type="Label" parent="SettingsPanel/VBoxContainer"]
+layout_mode = 2
+text = "⚙ 设置"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+
+[node name="MusicLabel" type="Label" parent="SettingsPanel/VBoxContainer"]
+layout_mode = 2
+text = "🎵 音乐音量"
+
+[node name="MusicSlider" type="HSlider" parent="SettingsPanel/VBoxContainer"]
+layout_mode = 2
+min_value = 0.0
+max_value = 1.0
+step = 0.05
+value = 0.8
+
+[node name="SFXLabel" type="Label" parent="SettingsPanel/VBoxContainer"]
+layout_mode = 2
+text = "🔊 音效音量"
+
+[node name="SFXSlider" type="HSlider" parent="SettingsPanel/VBoxContainer"]
+layout_mode = 2
+min_value = 0.0
+max_value = 1.0
+step = 0.05
+value = 0.8
+
+[node name="FullscreenCheck" type="CheckButton" parent="SettingsPanel/VBoxContainer"]
+layout_mode = 2
+text = "全屏模式"
+
+[node name="BackButton" type="Button" parent="SettingsPanel/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+text = "返回"
+pivot_offset = Vector2(140, 20)
+
+[node name="UpgradeShop" parent="." instance=ExtResource("2_shop")]
+
+[node name="CharacterSelect" parent="." instance=ExtResource("3_charsel")]
+
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/StartButton" to="." method="_on_start_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/CharButton" to="." method="_on_char_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/ShopButton" to="." method="_on_shop_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/SettingsButton" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/QuitButton" to="." method="_on_quit_pressed"]
+[connection signal="value_changed" from="SettingsPanel/VBoxContainer/MusicSlider" to="." method="_on_music_changed"]
+[connection signal="value_changed" from="SettingsPanel/VBoxContainer/SFXSlider" to="." method="_on_sfx_changed"]
+[connection signal="toggled" from="SettingsPanel/VBoxContainer/FullscreenCheck" to="." method="_on_fullscreen_toggled"]
+[connection signal="pressed" from="SettingsPanel/VBoxContainer/BackButton" to="." method="_on_back_pressed"]

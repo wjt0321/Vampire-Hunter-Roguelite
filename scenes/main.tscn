@@ -1,0 +1,35 @@
+[gd_scene load_steps=10 format=3 uid="uid://main_scene"]
+
+[ext_resource type="Script" path="res://scripts/managers/main.gd" id="1_main"]
+[ext_resource type="PackedScene" uid="uid://player_scene" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="Script" path="res://scripts/managers/wave_manager.gd" id="3_wave"]
+[ext_resource type="Script" path="res://scripts/weapons/weapon_manager.gd" id="4_weapon"]
+[ext_resource type="PackedScene" uid="uid://hud_scene" path="res://scenes/ui/hud.tscn" id="5_hud"]
+[ext_resource type="PackedScene" uid="uid://upgrade_ui" path="res://scenes/ui/upgrade_ui.tscn" id="6_upgrade"]
+[ext_resource type="PackedScene" uid="uid://game_over_ui" path="res://scenes/ui/game_over_ui.tscn" id="7_gameover"]
+[ext_resource type="PackedScene" uid="uid://boss_hp_bar" path="res://scenes/ui/boss_hp_bar.tscn" id="8_bosshp"]
+[ext_resource type="PackedScene" uid="uid://pause_menu" path="res://scenes/ui/pause_menu.tscn" id="9_pause"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_main")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector2(640, 360)
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+
+[node name="WaveManager" type="Node" parent="."]
+script = ExtResource("3_wave")
+
+[node name="WeaponManager" type="Node" parent="."]
+script = ExtResource("4_weapon")
+
+[node name="HUD" parent="." instance=ExtResource("5_hud")]
+
+[node name="UpgradeUI" parent="." instance=ExtResource("6_upgrade")]
+
+[node name="GameOverUI" parent="." instance=ExtResource("7_gameover")]
+
+[node name="BossHPBar" parent="." instance=ExtResource("8_bosshp")]
+
+[node name="PauseMenu" parent="." instance=ExtResource("9_pause")]

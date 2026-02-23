@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3 uid="uid://boss_vampire_lord"]
+
+[ext_resource type="Script" path="res://scripts/enemies/vampire_lord.gd" id="1_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_boss"]
+size = Vector2(28, 36)
+
+[node name="VampireLord" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("1_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0.6, 0.0, 0.3, 1.0)
+scale = Vector2(4.0, 5.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_boss")
+
+[node name="ContactArea" type="Area2D" parent="."]
+collision_layer = 2
+collision_mask = 1
+
+[node name="ContactShape" type="CollisionShape2D" parent="ContactArea"]
+shape = SubResource("RectangleShape2D_boss")
+
+[connection signal="body_entered" from="ContactArea" to="." method="_on_contact_area_body_entered"]

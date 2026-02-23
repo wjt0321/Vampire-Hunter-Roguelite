@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3 uid="uid://werewolf_enemy"]
+
+[ext_resource type="Script" path="res://scripts/enemies/werewolf.gd" id="1_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_werewolf"]
+size = Vector2(18, 24)
+
+[node name="Werewolf" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("1_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0.5, 0.35, 0.15, 1.0)
+scale = Vector2(2.2, 3.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_werewolf")
+
+[node name="ContactArea" type="Area2D" parent="."]
+collision_layer = 2
+collision_mask = 1
+
+[node name="ContactShape" type="CollisionShape2D" parent="ContactArea"]
+shape = SubResource("RectangleShape2D_werewolf")
+
+[connection signal="body_entered" from="ContactArea" to="." method="_on_contact_area_body_entered"]

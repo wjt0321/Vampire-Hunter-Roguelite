@@ -1,0 +1,38 @@
+[gd_scene load_steps=2 format=3 uid="uid://boss_hp_bar"]
+
+[ext_resource type="Script" path="res://scripts/ui/boss_hp_bar.gd" id="1_script"]
+
+[node name="BossHPBar" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_script")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 200.0
+offset_top = 10.0
+offset_right = -200.0
+offset_bottom = 80.0
+grow_horizontal = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Boss Name"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HPBar" type="ProgressBar" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 20)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="PhaseLabel" type="Label" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Phase 1"
+horizontal_alignment = 1
