@@ -123,6 +123,14 @@ func apply_upgrade(upgrade_type: String) -> void:
 func take_damage(amount: float) -> void:
 	if is_invincible:
 		return
+	
+	# 护盾抵挡伤害
+	if has_shield:
+		_break_shield()
+		_start_invincibility()
+		_flash_damage()
+		return
+	
 	var actual_damage := maxf(amount - armor, 1.0)
 	current_hp = clampf(current_hp - actual_damage, 0.0, max_hp)
 	hp_changed.emit(current_hp, max_hp)
@@ -222,26 +230,3 @@ func _apply_passive_effect(item) -> void:
 			shield_timer = 0.0
 		2:  # REGENERATION
 			regen_rate = item.get_scaled_value()
-
-func take_damage(amount: float) -> void:
-	if is_invincible:
-		return
-	
-	# 护盾抵挡伤害
-	if has_shield:
-		_break_shield()
-		_start_invincibility()
-		_flash_damage()
-		return
-	
-	var actual_damage := maxf(amount - armor, 1.0)
-	current_hp = clampf(current_hp - actual_damage, 0.0, max_hp)
-	hp_changed.emit(current_hp, max_hp)
-	_start_invincibility()
-	_flash_damage()
-	# 受击屏幕震动
-	var vfx := get_node_or_null("/root/VFXManager")
-	if vfx:
-		vfx.screen_shake(3.0, 0.1)
-	if current_hp <= 0:
-		_die()
