@@ -1,111 +1,117 @@
 # 🧛 吸血鬼猎人 (Vampire Hunter Roguelite)
 
-**Godot 4.6 · GDScript · 2D 俯视角肉鸽动作游戏**
+[![Godot Version](https://img.shields.io/badge/Godot-4.6+-478061?style=flat&logo=godot-engine)](https://godotengine.org)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Mac%20%7C%20Linux-blue.svg)](https://godotengine.org)
+
+一款暗黑哥特风格的 2D Roguelite 动作游戏。玩家扮演猎人在不断涌来的吸血鬼和怪物潮中求生，通过击杀获取经验升级武器，探索随机生成的房间，最终挑战 Boss。
 
 ---
 
-## 📖 简介
-
-一款暗黑哥特风格的 2D Roguelite 动作游戏。玩家扮演猎人在不断涌来的吸血鬼和怪物潮中求生，通过击杀获取经验升级武器，探索随机生成的房间，最终挑战 Boss。
+## 📖 游戏简介
 
 ### 核心特性
 
 | 特性 | 描述 |
-|---|---|
+|------|------|
 | 🎮 动作战斗 | WASD 移动 + 鼠标瞄准射击，多武器自动开火 |
 | 🗡️ 武器系统 | 手枪/散弹/激光/魔法书/飞刀/毒雾/闪电链，可堆叠升级和进化 |
 | 🗺️ 房间探索 | 程序化生成房间（战斗/商店/宝箱/休息/Boss） |
 | 👑 Boss 战 | 吸血鬼领主：弹幕 + 召唤 + 冲刺，50% 血量狂暴 |
 | 💎 永久进度 | 血晶货币 + 6 种永久升级 + 2 个可解锁角色 |
 | 🧛 多角色 | 猎人阿尔忒弥斯（平衡）/ 牧师塞西莉亚（防御） |
-| 🎵 音频系统 | BGM 播放、音效管理、音量控制 |
+| 🎵 音频系统 | 音效管理、音量控制 |
 | ✨ 视觉特效 | 粒子系统、屏幕震动、子弹拖尾、冰冻/闪避效果 |
+
+---
+
+## 🎮 游戏截图
+
+> 在此添加游戏截图
+
+![游戏截图](docs/images/screenshot.png)
 
 ---
 
 ## 🎯 操作方式
 
 | 按键 | 功能 |
-|---|---|
+|------|------|
 | `W/A/S/D` | 移动 |
 | `鼠标左键` | 射击 |
 | `ESC` | 暂停菜单 |
 
 ---
 
-## 🏗️ 项目结构
+## 🚀 开始游戏
+
+### 环境要求
+
+- **Godot Engine 4.6+**
+- **操作系统**: Windows / macOS / Linux
+
+### 运行步骤
+
+1. 克隆或下载本项目
+2. 安装 [Godot 4.6+](https://godotengine.org/download)
+3. 打开 Godot，点击 "导入" 并选择 `project.godot`
+4. 按 `F5` 运行游戏
+
+---
+
+## 🗂️ 项目结构
 
 ```
 VampireHunter/
-├── scenes/
-│   ├── main.tscn              # 游戏主场景
-│   ├── player/                # 玩家、子弹、经验宝石
-│   ├── enemies/               # 蝙蝠/僵尸/狼人/吸血鬼/骷髅/Boss
-│   └── ui/                    # 主菜单/HUD/暂停/结算/商店/角色选择
-├── scripts/
-│   ├── managers/              # main/wave_manager/save_manager/vfx_manager/audio
-│   ├── player/                # player/bullet/xp_gem/passive_item_data/character_data
-│   ├── enemies/               # enemy_base + 多种敌人 + 投射物
-│   ├── weapons/               # weapon_manager/weapon_data
-│   ├── map/                   # game_room/room_manager
-│   └── ui/                    # 所有 UI 脚本
+├── scenes/                    # 游戏场景
+│   ├── main.tscn              # 主场景
+│   ├── player/                # 玩家相关
+│   ├── enemies/               # 敌人
+│   └── ui/                    # UI界面
+├── scripts/                   # 源代码
+│   ├── managers/              # 游戏管理器
+│   ├── player/                # 玩家逻辑
+│   ├── enemies/               # 敌人逻辑
+│   ├── weapons/               # 武器系统
+│   └── ui/                    # UI脚本
+├── assets/                    # 资源文件
+│   ├── sprites/               # 精灵图
+│   ├── backgrounds/           # 背景图
+│   ├── ui/                    # UI资源
+│   ├── effects/               # 特效
+│   └── weapons/               # 武器图标
 ├── docs/                      # 开发文档
-│   └── art-assets-requirements.md  # 美术资源需求
-└── project.godot
+└── project.godot              # 项目配置
 ```
 
-### AutoLoad 单例
-
-| 单例 | 职责 |
-|---|---|
-| `SaveManager` | JSON 存档、血晶、升级、角色解锁 |
-| `VFXManager` | 粒子特效、屏幕震动 |
-| `AudioManager` | BGM/音效播放、音量控制 |
-
 ---
 
-## 🚀 运行方式
+## 🎮 已实现内容
 
-1. 安装 [Godot 4.6+](https://godotengine.org/download)
-2. 打开项目：`项目 → 导入 → 选择 project.godot`
-3. 按 `F5` 运行游戏
+### 武器系统 (7种)
 
----
+| 武器 | 描述 |
+|------|------|
+| 🔫 手枪 | 基础单发 |
+| 💥 散弹枪 | 扇形射击 |
+| 🔦 激光 | 穿透射线 |
+| 📖 魔法书 | 追踪法术 |
+| 🗡️ 飞刀 | 穿透攻击 |
+| ☠️ 毒雾 | 范围毒伤 |
+| ⚡ 闪电链 | 连锁攻击 |
 
-## 📈 开发进度
+### 敌人类型 (6种)
 
-### 已完成功能
+| 敌人 | 描述 |
+|------|------|
+| 🦇 蝙蝠 | 快速小怪 |
+| 🧟 僵尸 | 近战小怪 |
+| 🐺 狼人 | 冲锋精英 |
+| 🧛 吸血鬼 | 中等敌人 |
+| 💀 骷髅射手 | 远程攻击 |
+| 👹 吸血鬼领主 | Boss |
 
-- [x] **Phase 1-5**: 核心循环（玩家移动/射击、敌人AI、波次系统、经验系统、武器系统）
-- [x] **Phase 6**: 地图与房间系统（程序化房间生成、传送门）
-- [x] **Phase 7**: Boss 战（吸血鬼领主、多阶段攻击、狂暴模式）
-- [x] **Phase 8**: UI 系统（主菜单、HUD、暂停菜单、结算界面）
-- [x] **Phase 9**: 永久进度（存档/血晶/升级/多角色）
-- [x] **Phase 10**: VFX 特效系统（粒子、屏幕震动、各种视觉效果）
-- [x] **Phase 11**: 音频系统（背景音乐、音效管理）
-
-### 已实现内容
-
-**武器 (7种)**:
-
-- 🔫 手枪 - 基础单发
-- 💥 散弹枪 - 扇形多发
-- 🔦 激光 - 穿透射线
-- 📖 魔法书 - 追踪法术
-- 🗡️ 飞刀 - 穿透攻击
-- ☠️ 毒雾 - 范围毒伤
-- ⚡ 闪电链 - 连锁攻击
-
-**敌人 (6种)**:
-
-- 🦇 蝙蝠 - 快速小怪
-- 🧟 僵尸 - 近战小怪
-- 🐺 狼人 - 冲锋精英
-- 🧛 吸血鬼 - 中等敌人
-- 💀 骷髅射手 - 远程攻击
-- 👹 吸血鬼领主 - Boss
-
-**被动道具 (8种)**:
+### 被动道具 (8种)
 
 - 🧲 经验磁铁
 - 🛡️ 能量护盾
@@ -116,7 +122,7 @@ VampireHunter/
 - ⚡ 闪电护符
 - 🌑 影子披风
 
-**永久升级 (6种)**:
+### 永久升级 (6种)
 
 - ⚔️ 基础伤害 +5%/级
 - ❤️ 基础血量 +10/级
@@ -127,35 +133,35 @@ VampireHunter/
 
 ---
 
-## 🎨 后续开发建议
+## 🗺️ 开发路线图
 
-### 🔴 优先级 1：美术资源替换
-
-当前所有精灵图使用程序化生成的彩色方块，需要替换为像素美术：
-
-- **玩家角色** - 32x32 像素精灵，6组动画
-- **敌人精灵** - 15种敌人，每种 2-4 组动画
-- **Boss** - 64x64，多阶段动画
-- **UI 元素** - 按钮、血条、升级卡片等
-
-> 详见 [docs/art-assets-requirements.md](docs/art-assets-requirements.md)
-
-### 🟡 优先级 2：更多玩法内容
-
-- 更多敌人类型（自爆者、召唤师、精英怪）
-- 更多武器（火焰喷射器、苦无、血爆）
-- 第三角色（刺客、法师）
-- 成就系统
-
-### 🟢 优先级 3：发布准备
-
-- 本地化（中英文）
-- 手柄支持
-- Steam 集成
-- 性能优化
+详见 [docs/ROADMAP.md](docs/ROADMAP.md)
 
 ---
 
-## 📄 License
+## 🤝 贡献指南
 
-MIT License — 自由使用和修改
+欢迎提交 Issue 和 Pull Request！
+
+### 开发环境设置
+
+```bash
+# 克隆项目
+git clone https://github.com/yourusername/VampireHunter.git
+
+# 安装 Godot 4.6+
+# 导入项目并运行
+```
+
+---
+
+## 📄 许可证
+
+本项目基于 MIT 许可证开源 - 查看 [LICENSE](LICENSE) 了解详情。
+
+---
+
+## 🙏 致谢
+
+- [Godot Engine](https://godotengine.org) - 游戏引擎
+- [itch.io](https://itch.io/game-assets/tag-pixel-art) - 免费像素美术资源
