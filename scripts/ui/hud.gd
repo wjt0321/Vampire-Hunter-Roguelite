@@ -16,6 +16,7 @@ var game_time: float = 0.0
 
 func _ready() -> void:
 	wave_banner.visible = false
+	_setup_bar_textures()
 
 func _process(delta: float) -> void:
 	game_time += delta
@@ -51,3 +52,19 @@ func _show_wave_banner(wave_number: int) -> void:
 	tween.tween_interval(1.5)
 	tween.tween_property(wave_banner, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(func(): wave_banner.visible = false)
+
+func _setup_bar_textures() -> void:
+	## 设置血条和经验条的纹理
+	var hp_fill_texture := TextureManager.instance.get_ui_texture("hp_bar_fill")
+	var hp_border_texture := TextureManager.instance.get_ui_texture("hp_bar_border")
+	var xp_fill_texture := TextureManager.instance.get_ui_texture("xp_bar_fill")
+	
+	if hp_fill_texture:
+		var hp_style := StyleBoxTexture.new()
+		hp_style.texture = hp_fill_texture
+		hp_bar.add_theme_stylebox_override("fill", hp_style)
+	
+	if xp_fill_texture:
+		var xp_style := StyleBoxTexture.new()
+		xp_style.texture = xp_fill_texture
+		xp_bar.add_theme_stylebox_override("fill", xp_style)

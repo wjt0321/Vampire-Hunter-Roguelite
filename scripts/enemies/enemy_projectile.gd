@@ -16,9 +16,24 @@ func _ready() -> void:
 		var img := Image.create(8, 4, false, Image.FORMAT_RGBA8)
 		img.fill(Color(0.8, 0.2, 0.2, 1.0))  # 暗红色
 		sprite.texture = ImageTexture.create_from_image(img)
-	
+
+	# 根据碰撞体大小调整精灵缩放
+	_adjust_sprite_scale()
+
 	# 设置旋转朝向
 	rotation = direction.angle()
+
+func _adjust_sprite_scale() -> void:
+	## 根据碰撞体大小调整精灵缩放
+	var collision_shape := get_node_or_null("CollisionShape2D")
+	if collision_shape and collision_shape.shape is RectangleShape2D:
+		var collision_size: Vector2 = collision_shape.shape.size
+		if sprite and sprite.texture:
+			var texture_size: Vector2 = sprite.texture.get_size()
+			if texture_size.x > 0 and texture_size.y > 0:
+				# 先重置为原始大小，再按比例缩放
+				sprite.scale = Vector2.ONE
+				sprite.scale = collision_size / texture_size
 
 func _physics_process(delta: float) -> void:
 	var move_distance := speed * delta

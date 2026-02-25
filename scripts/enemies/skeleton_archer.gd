@@ -17,6 +17,17 @@ func _ready() -> void:
 	xp_value = 8
 	super._ready()
 
+func _load_sprite_texture() -> void:
+	if sprite:
+		var texture := TextureManager.instance.get_enemy_texture("skeleton", "idle")
+		if texture:
+			sprite.texture = texture
+			sprite.modulate = Color.WHITE
+			_adjust_sprite_scale()
+		else:
+			_ensure_default_texture()
+			_adjust_sprite_scale()
+
 func _physics_process(delta: float) -> void:
 	if is_dead or player == null or not is_instance_valid(player):
 		return

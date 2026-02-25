@@ -26,6 +26,7 @@ SaveManager="*res://scripts/managers/save_manager.gd"
 VFXManager="*res://scripts/managers/vfx_manager.gd"
 AudioManager="*res://scripts/managers/audio_manager.gd"
 AchievementManager="*res://scripts/managers/achievement_manager.gd"
+TextureManager="*res://scripts/managers/texture_manager.gd"
 
 [display]
 
@@ -74,7 +75,3 @@ pause={
 2d_physics/layer_3="bullets"
 2d_physics/layer_4="pickups"
 2d_physics/layer_5="walls"
-
-[rendering]
-
-textures/canvas_textures/default_texture_filter=0

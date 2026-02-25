@@ -27,15 +27,32 @@ var save_mgr: Node
 func _ready() -> void:
 	settings_panel.visible = false
 	save_mgr = get_node_or_null("/root/SaveManager")
+	_setup_background()
 	_setup_button_effects()
+	_setup_button_textures()
 	_animate_title()
 	_update_crystals()
 	upgrade_shop.shop_closed.connect(_update_crystals)
 	character_select.selection_closed.connect(_update_crystals)
 	
-	# 播放主菜单 BGM
-	var audio_lib := AudioLibraryScript.new()
-	AudioManager.play_bgm(audio_lib.get_menu_bgm())
+	# 播放主菜单 BGM (已禁用)
+	# var audio_lib := AudioLibraryScript.new()
+	# AudioManager.play_bgm(audio_lib.get_menu_bgm())
+
+func _setup_background() -> void:
+	## 设置菜单背景图
+	var bg_texture := TextureManager.instance.get_background("menu")
+	if bg_texture:
+		# 将ColorRect替换为TextureRect
+		var texture_rect := TextureRect.new()
+		texture_rect.name = "BackgroundTexture"
+		texture_rect.texture = bg_texture
+		texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		texture_rect.anchors_preset = Control.PRESET_FULL_RECT
+		add_child(texture_rect)
+		move_child(texture_rect, 0)  # 移到最底层
+		bg.visible = false  # 隐藏原来的ColorRect
 
 func _update_crystals() -> void:
 	if save_mgr:
@@ -46,6 +63,30 @@ func _setup_button_effects() -> void:
 		btn.mouse_entered.connect(func(): _on_button_hover(btn))
 		btn.mouse_exited.connect(func(): _on_button_unhover(btn))
 		btn.pressed.connect(_on_button_click)
+
+func _setup_button_textures() -> void:
+	## 设置按钮纹理
+	var normal_texture := TextureManager.instance.get_ui_texture("btn_normal")
+	var hover_texture := TextureManager.instance.get_ui_texture("btn_hover")
+	
+	if normal_texture and hover_texture:
+		for btn in [start_btn, char_btn, shop_btn, settings_btn, quit_btn, back_btn]:
+			# 创建纹理按钮样式
+			var normal_style := StyleBoxTexture.new()
+			normal_style.texture = normal_texture
+			
+			var hover_style := StyleBoxTexture.new()
+			hover_style.texture = hover_texture
+			
+			var pressed_style := StyleBoxTexture.new()
+			pressed_style.texture = hover_texture
+			
+			btn.add_theme_stylebox_override("normal", normal_style)
+			btn.add_theme_stylebox_override("hover", hover_style)
+			btn.add_theme_stylebox_override("pressed", pressed_style)
+			btn.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+			btn.add_theme_color_override("font_hover_color", Color(1, 0.9, 0.7, 1))
+			btn.add_theme_color_override("font_pressed_color", Color(0.9, 0.9, 0.9, 1))
 
 func _on_button_hover(btn: Button) -> void:
 	var tween := create_tween()

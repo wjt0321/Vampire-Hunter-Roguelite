@@ -51,9 +51,9 @@ func _ready() -> void:
 	# 启动波次
 	wave_manager.start(player)
 
-	# 初始化 AudioLibrary 缓存并播放战斗 BGM
+	# 初始化 AudioLibrary 缓存并播放战斗 BGM (已禁用)
 	_audio_lib = AudioLibraryScript.new()
-	AudioManager.play_bgm(_audio_lib.get_battle_bgm())
+	# AudioManager.play_bgm(_audio_lib.get_battle_bgm())
 	
 	# 初始化成就系统
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
@@ -220,8 +220,8 @@ func _enter_rest_room() -> void:
 func _enter_boss_room() -> void:
 	print("💀 Boss 房间! 吸血鬼领主降临!")
 
-	# 切换到 Boss BGM
-	AudioManager.play_bgm(_audio_lib.get_boss_bgm())
+	# 切换到 Boss BGM (已禁用)
+	# AudioManager.play_bgm(_audio_lib.get_boss_bgm())
 	
 	# 生成 Boss
 	var boss := boss_scene.instantiate()
@@ -252,8 +252,8 @@ func _on_boss_defeated() -> void:
 	if ach_mgr:
 		ach_mgr.record_boss_kill(int(ach_mgr.run_stats.get("damage_taken", 0)))
 	
-	# 切换回战斗 BGM
-	AudioManager.play_bgm(_audio_lib.get_battle_bgm())
+	# 切换回战斗 BGM (已禁用)
+	# AudioManager.play_bgm(_audio_lib.get_battle_bgm())
 	
 	# 给玩家额外升级
 	if is_instance_valid(player):

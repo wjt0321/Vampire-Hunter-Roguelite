@@ -277,7 +277,7 @@ func _create_pistol() -> Resource:
 	w.weapon_id = "pistol"
 	w.description = "可靠的基础武器"
 	w.icon_emoji = "🔫"
-	w.base_damage = 10.0
+	w.base_damage = 2.5
 	w.fire_rate = 0.35
 	w.bullet_speed = 500.0
 	w.bullet_range = 800.0
@@ -293,7 +293,7 @@ static func create_shotgun() -> Resource:
 	w.weapon_id = "shotgun"
 	w.description = "近距离扇形射击"
 	w.icon_emoji = "💥"
-	w.base_damage = 6.0
+	w.base_damage = 3.0
 	w.fire_rate = 0.8
 	w.bullet_speed = 400.0
 	w.bullet_range = 400.0
@@ -309,7 +309,7 @@ static func create_magic_book() -> Resource:
 	w.weapon_id = "magic_book"
 	w.description = "自动追踪最近的敌人"
 	w.icon_emoji = "📖"
-	w.base_damage = 8.0
+	w.base_damage = 4.0
 	w.fire_rate = 0.6
 	w.bullet_speed = 350.0
 	w.bullet_range = 600.0
@@ -337,7 +337,7 @@ static func create_throwing_knife() -> Resource:
 	w.weapon_id = "throwing_knife"
 	w.description = "穿透敌人的飞刀"
 	w.icon_emoji = "🔪"
-	w.base_damage = 12.0
+	w.base_damage = 6.0
 	w.fire_rate = 0.5
 	w.bullet_speed = 450.0
 	w.bullet_range = 500.0
@@ -354,7 +354,7 @@ static func create_poison_cloud() -> Resource:
 	w.weapon_id = "poison_cloud"
 	w.description = "投掷毒雾造成持续伤害"
 	w.icon_emoji = "☠️"
-	w.base_damage = 5.0
+	w.base_damage = 2.5
 	w.fire_rate = 1.5
 	w.bullet_speed = 0.0
 	w.bullet_range = 0.0
@@ -372,7 +372,7 @@ static func create_lightning_chain() -> Resource:
 	w.weapon_id = "lightning_chain"
 	w.description = "闪电在敌人之间跳跃"
 	w.icon_emoji = "⚡"
-	w.base_damage = 15.0
+	w.base_damage = 7.5
 	w.fire_rate = 0.8
 	w.bullet_speed = 0.0
 	w.bullet_range = 0.0

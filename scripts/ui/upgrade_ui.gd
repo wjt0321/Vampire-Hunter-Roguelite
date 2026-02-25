@@ -118,10 +118,130 @@ func _get_basic_rewards() -> Array:
 
 func _create_option_button(option: Dictionary) -> Button:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(180, 120)
-	btn.text = "%s\n%s\n%s" % [option["icon"], option["name"], option["desc"]]
+	btn.custom_minimum_size = Vector2(180, 140)
 	btn.pressed.connect(func(): _on_option_selected(option))
+	
+	# 创建垂直布局容器
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	
+	# 添加图标纹理
+	var icon_texture := _get_option_icon(option)
+	if icon_texture:
+		var icon := TextureRect.new()
+		icon.texture = icon_texture
+		icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.custom_minimum_size = Vector2(48, 48)
+		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		vbox.add_child(icon)
+	else:
+		# 使用emoji作为回退
+		var icon_label := Label.new()
+		icon_label.text = option.get("icon", "❓")
+		icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var icon_label_settings := LabelSettings.new()
+		icon_label_settings.font_size = 32
+		icon_label.label_settings = icon_label_settings
+		vbox.add_child(icon_label)
+
+	# 添加名称
+	var name_label := Label.new()
+	name_label.text = option["name"]
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	name_label.custom_minimum_size.x = 140  # 增加宽度
+	var name_label_settings := LabelSettings.new()
+	name_label_settings.font_size = 16
+	name_label_settings.font_color = Color(1, 0.9, 0.7, 1)
+	name_label.label_settings = name_label_settings
+	vbox.add_child(name_label)
+
+	# 添加描述
+	var desc_label := Label.new()
+	desc_label.text = option["desc"]
+	desc_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	desc_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	desc_label.custom_minimum_size.x = 140  # 增加宽度
+	var desc_label_settings := LabelSettings.new()
+	desc_label_settings.font_size = 12
+	desc_label_settings.font_color = Color(0.8, 0.8, 0.8, 1)
+	desc_label.label_settings = desc_label_settings
+	vbox.add_child(desc_label)
+	
+	btn.add_child(vbox)
+	
+	# 设置按钮样式
+	var card_texture := TextureManager.instance.get_ui_texture("upgrade_card")
+	if card_texture:
+		var normal_style := StyleBoxTexture.new()
+		normal_style.texture = card_texture
+		
+		var hover_style := StyleBoxTexture.new()
+		hover_style.texture = card_texture
+		
+		btn.add_theme_stylebox_override("normal", normal_style)
+		btn.add_theme_stylebox_override("hover", hover_style)
+		btn.add_theme_stylebox_override("pressed", hover_style)
+	
 	return btn
+
+func _get_option_icon(option: Dictionary) -> Texture2D:
+	## 获取选项对应的图标纹理
+	var option_type: String = option.get("type", "stat")
+	var option_id: String = option.get("id", "")
+	
+	match option_type:
+		"weapon":
+			match option_id:
+				"shotgun":
+					return TextureManager.instance.get_weapon_icon("shotgun")
+				"magic_book":
+					return TextureManager.instance.get_weapon_icon("magic_book")
+				"throwing_knife":
+					return TextureManager.instance.get_weapon_icon("knife")
+				"poison_cloud":
+					return TextureManager.instance.get_weapon_icon("poison")
+				"lightning_chain":
+					return TextureManager.instance.get_weapon_icon("lightning")
+		"passive":
+			match option_id:
+				"magnet":
+					return TextureManager.instance.get_weapon_icon("magnet")
+				"shield":
+					return TextureManager.instance.get_weapon_icon("shield")
+				"regeneration":
+					return TextureManager.instance.get_weapon_icon("heal_potion")
+				"greed_ring":
+					return TextureManager.instance.get_weapon_icon("xp_gem_large")
+				"berserker_blood":
+					return TextureManager.instance.get_weapon_icon("heal_potion")
+				"frozen_heart":
+					return TextureManager.instance.get_weapon_icon("shield")
+				"lightning_shield":
+					return TextureManager.instance.get_weapon_icon("lightning")
+				"shadow_cloak":
+					return TextureManager.instance.get_weapon_icon("shield")
+		"stat", "basic":
+			match option_id:
+				"damage", "damage_boost":
+					return TextureManager.instance.get_weapon_icon("shotgun")
+				"speed":
+					return TextureManager.instance.get_weapon_icon("magic_book")
+				"shoot_speed":
+					return TextureManager.instance.get_weapon_icon("knife")
+				"max_hp", "heal":
+					return TextureManager.instance.get_weapon_icon("heal_potion")
+				"armor":
+					return TextureManager.instance.get_weapon_icon("shield")
+				"pickup_range":
+					return TextureManager.instance.get_weapon_icon("magnet")
+				"gold":
+					return TextureManager.instance.get_weapon_icon("xp_gem_large")
+	
+	return null
 
 func _on_option_selected(option: Dictionary) -> void:
 	var option_type: String = option.get("type", "stat")

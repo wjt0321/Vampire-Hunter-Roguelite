@@ -6,7 +6,7 @@ class_name EnemyBase
 const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
 
 # === 属性 ===
-@export var max_hp: float = 30.0
+@export var max_hp: float = 39.0
 @export var move_speed: float = 80.0
 @export var contact_damage: float = 10.0
 @export var xp_value: int = 5
@@ -29,12 +29,29 @@ signal enemy_died(enemy: Node2D)
 func _ready() -> void:
 	current_hp = max_hp
 	add_to_group("enemies")
-	# 自动创建纹理（如果 sprite 没有 texture）
-	_ensure_sprite_texture()
+	# 加载精灵图纹理
+	_load_sprite_texture()
 	# 查找玩家节点
 	_find_player()
 
-func _ensure_sprite_texture() -> void:
+func _load_sprite_texture() -> void:
+	## 子类覆写此方法加载特定纹理
+	_ensure_default_texture()
+	# 根据碰撞体大小调整精灵缩放
+	_adjust_sprite_scale()
+
+func _adjust_sprite_scale() -> void:
+	## 根据目标大小调整精灵缩放，所有敌人统一大小
+	if sprite and sprite.texture:
+		var texture_size: Vector2 = sprite.texture.get_size()
+		if texture_size.x > 0 and texture_size.y > 0:
+			# 目标精灵大小
+			var target_size: float = 56.0
+			# 计算缩放比例
+			var scale_factor: float = target_size / max(texture_size.x, texture_size.y)
+			sprite.scale = Vector2(scale_factor, scale_factor)
+
+func _ensure_default_texture() -> void:
 	if sprite and sprite.texture == null:
 		var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)
 		img.fill(Color.WHITE)

@@ -20,13 +20,30 @@ func _generate_room() -> void:
 	_create_walls()
 
 func _create_floor() -> void:
-	var floor_rect := ColorRect.new()
-	floor_rect.name = "Floor"
-	floor_rect.color = Color(0.12, 0.08, 0.15, 1.0)  # 暗紫色地板
-	floor_rect.position = Vector2.ZERO
-	floor_rect.size = Vector2(room_width, room_height)
-	floor_rect.z_index = -10
-	add_child(floor_rect)
+	# 尝试加载背景纹理
+	var bg_texture := TextureManager.instance.get_background("standard")
+
+	if bg_texture:
+		# 使用纹理背景
+		var sprite := Sprite2D.new()
+		sprite.name = "FloorSprite"
+		sprite.texture = bg_texture
+		sprite.centered = false
+		sprite.z_index = -10
+		# 调整缩放以适应房间大小
+		var tex_size: Vector2 = bg_texture.get_size()
+		sprite.scale = Vector2(room_width / tex_size.x, room_height / tex_size.y)
+		add_child(sprite)
+	else:
+		# 回退到纯色背景
+		var floor_rect := ColorRect.new()
+		floor_rect.name = "Floor"
+		floor_rect.color = Color(0.12, 0.08, 0.15, 1.0)  # 暗紫色地板
+		floor_rect.position = Vector2.ZERO
+		floor_rect.size = Vector2(room_width, room_height)
+		floor_rect.z_index = -10
+		add_child(floor_rect)
+	
 	# 装饰性网格线
 	var grid := _create_grid_overlay()
 	add_child(grid)

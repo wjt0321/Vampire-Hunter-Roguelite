@@ -21,7 +21,7 @@ var is_invincible: bool = false
 # === 经验与升级 ===
 var current_xp: int = 0
 var current_level: int = 1
-var xp_to_next_level: int = 8  # 再次降低20% (原10)
+var xp_to_next_level: int = 16  # 提升2倍 (原8)
 
 # === 战斗属性（可被升级修改） ===
 var damage_multiplier: float = 1.0
@@ -69,16 +69,40 @@ func _ready() -> void:
 	current_hp = max_hp
 	# 初始化 AudioLibrary 缓存
 	_audio_lib = AudioLibraryScript.new()
-	# 自动创建纹理（如果 sprite 没有 texture）
-	if sprite and sprite.texture == null:
-		var img := Image.create(16, 24, false, Image.FORMAT_RGBA8)
-		img.fill(Color.WHITE)
-		sprite.texture = ImageTexture.create_from_image(img)
+	# 加载精灵图纹理
+	_load_sprite_texture()
 	invincible_timer.wait_time = invincible_duration
 	invincible_timer.one_shot = true
 	invincible_timer.timeout.connect(_on_invincible_timer_timeout)
 	hp_changed.emit(current_hp, max_hp)
 	xp_changed.emit(current_xp, xp_to_next_level, current_level)
+
+func _load_sprite_texture() -> void:
+	## 加载玩家精灵图
+	if sprite:
+		var texture := TextureManager.instance.get_player_texture("idle")
+		if texture:
+			sprite.texture = texture
+			sprite.modulate = Color.WHITE  # 重置颜色
+			# 根据碰撞体大小缩放精灵
+			_adjust_sprite_scale()
+		else:
+			# 回退到默认白色方块
+			var img := Image.create(16, 24, false, Image.FORMAT_RGBA8)
+			img.fill(Color.WHITE)
+			sprite.texture = ImageTexture.create_from_image(img)
+			_adjust_sprite_scale()
+
+func _adjust_sprite_scale() -> void:
+	## 根据目标大小调整精灵缩放
+	if sprite and sprite.texture:
+		var texture_size: Vector2 = sprite.texture.get_size()
+		if texture_size.x > 0 and texture_size.y > 0:
+			# 目标精灵大小
+			var target_size: float = 56.0
+			# 计算缩放比例
+			var scale_factor: float = target_size / max(texture_size.x, texture_size.y)
+			sprite.scale = Vector2(scale_factor, scale_factor)
 
 func _physics_process(delta: float) -> void:
 	_handle_movement()
@@ -113,7 +137,7 @@ func gain_xp(amount: int) -> void:
 
 func _level_up() -> void:
 	current_level += 1
-	xp_to_next_level = 8 + (current_level - 1) * 4  # 再次降低20% (原10+5)
+	xp_to_next_level = 16 + (current_level - 1) * 8  # 提升2倍
 	level_up.emit(current_level)
 	# 升级光效
 	var vfx := get_node_or_null("/root/VFXManager")

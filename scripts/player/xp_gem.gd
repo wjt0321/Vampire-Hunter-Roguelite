@@ -4,7 +4,7 @@ extends Area2D
 
 const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
 
-@export var xp_value: int = 5
+@export var xp_value: int = 2
 @export var attraction_speed: float = 300.0
 @export var attraction_range: float = 80.0
 

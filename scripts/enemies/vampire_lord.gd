@@ -32,16 +32,48 @@ signal boss_phase_changed(phase: int)
 
 func _ready() -> void:
 	# 覆写基类属性
-	max_hp = 845.0  # 增加30% (原650)
+	max_hp = 1690.0  # x2 倍 (原650)
 	move_speed = 60.0
 	contact_damage = 20.0
 	xp_value = 50  # 降低50% (原100)
-	
+
 	current_hp = max_hp
 	add_to_group("enemies")
 	add_to_group("boss")
-	_ensure_sprite_texture()
+	_load_sprite_texture()
 	_find_player()
+
+	# 延迟发送血量信号，让血条有动效
+	await get_tree().create_timer(1.5).timeout
+	boss_hp_changed.emit(0.0, max_hp)  # 先发送0%让血条从0开始
+	# 然后动画填充到100%
+	var tween := create_tween()
+	tween.tween_method(_update_boss_hp_bar, 0.0, max_hp, 1.0)
+
+func _update_boss_hp_bar(value: float) -> void:
+	## 更新血条
+	boss_hp_changed.emit(value, max_hp)
+
+func _load_sprite_texture() -> void:
+	if sprite:
+		var texture := TextureManager.instance.get_boss_texture("idle")
+		if texture:
+			sprite.texture = texture
+			sprite.modulate = Color.WHITE
+			_adjust_sprite_scale()
+		else:
+			_ensure_default_texture()
+			_adjust_sprite_scale()
+
+func _adjust_sprite_scale() -> void:
+	## BOSS使用更大的目标大小
+	if sprite and sprite.texture:
+		var texture_size: Vector2 = sprite.texture.get_size()
+		if texture_size.x > 0 and texture_size.y > 0:
+			# BOSS目标大小为128像素
+			var target_size: float = 128.0
+			var scale_factor: float = target_size / max(texture_size.x, texture_size.y)
+			sprite.scale = Vector2(scale_factor, scale_factor)
 
 func _physics_process(delta: float) -> void:
 	if is_dead or player == null or not is_instance_valid(player):
