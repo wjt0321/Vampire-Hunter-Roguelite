@@ -440,13 +440,14 @@ AI 更适合做这些：
 - `assets/weapons/portal.png`
 - `assets/weapons/icon_regen.png` / `icon_greed.png` / `icon_berserker.png`
 - `assets/weapons/icon_frozen.png`（占位） / `icon_lightning_shield.png` / `icon_shadow.png`（占位）
+- `assets/weapons/icon_vampiric.png` / `icon_swift_boots.png` / `icon_clover.png`
 - `assets/weapons/bullet.png` / `magic_orb.png` / `knife.png`
+- `assets/weapons/crossbow_bolt.png` / `holy_bolt.png`
 
 仍缺失：
 
-- `shotgun_pellet.png`
 - 部分被动道具图标的主题化精修版本
-- 毒雾 `poison_cloud.png`
+- 毒雾 `poison_cloud.png` 的主题化精修版本
 
 ---
 
@@ -658,6 +659,18 @@ AI 更适合做这些：
 | DONE | `icon_frozen.png` | Kenney Particle Pack（占位） | 火焰图标临时占位 |
 | DONE | `icon_lightning_shield.png` | Kenney Game Icons | 已复制缩放 |
 | DONE | `icon_shadow.png` | Kenney Game Icons（占位） | exitRight 图标临时占位 |
+| DONE | `icon_vampiric.png` | 程序生成占位 | 吸血獠牙 |
+| DONE | `icon_swift_boots.png` | 程序生成占位 | 疾风靴 |
+| DONE | `icon_clover.png` | 程序生成占位 | 幸运四叶草 |
+
+### 武器弹道
+
+建议继续放入：`assets/weapons/`
+
+| 状态 | 资源 | 备注 |
+|---|---|---|
+| DONE | `crossbow_bolt.png` | 程序生成占位 |
+| DONE | `holy_bolt.png` | 程序生成占位 |
 
 ### 战斗与粒子特效
 
