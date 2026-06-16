@@ -21,6 +21,9 @@ var _homing_target: Node2D = null
 func _ready() -> void:
 	# 缓存玩家引用
 	_cached_player = get_tree().get_first_node_in_group("player")
+	_setup_visuals()
+
+func _setup_visuals() -> void:
 	# 设置子弹旋转方向
 	rotation = direction.angle()
 	# 加载子弹纹理
@@ -34,6 +37,17 @@ func _ready() -> void:
 			img.fill(Color.WHITE)
 			spr.texture = ImageTexture.create_from_image(img)
 
+func reset_for_pool() -> void:
+	## 归还对象池前重置状态
+	distance_traveled = 0.0
+	homing = false
+	homing_strength = 8.0
+	_homing_target = null
+	_cached_player = null
+	rotation = 0.0
+	modulate = Color.WHITE
+	scale = Vector2.ONE
+
 func _physics_process(delta: float) -> void:
 	if homing:
 		_update_homing(delta)
@@ -44,9 +58,9 @@ func _physics_process(delta: float) -> void:
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx and Engine.get_physics_frames() % 3 == 0:
 		vfx.spawn_bullet_trail(global_position)
-	# 超出射程后销毁
+	# 超出射程后归还对象池
 	if distance_traveled >= max_range:
-		queue_free()
+		ObjectPool.release(self)
 
 func _update_homing(delta: float) -> void:
 	if _homing_target == null or not is_instance_valid(_homing_target):
@@ -77,7 +91,7 @@ func get_damage() -> float:
 func _on_body_entered(body: Node2D) -> void:
 	# 碰到墙壁
 	if body.is_in_group("walls"):
-		queue_free()
+		ObjectPool.release(self)
 		return
 	# 碰到敌人
 	if body.has_method("take_damage"):
@@ -97,7 +111,7 @@ func _on_body_entered(body: Node2D) -> void:
 			body.take_damage(dmg)
 		# 冰冻之心效果：检查是否冻结敌人
 		_check_freeze(body)
-	queue_free()
+	ObjectPool.release(self)
 
 func _check_freeze(enemy: Node2D) -> void:
 	## 检查是否触发冰冻效果
@@ -128,4 +142,4 @@ func _check_freeze(enemy: Node2D) -> void:
 func _on_area_entered(area: Area2D) -> void:
 	# 碰到墙壁等
 	if area.is_in_group("walls"):
-		queue_free()
+		ObjectPool.release(self)

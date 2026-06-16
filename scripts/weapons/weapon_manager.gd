@@ -309,23 +309,24 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 	# 根据武器类型创建不同的子弹
 	var bullet: Area2D
 	if weapon.weapon_id == "throwing_knife":
-		bullet = KnifeBulletScene.instantiate()
+		bullet = ObjectPool.acquire(KnifeBulletScene)
 		# 设置穿透数
 		if bullet.has_method("set_pierce_count"):
 			bullet.set_pierce_count(weapon.get_scaled_pierce_count())
 	elif weapon.weapon_id == "crossbow":
-		bullet = CrossbowBoltScene.instantiate()
+		bullet = ObjectPool.acquire(CrossbowBoltScene)
 		if bullet.has_method("set_pierce_count"):
 			bullet.set_pierce_count(weapon.get_scaled_pierce_count())
 	elif weapon.weapon_id == "holy_wand":
-		bullet = HolyBoltScene.instantiate()
+		bullet = ObjectPool.acquire(HolyBoltScene)
 		bullet.homing = true
 		bullet.homing_strength = 6.0
 	else:
-		bullet = bullet_scene.instantiate()
+		bullet = ObjectPool.acquire(bullet_scene)
 
 	bullet.global_position = origin + direction * 16.0
 	bullet.direction = direction
+	bullet.rotation = direction.angle()
 	bullet.speed = weapon.bullet_speed
 	bullet.base_damage = weapon.get_scaled_damage()
 	# 根据房间大小限制子弹射程，避免穿越房间

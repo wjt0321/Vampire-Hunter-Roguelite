@@ -206,9 +206,12 @@ func _unfreeze() -> void:
 
 func _drop_xp_gem() -> void:
 	var gem_scene := preload("res://scenes/player/xp_gem.tscn")
-	var gem := gem_scene.instantiate() as Area2D
+	var gem := ObjectPool.acquire(gem_scene) as Area2D
 	gem.global_position = global_position
 	gem.xp_value = xp_value
+	# 对象池复用时重新初始化掉落动画
+	if gem.has_method("_setup_gem"):
+		gem._setup_gem()
 	get_tree().current_scene.call_deferred("add_child", gem)
 
 func _on_contact_area_body_entered(body: Node2D) -> void:

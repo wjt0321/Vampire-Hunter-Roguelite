@@ -11,6 +11,9 @@ var is_attracted: bool = false
 var player: Node2D = null
 
 func _ready() -> void:
+	_setup_gem()
+
+func _setup_gem() -> void:
 	add_to_group("xp_gems")
 	# 自动创建纹理
 	var spr := $Sprite2D as Sprite2D
@@ -22,6 +25,13 @@ func _ready() -> void:
 	var tween := create_tween()
 	var random_offset := Vector2(randf_range(-20, 20), randf_range(-20, 20))
 	tween.tween_property(self, "position", position + random_offset, 0.3).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BOUNCE)
+
+func reset_for_pool() -> void:
+	## 归还对象池前/后重置状态
+	is_attracted = false
+	player = null
+	scale = Vector2.ONE
+	modulate = Color.WHITE
 
 func _physics_process(delta: float) -> void:
 	if player == null or not is_instance_valid(player):
@@ -58,4 +68,4 @@ func _collect() -> void:
 	# 拾取特效
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.1)
-	tween.tween_callback(queue_free)
+	tween.tween_callback(func(): ObjectPool.release(self))

@@ -17,6 +17,9 @@ var hit_enemies: Array = []      # 已击中的敌人（避免重复伤害）
 @onready var sprite: Sprite2D = $Sprite2D
 
 func _ready() -> void:
+	_setup_visuals()
+
+func _setup_visuals() -> void:
 	# 设置飞刀旋转方向
 	rotation = direction.angle()
 	# 加载飞刀纹理
@@ -29,6 +32,15 @@ func _ready() -> void:
 			img.fill(Color.SILVER)
 			sprite.texture = ImageTexture.create_from_image(img)
 
+func reset_for_pool() -> void:
+	## 归还对象池前重置状态
+	distance_traveled = 0.0
+	pierce_count = 0
+	hit_enemies.clear()
+	rotation = 0.0
+	modulate = Color.WHITE
+	scale = Vector2.ONE
+
 func _physics_process(delta: float) -> void:
 	var move_distance := speed * delta
 	position += direction * move_distance
@@ -39,9 +51,9 @@ func _physics_process(delta: float) -> void:
 	if vfx and Engine.get_physics_frames() % 5 == 0:
 		vfx.spawn_bullet_trail(global_position)
 	
-	# 超出射程后销毁
+	# 超出射程后归还对象池
 	if distance_traveled >= max_range:
-		queue_free()
+		ObjectPool.release(self)
 
 func get_damage() -> float:
 	return base_damage * damage_multiplier
@@ -49,7 +61,7 @@ func get_damage() -> float:
 func _on_body_entered(body: Node2D) -> void:
 	# 碰到墙壁
 	if body.is_in_group("walls"):
-		queue_free()
+		ObjectPool.release(self)
 		return
 	
 	# 碰到敌人
@@ -64,7 +76,7 @@ func _on_body_entered(body: Node2D) -> void:
 		# 检查是否还能穿透
 		pierce_count += 1
 		if pierce_count >= max_pierce:
-			queue_free()
+			ObjectPool.release(self)
 		else:
 			# 穿透时产生小特效
 			var vfx := get_node_or_null("/root/VFXManager")
@@ -72,9 +84,9 @@ func _on_body_entered(body: Node2D) -> void:
 				vfx.spawn_hit_particles(global_position, Color.SILVER, 2)
 
 func _on_area_entered(area: Area2D) -> void:
-	# 碰到墙壁销毁（飞刀不能穿透墙壁）
+	# 碰到墙壁归还对象池（飞刀不能穿透墙壁）
 	if area.is_in_group("walls"):
-		queue_free()
+		ObjectPool.release(self)
 
 func set_pierce_count(count: int) -> void:
 	max_pierce = count
