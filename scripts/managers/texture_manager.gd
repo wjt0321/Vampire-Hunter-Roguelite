@@ -25,6 +25,12 @@ var weapon_icons: Dictionary = {}
 # 特效纹理
 var effect_textures: Dictionary = {}
 
+# 房间瓦片纹理（按主题）
+var tile_textures: Dictionary = {}
+
+# 环境装饰物纹理
+var prop_textures: Dictionary = {}
+
 func _ready():
 	instance = self
 	_load_all_textures()
@@ -37,6 +43,8 @@ func _load_all_textures():
 	_load_background_textures()
 	_load_weapon_icons()
 	_load_effect_textures()
+	_load_tile_textures()
+	_load_prop_textures()
 
 func _load_player_textures():
 	player_textures = {
@@ -184,6 +192,47 @@ func _load_effect_textures():
 		"wave_start": _load_texture("res://assets/effects/wave_start.png"),
 		"crit_text": _load_texture("res://assets/effects/crit_text.png"),
 		"boss_warning": _load_texture("res://assets/effects/boss_warning.png"),
+		"portal": _load_texture("res://assets/effects/portal.png"),
+	}
+
+func _load_tile_textures():
+	tile_textures = {
+		"dungeon": {
+			"wall": _load_texture("res://assets/tiles/wall_dungeon.png"),
+			"wall_v": _load_texture("res://assets/tiles/wall_dungeon_v.png"),
+			"pillar": _load_texture("res://assets/tiles/pillar_dungeon.png"),
+			"floor": _load_texture("res://assets/tiles/floor_dungeon.png"),
+		},
+		"castle": {
+			"wall": _load_texture("res://assets/tiles/wall_castle.png"),
+			"wall_v": _load_texture("res://assets/tiles/wall_castle_v.png"),
+			"pillar": _load_texture("res://assets/tiles/pillar_castle.png"),
+			"floor": _load_texture("res://assets/tiles/floor_castle.png"),
+		},
+		"cave": {
+			"wall": _load_texture("res://assets/tiles/wall_cave.png"),
+			"wall_v": _load_texture("res://assets/tiles/wall_cave_v.png"),
+			"pillar": _load_texture("res://assets/tiles/pillar_cave.png"),
+			"floor": _load_texture("res://assets/tiles/floor_cave.png"),
+		},
+		"boss": {
+			"wall": _load_texture("res://assets/tiles/wall_boss.png"),
+			"wall_v": _load_texture("res://assets/tiles/wall_boss_v.png"),
+			"pillar": _load_texture("res://assets/tiles/pillar_boss.png"),
+			"floor": _load_texture("res://assets/tiles/floor_boss.png"),
+		},
+	}
+
+func _load_prop_textures():
+	prop_textures = {
+		"torch": _load_texture("res://assets/tiles/props/torch.png"),
+		"coffin": _load_texture("res://assets/tiles/props/coffin.png"),
+		"bookshelf": _load_texture("res://assets/tiles/props/bookshelf.png"),
+		"statue": _load_texture("res://assets/tiles/props/statue.png"),
+		"altar": _load_texture("res://assets/tiles/props/altar.png"),
+		"broken_pillar": _load_texture("res://assets/tiles/props/broken_pillar.png"),
+		"blood_splatter": _load_texture("res://assets/tiles/props/blood_splatter.png"),
+		"cobweb": _load_texture("res://assets/tiles/props/cobweb.png"),
 	}
 
 func _load_texture(path: String) -> Texture2D:
@@ -214,3 +263,10 @@ func get_weapon_icon(weapon_id: String) -> Texture2D:
 
 func get_effect_texture(effect_name: String) -> Texture2D:
 	return effect_textures.get(effect_name, null)
+
+func get_tile_texture(theme: String, tile_name: String) -> Texture2D:
+	var theme_data = tile_textures.get(theme, {})
+	return theme_data.get(tile_name, null)
+
+func get_prop_texture(prop_name: String) -> Texture2D:
+	return prop_textures.get(prop_name, null)

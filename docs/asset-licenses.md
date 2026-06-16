@@ -574,6 +574,37 @@
 - 修改记录：使用 Python/Pillow 从已有贴图派生生成
 - 备注：均为占位，后续可替换为正式逐帧动画
 
+#### 3.7 房间主题瓦片与装饰物
+
+- 状态：已使用
+- 风险：低
+- 类型：地图 / 装饰物 / 特效
+- 来源平台：自制 / 代码生成
+- 授权名称：自制
+- 是否允许商用：是
+- 是否允许修改：是
+- 是否需要署名：否
+- 下载 / 生成日期：2026-06-16
+- 项目内使用路径：
+  - `assets/tiles/wall_dungeon.png` / `wall_dungeon_v.png`
+  - `assets/tiles/wall_castle.png` / `wall_castle_v.png`
+  - `assets/tiles/wall_cave.png` / `wall_cave_v.png`
+  - `assets/tiles/wall_boss.png` / `wall_boss_v.png`
+  - `assets/tiles/pillar_dungeon.png` / `pillar_castle.png` / `pillar_cave.png` / `pillar_boss.png`
+  - `assets/tiles/floor_dungeon.png` / `floor_castle.png` / `floor_cave.png` / `floor_boss.png`
+  - `assets/tiles/props/torch.png`
+  - `assets/tiles/props/coffin.png`
+  - `assets/tiles/props/bookshelf.png`
+  - `assets/tiles/props/statue.png`
+  - `assets/tiles/props/altar.png`
+  - `assets/tiles/props/broken_pillar.png`
+  - `assets/tiles/props/blood_splatter.png`
+  - `assets/tiles/props/cobweb.png`
+  - `assets/effects/portal.png`
+- 用途说明：为房间生成提供主题化墙壁、柱子、地板与装饰物，提升单局视觉多样性
+- 修改记录：使用 Python/Pillow 程序化生成
+- 备注：均为占位，后续可替换为正式 tileset 与手绘装饰物
+
 ---
 
 ## 五、推荐优先登记批次

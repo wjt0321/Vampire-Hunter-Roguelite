@@ -299,12 +299,21 @@
 - `tile_wall_corner.png`
 - `tile_pillar.png`
 - `tile_obstacle.png`
+- `wall_dungeon.png` / `wall_dungeon_v.png`
+- `wall_castle.png` / `wall_castle_v.png`
+- `wall_cave.png` / `wall_cave_v.png`
+- `wall_boss.png` / `wall_boss_v.png`
+- `pillar_dungeon.png` / `pillar_castle.png` / `pillar_cave.png` / `pillar_boss.png`
+- `floor_dungeon.png` / `floor_castle.png` / `floor_cave.png` / `floor_boss.png`
 - `torch.png`
 - `window.png`
 - `coffin.png`
 - `bookshelf.png`
 - `cobweb.png`
 - `blood_splatter.png`
+- `statue.png`
+- `altar.png`
+- `broken_pillar.png`
 
 建议：
 

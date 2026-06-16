@@ -591,6 +591,12 @@ AI 更适合做这些：
 | DONE | `assets/tiles/tile_wall_corner.png` | Kenney Roguelike RPG Pack | 已切片放大至 32x32 |
 | DONE | `assets/tiles/tile_pillar.png` | Kenney Roguelike RPG Pack | 已切片放大至 64x64 |
 | DONE | `assets/tiles/tile_obstacle.png` | Kenney Roguelike RPG Pack | 已切片放大至 64x64 |
+| DONE | `assets/tiles/wall_dungeon.png` / `wall_dungeon_v.png` | 程序生成占位 | 地牢主题墙壁条带 |
+| DONE | `assets/tiles/wall_castle.png` / `wall_castle_v.png` | 程序生成占位 | 城堡主题墙壁条带 |
+| DONE | `assets/tiles/wall_cave.png` / `wall_cave_v.png` | 程序生成占位 | 洞穴主题墙壁条带 |
+| DONE | `assets/tiles/wall_boss.png` / `wall_boss_v.png` | 程序生成占位 | Boss 主题墙壁条带 |
+| DONE | `assets/tiles/pillar_dungeon.png` / `pillar_castle.png` / `pillar_cave.png` / `pillar_boss.png` | 程序生成占位 | 主题化柱子 |
+| DONE | `assets/tiles/floor_dungeon.png` / `floor_castle.png` / `floor_cave.png` / `floor_boss.png` | 程序生成占位 | 主题化可平铺地板 |
 
 ### 环境装饰
 
@@ -604,6 +610,9 @@ AI 更适合做这些：
 | DONE | `bookshelf.png` | 程序生成占位 | 已生成 |
 | DONE | `cobweb.png` | 程序生成占位 | 已生成 |
 | DONE | `blood_splatter.png` | 程序生成占位 | 已生成 |
+| DONE | `statue.png` | 程序生成占位 | 已生成 |
+| DONE | `altar.png` | 程序生成占位 | 已生成 |
+| DONE | `broken_pillar.png` | 程序生成占位 | 已生成 |
 
 ### HUD 与商店 UI
 
@@ -829,3 +838,29 @@ assets/tiles/props/
 3. 若尺寸不同，优先用导入设置或统一脚本适配，不要随意拉伸变形。
 4. Godot 导入后记得确认 `.import` 文件已生成并纳入版本管理。
 5. 所有临时占位素材建议在文件名或授权文档里标注 `placeholder`，方便后续替换。
+
+---
+
+## 十一、本次整理完成情况（2026-06-16 第二轮）
+
+本轮重点：扩展地图/房间内容，增加主题化瓦片与装饰物，提升单局视觉多样性。
+
+已完成：
+
+- 房间主题系统：新增 `dungeon` / `castle` / `cave` / `boss` 四种主题
+- 主题化墙壁条带：`wall_*.png` / `wall_*_v.png`（水平/垂直）
+- 主题化柱子：`pillar_*.png`
+- 主题化可平铺地板：`floor_*.png`
+- 环境装饰物：`torch` / `coffin` / `bookshelf` / `statue` / `altar` / `broken_pillar` / `blood_splatter` / `cobweb`
+- 传送门精灵：`assets/effects/portal.png`
+- 房间生成逻辑更新：
+  - `scripts/map/game_room.gd` 支持按主题选择背景、使用纹理墙壁/柱子、生成带碰撞道具与无碰撞装饰
+  - `scripts/managers/main.gd` 根据房间类型分配主题并调用新装饰生成
+  - `scripts/managers/texture_manager.gd` 注册新瓦片与装饰物纹理
+
+未完成 / 后续可迭代：
+
+- 墙壁/柱子/地板纹理目前为程序生成占位，后续可替换为正式手绘 tileset
+- 房间背景仍为静态图，后续可增加更多主题背景（如 cave 专属背景）
+- 装饰物碰撞盒较简单，后续可针对具体道具精调
+- 火把、血迹等装饰物暂无动画，后续可加简单粒子/闪烁效果

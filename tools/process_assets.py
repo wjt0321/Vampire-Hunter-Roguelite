@@ -6,9 +6,13 @@
 - 输出到 assets/ 对应目录
 """
 import os
+import random
 import shutil
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageEnhance
+
+# 固定随机种子，保证每次生成结果一致（便于版本控制）
+random.seed(42)
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "assets-downloaded"
@@ -539,6 +543,260 @@ def generate_enemy_states():
     save(boss_death, boss / "boss_death.png")
 
 
+# ===== 房间瓦片与装饰物 =====
+
+ROOM_THEMES: dict = {
+    "dungeon": {
+        "base": (45, 42, 48),
+        "highlight": (70, 66, 74),
+        "shadow": (28, 26, 30),
+        "accent": (90, 30, 30),
+    },
+    "castle": {
+        "base": (55, 45, 45),
+        "highlight": (85, 70, 68),
+        "shadow": (35, 28, 28),
+        "accent": (120, 50, 45),
+    },
+    "cave": {
+        "base": (48, 40, 35),
+        "highlight": (75, 62, 52),
+        "shadow": (28, 22, 18),
+        "accent": (65, 50, 40),
+    },
+    "boss": {
+        "base": (35, 25, 30),
+        "highlight": (65, 45, 50),
+        "shadow": (20, 14, 16),
+        "accent": (140, 25, 25),
+    },
+}
+
+
+def _clamp_color(c: tuple) -> tuple:
+    return tuple(max(0, min(255, v)) for v in c)
+
+
+def _vary_color(base: tuple, delta: int = 12) -> tuple:
+    return _clamp_color(tuple(v + random.randint(-delta, delta) for v in base))
+
+
+def _generate_wall_tile(theme: str, colors: dict, out: Path) -> None:
+    """生成水平墙壁条带纹理（128x32，可横向拉伸或平铺）。"""
+    w, h = 128, 32
+    img = Image.new("RGBA", (w, h))
+    draw = ImageDraw.Draw(img)
+    base = colors["base"]
+    highlight = colors["highlight"]
+    shadow = colors["shadow"]
+    accent = colors["accent"]
+
+    brick_h = 10
+    cols = 4
+    for row in range(h // brick_h):
+        y = row * brick_h
+        offset = (row % 2) * (w // (cols * 2))
+        for col in range(-1, cols + 1):
+            bx = col * (w // cols) + offset
+            fill = _vary_color(base, 10)
+            draw.rectangle(
+                [bx, y, bx + w // cols - 1, y + brick_h - 1],
+                fill=fill,
+                outline=shadow,
+                width=1,
+            )
+            draw.line([(bx, y), (bx + w // cols - 1, y)], fill=highlight, width=1)
+
+    # 裂缝 / 血迹
+    for _ in range(4):
+        x1 = random.randint(0, w - 1)
+        y1 = random.randint(0, h - 1)
+        pts = [(x1, y1)]
+        for _ in range(2):
+            pts.append((pts[-1][0] + random.randint(-14, 14), pts[-1][1] + random.randint(-6, 6)))
+        draw.line(pts, fill=(*accent, 130), width=1)
+
+    save(img, out / f"wall_{theme}.png")
+    vertical = img.rotate(90, expand=True)
+    save(vertical, out / f"wall_{theme}_v.png")
+
+
+def _generate_pillar_tile(theme: str, colors: dict, out: Path) -> None:
+    """生成方形柱子纹理 48x48。"""
+    size = 48
+    img = Image.new("RGBA", (size, size))
+    draw = ImageDraw.Draw(img)
+    base = colors["base"]
+    highlight = colors["highlight"]
+    shadow = colors["shadow"]
+    accent = colors["accent"]
+
+    margin = 4
+    body = _vary_color(base, 8)
+    draw.rectangle(
+        [margin, margin, size - margin, size - margin],
+        fill=body,
+        outline=shadow,
+        width=2,
+    )
+    draw.line([(margin, margin), (size - margin, margin)], fill=highlight, width=2)
+    draw.line([(margin, margin), (margin, size - margin)], fill=highlight, width=2)
+
+    for _ in range(2):
+        x1 = random.randint(margin + 6, size - margin - 6)
+        y1 = random.randint(margin + 6, size - margin - 6)
+        draw.line(
+            [(x1, y1), (x1 + random.randint(-8, 8), y1 + random.randint(-8, 8))],
+            fill=(*accent, 150),
+            width=1,
+        )
+
+    save(img, out / f"pillar_{theme}.png")
+
+
+def _generate_floor_tile(theme: str, colors: dict, out: Path) -> None:
+    """生成可平铺地板细节纹理 128x128。"""
+    size = 128
+    img = Image.new("RGBA", (size, size))
+    draw = ImageDraw.Draw(img)
+    base = colors["base"]
+    shadow = colors["shadow"]
+    accent = colors["accent"]
+
+    draw.rectangle([0, 0, size, size], fill=base)
+
+    tile_size = 32
+    for y in range(0, size, tile_size):
+        for x in range(0, size, tile_size):
+            fill = _vary_color(base, 15)
+            draw.rectangle([x, y, x + tile_size - 1, y + tile_size - 1], fill=fill, outline=shadow, width=1)
+
+    for _ in range(6):
+        x1 = random.randint(0, size - 1)
+        y1 = random.randint(0, size - 1)
+        pts = [(x1, y1)]
+        for _ in range(3):
+            pts.append((pts[-1][0] + random.randint(-18, 18), pts[-1][1] + random.randint(-18, 18)))
+        draw.line(pts, fill=(*accent, 70), width=1)
+
+    save(img, out / f"floor_{theme}.png")
+
+
+def _generate_props(out: Path) -> None:
+    """生成环境装饰物精灵图。"""
+    out.mkdir(parents=True, exist_ok=True)
+
+    # 火把
+    torch = Image.new("RGBA", (24, 48))
+    d = ImageDraw.Draw(torch)
+    d.rectangle([6, 20, 18, 26], fill=(55, 40, 30))
+    d.rectangle([4, 14, 20, 20], fill=(75, 55, 40))
+    d.ellipse([5, 0, 19, 16], fill=(230, 90, 15))
+    d.ellipse([8, 2, 16, 11], fill=(255, 230, 80))
+    save(torch, out / "torch.png")
+
+    # 棺材
+    coffin = Image.new("RGBA", (40, 64))
+    d = ImageDraw.Draw(coffin)
+    d.rounded_rectangle([2, 0, 38, 63], radius=7, fill=(48, 38, 33), outline=(28, 20, 16), width=2)
+    d.line([(20, 4), (20, 58)], fill=(68, 52, 42), width=2)
+    d.line([(7, 18), (33, 18)], fill=(68, 52, 42), width=2)
+    d.line([(7, 48), (33, 48)], fill=(68, 52, 42), width=2)
+    save(coffin, out / "coffin.png")
+
+    # 书架
+    shelf = Image.new("RGBA", (48, 56))
+    d = ImageDraw.Draw(shelf)
+    d.rectangle([0, 0, 47, 55], fill=(52, 32, 22), outline=(28, 16, 10), width=2)
+    for y in [14, 28, 42]:
+        d.line([(2, y), (45, y)], fill=(32, 18, 10), width=2)
+    book_colors = [(120, 40, 40), (40, 60, 90), (80, 80, 40), (90, 40, 80)]
+    for y in [4, 18, 32]:
+        x = 4
+        for c in book_colors:
+            w = random.randint(5, 9)
+            d.rectangle([x, y, x + w, y + 10], fill=c)
+            x += w + 1
+    save(shelf, out / "bookshelf.png")
+
+    # 雕像
+    statue = Image.new("RGBA", (40, 56))
+    d = ImageDraw.Draw(statue)
+    d.rectangle([10, 40, 30, 55], fill=(92, 92, 98), outline=(52, 52, 58), width=2)
+    d.ellipse([10, 6, 30, 28], fill=(112, 112, 118), outline=(62, 62, 68), width=2)
+    d.rectangle([14, 24, 26, 42], fill=(102, 102, 108), outline=(62, 62, 68), width=2)
+    save(statue, out / "statue.png")
+
+    # 祭坛
+    altar = Image.new("RGBA", (64, 40))
+    d = ImageDraw.Draw(altar)
+    d.rectangle([0, 16, 63, 39], fill=(60, 55, 60), outline=(35, 30, 35), width=2)
+    d.rectangle([12, 0, 52, 16], fill=(50, 45, 50), outline=(35, 30, 35), width=2)
+    d.ellipse([26, 4, 38, 12], fill=(160, 25, 25))
+    save(altar, out / "altar.png")
+
+    # 断裂石柱
+    broken = Image.new("RGBA", (40, 48))
+    d = ImageDraw.Draw(broken)
+    d.rectangle([8, 10, 32, 47], fill=(82, 80, 84), outline=(47, 45, 49), width=2)
+    d.polygon(
+        [(8, 10), (14, 2), (23, 7), (32, 3), (32, 10)],
+        fill=(82, 80, 84),
+        outline=(47, 45, 49),
+        width=2,
+    )
+    save(broken, out / "broken_pillar.png")
+
+    # 血迹
+    splatter = Image.new("RGBA", (48, 48))
+    d = ImageDraw.Draw(splatter)
+    for r, a in [(20, 150), (14, 190), (8, 220)]:
+        d.ellipse([24 - r, 24 - r, 24 + r, 24 + r], fill=(145, 10, 10, a))
+    for _ in range(6):
+        x, y = random.randint(0, 42), random.randint(0, 42)
+        d.ellipse([x, y, x + 7, y + 7], fill=(125, 8, 8, 140))
+    save(splatter, out / "blood_splatter.png")
+
+    # 蛛网
+    cobweb = Image.new("RGBA", (48, 48))
+    d = ImageDraw.Draw(cobweb)
+    for i in range(0, 48, 6):
+        d.line([(0, i), (i, 0)], fill=(200, 200, 200, 55), width=1)
+        d.line([(i, 47), (47, i)], fill=(200, 200, 200, 55), width=1)
+    d.ellipse([8, 8, 40, 40], outline=(200, 200, 200, 35), width=1)
+    d.ellipse([16, 16, 32, 32], outline=(200, 200, 200, 35), width=1)
+    save(cobweb, out / "cobweb.png")
+
+
+def generate_room_tiles() -> None:
+    """生成房间主题瓦片与装饰物。"""
+    out = DST / "tiles"
+    for theme, colors in ROOM_THEMES.items():
+        _generate_wall_tile(theme, colors, out)
+        _generate_pillar_tile(theme, colors, out)
+        _generate_floor_tile(theme, colors, out)
+    _generate_props(out / "props")
+
+
+def generate_portal() -> None:
+    """生成传送门精灵图。"""
+    size = 96
+    img = Image.new("RGBA", (size, size))
+    draw = ImageDraw.Draw(img)
+    cx, cy = size // 2, size // 2
+
+    for r in range(size // 2, 8, -4):
+        alpha = int(110 * (r / (size // 2)))
+        draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(120, 30, 180, alpha))
+
+    for r in range(size // 3, 4, -3):
+        alpha = int(190 * (r / (size // 3)))
+        draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(80, 10, 160, alpha))
+
+    draw.ellipse([cx - 10, cy - 10, cx + 10, cy + 10], fill=(210, 130, 255))
+    save(img, DST / "effects" / "portal.png")
+
+
 if __name__ == "__main__":
     process_enemies()
     generate_effects()
@@ -546,4 +804,6 @@ if __name__ == "__main__":
     copy_bgm()
     copy_sfx()
     generate_enemy_states()
+    generate_room_tiles()
+    generate_portal()
     print("Done")
