@@ -51,6 +51,43 @@ func spawn_levelup_particles(pos: Vector2, count: int = 20) -> void:
 		tween.parallel().tween_property(p, "scale", Vector2.ZERO, 0.5)
 		tween.tween_callback(p.queue_free)
 
+func spawn_evolution_effect(pos: Vector2, theme_color: Color = Color(1.0, 0.85, 0.3, 0.9)) -> void:
+	## 武器进化大光环特效
+	# 1. 中心爆发粒子
+	for i in 32:
+		var angle := TAU * float(i) / 32.0
+		var dir := Vector2(cos(angle), sin(angle))
+		var p := _create_particle_node(pos, theme_color, randf_range(4, 8))
+		var tween := p.create_tween()
+		var target := pos + dir * randf_range(80, 160)
+		tween.tween_property(p, "global_position", target, 0.6).set_ease(Tween.EASE_OUT)
+		tween.parallel().tween_property(p, "modulate:a", 0.0, 0.6)
+		tween.parallel().tween_property(p, "scale", Vector2.ZERO, 0.6)
+		tween.tween_callback(p.queue_free)
+
+	# 2. 扩散圆环
+	for i in range(3):
+		var ring := _create_ring(pos, Color(theme_color.r, theme_color.g, theme_color.b, 0.7), 15.0 + i * 12.0)
+		var tween := ring.create_tween()
+		tween.tween_property(ring, "scale", Vector2(6 + i * 2, 6 + i * 2), 0.8).set_ease(Tween.EASE_OUT)
+		tween.parallel().tween_property(ring, "modulate:a", 0.0, 0.8)
+		tween.tween_callback(ring.queue_free)
+
+	# 3. 中心闪光
+	var flash := ColorRect.new()
+	flash.color = Color(theme_color.r, theme_color.g, theme_color.b, 0.4)
+	flash.size = Vector2(200, 200)
+	flash.position = Vector2(-100, -100)
+	flash.z_index = 99
+	var flash_container := Node2D.new()
+	flash_container.global_position = pos
+	flash_container.add_child(flash)
+	get_tree().current_scene.add_child(flash_container)
+	var flash_tween := flash_container.create_tween()
+	flash_tween.tween_property(flash, "modulate:a", 0.0, 0.4)
+	flash_tween.parallel().tween_property(flash, "scale", Vector2(3, 3), 0.4)
+	flash_tween.tween_callback(flash_container.queue_free)
+
 func spawn_bullet_trail(pos: Vector2, color: Color = Color(1.0, 0.9, 0.3, 0.5)) -> void:
 	## 子弹拖尾
 	var p := _create_particle_node(pos, color, 3.0)

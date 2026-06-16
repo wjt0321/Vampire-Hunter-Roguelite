@@ -180,7 +180,7 @@ func check_evolution_conditions(kill_count: int, owned_passives: Array) -> void:
 func _evolve_weapon(weapon_id: String, evolution: WeaponEvolution) -> void:
 	## 执行武器进化
 	evolution.evolve()
-	
+
 	# 找到对应的武器
 	for weapon in weapons:
 		if weapon.weapon_id == weapon_id:
@@ -191,17 +191,40 @@ func _evolve_weapon(weapon_id: String, evolution: WeaponEvolution) -> void:
 			weapon.weapon_name = evolution.evolution_name
 			weapon.description = evolution.evolution_description
 			weapon.icon_emoji = evolution.evolution_icon
-			
+
 			# 更新计时器
 			if shoot_timers.has(weapon_id):
 				shoot_timers[weapon_id].wait_time = weapon.get_scaled_fire_rate()
-			
+
 			weapon_evolved.emit(weapon, evolution)
 			print("✨ %s 已进化为 %s!" % [weapon_id, evolution.evolution_name])
-			
+
+			# 视觉与音效反馈
+			var vfx := get_node_or_null("/root/VFXManager")
+			if vfx and player and is_instance_valid(player):
+				var theme_color := _get_evolution_color(weapon_id)
+				vfx.spawn_evolution_effect(player.global_position, theme_color)
+				vfx.screen_shake(6.0, 0.35)
+
 			# 播放进化音效
 			AudioManager.play_sfx(_audio_lib.get_sound("level_up"))
 			break
+
+func _get_evolution_color(weapon_id: String) -> Color:
+	match weapon_id:
+		"pistol":
+			return Color(1.0, 0.9, 0.4, 0.9)   # 神圣金
+		"shotgun":
+			return Color(1.0, 0.4, 0.2, 0.9)   # 爆裂橙红
+		"magic_book":
+			return Color(0.8, 0.3, 0.9, 0.9)   # 魔导紫
+		"throwing_knife":
+			return Color(0.4, 0.9, 0.95, 0.9)  # 刀阵青
+		"poison_cloud":
+			return Color(0.4, 0.9, 0.3, 0.9)   # 瘟疫绿
+		"lightning_chain":
+			return Color(1.0, 0.95, 0.3, 0.9)  # 雷电黄
+	return Color(1.0, 0.85, 0.3, 0.9)
 
 func get_weapon_evolution(weapon_id: String) -> WeaponEvolution:
 	return weapon_evolutions.get(weapon_id, null)
@@ -251,7 +274,7 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 			bullet.set_pierce_count(weapon.get_scaled_pierce_count())
 	else:
 		bullet = bullet_scene.instantiate()
-	
+
 	bullet.global_position = origin + direction * 16.0
 	bullet.direction = direction
 	bullet.speed = weapon.bullet_speed
@@ -269,8 +292,21 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 		bullet.damage_multiplier = player.get_total_damage_multiplier()
 	else:
 		bullet.damage_multiplier = player.damage_multiplier if player else 1.0
+
+	# 进化后视觉强化
+	var is_evolved: bool = is_weapon_evolved(weapon.weapon_id)
+	if bullet.has_node("Sprite2D"):
+		var spr := bullet.get_node("Sprite2D") as Sprite2D
+		if is_evolved:
+			spr.modulate = _get_evolution_color(weapon.weapon_id)
+			var evo: WeaponEvolution = weapon_evolutions.get(weapon.weapon_id, null)
+			if evo:
+				spr.scale *= evo.size_multiplier
+		else:
+			spr.modulate = Color.WHITE
+
 	get_tree().current_scene.add_child(bullet)
-	
+
 	# 播放射击音效
 	_play_shoot_sound(weapon.weapon_id)
 
