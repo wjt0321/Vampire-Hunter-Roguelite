@@ -120,6 +120,8 @@ func _spawn_enemy() -> void:
 		
 		# 连接死亡信号
 		enemy.enemy_died.connect(_on_enemy_died)
+		if player and player.has_method("_on_enemy_died"):
+			enemy.enemy_died.connect(player._on_enemy_died)
 
 		enemies_alive += 1
 		_ensure_current_scene()

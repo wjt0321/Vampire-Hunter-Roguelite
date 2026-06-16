@@ -1,0 +1,21 @@
+[gd_scene load_steps=4 format=3 uid="uid://crossbow_bolt_scene"]
+
+[ext_resource type="Script" path="res://scripts/player/knife_bullet.gd" id="1_bolt"]
+[ext_resource type="Texture2D" path="res://assets/weapons/crossbow_bolt.png" id="2_bolt_tex"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bolt"]
+size = Vector2(12, 4)
+
+[node name="CrossbowBolt" type="Area2D"]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_bolt")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_bolt_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_bolt")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="area_entered" from="." to="." method="_on_area_entered"]

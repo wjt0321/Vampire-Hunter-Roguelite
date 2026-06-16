@@ -51,6 +51,11 @@ var berserker_bonus: float = 0.0  # 狂战士之血
 var freeze_chance: float = 0.0  # 冰冻之心
 var lightning_retaliate_damage: float = 0.0  # 闪电护符
 var dodge_chance: float = 0.0  # 影子披风
+var lifesteal_chance: float = 0.0  # 吸血獠牙触发几率
+var lifesteal_amount: float = 0.03  # 吸血量（最大生命百分比）
+var move_speed_bonus_multiplier: float = 0.0  # 疾风靴移速加成
+var crit_chance: float = 0.0  # 幸运四叶草暴击几率
+var crit_damage: float = 2.0  # 暴击伤害倍率
 
 # === 角色特性 ===
 var character_id: String = "hunter"
@@ -136,7 +141,8 @@ func _handle_movement() -> void:
 	input_dir.x = Input.get_axis("move_left", "move_right")
 	input_dir.y = Input.get_axis("move_up", "move_down")
 	input_dir = input_dir.normalized()
-	velocity = input_dir * move_speed * speed_multiplier
+	var total_speed_mult := speed_multiplier * (1.0 + move_speed_bonus_multiplier)
+	velocity = input_dir * move_speed * total_speed_mult
 	move_and_slide()
 
 func _handle_rotation() -> void:
@@ -270,6 +276,20 @@ func heal(amount: float) -> void:
 	if amount > 0:
 		AudioManager.play_sfx(_audio_lib.get_sound("heal"))
 
+func roll_crit() -> bool:
+	## 暴击判定
+	return crit_chance > 0 and randf() < crit_chance
+
+func _on_enemy_died(_enemy: Node2D) -> void:
+	## 敌人死亡时触发的效果（吸血等）
+	if lifesteal_chance > 0 and randf() < lifesteal_chance:
+		var heal_amount := max_hp * lifesteal_amount
+		heal(heal_amount)
+		print("🦷 吸血触发，恢复 %.1f 生命" % heal_amount)
+		var vfx := get_node_or_null("/root/VFXManager")
+		if vfx:
+			vfx.spawn_hit_particles(global_position, Color(0.8, 0.1, 0.1), 4)
+
 func _start_invincibility() -> void:
 	is_invincible = true
 	invincible_timer.start()
@@ -380,6 +400,12 @@ func _apply_passive_effect(item) -> void:
 			lightning_retaliate_damage = item.get_scaled_value()
 		7:  # SHADOW
 			dodge_chance = item.get_scaled_value()
+		8:  # VAMPIRIC
+			lifesteal_chance = item.get_scaled_value()
+		9:  # SWIFT
+			move_speed_bonus_multiplier = item.get_scaled_value()
+		10: # CLOVER
+			crit_chance = item.get_scaled_value()
 
 func get_owned_passive_items() -> Array[String]:
 	## 获取已拥有的被动道具ID列表

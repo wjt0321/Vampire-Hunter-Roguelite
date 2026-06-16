@@ -9,6 +9,8 @@ const WeaponEvolutionScript = preload("res://scripts/weapons/weapon_evolution.gd
 const KnifeBulletScene = preload("res://scenes/player/knife_bullet.tscn")
 const PoisonCloudScene = preload("res://scenes/player/poison_cloud.tscn")
 const LightningChainScene = preload("res://scenes/player/lightning_chain.tscn")
+const CrossbowBoltScene = preload("res://scenes/player/crossbow_bolt.tscn")
+const HolyBoltScene = preload("res://scenes/player/holy_bolt.tscn")
 
 var weapons: Array = []
 var weapon_evolutions: Dictionary = {}  # weapon_id -> WeaponEvolution
@@ -99,6 +101,28 @@ const EVOLUTION_CONFIG: Dictionary = {
 		"fire_rate_multiplier": 0.4,
 		"size_multiplier": 1.5,
 		"special_effect": "全屏连锁",
+	},
+	"crossbow": {
+		"evolution_name": "圣光弩",
+		"evolution_description": "穿透力更强的神圣弩箭",
+		"evolution_icon": "🏹",
+		"required_passive_items": [],
+		"required_kill_count": 50,
+		"damage_multiplier": 2.5,
+		"fire_rate_multiplier": 0.4,
+		"size_multiplier": 1.3,
+		"special_effect": "穿透强化",
+	},
+	"holy_wand": {
+		"evolution_name": "大天使之杖",
+		"evolution_description": "自动追踪多个敌人的圣光弹",
+		"evolution_icon": "✨",
+		"required_passive_items": [],
+		"required_kill_count": 50,
+		"damage_multiplier": 2.5,
+		"fire_rate_multiplier": 0.4,
+		"size_multiplier": 1.4,
+		"special_effect": "神圣追踪",
 	},
 }
 
@@ -237,6 +261,10 @@ func _get_evolution_color(weapon_id: String) -> Color:
 			return Color(0.4, 0.9, 0.3, 0.9)   # 瘟疫绿
 		"lightning_chain":
 			return Color(1.0, 0.95, 0.3, 0.9)  # 雷电黄
+		"crossbow":
+			return Color(0.95, 0.85, 0.4, 0.9) # 圣光金
+		"holy_wand":
+			return Color(0.9, 0.95, 1.0, 0.9)  # 圣洁白
 	return Color(1.0, 0.85, 0.3, 0.9)
 
 func get_weapon_evolution(weapon_id: String) -> WeaponEvolution:
@@ -285,6 +313,14 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 		# 设置穿透数
 		if bullet.has_method("set_pierce_count"):
 			bullet.set_pierce_count(weapon.get_scaled_pierce_count())
+	elif weapon.weapon_id == "crossbow":
+		bullet = CrossbowBoltScene.instantiate()
+		if bullet.has_method("set_pierce_count"):
+			bullet.set_pierce_count(weapon.get_scaled_pierce_count())
+	elif weapon.weapon_id == "holy_wand":
+		bullet = HolyBoltScene.instantiate()
+		bullet.homing = true
+		bullet.homing_strength = 6.0
 	else:
 		bullet = bullet_scene.instantiate()
 
@@ -420,9 +456,9 @@ func _play_shoot_sound(weapon_id: String) -> void:
 	match weapon_id:
 		"shotgun":
 			sound_name = "shoot_shotgun"
-		"magic_book":
+		"magic_book", "holy_wand":
 			sound_name = "shoot_magic"
-		"throwing_knife":
+		"throwing_knife", "crossbow":
 			sound_name = "knife_throw"
 		"poison_cloud":
 			sound_name = "poison_cloud"
@@ -483,6 +519,39 @@ static func create_lightning_chain() -> Resource:
 	w.lightning_jumps = 3
 	return w
 
+static func create_crossbow() -> Resource:
+	var script = preload("res://scripts/weapons/weapon_data.gd")
+	var w = script.new()
+	w.weapon_name = "十字弩"
+	w.weapon_id = "crossbow"
+	w.description = "高伤害穿透弩箭"
+	w.icon_emoji = "🏹"
+	w.base_damage = 14.0
+	w.fire_rate = 0.9
+	w.bullet_speed = 650.0
+	w.bullet_range = 700.0
+	w.projectile_count = 1
+	w.spread_angle = 0.0
+	w.auto_aim = true
+	w.pierce_count = 2
+	return w
+
+static func create_holy_wand() -> Resource:
+	var script = preload("res://scripts/weapons/weapon_data.gd")
+	var w = script.new()
+	w.weapon_name = "圣光魔杖"
+	w.weapon_id = "holy_wand"
+	w.description = "自动追踪敌人的圣光弹"
+	w.icon_emoji = "✨"
+	w.base_damage = 5.0
+	w.fire_rate = 0.5
+	w.bullet_speed = 380.0
+	w.bullet_range = 700.0
+	w.projectile_count = 1
+	w.spread_angle = 0.0
+	w.auto_aim = true
+	return w
+
 func _create_weapon_by_id(weapon_id: String):
 	match weapon_id:
 		"pistol":
@@ -497,6 +566,10 @@ func _create_weapon_by_id(weapon_id: String):
 			return create_poison_cloud()
 		"lightning_chain":
 			return create_lightning_chain()
+		"crossbow":
+			return create_crossbow()
+		"holy_wand":
+			return create_holy_wand()
 	return null
 
 func _spawn_poison_cloud(weapon) -> void:

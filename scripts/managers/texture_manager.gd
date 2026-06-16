@@ -178,6 +178,13 @@ func _load_weapon_icons():
 		"shadow": _load_texture("res://assets/weapons/icon_shadow.png"),
 		"shotgun_pellet": _load_texture("res://assets/weapons/shotgun_pellet.png"),
 		"poison_cloud": _load_texture("res://assets/weapons/poison_cloud.png"),
+		"crossbow": _load_texture("res://assets/weapons/icon_crossbow.png"),
+		"holy_wand": _load_texture("res://assets/weapons/icon_holy_wand.png"),
+		"vampiric": _load_texture("res://assets/weapons/icon_vampiric.png"),
+		"swift_boots": _load_texture("res://assets/weapons/icon_swift_boots.png"),
+		"clover": _load_texture("res://assets/weapons/icon_clover.png"),
+		"crossbow_bolt": _load_texture("res://assets/weapons/crossbow_bolt.png"),
+		"holy_bolt": _load_texture("res://assets/weapons/holy_bolt.png"),
 	}
 
 func _load_effect_textures():

@@ -8,7 +8,7 @@ extends Resource
 @export var icon_emoji: String = "📦"
 
 # 效果类型
-enum EffectType { MAGNET, SHIELD, REGENERATION, GREED, BERSERKER, FROZEN, LIGHTNING_SHIELD, SHADOW }
+enum EffectType { MAGNET, SHIELD, REGENERATION, GREED, BERSERKER, FROZEN, LIGHTNING_SHIELD, SHADOW, VAMPIRIC, SWIFT, CLOVER }
 @export var effect_type: EffectType = EffectType.MAGNET
 
 # 基础数值
@@ -124,4 +124,40 @@ static func create_shadow_cloak() -> Resource:
 	item.effect_type = EffectType.SHADOW
 	item.base_value = 0.05  # 基础5%闪避
 	item.value_per_level = 0.03  # 每级增加3%
+	return item
+
+static func create_vampiric_fang() -> Resource:
+	var script = preload("res://scripts/player/passive_item_data.gd")
+	var item = script.new()
+	item.item_id = "vampiric_fang"
+	item.item_name = "吸血獠牙"
+	item.description = "击杀敌人时概率吸血"
+	item.icon_emoji = "🦷"
+	item.effect_type = EffectType.VAMPIRIC
+	item.base_value = 0.1  # 基础10%触发几率
+	item.value_per_level = 0.06  # 每级增加6%
+	return item
+
+static func create_swift_boots() -> Resource:
+	var script = preload("res://scripts/player/passive_item_data.gd")
+	var item = script.new()
+	item.item_id = "swift_boots"
+	item.item_name = "疾风靴"
+	item.description = "增加移动速度"
+	item.icon_emoji = "👟"
+	item.effect_type = EffectType.SWIFT
+	item.base_value = 0.1  # 基础10%移速
+	item.value_per_level = 0.05  # 每级增加5%
+	return item
+
+static func create_lucky_clover() -> Resource:
+	var script = preload("res://scripts/player/passive_item_data.gd")
+	var item = script.new()
+	item.item_id = "lucky_clover"
+	item.item_name = "幸运四叶草"
+	item.description = "增加暴击几率"
+	item.icon_emoji = "🍀"
+	item.effect_type = EffectType.CLOVER
+	item.base_value = 0.08  # 基础8%暴击
+	item.value_per_level = 0.04  # 每级增加4%
 	return item

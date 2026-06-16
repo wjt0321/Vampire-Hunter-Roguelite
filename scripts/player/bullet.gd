@@ -13,6 +13,11 @@ var direction: Vector2 = Vector2.RIGHT
 var damage_multiplier: float = 1.0
 var distance_traveled: float = 0.0
 
+# 追踪相关
+var homing: bool = false
+var homing_strength: float = 8.0
+var _homing_target: Node2D = null
+
 func _ready() -> void:
 	# 缓存玩家引用
 	_cached_player = get_tree().get_first_node_in_group("player")
@@ -30,6 +35,8 @@ func _ready() -> void:
 			spr.texture = ImageTexture.create_from_image(img)
 
 func _physics_process(delta: float) -> void:
+	if homing:
+		_update_homing(delta)
 	var move_distance := speed * delta
 	position += direction * move_distance
 	distance_traveled += move_distance
@@ -41,6 +48,29 @@ func _physics_process(delta: float) -> void:
 	if distance_traveled >= max_range:
 		queue_free()
 
+func _update_homing(delta: float) -> void:
+	if _homing_target == null or not is_instance_valid(_homing_target):
+		_homing_target = _find_nearest_enemy()
+	if _homing_target and is_instance_valid(_homing_target):
+		var target_dir := (_homing_target.global_position - global_position).normalized()
+		direction = direction.move_toward(target_dir, homing_strength * delta).normalized()
+		rotation = direction.angle()
+	else:
+		_homing_target = null
+
+func _find_nearest_enemy() -> Node2D:
+	var enemies := get_tree().get_nodes_in_group("enemies")
+	var nearest: Node2D = null
+	var nearest_dist: float = INF
+	for enemy in enemies:
+		if not is_instance_valid(enemy):
+			continue
+		var dist := global_position.distance_squared_to(enemy.global_position)
+		if dist < nearest_dist:
+			nearest_dist = dist
+			nearest = enemy
+	return nearest
+
 func get_damage() -> float:
 	return base_damage * damage_multiplier
 
@@ -51,7 +81,20 @@ func _on_body_entered(body: Node2D) -> void:
 		return
 	# 碰到敌人
 	if body.has_method("take_damage"):
-		body.take_damage(get_damage())
+		var dmg := get_damage()
+		# 暴击检查
+		if _cached_player and _cached_player.has_method("roll_crit"):
+			if _cached_player.roll_crit():
+				dmg *= _cached_player.crit_damage
+				# 暴击视觉
+				var vfx := get_node_or_null("/root/VFXManager")
+				if vfx:
+					vfx.spawn_hit_particles(global_position, Color(1.0, 0.9, 0.3), 4)
+		var knockback_dir := direction
+		if body.has_method("take_damage_with_knockback"):
+			body.take_damage_with_knockback(dmg, knockback_dir, 120.0, 0.08)
+		else:
+			body.take_damage(dmg)
 		# 冰冻之心效果：检查是否冻结敌人
 		_check_freeze(body)
 	queue_free()

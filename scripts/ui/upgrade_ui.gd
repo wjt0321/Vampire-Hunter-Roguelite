@@ -21,6 +21,9 @@ const PASSIVE_UPGRADES: Array = [
 	{"id": "frozen_heart", "name": "冰冻之心", "desc": "10%几率冻结敌人", "icon": "❄️", "type": "passive"},
 	{"id": "lightning_shield", "name": "闪电护符", "desc": "受击时闪电反击", "icon": "⚡", "type": "passive"},
 	{"id": "shadow_cloak", "name": "影子披风", "desc": "闪避几率 +5%", "icon": "🌑", "type": "passive"},
+	{"id": "vampiric_fang", "name": "吸血獠牙", "desc": "击杀时概率回血", "icon": "🦷", "type": "passive"},
+	{"id": "swift_boots", "name": "疾风靴", "desc": "移动速度 +10%", "icon": "👟", "type": "passive"},
+	{"id": "lucky_clover", "name": "幸运四叶草", "desc": "暴击几率 +8%", "icon": "🍀", "type": "passive"},
 ]
 
 const WEAPON_UPGRADES: Array = [
@@ -29,6 +32,8 @@ const WEAPON_UPGRADES: Array = [
 	{"id": "throwing_knife", "name": "飞刀", "desc": "穿透多个敌人", "icon": "🔪", "type": "weapon"},
 	{"id": "poison_cloud", "name": "毒雾瓶", "desc": "持续伤害区域", "icon": "☠️", "type": "weapon"},
 	{"id": "lightning_chain", "name": "闪电法杖", "desc": "闪电链跳跃", "icon": "⚡", "type": "weapon"},
+	{"id": "crossbow", "name": "十字弩", "desc": "高伤害穿透弩箭", "icon": "🏹", "type": "weapon"},
+	{"id": "holy_wand", "name": "圣光魔杖", "desc": "自动追踪的圣光弹", "icon": "✨", "type": "weapon"},
 ]
 
 var player: Node = null
@@ -215,6 +220,10 @@ func _get_option_icon(option: Dictionary) -> Texture2D:
 					return TextureManager.instance.get_weapon_icon("poison")
 				"lightning_chain":
 					return TextureManager.instance.get_weapon_icon("lightning")
+				"crossbow":
+					return TextureManager.instance.get_weapon_icon("crossbow")
+				"holy_wand":
+					return TextureManager.instance.get_weapon_icon("holy_wand")
 		"passive":
 			match option_id:
 				"magnet":
@@ -233,6 +242,12 @@ func _get_option_icon(option: Dictionary) -> Texture2D:
 					return TextureManager.instance.get_weapon_icon("lightning_shield")
 				"shadow_cloak":
 					return TextureManager.instance.get_weapon_icon("shadow")
+				"vampiric_fang":
+					return TextureManager.instance.get_weapon_icon("vampiric")
+				"swift_boots":
+					return TextureManager.instance.get_weapon_icon("swift_boots")
+				"lucky_clover":
+					return TextureManager.instance.get_weapon_icon("clover")
 		"stat", "basic":
 			match option_id:
 				"damage", "damage_boost":
@@ -308,6 +323,10 @@ func _create_weapon_by_id(weapon_id: String):
 			return WeaponManagerScript.create_poison_cloud()
 		"lightning_chain":
 			return WeaponManagerScript.create_lightning_chain()
+		"crossbow":
+			return WeaponManagerScript.create_crossbow()
+		"holy_wand":
+			return WeaponManagerScript.create_holy_wand()
 	return null
 
 func _create_passive_by_id(passive_id: String):
@@ -328,4 +347,10 @@ func _create_passive_by_id(passive_id: String):
 			return preload("res://scripts/player/passive_item_data.gd").create_lightning_shield()
 		"shadow_cloak":
 			return preload("res://scripts/player/passive_item_data.gd").create_shadow_cloak()
+		"vampiric_fang":
+			return preload("res://scripts/player/passive_item_data.gd").create_vampiric_fang()
+		"swift_boots":
+			return preload("res://scripts/player/passive_item_data.gd").create_swift_boots()
+		"lucky_clover":
+			return preload("res://scripts/player/passive_item_data.gd").create_lucky_clover()
 	return null
