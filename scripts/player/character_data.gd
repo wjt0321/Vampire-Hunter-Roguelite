@@ -4,6 +4,7 @@ extends Resource
 @export var char_id: String = "hunter"
 @export var char_name: String = "猎人阿尔忒弥斯"
 @export var description: String = "平衡型角色"
+@export var icon_emoji: String = "🧛"
 @export var initial_weapon: String = "pistol"   # 初始武器 ID
 @export var unlock_cost: int = 0                # 0 = 默认角色
 
@@ -22,6 +23,7 @@ static func create_hunter() -> Resource:
 	data.char_id = "hunter"
 	data.char_name = "猎人阿尔忒弥斯"
 	data.description = "平衡型角色，适合新手"
+	data.icon_emoji = "🏹"
 	data.initial_weapon = "pistol"
 	data.unlock_cost = 0
 	data.base_hp = 100.0
@@ -37,6 +39,7 @@ static func create_priestess() -> Resource:
 	data.char_id = "priestess"
 	data.char_name = "牧师塞西莉亚"
 	data.description = "高血量低速，防御型角色"
+	data.icon_emoji = "✨"
 	data.initial_weapon = "magic_book"
 	data.unlock_cost = 500
 	data.base_hp = 150.0

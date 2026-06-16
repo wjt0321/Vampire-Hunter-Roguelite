@@ -74,7 +74,8 @@ func _create_card(char_data: Resource) -> PanelContainer:
 
 	# 角色 emoji 大图标
 	var icon_label := Label.new()
-	icon_label.text = char_data.get("icon_emoji", "🧛")
+	var icon_emoji: Variant = char_data.get("icon_emoji")
+	icon_label.text = icon_emoji if icon_emoji != null else "🧛"
 	icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	icon_label.add_theme_font_size_override("font_size", 48)
 	vbox.add_child(icon_label)

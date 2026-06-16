@@ -300,7 +300,7 @@ func record_weapon_used(weapon_type: String) -> void:
 	if weapon_type not in run_stats["weapon_types_used"]:
 		run_stats["weapon_types_used"].append(weapon_type)
 
-func record_weapon_evolved(weapon_id: String) -> void:
+func record_weapon_evolved(_weapon_id: String) -> void:
 	run_stats["evolved_weapons"] += 1
 	_check_achievements()
 
