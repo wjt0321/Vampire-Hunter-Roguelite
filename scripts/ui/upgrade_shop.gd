@@ -23,6 +23,36 @@ func _ready() -> void:
 	visible = false
 	back_btn.pressed.connect(_on_back_pressed)
 	save_mgr = get_node_or_null("/root/SaveManager")
+	_setup_panel_style()
+	_setup_back_button_style()
+
+func _setup_panel_style() -> void:
+	var panel_texture := TextureManager.instance.get_ui_texture("stats_panel")
+	if panel_texture:
+		var style := StyleBoxTexture.new()
+		style.texture = panel_texture
+		$Panel.add_theme_stylebox_override("panel", style)
+
+func _setup_back_button_style() -> void:
+	_apply_button_texture(back_btn)
+
+func _apply_button_texture(btn: Button) -> void:
+	var normal := TextureManager.instance.get_ui_texture("btn_normal")
+	var hover := TextureManager.instance.get_ui_texture("btn_hover")
+	var pressed := TextureManager.instance.get_ui_texture("btn_pressed")
+	if normal and hover:
+		var normal_style := StyleBoxTexture.new()
+		normal_style.texture = normal
+		var hover_style := StyleBoxTexture.new()
+		hover_style.texture = hover
+		var pressed_style := StyleBoxTexture.new()
+		pressed_style.texture = pressed if pressed else hover
+		btn.add_theme_stylebox_override("normal", normal_style)
+		btn.add_theme_stylebox_override("hover", hover_style)
+		btn.add_theme_stylebox_override("pressed", pressed_style)
+		btn.add_theme_color_override("font_color", Color.WHITE)
+		btn.add_theme_color_override("font_hover_color", Color(1, 0.9, 0.7, 1))
+		btn.add_theme_color_override("font_pressed_color", Color(0.9, 0.9, 0.9, 1))
 
 func show_shop() -> void:
 	visible = true
@@ -63,6 +93,7 @@ func _refresh_ui() -> void:
 			var uid: String = upgrade_id
 			buy_btn.pressed.connect(func(): _purchase(uid))
 		buy_btn.custom_minimum_size = Vector2(100, 0)
+		_apply_button_texture(buy_btn)
 		row.add_child(buy_btn)
 		
 		upgrades_container.add_child(row)

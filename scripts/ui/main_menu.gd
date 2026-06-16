@@ -32,6 +32,7 @@ func _ready() -> void:
 	_setup_background()
 	_setup_button_effects()
 	_setup_button_textures()
+	_setup_settings_panel()
 	_setup_volume_sliders()
 	_animate_title()
 	_update_crystals()
@@ -41,6 +42,14 @@ func _ready() -> void:
 	# 播放主菜单 BGM
 	var audio_lib := AudioLib
 	AudioManager.play_bgm(audio_lib.get_menu_bgm())
+
+func _setup_settings_panel() -> void:
+	## 设置面板使用统一面板纹理
+	var panel_texture := TextureManager.instance.get_ui_texture("stats_panel")
+	if panel_texture:
+		var style := StyleBoxTexture.new()
+		style.texture = panel_texture
+		settings_panel.add_theme_stylebox_override("panel", style)
 
 func _setup_background() -> void:
 	## 设置菜单背景图

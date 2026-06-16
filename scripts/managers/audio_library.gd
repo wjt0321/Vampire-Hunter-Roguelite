@@ -28,6 +28,9 @@ const BGM_PATHS: Dictionary = {
 	"menu": "res://assets/audio/bgm/bgm_menu.mp3",
 	"battle": "res://assets/audio/bgm/bgm_battle.mp3",
 	"boss": "res://assets/audio/bgm/bgm_boss.ogg",
+	"victory": "res://assets/audio/bgm/bgm_victory.ogg",
+	"defeat": "res://assets/audio/bgm/bgm_defeat.mp3",
+	"shop": "res://assets/audio/bgm/bgm_shop.ogg",
 }
 
 # ========== 缓存 ==========
@@ -169,6 +172,30 @@ func get_boss_bgm() -> AudioStream:
 		if stream:
 			return stream
 	return _generate_ambient_loop(20.0, [110, 130, 164], 0.5)
+
+func get_victory_bgm() -> AudioStream:
+	var path: String = BGM_PATHS.get("victory", "")
+	if not path.is_empty():
+		var stream := _load_audio_file(path)
+		if stream:
+			return stream
+	return _generate_simple_ambient(30.0, 523, 0.3)
+
+func get_defeat_bgm() -> AudioStream:
+	var path: String = BGM_PATHS.get("defeat", "")
+	if not path.is_empty():
+		var stream := _load_audio_file(path)
+		if stream:
+			return stream
+	return _generate_ambient_loop(30.0, [110, 130], 0.3)
+
+func get_shop_bgm() -> AudioStream:
+	var path: String = BGM_PATHS.get("shop", "")
+	if not path.is_empty():
+		var stream := _load_audio_file(path)
+		if stream:
+			return stream
+	return _generate_simple_ambient(30.0, 220, 0.2)
 
 func _generate_ambient_loop(duration: float, base_freqs: Array, volume: float) -> AudioStreamWAV:
 	var samples := int(SAMPLE_RATE * duration)

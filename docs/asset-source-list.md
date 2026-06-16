@@ -359,6 +359,7 @@
 - UI 包可以独立于角色包，但内部必须统一
 - 优先补交互状态：normal / hover / pressed / disabled
 - 被动道具图标可以用 AI 或图标包快速补齐
+- 本项目已基于 `Kenney UI Pack` + `PixelUIpack` 用脚本生成一套暗黑哥特 UI，后续如需替换可直接找同风格包
 
 ---
 
@@ -438,12 +439,12 @@
 项目对应资源：
 
 - `bgm_menu.mp3`
-- `bgm_battle1.ogg`
+- `bgm_battle1.ogg` / `bgm_battle.mp3`
 - `bgm_battle2.ogg`
 - `bgm_boss.ogg`
-- `bgm_shop.ogg`
-- `bgm_victory.ogg`
-- `bgm_defeat.ogg`
+- `bgm_shop.ogg`（已使用：`Tavern_0.ogg`，作者 yd，CC0）
+- `bgm_victory.ogg`（已使用：`ForgottenVictory.ogg`，作者 yd，CC0）
+- `bgm_defeat.ogg`（已使用：`WhatIsLeft_0.mp3`，作者 SeKa，CC0）
 - `sfx_shoot.wav`
 - `sfx_shoot_magic.wav`
 - `sfx_hit_enemy.wav`

@@ -62,6 +62,7 @@ func _ready() -> void:
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
 	if ach_mgr:
 		ach_mgr.start_new_run()
+	
 
 func _apply_selected_character() -> String:
 	## 读取存档中的选中角色并应用
@@ -191,7 +192,8 @@ func _transition_to_next_room() -> void:
 		"boss":
 			_enter_boss_room()
 		_:
-			# 普通战斗房间，启动波次
+			# 普通战斗房间，切换回战斗 BGM 并启动波次
+			AudioManager.play_bgm(_audio_lib.get_battle_bgm())
 			wave_manager.start(player)
 	
 	# 更新 HUD 显示当前房间
@@ -207,6 +209,8 @@ func _transition_to_next_room() -> void:
 # === 特殊房间 ===
 func _enter_shop_room() -> void:
 	print("🏪 商店房间!")
+	# 播放商店 BGM
+	AudioManager.play_bgm(_audio_lib.get_shop_bgm())
 	# 简化版：自动回血 + 给一个随机升级
 	if is_instance_valid(player):
 		player.heal(player.max_hp * 0.3)
@@ -274,16 +278,19 @@ func _on_boss_defeated() -> void:
 	if ach_mgr:
 		ach_mgr.record_boss_kill(int(ach_mgr.run_stats.get("damage_taken", 0)))
 	
-	# 切换回战斗 BGM
-	AudioManager.play_bgm(_audio_lib.get_battle_bgm())
-	
-	# 给玩家额外升级
+	# 给玩家回满血作为奖励
 	if is_instance_valid(player):
-		player.heal(player.max_hp)  # 回满血
-	# 延迟生成传送门
-	await get_tree().create_timer(2.0).timeout
-	if current_room:
-		current_room.spawn_portal()
+		player.heal(player.max_hp)
+	
+	# 延迟后弹出胜利结算界面
+	await get_tree().create_timer(1.5).timeout
+	var stats := {
+		"wave": wave_manager.current_wave,
+		"kills": wave_manager.total_kills,
+		"level": player.current_level if is_instance_valid(player) else 1,
+		"rooms": rooms_cleared,
+	}
+	game_over_ui.show_game_over(stats, true)
 
 # === 现有回调 ===
 func _on_player_level_up(new_level: int) -> void:

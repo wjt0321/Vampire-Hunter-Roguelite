@@ -42,6 +42,14 @@ signal upgrade_selected
 
 func _ready() -> void:
 	visible = false
+	_setup_panel_style()
+
+func _setup_panel_style() -> void:
+	var panel_texture := TextureManager.instance.get_ui_texture("stats_panel")
+	if panel_texture:
+		var style := StyleBoxTexture.new()
+		style.texture = panel_texture
+		panel.add_theme_stylebox_override("panel", style)
 
 func show_upgrade(player_node: Node, weapon_mgr: Node = null) -> void:
 	player = player_node
@@ -118,7 +126,7 @@ func _get_basic_rewards() -> Array:
 
 func _create_option_button(option: Dictionary) -> Button:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(180, 140)
+	btn.custom_minimum_size = Vector2(200, 160)
 	btn.pressed.connect(func(): _on_option_selected(option))
 	
 	# 创建垂直布局容器

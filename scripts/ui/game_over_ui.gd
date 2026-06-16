@@ -11,13 +11,34 @@ signal menu_requested
 
 var save_mgr: Node
 var achievement_mgr: Node
+var bg_rect: TextureRect
 
 func _ready() -> void:
 	visible = false
 	save_mgr = get_node_or_null("/root/SaveManager")
 	achievement_mgr = get_node_or_null("/root/AchievementManager")
+	_setup_background()
+	_setup_panel_style()
 
-func show_game_over(stats: Dictionary) -> void:
+func _setup_background() -> void:
+	bg_rect = TextureRect.new()
+	bg_rect.name = "Background"
+	bg_rect.anchors_preset = Control.PRESET_FULL_RECT
+	bg_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	bg_rect.z_index = -10
+	bg_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(bg_rect)
+	move_child(bg_rect, 0)
+
+func _setup_panel_style() -> void:
+	var panel_texture := TextureManager.instance.get_ui_texture("stats_panel")
+	if panel_texture:
+		var style := StyleBoxTexture.new()
+		style.texture = panel_texture
+		panel.add_theme_stylebox_override("panel", style)
+
+func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 	visible = true
 	get_tree().paused = true
 	
@@ -25,7 +46,22 @@ func show_game_over(stats: Dictionary) -> void:
 	if save_mgr:
 		crystals = save_mgr.end_run(stats)
 	
-	var text := "☠ 游戏结束 ☠\n\n"
+	var title := ""
+	if is_victory:
+		title = "🦇 胜利！吸血鬼领主已被终结 🦇\n\n"
+		stats_label.label_settings = null
+		stats_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4, 1.0))
+		if bg_rect:
+			bg_rect.texture = TextureManager.instance.get_ui_texture("victory_bg")
+		AudioManager.play_bgm(AudioLib.get_victory_bgm())
+	else:
+		title = "☠ 游戏结束 ☠\n\n"
+		stats_label.add_theme_color_override("font_color", Color(0.85, 0.2, 0.2, 1.0))
+		if bg_rect:
+			bg_rect.texture = TextureManager.instance.get_ui_texture("defeat_bg")
+		AudioManager.play_bgm(AudioLib.get_defeat_bgm())
+	
+	var text := title
 	text += "探索房间: %d\n" % stats.get("rooms", 0)
 	text += "存活波次: %d\n" % stats.get("wave", 0)
 	text += "击杀数: %d\n" % stats.get("kills", 0)

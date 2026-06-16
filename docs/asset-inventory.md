@@ -619,15 +619,15 @@ AI 更适合做这些：
 
 | 状态 | 资源 | 建议方式 |
 |---|---|---|
-| DONE | `assets/ui/victory_bg.png` | 程序生成暗金背景 |
-| DONE | `assets/ui/defeat_bg.png` | 程序生成暗红背景 |
-| DONE | `assets/ui/stats_panel.png` | 程序生成占位 | 已生成 |
+| DONE | `assets/ui/victory_bg.png` | 程序生成暗金背景，已接入胜利结算 |
+| DONE | `assets/ui/defeat_bg.png` | 程序生成暗红背景，已接入失败结算 |
+| DONE | `assets/ui/stats_panel.png` | 程序生成面板，已用于设置/商店/升级弹窗 |
 | DONE | `assets/ui/achievement_icon.png` | Kenney Game Icons | 已复制缩放 |
 | DONE | `assets/ui/star_gold.png` | Kenney UI Pack | 已复制缩放 |
 | DONE | `assets/ui/star_gray.png` | Kenney UI Pack | 已复制缩放 |
-| DONE | `assets/ui/menu_frame.png` | 程序生成边框 |
-| DONE | `assets/ui/btn_pause.png` | Kenney Game Icons | 已复制缩放 |
-| DONE | `assets/ui/selected_mark.png` | Kenney Game Icons | 已复制缩放 |
+| DONE | `assets/ui/menu_frame.png` | 程序生成哥特边框 |
+| DONE | `assets/ui/btn_pause.png` | Kenney Game Icons 调色 | 已复制缩放 |
+| DONE | `assets/ui/selected_mark.png` | Kenney Game Icons 调色 | 已复制缩放 |
 | DONE | `assets/ui/star_icon.png` | Kenney UI Pack | 已复制缩放 |
 | DONE | `assets/ui/evolution_glow.png` | 程序生成占位 | 已生成 |
 
@@ -686,15 +686,15 @@ AI 更适合做这些：
 | DONE | `bgm_battle.mp3` | P1 | OpenGameArt (CC0) |
 | TODO | `bgm_battle2.ogg` | P2 | OpenGameArt / Pixabay |
 | DONE | `bgm_boss.ogg` | P1 | OpenGameArt (CC0) |
-| TODO | `bgm_shop.ogg` | P2 | OpenGameArt / Pixabay |
-| TODO | `bgm_victory.ogg` | P2 | OpenGameArt / Pixabay |
-| TODO | `bgm_defeat.ogg` | P2 | OpenGameArt / Pixabay |
+| DONE | `bgm_shop.ogg` | P2 | OpenGameArt (yd, CC0) |
+| DONE | `bgm_victory.ogg` | P2 | OpenGameArt (yd, CC0) |
+| DONE | `bgm_defeat.ogg` | P2 | OpenGameArt (SeKa, CC0) |
 
 建议：
 
-- `menu` 已补齐
-- 先补 `battle1`、`boss`
-- 其余等商店/结算流程稳定后再补
+- `menu`、`battle`、`boss` 已补齐
+- `shop`、`victory`、`defeat` 已补齐并接入对应流程
+- `battle2` 可留作后续房间变体
 
 ---
 

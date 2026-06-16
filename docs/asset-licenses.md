@@ -448,7 +448,55 @@
 - 修改记录：重命名
 - 备注：原先程序生成的 `bgm_battle.wav` / `bgm_boss.wav` 已删除
 
-#### 3.4 程序生成占位特效 / UI
+#### 3.4 暗黑哥特 UI 主题生成
+
+- 状态：已使用
+- 风险：低
+- 类型：UI
+- 来源平台：Kenney UI Pack + PixelUIpack（CC0）经 Python/Pillow 调色生成
+- 授权名称：CC0
+- 是否允许商用：是
+- 是否允许修改：是
+- 是否需要署名：否
+- 下载 / 生成日期：2026-06-16
+- 原始文件保存位置：
+  - `assets-downloaded/ui/kenney_ui-pack/PNG/Red/Default/`
+  - `assets-downloaded/ui/PixelUIpack/9-Slice/Ancient/`
+- 项目内使用路径：
+  - `assets/ui/btn_normal.png` / `btn_hover.png` / `btn_pressed.png`
+  - `assets/ui/upgrade_card.png` / `upgrade_card_hover.png`
+  - `assets/ui/shop_slot.png` / `stats_panel.png` / `menu_frame.png`
+  - `assets/ui/weapon_slot.png` / `passive_slot.png`
+  - `assets/ui/hp_bar_fill.png` / `hp_bar_bg.png` / `xp_bar_fill.png` / `xp_bar_bg.png`
+  - `assets/ui/boss_hp_fill.png` / `boss_hp_bg.png`
+  - `assets/ui/wave_number_bg.png` / `price_tag.png` / `sold_out.png`
+  - `assets/ui/selected_mark.png` / `btn_pause.png`
+  - `assets/ui/victory_bg.png` / `defeat_bg.png`
+- 用途说明：统一游戏整体 UI 风格
+- 修改记录：去饱和、压暗、暗红/黑金调色、目标尺寸生成
+- 备注：生成脚本见 `tools/process_assets.py`
+
+#### 3.5 OpenGameArt 新增 BGM
+
+- 状态：已使用
+- 风险：低
+- 类型：BGM
+- 来源平台：OpenGameArt
+- 授权名称：CC0
+- 是否允许商用：是
+- 是否允许修改：是
+- 是否需要署名：否
+- 下载 / 生成日期：2026-06-16
+- 原始文件保存位置：`assets-downloaded/audio/oga/`
+- 项目内使用路径：
+  - `assets/audio/bgm/bgm_victory.ogg`（来源：`ForgottenVictory.ogg`，作者：yd，CC0）
+  - `assets/audio/bgm/bgm_defeat.mp3`（来源：`WhatIsLeft_0.mp3`，作者：SeKa，CC0）
+  - `assets/audio/bgm/bgm_shop.ogg`（来源：`Tavern_0.ogg`，作者：yd，CC0）
+- 用途说明：胜利结算、失败结算、商店房间背景音乐
+- 修改记录：重命名
+- 备注：无
+
+#### 3.6 程序生成占位特效 / UI
 
 - 状态：已使用
 - 风险：低
@@ -470,9 +518,6 @@
   - `assets/effects/boss_warning.png`
   - `assets/weapons/shotgun_pellet.png`
   - `assets/weapons/poison_cloud.png`
-  - `assets/ui/victory_bg.png`
-  - `assets/ui/defeat_bg.png`
-  - `assets/ui/menu_frame.png`
 - 用途说明：补齐资产缺口，方便后续替换
 - 修改记录：使用 Python/Pillow 程序化绘制
 - 备注：均为占位，后续可替换为正式美术
