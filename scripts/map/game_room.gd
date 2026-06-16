@@ -335,3 +335,57 @@ func _create_decoration(dec_name: String, pos: Vector2) -> void:
 	deco.position = pos
 	deco.z_index = -8 if dec_name == "blood_splatter" else -1
 	add_child(deco)
+
+# === 特殊房间布置 ===
+func setup_shop_room() -> void:
+	## 商店房间：金币堆、商店招牌、商人
+	room_theme = "castle"
+	_add_prop_at("shop_sign", get_center() + Vector2(-120, -60))
+	_add_prop_at("gold_pile", get_center() + Vector2(80, 50))
+	_add_prop_at("gold_pile", get_center() + Vector2(-80, 60))
+	_create_merchant(get_center() + Vector2(0, -30))
+	add_decorations(2)
+
+func setup_treasure_room() -> void:
+	## 宝箱房间：大宝箱、金币堆
+	room_theme = "dungeon"
+	_add_prop_at("chest", get_center())
+	_add_prop_at("gold_pile", get_center() + Vector2(-50, 40))
+	_add_prop_at("gold_pile", get_center() + Vector2(50, 40))
+	add_decorations(2)
+
+func setup_rest_room() -> void:
+	## 休息站：篝火、睡袋
+	room_theme = "cave"
+	_add_decoration_at("campfire", get_center())
+	_add_decoration_at("bedroll", get_center() + Vector2(50, 20))
+	_add_decoration_at("bedroll", get_center() + Vector2(-50, 25))
+	add_decorations(2)
+
+func _add_prop_at(prop_name: String, pos: Vector2) -> void:
+	_create_prop(prop_name, pos)
+
+func _add_decoration_at(dec_name: String, pos: Vector2) -> void:
+	_create_decoration(dec_name, pos)
+
+func _create_merchant(pos: Vector2) -> void:
+	## 在房间中放置商人立绘（无碰撞装饰）
+	var texture := TextureManager.instance.get_ui_texture("merchant")
+	if texture == null:
+		return
+
+	var merchant := Sprite2D.new()
+	merchant.name = "MerchantNPC"
+	merchant.texture = texture
+	merchant.position = pos
+	merchant.scale = Vector2(0.8, 0.8)
+	merchant.z_index = -1
+	add_child(merchant)
+
+	# 商人脚下光晕
+	var glow := Sprite2D.new()
+	glow.texture = TextureManager.instance.get_effect_texture("portal")
+	if glow.texture:
+		glow.modulate = Color(1.0, 0.9, 0.4, 0.3)
+		glow.scale = Vector2(0.8, 0.4)
+		merchant.add_child(glow)

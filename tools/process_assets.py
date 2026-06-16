@@ -767,6 +767,53 @@ def _generate_props(out: Path) -> None:
     d.ellipse([16, 16, 32, 32], outline=(200, 200, 200, 35), width=1)
     save(cobweb, out / "cobweb.png")
 
+    # 宝箱
+    chest = Image.new("RGBA", (48, 40))
+    d = ImageDraw.Draw(chest)
+    d.rectangle([2, 12, 46, 38], fill=(120, 70, 30), outline=(60, 35, 15), width=2)
+    d.rectangle([2, 2, 46, 14], fill=(140, 85, 35), outline=(60, 35, 15), width=2)
+    d.rectangle([20, 2, 28, 14], fill=(180, 160, 40), outline=(90, 80, 15), width=1)
+    d.line([2, 14, 46, 14], fill=(60, 35, 15), width=2)
+    save(chest, out / "chest.png")
+
+    # 金币堆
+    gold = Image.new("RGBA", (40, 28))
+    d = ImageDraw.Draw(gold)
+    for _ in range(18):
+        x, y = random.randint(4, 36), random.randint(8, 24)
+        r = random.randint(3, 5)
+        d.ellipse([x - r, y - r, x + r, y + r], fill=(220, 180, 30), outline=(160, 120, 20), width=1)
+    save(gold, out / "gold_pile.png")
+
+    # 篝火
+    campfire = Image.new("RGBA", (40, 48))
+    d = ImageDraw.Draw(campfire)
+    # 木柴
+    d.line([(8, 40), (32, 30)], fill=(80, 50, 30), width=4)
+    d.line([(32, 40), (8, 30)], fill=(80, 50, 30), width=4)
+    # 火焰
+    d.ellipse([10, 4, 30, 28], fill=(230, 90, 15))
+    d.ellipse([14, 8, 26, 22], fill=(255, 220, 80))
+    d.ellipse([16, 12, 24, 20], fill=(255, 255, 200))
+    save(campfire, out / "campfire.png")
+
+    # 睡袋
+    bedroll = Image.new("RGBA", (48, 32))
+    d = ImageDraw.Draw(bedroll)
+    d.rounded_rectangle([2, 4, 46, 28], radius=6, fill=(60, 70, 90), outline=(35, 40, 55), width=2)
+    d.line([(10, 8), (10, 24)], fill=(80, 90, 115), width=2)
+    save(bedroll, out / "bedroll.png")
+
+    # 商店招牌
+    shop_sign = Image.new("RGBA", (56, 40))
+    d = ImageDraw.Draw(shop_sign)
+    d.rectangle([4, 4, 52, 28], fill=(55, 35, 25), outline=(30, 18, 12), width=2)
+    d.rectangle([24, 28, 32, 38], fill=(80, 55, 35), outline=(40, 28, 18), width=1)
+    # 金币符号
+    d.ellipse([22, 10, 34, 22], fill=(220, 180, 30), outline=(140, 110, 15), width=1)
+    d.line([(28, 12), (28, 20)], fill=(80, 60, 10), width=2)
+    save(shop_sign, out / "shop_sign.png")
+
 
 def generate_room_tiles() -> None:
     """生成房间主题瓦片与装饰物。"""

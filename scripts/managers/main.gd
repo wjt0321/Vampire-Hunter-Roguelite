@@ -103,7 +103,7 @@ func _create_room(width: float, height: float, room_type: String) -> void:
 	if current_room != null:
 		current_room.queue_free()
 		current_room = null
-	
+
 	# 创建新房间
 	current_room = Node2D.new()
 	current_room.set_script(GameRoomScript)
@@ -111,8 +111,20 @@ func _create_room(width: float, height: float, room_type: String) -> void:
 	current_room.room_height = height
 	current_room.name = "GameRoom"
 
-	# 根据房间类型选择主题
-	current_room.room_theme = _get_room_theme(room_type)
+	# 根据房间类型预布置（必须在 add_child 前完成，以影响 _ready 中的主题生成）
+	match room_type:
+		"boss":
+			current_room.room_theme = "boss"
+			current_room.room_width = 2080.0
+			current_room.room_height = 1248.0
+		"shop":
+			current_room.setup_shop_room()
+		"treasure":
+			current_room.setup_treasure_room()
+		"rest":
+			current_room.setup_rest_room()
+		_:
+			current_room.room_theme = _get_combat_theme()
 
 	add_child(current_room)
 	# 移到最底层
@@ -121,7 +133,7 @@ func _create_room(width: float, height: float, room_type: String) -> void:
 	# 连接传送门信号
 	current_room.portal_entered.connect(_on_portal_entered)
 
-	# 根据房间类型添加障碍物与装饰
+	# 根据房间类型添加障碍物与装饰（在场景树中操作）
 	match room_type:
 		"combat":
 			if rooms_cleared > 1:
@@ -129,28 +141,14 @@ func _create_room(width: float, height: float, room_type: String) -> void:
 				current_room.add_props(randi_range(1, 3))
 			current_room.add_decorations(randi_range(2, 5))
 		"boss":
-			current_room.room_width = 2080.0
-			current_room.room_height = 1248.0
 			current_room.add_pillars(randi_range(4, 7))
 			current_room.add_props(randi_range(2, 4))
 			current_room.add_decorations(randi_range(3, 6))
-		"shop", "treasure", "rest":
-			current_room.add_decorations(randi_range(2, 4))
 
-func _get_room_theme(room_type: String) -> String:
-	match room_type:
-		"boss":
-			return "boss"
-		"shop":
-			return "castle"
-		"treasure":
-			return "castle"
-		"rest":
-			return "cave"
-		_:
-			# 普通战斗房间在几个主题间轮换
-			var themes: Array = ["dungeon", "castle", "cave"]
-			return themes[rooms_cleared % themes.size()]
+func _get_combat_theme() -> String:
+	## 普通战斗房间在几个主题间轮换
+	var themes: Array = ["dungeon", "castle", "cave"]
+	return themes[rooms_cleared % themes.size()]
 
 func _setup_camera_limits() -> void:
 	if current_room == null:

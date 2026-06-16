@@ -233,6 +233,11 @@ func _load_prop_textures():
 		"broken_pillar": _load_texture("res://assets/tiles/props/broken_pillar.png"),
 		"blood_splatter": _load_texture("res://assets/tiles/props/blood_splatter.png"),
 		"cobweb": _load_texture("res://assets/tiles/props/cobweb.png"),
+		"chest": _load_texture("res://assets/tiles/props/chest.png"),
+		"gold_pile": _load_texture("res://assets/tiles/props/gold_pile.png"),
+		"campfire": _load_texture("res://assets/tiles/props/campfire.png"),
+		"bedroll": _load_texture("res://assets/tiles/props/bedroll.png"),
+		"shop_sign": _load_texture("res://assets/tiles/props/shop_sign.png"),
 	}
 
 func _load_texture(path: String) -> Texture2D:
