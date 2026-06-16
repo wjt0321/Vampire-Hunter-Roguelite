@@ -13,6 +13,7 @@ extends CanvasLayer
 @onready var room_label: Label = $MarginContainer/VBoxContainer/TopBar/RoomLabel
 
 var game_time: float = 0.0
+var _low_hp_tween: Tween = null
 
 func _ready() -> void:
 	wave_banner.visible = false
@@ -28,6 +29,21 @@ func update_hp(current: float, maximum: float) -> void:
 	hp_bar.max_value = maximum
 	hp_bar.value = current
 	hp_label.text = "%d / %d" % [int(current), int(maximum)]
+	_update_low_hp_warning(current, maximum)
+
+func _update_low_hp_warning(current: float, maximum: float) -> void:
+	var ratio := current / maximum if maximum > 0 else 1.0
+	if ratio <= 0.25:
+		hp_bar.modulate = Color(1.5, 0.3, 0.3, 1.0)
+		if _low_hp_tween == null or not _low_hp_tween.is_valid():
+			_low_hp_tween = create_tween().set_loops()
+			_low_hp_tween.tween_property(hp_bar, "modulate", Color(2.0, 0.2, 0.2, 1.0), 0.4)
+			_low_hp_tween.tween_property(hp_bar, "modulate", Color(1.2, 0.3, 0.3, 1.0), 0.4)
+	else:
+		hp_bar.modulate = Color.WHITE
+		if _low_hp_tween and _low_hp_tween.is_valid():
+			_low_hp_tween.kill()
+			_low_hp_tween = null
 
 func update_xp(current_xp: int, xp_needed: int, level: int) -> void:
 	xp_bar.max_value = xp_needed

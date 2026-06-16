@@ -37,6 +37,28 @@ func _setup_panel_style() -> void:
 		var style := StyleBoxTexture.new()
 		style.texture = panel_texture
 		panel.add_theme_stylebox_override("panel", style)
+	_setup_button_effects()
+
+func _setup_button_effects() -> void:
+	var normal := TextureManager.instance.get_ui_texture("btn_normal")
+	var hover := TextureManager.instance.get_ui_texture("btn_hover")
+	var pressed := TextureManager.instance.get_ui_texture("btn_pressed")
+	for btn in panel.find_children("", "Button", true):
+		if normal and hover:
+			var normal_style := StyleBoxTexture.new()
+			normal_style.texture = normal
+			var hover_style := StyleBoxTexture.new()
+			hover_style.texture = hover
+			var pressed_style := StyleBoxTexture.new()
+			pressed_style.texture = pressed if pressed else hover
+			btn.add_theme_stylebox_override("normal", normal_style)
+			btn.add_theme_stylebox_override("hover", hover_style)
+			btn.add_theme_stylebox_override("pressed", pressed_style)
+			btn.add_theme_color_override("font_color", Color.WHITE)
+			btn.add_theme_color_override("font_hover_color", Color(1, 0.9, 0.7, 1))
+			btn.add_theme_color_override("font_pressed_color", Color(0.9, 0.9, 0.9, 1))
+		btn.mouse_entered.connect(func(): AudioManager.play_sfx(AudioLib.get_sound("hover")))
+		btn.pressed.connect(func(): AudioManager.play_sfx(AudioLib.get_sound("button_click")))
 
 func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 	visible = true
