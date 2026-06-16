@@ -62,24 +62,48 @@ func _physics_process(delta: float) -> void:
 
 func _attack() -> void:
 	attack_timer = ATTACK_COOLDOWN
-	
+
 	if projectile_scene == null or player == null:
 		return
-	
-	var projectile := projectile_scene.instantiate() as Area2D
-	projectile.global_position = global_position
-	
-	# 计算朝向玩家的方向
-	var direction := (player.global_position - global_position).normalized()
-	projectile.direction = direction
-	projectile.damage = contact_damage * 2
-	
-	get_tree().current_scene.add_child(projectile)
-	
+
+	# 20% 概率散射三发
+	var is_triple_shot: bool = randf() < 0.2
+	var shot_count: int = 3 if is_triple_shot else 1
+	var base_direction := _get_predicted_aim_direction()
+
+	for i in range(shot_count):
+		var projectile := projectile_scene.instantiate() as Area2D
+		projectile.global_position = global_position
+
+		var direction := base_direction
+		if is_triple_shot:
+			# 三发呈扇形：-15° / 0° / +15°
+			var spread: float = deg_to_rad(15.0) * (i - 1)
+			direction = base_direction.rotated(spread)
+
+		projectile.direction = direction
+		projectile.damage = contact_damage * 2
+
+		get_tree().current_scene.add_child(projectile)
+
 	# 播放射击动画（闪烁）
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", Color(1.5, 1.5, 1.5, 1.0), 0.1)
 	tween.tween_property(sprite, "modulate", Color.WHITE, 0.1)
+
+func _get_predicted_aim_direction() -> Vector2:
+	## 预测玩家位置，提前量瞄准
+	var player_vel: Vector2 = Vector2.ZERO
+	if player.has_method("get_velocity"):
+		player_vel = player.get_velocity()
+	elif "velocity" in player:
+		player_vel = player.velocity
+
+	var to_player := player.global_position - global_position
+	var projectile_speed: float = 300.0  # 与 enemy_projectile.gd 默认速度一致
+	var time_to_hit: float = to_player.length() / maxf(projectile_speed, 1.0)
+	var predicted_pos: Vector2 = player.global_position + player_vel * time_to_hit
+	return (predicted_pos - global_position).normalized()
 
 func _get_enemy_type() -> String:
 	return "skeleton"
