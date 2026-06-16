@@ -31,7 +31,7 @@
 ## 文档更新
 
 - 更新 `docs/asset-licenses.md`，登记所有新增素材的来源与授权。
-- 更新 `docs/missing-assets-todo.md`，将已补齐项标记为 DONE，并补充剩余缺口。
+- 更新 `docs/asset-inventory.md`，将已补齐项标记为 DONE，并补充剩余缺口。
 - 更新 `docs/asset_mapping_guide.md` 中的映射关系（如新增条目）。
 
 ## 验证

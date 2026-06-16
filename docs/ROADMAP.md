@@ -69,7 +69,7 @@
 - 拾取特效
 
 > 详细规格见: [docs/art-assets-requirements.md](docs/art-assets-requirements.md)
-> 快速入门见: [docs/art-development-guide.md](docs/art-development-guide.md)
+> 快速入门见: [docs/art-assets-requirements.md](docs/art-assets-requirements.md)
 
 ---
 
@@ -206,8 +206,7 @@
 
 ## 📚 参考资源
 
-- [美术资源需求文档](docs/art-assets-requirements.md)
-- [美术开发指南](docs/art-development-guide.md)
+- [美术资源需求与风格指南](docs/art-assets-requirements.md)
 
 ---
 

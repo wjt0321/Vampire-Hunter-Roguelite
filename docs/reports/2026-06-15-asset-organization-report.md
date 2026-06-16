@@ -30,7 +30,7 @@
 ### 已更新文档
 
 - `docs/asset-licenses.md`：新增 11 组素材授权登记条目
-- `docs/missing-assets-todo.md`：更新已有/缺失状态，标记大量 P0/P1 为 DONE
+- `docs/asset-inventory.md`：更新已有/缺失状态，标记大量 P0/P1 为 DONE
 - `assets-downloaded/asset_mapping_guide.md`：添加整理时间戳与结果指向
 - `docs/plans/2026-06-15-asset-organization-plan.md`：执行计划
 - `docs/plans/2026-06-15-asset-organization-report.md`：本报告
@@ -51,7 +51,7 @@
 
 - 以 **Kenney CC0** 资源作为 UI、图标、特效、瓦片的基础，保证一致性。
 - 敌人/Boss 使用 OpenGameArt 暗黑/哥特像素素材，尺寸统一为 32x32 / 40x40 / 48x48 / 64x64。
-- 占位素材在文件名未做特殊标记，但在 `docs/asset-licenses.md` 和 `docs/missing-assets-todo.md` 中明确标注。
+- 占位素材在文件名未做特殊标记，但在 `docs/asset-licenses.md` 和 `docs/asset-inventory.md` 中明确标注。
 
 ## 后续建议
 
