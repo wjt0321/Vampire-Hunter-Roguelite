@@ -260,13 +260,11 @@
 - 下载 / 生成日期：2026-06-15
 - 原始文件保存位置：`assets-downloaded/audio/kenney_impact-sounds/`
 - 项目内使用路径：
-  - `assets/audio/sfx/sfx_shoot.ogg`
   - `assets/audio/sfx/sfx_hit_enemy.ogg`
   - `assets/audio/sfx/sfx_enemy_death.ogg`
   - `assets/audio/sfx/sfx_player_hurt.ogg`
   - `assets/audio/sfx/sfx_shield_break.ogg`
-  - `assets/audio/sfx/sfx_explosion.ogg`
-- 用途说明：射击、命中、死亡、受伤、护盾破碎、爆炸
+- 用途说明：命中、死亡、受伤、护盾破碎
 - 修改记录：重命名
 - 备注：无
 
@@ -286,6 +284,52 @@
 - 原始文件保存位置：`assets-downloaded/audio/172206__fins__teleport.wav`
 - 项目内使用路径：`assets/audio/sfx/sfx_teleport.wav`
 - 用途说明：传送/瞬移音效
+- 修改记录：重命名
+- 备注：无
+
+#### 2.7a Kenney Sci-Fi Sounds
+
+- 状态：已使用
+- 风险：低
+- 类型：音效
+- 来源 URL：https://kenney.nl/assets/sci-fi-sounds
+- 来源平台：Kenney
+- 作者 / 版权方：Kenney
+- 授权名称：CC0
+- 是否允许商用：是
+- 是否允许修改：是
+- 是否需要署名：否
+- 下载 / 生成日期：2026-06-16
+- 原始文件保存位置：`assets-downloaded/audio/kenney_sci-fi-sounds/`
+- 项目内使用路径：
+  - `assets/audio/sfx/sfx_shoot.ogg`（来源：`laserSmall_000.ogg`）
+  - `assets/audio/sfx/sfx_shoot_shotgun.ogg`（来源：`explosionCrunch_000.ogg`）
+  - `assets/audio/sfx/sfx_shoot_magic.ogg`（来源：`forceField_000.ogg`）
+  - `assets/audio/sfx/sfx_poison_cloud.ogg`（来源：`slime_000.ogg`）
+  - `assets/audio/sfx/sfx_lightning_chain.ogg`（来源：`laserRetro_000.ogg`）
+  - `assets/audio/sfx/sfx_boss_attack.ogg`（来源：`lowFrequency_explosion_000.ogg`）
+  - `assets/audio/sfx/sfx_explosion.ogg`（来源：`explosionCrunch_002.ogg`）
+- 用途说明：武器射击、技能、Boss 攻击、爆炸
+- 修改记录：重命名
+- 备注：无
+
+#### 2.7b Kenney RPG Audio
+
+- 状态：已使用
+- 风险：低
+- 类型：音效
+- 来源 URL：https://kenney.nl/assets/rpg-audio
+- 来源平台：Kenney
+- 作者 / 版权方：Kenney
+- 授权名称：CC0
+- 是否允许商用：是
+- 是否允许修改：是
+- 是否需要署名：否
+- 下载 / 生成日期：2026-06-16
+- 原始文件保存位置：`assets-downloaded/audio/kenney_rpg-audio/`
+- 项目内使用路径：
+  - `assets/audio/sfx/sfx_knife_throw.ogg`（来源：`knifeSlice.ogg`）
+- 用途说明：飞刀射击音效
 - 修改记录：重命名
 - 备注：无
 

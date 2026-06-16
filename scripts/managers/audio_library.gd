@@ -9,8 +9,12 @@ const SAMPLE_RATE: int = 44100
 # ========== 真实音频文件映射 ==========
 const SFX_PATHS: Dictionary = {
 	"shoot_pistol": "res://assets/audio/sfx/sfx_shoot.ogg",
-	"shoot_shotgun": "res://assets/audio/sfx/sfx_shoot.ogg",
-	"shoot_magic": "res://assets/audio/sfx/sfx_shoot.ogg",
+	"shoot_shotgun": "res://assets/audio/sfx/sfx_shoot_shotgun.ogg",
+	"shoot_magic": "res://assets/audio/sfx/sfx_shoot_magic.ogg",
+	"knife_throw": "res://assets/audio/sfx/sfx_knife_throw.ogg",
+	"poison_cloud": "res://assets/audio/sfx/sfx_poison_cloud.ogg",
+	"lightning_chain": "res://assets/audio/sfx/sfx_lightning_chain.ogg",
+	"boss_attack": "res://assets/audio/sfx/sfx_boss_attack.ogg",
 	"hit_enemy": "res://assets/audio/sfx/sfx_hit_enemy.ogg",
 	"enemy_death": "res://assets/audio/sfx/sfx_enemy_death.ogg",
 	"pickup_xp": "res://assets/audio/sfx/sfx_pickup_xp.ogg",

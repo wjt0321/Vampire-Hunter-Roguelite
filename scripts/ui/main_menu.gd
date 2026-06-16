@@ -107,6 +107,7 @@ func _on_button_hover(btn: Button) -> void:
 	_button_tweens[btn] = tween
 	tween.tween_property(btn, "scale", Vector2(1.08, 1.08), 0.15)
 	btn.modulate = Color(1.3, 0.9, 0.9, 1.0)
+	AudioManager.play_sfx(AudioLib.get_sound("hover"))
 
 func _on_button_unhover(btn: Button) -> void:
 	_kill_button_tween(btn)

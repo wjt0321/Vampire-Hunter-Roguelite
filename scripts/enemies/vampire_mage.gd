@@ -115,20 +115,19 @@ func _teleport_effect() -> void:
 	if vfx:
 		vfx.spawn_death_particles(global_position, Color(0.5, 0.0, 0.8, 0.8), 8)
 	
-	# 播放音效
+	# 播放瞬移音效
 	var audio_lib := AudioLib
-	AudioManager.play_sfx(audio_lib.get_sound("hit_enemy"))
-	
-	# 淡出
-	if sprite:
-		var tween := create_tween()
-		tween.tween_property(sprite, "modulate:a", 0.0, 0.2)
+	AudioManager.play_sfx(audio_lib.get_sound("teleport"))
 
 func _teleport_arrive_effect() -> void:
 	## 瞬移到达特效
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
 		vfx.spawn_death_particles(global_position, Color(0.8, 0.0, 0.5, 0.8), 8)
+	
+	# 播放瞬移到达音效
+	var audio_lib := AudioLib
+	AudioManager.play_sfx(audio_lib.get_sound("teleport"))
 	
 	# 淡入
 	if sprite:

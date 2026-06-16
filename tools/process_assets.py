@@ -6,6 +6,7 @@
 - 输出到 assets/ 对应目录
 """
 import os
+import shutil
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageEnhance
 
@@ -407,9 +408,37 @@ def copy_bgm():
             print(f"Copied {src} -> {dst}")
 
 
+def copy_sfx():
+    """从 Kenney 音效包中挑选并复制战斗/受击/技能音效。"""
+    sfx_dst = DST / "audio" / "sfx"
+    sfx_dst.mkdir(parents=True, exist_ok=True)
+    mapping = {
+        # 武器射击
+        "kenney_sci-fi-sounds/Audio/laserSmall_000.ogg": "sfx_shoot.ogg",
+        "kenney_sci-fi-sounds/Audio/explosionCrunch_000.ogg": "sfx_shoot_shotgun.ogg",
+        "kenney_sci-fi-sounds/Audio/forceField_000.ogg": "sfx_shoot_magic.ogg",
+        "kenney_rpg-audio/Audio/knifeSlice.ogg": "sfx_knife_throw.ogg",
+        "kenney_sci-fi-sounds/Audio/slime_000.ogg": "sfx_poison_cloud.ogg",
+        "kenney_sci-fi-sounds/Audio/laserRetro_000.ogg": "sfx_lightning_chain.ogg",
+        # Boss / 受击 / 死亡
+        "kenney_sci-fi-sounds/Audio/lowFrequency_explosion_000.ogg": "sfx_boss_attack.ogg",
+        "kenney_impact-sounds/Audio/impactGlass_medium_000.ogg": "sfx_player_hurt.ogg",
+        "kenney_impact-sounds/Audio/impactMetal_medium_000.ogg": "sfx_hit_enemy.ogg",
+        "kenney_impact-sounds/Audio/impactBell_heavy_000.ogg": "sfx_enemy_death.ogg",
+        "kenney_sci-fi-sounds/Audio/explosionCrunch_002.ogg": "sfx_explosion.ogg",
+    }
+    for src_rel, dst_name in mapping.items():
+        src = SRC / "audio" / src_rel
+        dst = sfx_dst / dst_name
+        if src.exists():
+            shutil.copy2(src, dst)
+            print(f"Copied {src} -> {dst}")
+
+
 if __name__ == "__main__":
     process_enemies()
     generate_effects()
     generate_ui()
     copy_bgm()
+    copy_sfx()
     print("Done")

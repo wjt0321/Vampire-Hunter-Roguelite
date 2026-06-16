@@ -372,7 +372,11 @@ func _play_shoot_sound(weapon_id: String) -> void:
 		"magic_book":
 			sound_name = "shoot_magic"
 		"throwing_knife":
-			sound_name = "shoot_pistol"  # 飞刀使用相同音效
+			sound_name = "knife_throw"
+		"poison_cloud":
+			sound_name = "poison_cloud"
+		"lightning_chain":
+			sound_name = "lightning_chain"
 	var sound := _audio_lib.get_sound(sound_name)
 	AudioManager.play_sfx(sound)
 

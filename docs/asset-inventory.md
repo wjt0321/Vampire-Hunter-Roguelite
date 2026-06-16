@@ -527,18 +527,24 @@ AI 更适合做这些：
 
 | 状态 | 资源 | 建议来源 | 备注 |
 |---|---|---|---|
-| DONE | `assets/audio/sfx/sfx_shoot.ogg` | Kenney Impact Sounds | 手枪射击 |
+| DONE | `assets/audio/sfx/sfx_shoot.ogg` | Kenney Sci-Fi Sounds | 手枪射击 |
+| DONE | `assets/audio/sfx/sfx_shoot_shotgun.ogg` | Kenney Sci-Fi Sounds | 霰弹枪射击 |
+| DONE | `assets/audio/sfx/sfx_shoot_magic.ogg` | Kenney Sci-Fi Sounds | 魔法书射击 |
+| DONE | `assets/audio/sfx/sfx_knife_throw.ogg` | Kenney RPG Audio | 飞刀射击 |
+| DONE | `assets/audio/sfx/sfx_poison_cloud.ogg` | Kenney Sci-Fi Sounds | 毒雾瓶 |
+| DONE | `assets/audio/sfx/sfx_lightning_chain.ogg` | Kenney Sci-Fi Sounds | 闪电链 |
+| DONE | `assets/audio/sfx/sfx_boss_attack.ogg` | Kenney Sci-Fi Sounds | Boss/精英攻击 |
 | DONE | `assets/audio/sfx/sfx_hit_enemy.ogg` | Kenney Impact Sounds | 命中反馈 |
 | DONE | `assets/audio/sfx/sfx_enemy_death.ogg` | Kenney Impact Sounds | 死亡反馈 |
 | DONE | `assets/audio/sfx/sfx_pickup_xp.ogg` | Kenney Interface Sounds | 拾取经验 |
 | DONE | `assets/audio/sfx/sfx_levelup.ogg` | Kenney Interface Sounds | 升级提示 |
-| DONE | `assets/audio/sfx/sfx_player_hurt.ogg` | Kenney Impact Sounds | 玩家受伤 |
+| DONE | `assets/audio/sfx/sfx_player_hurt.ogg` | Kenney Impact Sounds | 玩家受伤（已接入） |
 | DONE | `assets/audio/sfx/sfx_click.ogg` | Kenney Interface Sounds | UI 点击 |
-| DONE | `assets/audio/sfx/sfx_hover.ogg` | Kenney Interface Sounds | UI 悬停 |
+| DONE | `assets/audio/sfx/sfx_hover.ogg` | Kenney Interface Sounds | UI 悬停（已接入） |
 | DONE | `assets/audio/sfx/sfx_shield_break.ogg` | Kenney Impact Sounds | 护盾破碎 |
-| DONE | `assets/audio/sfx/sfx_explosion.ogg` | Kenney Impact Sounds | 爆炸 |
-| DONE | `assets/audio/sfx/sfx_coin.ogg` | Kenney Interface Sounds | 金币 |
-| DONE | `assets/audio/sfx/sfx_teleport.wav` | fins (OpenGameArt, CC0) | 传送 |
+| DONE | `assets/audio/sfx/sfx_explosion.ogg` | Kenney Sci-Fi Sounds | 爆炸 |
+| DONE | `assets/audio/sfx/sfx_coin.ogg` | Kenney Interface Sounds | 金币/治疗 |
+| DONE | `assets/audio/sfx/sfx_teleport.wav` | fins (OpenGameArt, CC0) | 传送（已接入法师/传送门） |
 
 ### 拾取与货币
 

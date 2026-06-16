@@ -213,6 +213,9 @@ func take_damage(amount: float) -> void:
 	_start_invincibility()
 	_flash_damage()
 	
+	# 播放受击音效
+	AudioManager.play_sfx(_audio_lib.get_sound("player_hurt"))
+	
 	# 闪电护符反击
 	if lightning_retaliate_damage > 0:
 		_lightning_retaliate()
@@ -252,11 +255,13 @@ func _lightning_retaliate() -> void:
 		get_tree().current_scene.add_child(lightning)
 
 		# 播放音效
-		AudioManager.play_sfx(_audio_lib.get_sound("shoot_magic"))
+		AudioManager.play_sfx(_audio_lib.get_sound("lightning_chain"))
 
 func heal(amount: float) -> void:
 	current_hp = clampf(current_hp + amount, 0.0, max_hp)
 	hp_changed.emit(current_hp, max_hp)
+	if amount > 0:
+		AudioManager.play_sfx(_audio_lib.get_sound("heal"))
 
 func _start_invincibility() -> void:
 	is_invincible = true

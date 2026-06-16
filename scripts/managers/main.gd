@@ -158,6 +158,8 @@ func _on_portal_entered() -> void:
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
 	if ach_mgr:
 		ach_mgr.update_rooms(rooms_cleared)
+	# 播放传送音效
+	AudioManager.play_sfx(_audio_lib.get_sound("teleport"))
 	_transition_to_next_room()
 
 func _transition_to_next_room() -> void:

@@ -445,20 +445,14 @@
 - `bgm_shop.ogg`（已使用：`Tavern_0.ogg`，作者 yd，CC0）
 - `bgm_victory.ogg`（已使用：`ForgottenVictory.ogg`，作者 yd，CC0）
 - `bgm_defeat.ogg`（已使用：`WhatIsLeft_0.mp3`，作者 SeKa，CC0）
-- `sfx_shoot.wav`
-- `sfx_shoot_magic.wav`
-- `sfx_hit_enemy.wav`
-- `sfx_enemy_death.wav`
-- `sfx_pickup_xp.wav`
-- `sfx_levelup.wav`
-- `sfx_player_hurt.wav`
-- `sfx_shield_break.wav`
-- `sfx_explosion.wav`
-- `sfx_teleport.wav`
-- `sfx_boss_roar.wav`
-- `sfx_click.wav`
-- `sfx_hover.wav`
-- `sfx_coin.wav`
+- `sfx_shoot.ogg` / `sfx_shoot_shotgun.ogg` / `sfx_shoot_magic.ogg`
+- `sfx_knife_throw.ogg` / `sfx_poison_cloud.ogg` / `sfx_lightning_chain.ogg`
+- `sfx_boss_attack.ogg`
+- `sfx_hit_enemy.ogg` / `sfx_enemy_death.ogg`
+- `sfx_pickup_xp.ogg` / `sfx_levelup.ogg`
+- `sfx_player_hurt.ogg` / `sfx_shield_break.ogg`
+- `sfx_explosion.ogg` / `sfx_teleport.wav`
+- `sfx_click.ogg` / `sfx_hover.ogg` / `sfx_coin.ogg`
 
 建议：
 
