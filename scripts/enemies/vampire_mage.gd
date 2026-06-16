@@ -116,7 +116,7 @@ func _teleport_effect() -> void:
 		vfx.spawn_death_particles(global_position, Color(0.5, 0.0, 0.8, 0.8), 8)
 	
 	# 播放音效
-	var audio_lib := AudioLibraryScript.new()
+	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("hit_enemy"))
 	
 	# 淡出
@@ -159,7 +159,7 @@ func _cast_spell() -> void:
 	get_tree().current_scene.add_child(spell)
 	
 	# 播放音效
-	var audio_lib := AudioLibraryScript.new()
+	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("shoot_magic"))
 
 func _get_enemy_type() -> String:

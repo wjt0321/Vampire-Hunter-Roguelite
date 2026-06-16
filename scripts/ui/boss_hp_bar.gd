@@ -9,6 +9,22 @@ extends CanvasLayer
 
 func _ready() -> void:
 	visible = false
+	_setup_bar_textures()
+
+func _setup_bar_textures() -> void:
+	## 使用整理好的 Boss 血条纹理
+	var bg_texture := TextureManager.instance.get_ui_texture("boss_hp_bg")
+	var fill_texture := TextureManager.instance.get_ui_texture("boss_hp_fill")
+	
+	if bg_texture:
+		var bg_style := StyleBoxTexture.new()
+		bg_style.texture = bg_texture
+		hp_bar.add_theme_stylebox_override("background", bg_style)
+	
+	if fill_texture:
+		var fill_style := StyleBoxTexture.new()
+		fill_style.texture = fill_texture
+		hp_bar.add_theme_stylebox_override("fill", fill_style)
 
 func show_boss_bar(boss_name: String) -> void:
 	visible = true

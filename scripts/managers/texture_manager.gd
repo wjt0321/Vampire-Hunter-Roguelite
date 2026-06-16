@@ -82,11 +82,30 @@ func _load_ui_textures():
 	ui_textures = {
 		"btn_normal": _load_texture("res://assets/ui/btn_normal.png"),
 		"btn_hover": _load_texture("res://assets/ui/btn_hover.png"),
+		"btn_pressed": _load_texture("res://assets/ui/btn_pressed.png"),
 		"game_logo": _load_texture("res://assets/ui/game_logo.png"),
 		"hp_bar_fill": _load_texture("res://assets/ui/hp_bar_fill.png"),
 		"hp_bar_border": _load_texture("res://assets/ui/hp_bar_border.png"),
+		"hp_bar_bg": _load_texture("res://assets/ui/hp_bar_bg.png"),
 		"xp_bar_fill": _load_texture("res://assets/ui/xp_bar_fill.png"),
-		"upgrade_card": _load_texture("res://assets/ui/upgrade_card.png")
+		"xp_bar_bg": _load_texture("res://assets/ui/xp_bar_bg.png"),
+		"upgrade_card": _load_texture("res://assets/ui/upgrade_card.png"),
+		"upgrade_card_hover": _load_texture("res://assets/ui/upgrade_card_hover.png"),
+		"boss_hp_bg": _load_texture("res://assets/ui/boss_hp_bg.png"),
+		"boss_hp_fill": _load_texture("res://assets/ui/boss_hp_fill.png"),
+		"weapon_slot": _load_texture("res://assets/ui/weapon_slot.png"),
+		"passive_slot": _load_texture("res://assets/ui/passive_slot.png"),
+		"shop_slot": _load_texture("res://assets/ui/shop_slot.png"),
+		"price_tag": _load_texture("res://assets/ui/price_tag.png"),
+		"sold_out": _load_texture("res://assets/ui/sold_out.png"),
+		"wave_number_bg": _load_texture("res://assets/ui/wave_number_bg.png"),
+		"star_gold": _load_texture("res://assets/ui/star_gold.png"),
+		"star_gray": _load_texture("res://assets/ui/star_gray.png"),
+		"achievement_icon": _load_texture("res://assets/ui/achievement_icon.png"),
+		"stats_panel": _load_texture("res://assets/ui/stats_panel.png"),
+		"evolution_glow": _load_texture("res://assets/ui/evolution_glow.png"),
+		"btn_pause": _load_texture("res://assets/ui/btn_pause.png"),
+		"selected_mark": _load_texture("res://assets/ui/selected_mark.png"),
 	}
 
 func _load_background_textures():
@@ -109,7 +128,16 @@ func _load_weapon_icons():
 		"magnet": _load_texture("res://assets/weapons/icon_magnet.png"),
 		"shield": _load_texture("res://assets/weapons/icon_shield.png"),
 		"heal_potion": _load_texture("res://assets/weapons/heal_potion.png"),
-		"xp_gem_large": _load_texture("res://assets/weapons/xp_gem_large.png")
+		"xp_gem_large": _load_texture("res://assets/weapons/xp_gem_large.png"),
+		"bullet": _load_texture("res://assets/weapons/bullet.png"),
+		"magic_orb": _load_texture("res://assets/weapons/magic_orb.png"),
+		"blood_crystal": _load_texture("res://assets/weapons/blood_crystal.png"),
+		"regen": _load_texture("res://assets/weapons/icon_regen.png"),
+		"greed": _load_texture("res://assets/weapons/icon_greed.png"),
+		"berserker": _load_texture("res://assets/weapons/icon_berserker.png"),
+		"frozen": _load_texture("res://assets/weapons/icon_frozen.png"),
+		"lightning_shield": _load_texture("res://assets/weapons/icon_lightning_shield.png"),
+		"shadow": _load_texture("res://assets/weapons/icon_shadow.png"),
 	}
 
 func _load_effect_textures():

@@ -18,12 +18,16 @@ func _ready() -> void:
 	_cached_player = get_tree().get_first_node_in_group("player")
 	# 设置子弹旋转方向
 	rotation = direction.angle()
-	# 自动创建纹理
+	# 加载子弹纹理
 	var spr := $Sprite2D as Sprite2D
 	if spr and spr.texture == null:
-		var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)
-		img.fill(Color.WHITE)
-		spr.texture = ImageTexture.create_from_image(img)
+		var tex := TextureManager.instance.get_weapon_icon("bullet")
+		if tex:
+			spr.texture = tex
+		else:
+			var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)
+			img.fill(Color.WHITE)
+			spr.texture = ImageTexture.create_from_image(img)
 
 func _physics_process(delta: float) -> void:
 	var move_distance := speed * delta

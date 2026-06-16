@@ -435,3 +435,41 @@
 - 处理方式：已删除 / 已移出项目 / 保留在外部素材库
 - 日期：YYYY-MM-DD
 ```
+
+## Noto Sans CJK SC Regular
+
+- 状态：已使用
+- 风险：低
+- 类型：字体
+- 来源 URL：https://github.com/notofonts/noto-cjk
+- 来源平台：Google Noto Fonts (GitHub)
+- 作者 / 版权方：Google Inc.
+- 授权名称：OFL (SIL Open Font License) 1.1
+- 是否允许商用：是
+- 是否允许修改：是
+- 是否需要署名：否（OFL 不要求署名，但需保留授权文件）
+- 下载 / 生成日期：2026-06-16
+- 原始文件保存位置：assets/fonts/NotoSansCJKsc-Regular.otf
+- 项目内使用路径：assets/fonts/NotoSansCJKsc-Regular.otf
+- 用途说明：游戏主界面、HUD、伤害数字等所有中文显示
+- 修改记录：无
+- 备注：通过本地代理从 GitHub 下载
+
+## 程序化 BGM（战斗 / Boss）
+
+- 状态：已使用
+- 风险：低
+- 类型：BGM
+- 来源 URL：N/A
+- 来源平台：自制 / 代码生成
+- 作者 / 版权方：项目作者
+- 授权名称：自制
+- 是否允许商用：是
+- 是否允许修改：是
+- 是否需要署名：否
+- 下载 / 生成日期：2026-06-16
+- 原始文件保存位置：scripts/managers/audio_library.gd
+- 项目内使用路径：assets/audio/bgm/bgm_battle.wav、assets/audio/bgm/bgm_boss.wav
+- 用途说明：战斗房间与 Boss 战背景音乐（临时占位，后续可替换为正式作曲）
+- 修改记录：使用 AudioLibrary 中的正弦波/噪声生成算法导出为 WAV
+- 备注：文件由 scripts/tools/generate_bgm.gd 生成

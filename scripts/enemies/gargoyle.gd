@@ -94,7 +94,7 @@ func _unpetrify() -> void:
 			vfx.spawn_death_particles(global_position, Color(0.8, 0.8, 0.8, 0.8), 10)
 	
 	# 播放音效
-	var audio_lib := AudioLibraryScript.new()
+	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("enemy_death"))
 
 func take_damage(amount: float) -> void:
@@ -125,7 +125,7 @@ func _flash_hit() -> void:
 		vfx.spawn_hit_particles(global_position, Color(0.6, 0.6, 0.6, 0.9), 4)
 	
 	# 播放受击音效（石头声）
-	var audio_lib := AudioLibraryScript.new()
+	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("hit_enemy"))
 
 func _get_enemy_type() -> String:

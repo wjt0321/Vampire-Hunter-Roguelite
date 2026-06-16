@@ -4,7 +4,6 @@ class_name WeaponManager
 
 const WeaponDataScript = preload("res://scripts/weapons/weapon_data.gd")
 const WeaponEvolutionScript = preload("res://scripts/weapons/weapon_evolution.gd")
-const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
 
 # 场景预加载常量
 const KnifeBulletScene = preload("res://scenes/player/knife_bullet.tscn")
@@ -18,7 +17,13 @@ var player: CharacterBody2D = null
 var bullet_scene: PackedScene = preload("res://scenes/player/bullet.tscn")
 
 # 缓存的 AudioLibrary 实例
-var _audio_lib: AudioLibraryScript = null
+var _audio_lib: AudioLibrary = null
+
+# 敌人方向缓存（降低每帧扫描开销）
+var _nearest_enemy_dir: Vector2 = Vector2.ZERO
+var _nearest_enemy_pos: Vector2 = Vector2.ZERO
+var _enemy_cache_timer: float = 0.0
+const ENEMY_CACHE_INTERVAL: float = 0.15
 
 signal weapon_added(weapon: Resource)
 signal weapon_leveled_up(weapon: Resource)
@@ -96,8 +101,8 @@ const EVOLUTION_CONFIG: Dictionary = {
 
 func setup(player_node: CharacterBody2D, initial_weapon_id: String = "pistol") -> void:
 	player = player_node
-	# 初始化 AudioLibrary 缓存
-	_audio_lib = AudioLibraryScript.new()
+	# 初始化 AudioLib 缓存
+	_audio_lib = AudioLib
 	var initial_weapon = _create_weapon_by_id(initial_weapon_id)
 	if initial_weapon:
 		add_weapon(initial_weapon)
@@ -105,9 +110,16 @@ func setup(player_node: CharacterBody2D, initial_weapon_id: String = "pistol") -
 		var pistol := _create_pistol()
 		add_weapon(pistol)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if player == null or not is_instance_valid(player):
 		return
+	
+	# 定期刷新最近敌人缓存
+	_enemy_cache_timer += delta
+	if _enemy_cache_timer >= ENEMY_CACHE_INTERVAL:
+		_enemy_cache_timer = 0.0
+		_refresh_enemy_cache()
+	
 	for weapon in weapons:
 		var timer_key: String = weapon.weapon_id
 		if shoot_timers.has(timer_key):
@@ -262,12 +274,42 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 	# 播放射击音效
 	_play_shoot_sound(weapon.weapon_id)
 
+func _refresh_enemy_cache() -> void:
+	## 刷新最近敌人方向和位置缓存
+	if player == null or not is_instance_valid(player):
+		_nearest_enemy_dir = Vector2.ZERO
+		_nearest_enemy_pos = Vector2.ZERO
+		return
+	
+	var origin := player.global_position
+	var enemies := get_tree().get_nodes_in_group("enemies")
+	var nearest_dist: float = INF
+	var nearest_pos: Vector2 = Vector2.ZERO
+	
+	for enemy in enemies:
+		if not is_instance_valid(enemy):
+			continue
+		var dist := origin.distance_squared_to(enemy.global_position)
+		if dist < nearest_dist:
+			nearest_dist = dist
+			nearest_pos = enemy.global_position
+	
+	_nearest_enemy_pos = nearest_pos
+	if nearest_pos != Vector2.ZERO:
+		_nearest_enemy_dir = (nearest_pos - origin).normalized()
+	else:
+		_nearest_enemy_dir = Vector2.ZERO
+
 func _get_nearest_enemy_direction(from: Vector2) -> Vector2:
+	# 如果缓存有效直接返回，否则实时计算一次
+	if _nearest_enemy_dir != Vector2.ZERO:
+		return _nearest_enemy_dir
+	
 	var enemies := get_tree().get_nodes_in_group("enemies")
 	var nearest_dist: float = INF
 	var nearest_dir: Vector2 = Vector2.ZERO
 	for enemy in enemies:
-		if not is_instance_valid(enemy) or not enemy is CharacterBody2D:
+		if not is_instance_valid(enemy):
 			continue
 		var dist := from.distance_squared_to(enemy.global_position)
 		if dist < nearest_dist:
@@ -427,6 +469,10 @@ func _spawn_lightning_chain(weapon) -> void:
 	_play_shoot_sound(weapon.weapon_id)
 
 func _get_nearest_enemy_position(from: Vector2) -> Vector2:
+	# 优先使用缓存位置
+	if _nearest_enemy_pos != Vector2.ZERO:
+		return _nearest_enemy_pos
+	
 	var enemies := get_tree().get_nodes_in_group("enemies")
 	var nearest_pos := Vector2.ZERO
 	var nearest_dist: float = INF

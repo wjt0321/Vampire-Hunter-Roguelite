@@ -19,11 +19,15 @@ var hit_enemies: Array = []      # 已击中的敌人（避免重复伤害）
 func _ready() -> void:
 	# 设置飞刀旋转方向
 	rotation = direction.angle()
-	# 自动创建纹理（长条形飞刀）
+	# 加载飞刀纹理
 	if sprite and sprite.texture == null:
-		var img := Image.create(16, 4, false, Image.FORMAT_RGBA8)
-		img.fill(Color.SILVER)
-		sprite.texture = ImageTexture.create_from_image(img)
+		var tex := TextureManager.instance.get_weapon_icon("knife")
+		if tex:
+			sprite.texture = tex
+		else:
+			var img := Image.create(16, 4, false, Image.FORMAT_RGBA8)
+			img.fill(Color.SILVER)
+			sprite.texture = ImageTexture.create_from_image(img)
 
 func _physics_process(delta: float) -> void:
 	var move_distance := speed * delta
@@ -43,6 +47,11 @@ func get_damage() -> float:
 	return base_damage * damage_multiplier
 
 func _on_body_entered(body: Node2D) -> void:
+	# 碰到墙壁
+	if body.is_in_group("walls"):
+		queue_free()
+		return
+	
 	# 碰到敌人
 	if body.has_method("take_damage"):
 		# 避免重复伤害同一敌人

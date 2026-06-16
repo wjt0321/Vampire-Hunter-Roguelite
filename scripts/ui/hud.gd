@@ -56,15 +56,26 @@ func _show_wave_banner(wave_number: int) -> void:
 func _setup_bar_textures() -> void:
 	## 设置血条和经验条的纹理
 	var hp_fill_texture := TextureManager.instance.get_ui_texture("hp_bar_fill")
-	var hp_border_texture := TextureManager.instance.get_ui_texture("hp_bar_border")
+	var hp_bg_texture := TextureManager.instance.get_ui_texture("hp_bar_bg")
 	var xp_fill_texture := TextureManager.instance.get_ui_texture("xp_bar_fill")
+	var xp_bg_texture := TextureManager.instance.get_ui_texture("xp_bar_bg")
 	
 	if hp_fill_texture:
 		var hp_style := StyleBoxTexture.new()
 		hp_style.texture = hp_fill_texture
 		hp_bar.add_theme_stylebox_override("fill", hp_style)
 	
+	if hp_bg_texture:
+		var hp_bg_style := StyleBoxTexture.new()
+		hp_bg_style.texture = hp_bg_texture
+		hp_bar.add_theme_stylebox_override("background", hp_bg_style)
+	
 	if xp_fill_texture:
 		var xp_style := StyleBoxTexture.new()
 		xp_style.texture = xp_fill_texture
 		xp_bar.add_theme_stylebox_override("fill", xp_style)
+	
+	if xp_bg_texture:
+		var xp_bg_style := StyleBoxTexture.new()
+		xp_bg_style.texture = xp_bg_texture
+		xp_bar.add_theme_stylebox_override("background", xp_bg_style)

@@ -91,7 +91,7 @@ func _summon() -> void:
 		summon_particles.restart()
 	
 	# 播放音效
-	var audio_lib := AudioLibraryScript.new()
+	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("enemy_death"))
 	
 	# 召唤蝙蝠（较弱的敌人）

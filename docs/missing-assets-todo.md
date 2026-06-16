@@ -376,9 +376,10 @@
 | 状态 | 资源 | 优先级 | 建议来源 |
 |---|---|---|---|
 | DONE | `bgm_menu.mp3` | P1 | OpenGameArt (matthew.pablo, CC-BY) |
-| TODO | `bgm_battle1.ogg` | P1 | OpenGameArt / Pixabay |
+| DONE | `bgm_battle.wav` | P1 | 程序生成占位 |
+| TODO | `bgm_battle1.ogg` | P2 | OpenGameArt / Pixabay |
 | TODO | `bgm_battle2.ogg` | P2 | OpenGameArt / Pixabay |
-| TODO | `bgm_boss.ogg` | P1 | OpenGameArt / Pixabay |
+| DONE | `bgm_boss.wav` | P1 | 程序生成占位 |
 | TODO | `bgm_shop.ogg` | P2 | OpenGameArt / Pixabay |
 | TODO | `bgm_victory.ogg` | P2 | OpenGameArt / Pixabay |
 | TODO | `bgm_defeat.ogg` | P2 | OpenGameArt / Pixabay |
@@ -397,10 +398,9 @@
 
 | 状态 | 资源 | 优先级 | 备注 |
 |---|---|---|---|
+| DONE | `NotoSansCJKsc-Regular.otf` | P1 | 主界面/HUD/伤害数字（思源黑体，OFL） |
 | TODO | `title_font.ttf` | P2 | 哥特标题，可不支持中文 |
-| TODO | `main_font.ttf` | P1 | 必须可读，若有中文需支持中文 |
-| TODO | `number_font.ttf` | P2 | HUD/计数 |
-| TODO | `damage_font.ttf` | P1 | 伤害数字 |
+| TODO | `number_font.ttf` | P2 | 专用数字字体 |
 
 状态：
 

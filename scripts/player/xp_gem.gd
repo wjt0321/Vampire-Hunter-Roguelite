@@ -2,7 +2,6 @@ extends Area2D
 ## 经验宝石脚本
 ## 敌人死亡后掉落，被玩家吸附拾取
 
-const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
 
 @export var xp_value: int = 2
 @export var attraction_speed: float = 300.0
@@ -54,7 +53,7 @@ func _collect() -> void:
 	if vfx:
 		vfx.spawn_xp_particles(global_position)
 	# 播放拾取音效
-	var audio_lib := AudioLibraryScript.new()
+	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("pickup_xp"))
 	# 拾取特效
 	var tween := create_tween()

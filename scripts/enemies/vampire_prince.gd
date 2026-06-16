@@ -115,7 +115,7 @@ func _enter_second_phase() -> void:
 		sprite.modulate = Color(1.2, 0.8, 0.8, 1.0)  # 略微发红
 	
 	# 播放音效
-	var audio_lib := AudioLibraryScript.new()
+	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("boss_attack"))
 	
 	# 屏幕震动
@@ -145,7 +145,7 @@ func _flash_hit() -> void:
 		vfx.spawn_hit_particles(global_position, Color(0.8, 0.0, 0.0, 0.9), 6)
 	
 	# 播放受击音效
-	var audio_lib := AudioLibraryScript.new()
+	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("hit_enemy"))
 
 func _on_contact_area_body_entered(body: Node2D) -> void:

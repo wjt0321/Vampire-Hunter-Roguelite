@@ -2,7 +2,6 @@ extends CanvasLayer
 ## 主菜单
 ## 暗黑哥特风格
 
-const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
 
 @onready var title_label: Label = $CenterContainer/VBoxContainer/TitleLabel
 @onready var subtitle_label: Label = $CenterContainer/VBoxContainer/SubtitleLabel
@@ -24,6 +23,9 @@ const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
 
 var save_mgr: Node
 
+# 按钮动画缓动缓存，避免快速悬停时 tween 堆积
+var _button_tweens: Dictionary = {}
+
 func _ready() -> void:
 	settings_panel.visible = false
 	save_mgr = get_node_or_null("/root/SaveManager")
@@ -37,7 +39,7 @@ func _ready() -> void:
 	character_select.selection_closed.connect(_update_crystals)
 	
 	# 播放主菜单 BGM
-	var audio_lib := AudioLibraryScript.new()
+	var audio_lib := AudioLib
 	AudioManager.play_bgm(audio_lib.get_menu_bgm())
 
 func _setup_background() -> void:
@@ -69,6 +71,7 @@ func _setup_button_textures() -> void:
 	## 设置按钮纹理
 	var normal_texture := TextureManager.instance.get_ui_texture("btn_normal")
 	var hover_texture := TextureManager.instance.get_ui_texture("btn_hover")
+	var pressed_texture := TextureManager.instance.get_ui_texture("btn_pressed")
 	
 	if normal_texture and hover_texture:
 		for btn in [start_btn, char_btn, shop_btn, settings_btn, quit_btn, back_btn]:
@@ -80,7 +83,7 @@ func _setup_button_textures() -> void:
 			hover_style.texture = hover_texture
 			
 			var pressed_style := StyleBoxTexture.new()
-			pressed_style.texture = hover_texture
+			pressed_style.texture = pressed_texture if pressed_texture else hover_texture
 			
 			btn.add_theme_stylebox_override("normal", normal_style)
 			btn.add_theme_stylebox_override("hover", hover_style)
@@ -90,17 +93,28 @@ func _setup_button_textures() -> void:
 			btn.add_theme_color_override("font_pressed_color", Color(0.9, 0.9, 0.9, 1))
 
 func _on_button_hover(btn: Button) -> void:
+	_kill_button_tween(btn)
 	var tween := create_tween()
+	_button_tweens[btn] = tween
 	tween.tween_property(btn, "scale", Vector2(1.08, 1.08), 0.15)
 	btn.modulate = Color(1.3, 0.9, 0.9, 1.0)
 
 func _on_button_unhover(btn: Button) -> void:
+	_kill_button_tween(btn)
 	var tween := create_tween()
+	_button_tweens[btn] = tween
 	tween.tween_property(btn, "scale", Vector2.ONE, 0.15)
 	btn.modulate = Color.WHITE
 
+func _kill_button_tween(btn: Button) -> void:
+	if _button_tweens.has(btn):
+		var old_tween: Tween = _button_tweens[btn]
+		if old_tween and old_tween.is_valid():
+			old_tween.kill()
+		_button_tweens.erase(btn)
+
 func _on_button_click() -> void:
-	var audio_lib := AudioLibraryScript.new()
+	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("button_click"))
 
 func _animate_title() -> void:

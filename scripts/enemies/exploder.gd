@@ -77,7 +77,7 @@ func _explode() -> void:
 				player.take_damage(EXPLOSION_DAMAGE)
 	
 	# 播放爆炸音效
-	var audio_lib := AudioLibraryScript.new()
+	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("explosion"))
 	
 	# 爆炸视觉效果

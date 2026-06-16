@@ -26,6 +26,8 @@ const SFX_PATHS: Dictionary = {
 
 const BGM_PATHS: Dictionary = {
 	"menu": "res://assets/audio/bgm/bgm_menu.mp3",
+	"battle": "res://assets/audio/bgm/bgm_battle.wav",
+	"boss": "res://assets/audio/bgm/bgm_boss.wav",
 }
 
 # ========== 缓存 ==========

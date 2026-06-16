@@ -3,7 +3,6 @@ class_name EnemyBase
 ## 敌人基类脚本
 ## 所有敌人类型继承此类
 
-const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
 
 # === 属性 ===
 @export var max_hp: float = 39.0
@@ -106,7 +105,7 @@ func _flash_hit() -> void:
 	if vfx:
 		vfx.spawn_hit_particles(global_position, sprite.modulate, 4)
 	# 播放受击音效
-	var audio_lib := AudioLibraryScript.new()
+	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("hit_enemy"))
 
 func _die() -> void:
@@ -121,7 +120,7 @@ func _die() -> void:
 	if vfx:
 		vfx.spawn_death_particles(global_position, sprite.modulate, 10)
 	# 播放死亡音效
-	var audio_lib := AudioLibraryScript.new()
+	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("enemy_death"))
 	# 掉落经验宝石
 	_drop_xp_gem()

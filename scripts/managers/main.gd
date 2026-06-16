@@ -4,12 +4,11 @@ extends Node2D
 
 const GameRoomScript = preload("res://scripts/map/game_room.gd")
 const RoomManagerScript = preload("res://scripts/map/room_manager.gd")
-const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
 const CharacterDataScript = preload("res://scripts/player/character_data.gd")
 var boss_scene: PackedScene = preload("res://scenes/enemies/vampire_lord.tscn")
 
 # 缓存的 AudioLibrary 实例
-var _audio_lib: AudioLibraryScript = null
+var _audio_lib: AudioLibrary = null
 
 @onready var player: CharacterBody2D = $Player
 @onready var camera: Camera2D = $Player/Camera2D
@@ -55,8 +54,8 @@ func _ready() -> void:
 	# 启动波次
 	wave_manager.start(player)
 
-	# 初始化 AudioLibrary 缓存并播放战斗 BGM
-	_audio_lib = AudioLibraryScript.new()
+	# 初始化 AudioLib 缓存并播放战斗 BGM
+	_audio_lib = AudioLib
 	AudioManager.play_bgm(_audio_lib.get_battle_bgm())
 	
 	# 初始化成就系统

@@ -3,11 +3,10 @@ extends CharacterBody2D
 ## 处理移动、生命值、经验升级等核心逻辑
 ## 射击由 WeaponManager 独立处理
 
-const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
 const LightningChainScene = preload("res://scenes/player/lightning_chain.tscn")
 
 # 缓存的 AudioLibrary 实例
-var _audio_lib: AudioLibraryScript = null
+var _audio_lib: AudioLibrary = null
 
 # === 移动属性 ===
 @export var move_speed: float = 200.0
@@ -72,8 +71,8 @@ signal player_died
 func _ready() -> void:
 	add_to_group("player")
 	current_hp = max_hp
-	# 初始化 AudioLibrary 缓存
-	_audio_lib = AudioLibraryScript.new()
+	# 初始化 AudioLib 缓存
+	_audio_lib = AudioLib
 	# 加载精灵图纹理
 	_load_sprite_texture()
 	invincible_timer.wait_time = invincible_duration

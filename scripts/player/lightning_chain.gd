@@ -2,7 +2,6 @@ extends Node2D
 ## 闪电链
 ## 自动追踪并在敌人之间跳跃
 
-const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
 
 @export var base_damage: float = 15.0
 @export var max_jumps: int = 3
@@ -41,7 +40,7 @@ func _cast_lightning(from_pos: Vector2, target: Node2D) -> void:
 		target.take_damage(_current_damage * damage_multiplier)
 	
 	# 播放音效
-	var audio_lib := AudioLibraryScript.new()
+	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("shoot_magic"))
 	
 	# 查找下一个目标

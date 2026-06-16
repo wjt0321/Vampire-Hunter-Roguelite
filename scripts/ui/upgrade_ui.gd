@@ -175,12 +175,13 @@ func _create_option_button(option: Dictionary) -> Button:
 	
 	# 设置按钮样式
 	var card_texture := TextureManager.instance.get_ui_texture("upgrade_card")
+	var hover_texture := TextureManager.instance.get_ui_texture("upgrade_card_hover")
 	if card_texture:
 		var normal_style := StyleBoxTexture.new()
 		normal_style.texture = card_texture
 		
 		var hover_style := StyleBoxTexture.new()
-		hover_style.texture = card_texture
+		hover_style.texture = hover_texture if hover_texture else card_texture
 		
 		btn.add_theme_stylebox_override("normal", normal_style)
 		btn.add_theme_stylebox_override("hover", hover_style)
@@ -213,23 +214,23 @@ func _get_option_icon(option: Dictionary) -> Texture2D:
 				"shield":
 					return TextureManager.instance.get_weapon_icon("shield")
 				"regeneration":
-					return TextureManager.instance.get_weapon_icon("heal_potion")
+					return TextureManager.instance.get_weapon_icon("regen")
 				"greed_ring":
-					return TextureManager.instance.get_weapon_icon("xp_gem_large")
+					return TextureManager.instance.get_weapon_icon("greed")
 				"berserker_blood":
-					return TextureManager.instance.get_weapon_icon("heal_potion")
+					return TextureManager.instance.get_weapon_icon("berserker")
 				"frozen_heart":
-					return TextureManager.instance.get_weapon_icon("shield")
+					return TextureManager.instance.get_weapon_icon("frozen")
 				"lightning_shield":
-					return TextureManager.instance.get_weapon_icon("lightning")
+					return TextureManager.instance.get_weapon_icon("lightning_shield")
 				"shadow_cloak":
-					return TextureManager.instance.get_weapon_icon("shield")
+					return TextureManager.instance.get_weapon_icon("shadow")
 		"stat", "basic":
 			match option_id:
 				"damage", "damage_boost":
-					return TextureManager.instance.get_weapon_icon("shotgun")
+					return TextureManager.instance.get_weapon_icon("berserker")
 				"speed":
-					return TextureManager.instance.get_weapon_icon("magic_book")
+					return TextureManager.instance.get_weapon_icon("shadow")
 				"shoot_speed":
 					return TextureManager.instance.get_weapon_icon("knife")
 				"max_hp", "heal":
@@ -239,7 +240,7 @@ func _get_option_icon(option: Dictionary) -> Texture2D:
 				"pickup_range":
 					return TextureManager.instance.get_weapon_icon("magnet")
 				"gold":
-					return TextureManager.instance.get_weapon_icon("xp_gem_large")
+					return TextureManager.instance.get_weapon_icon("blood_crystal")
 	
 	return null
 
