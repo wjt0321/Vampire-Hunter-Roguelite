@@ -3,7 +3,7 @@ extends "res://scripts/enemies/enemy_base.gd"
 ## 攻击模式：远程弹幕 + 召唤小怪 + 冲刺
 ## 50% 血量以下进入狂暴模式
 
-enum BossPhase { NORMAL, ENRAGED }
+enum BossPhase { NORMAL, ENRAGED, DESPERATE }
 enum AttackState { IDLE, BARRAGE, SUMMON, DASH, COOLDOWN }
 
 # === Boss 属性 ===
@@ -22,6 +22,8 @@ var cooldown_timer: float = 0.0
 var dash_timer: float = 0.0
 var dash_direction: Vector2 = Vector2.ZERO
 var phase_changed: bool = false
+var desperate_changed: bool = false
+var nova_count: int = 12
 
 var bat_scene: PackedScene = preload("res://scenes/enemies/bat.tscn")
 
@@ -115,15 +117,20 @@ func _physics_process(delta: float) -> void:
 						_adjust_sprite_scale()
 
 func _check_phase_transition() -> void:
-	if phase_changed:
-		return
-	if current_hp <= max_hp * 0.5:
+	if not phase_changed and current_hp <= max_hp * 0.5:
 		phase_changed = true
 		current_phase = BossPhase.ENRAGED
 		boss_phase_changed.emit(1)
 		# 狂暴视觉效果
 		_enrage_effect()
 		print("💀 吸血鬼领主进入狂暴模式!")
+		return
+	if not desperate_changed and current_hp <= max_hp * 0.25:
+		desperate_changed = true
+		current_phase = BossPhase.DESPERATE
+		boss_phase_changed.emit(2)
+		_desperate_effect()
+		print("🔥 吸血鬼领主进入绝望模式!")
 
 func _enrage_effect() -> void:
 	# 切换到狂暴贴图
@@ -140,6 +147,34 @@ func _enrage_effect() -> void:
 	move_speed = 90.0
 	contact_damage = 30.0
 	barrage_count = 12
+	attack_cooldown = 2.0
+	# 屏幕震动
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx:
+		vfx.screen_shake(8.0, 0.4)
+
+func _desperate_effect() -> void:
+	# 切换到狂暴贴图（如有死亡/暴怒贴图可替换）
+	if sprite:
+		var tex := TextureManager.instance.get_boss_texture("enraged")
+		if tex:
+			sprite.texture = tex
+			_adjust_sprite_scale()
+	# 闪烁暗红
+	var tween := create_tween().set_loops(5)
+	tween.tween_property(sprite, "modulate", Color(3.0, 0.1, 0.1, 1.0), 0.1)
+	tween.tween_property(sprite, "modulate", Color(1.0, 0.3, 0.3, 1.0), 0.1)
+	# 极大增强
+	move_speed = 120.0
+	contact_damage = 40.0
+	barrage_count = 16
+	summon_count = 5
+	attack_cooldown = 1.5
+	nova_count = 18
+	# 屏幕震动
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx:
+		vfx.screen_shake(12.0, 0.5)
 
 func _choose_attack() -> void:
 	var attacks: Array = ["barrage", "summon", "dash"]
@@ -147,6 +182,12 @@ func _choose_attack() -> void:
 		# 狂暴模式更常弹幕
 		attacks.append("barrage")
 		attacks.append("barrage")
+	elif current_phase == BossPhase.DESPERATE:
+		# 绝望模式加入新星攻击并更频繁
+		attacks.append("barrage")
+		attacks.append("barrage")
+		attacks.append("nova")
+		attacks.append("dash")
 	
 	var choice: String = attacks.pick_random()
 	match choice:
@@ -156,10 +197,13 @@ func _choose_attack() -> void:
 			_attack_summon()
 		"dash":
 			_attack_dash()
+		"nova":
+			_attack_nova()
 
 func _attack_barrage() -> void:
 	## 弹幕攻击：向四周发射弹丸
 	attack_state = AttackState.COOLDOWN
+	_telegraph_attack()
 	var count: int = barrage_count
 	for i in range(count):
 		var angle: float = (TAU / float(count)) * float(i)
@@ -191,7 +235,7 @@ func _spawn_boss_projectile(direction: Vector2) -> void:
 	# 移动 + 碰撞检测
 	proj.body_entered.connect(func(body: Node2D):
 		if body.is_in_group("player") and body.has_method("take_damage"):
-			body.take_damage(barrage_damage)
+			body.take_damage(barrage_damage, global_position)
 		proj.queue_free()
 	)
 	
@@ -205,6 +249,7 @@ func _spawn_boss_projectile(direction: Vector2) -> void:
 func _attack_summon() -> void:
 	## 召唤小怪
 	attack_state = AttackState.COOLDOWN
+	_telegraph_attack()
 	var count: int = summon_count
 	if current_phase == BossPhase.ENRAGED:
 		count += 2
@@ -229,6 +274,7 @@ func _attack_dash() -> void:
 	if player == null or not is_instance_valid(player):
 		attack_state = AttackState.COOLDOWN
 		return
+	_telegraph_attack()
 	attack_state = AttackState.DASH
 	dash_timer = 0.0
 	dash_direction = (player.global_position - global_position).normalized()
@@ -243,6 +289,32 @@ func _attack_dash() -> void:
 	tween.tween_property(sprite, "modulate", Color(3.0, 1.0, 1.0, 1.0), 0.1)
 	tween.tween_property(sprite, "modulate", Color.WHITE, 0.1)
 	print("💨 冲刺攻击!")
+
+
+func _telegraph_attack() -> void:
+	## 攻击前 Telegraph：红色闪烁 + 警告环
+	if sprite:
+		var tw := create_tween()
+		tw.tween_property(sprite, "modulate", Color(2.0, 0.2, 0.2, 1.0), 0.1)
+		tw.tween_property(sprite, "modulate", Color.WHITE, 0.15)
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx:
+		vfx.spawn_boss_warning(global_position)
+
+func _attack_nova() -> void:
+	## 绝望模式新星：两圈向外扩散的弹丸
+	attack_state = AttackState.COOLDOWN
+	_telegraph_attack()
+	var inner_count: int = nova_count
+	var outer_count: int = nova_count + 6
+	for i in range(inner_count):
+		var angle: float = (TAU / float(inner_count)) * float(i)
+		_spawn_boss_projectile(Vector2(cos(angle), sin(angle)))
+	# 第二圈稍微旋转偏移
+	for i in range(outer_count):
+		var angle: float = (TAU / float(outer_count)) * float(i) + PI / float(outer_count)
+		_spawn_boss_projectile(Vector2(cos(angle), sin(angle)))
+	print("💥 新星爆发!")
 
 func take_damage(amount: float) -> void:
 	if is_dead:
@@ -259,6 +331,10 @@ func _die() -> void:
 	is_dead = true
 	enemy_died.emit(self)
 	boss_defeated.emit()
+	# 死亡强烈震动
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx:
+		vfx.screen_shake(15.0, 0.8)
 	_drop_xp_gem()
 	# 掉落额外经验
 	for i in range(5):

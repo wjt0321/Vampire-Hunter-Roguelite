@@ -40,11 +40,16 @@ func update_hp(current: float, max_val: float) -> void:
 	hp_bar.value = (current / max_val) * 100.0
 
 func update_phase(phase: int) -> void:
-	if phase == 1:
-		phase_label.text = "💀 狂暴模式!"
-		phase_label.modulate = Color(1.0, 0.3, 0.3, 1.0)
-		# 血条颜色变红
-		hp_bar.modulate = Color(1.5, 0.5, 0.5, 1.0)
+	match phase:
+		1:
+			phase_label.text = "💀 狂暴模式!"
+			phase_label.modulate = Color(1.0, 0.3, 0.3, 1.0)
+			# 血条颜色变红
+			hp_bar.modulate = Color(1.5, 0.5, 0.5, 1.0)
+		2:
+			phase_label.text = "🔥 绝望模式!"
+			phase_label.modulate = Color(1.0, 0.1, 0.1, 1.0)
+			hp_bar.modulate = Color(2.0, 0.3, 0.3, 1.0)
 
 func hide_boss_bar() -> void:
 	var tween := create_tween()
