@@ -30,7 +30,37 @@ const ACHIEVEMENTS: Dictionary = {
 		"icon": "🧛",
 		"condition": "vampire_kills >= 100",
 	},
-	
+	"werewolf_hunter": {
+		"name": "狼人猎手",
+		"description": "累计击杀50只狼人",
+		"icon": "🐺",
+		"condition": "werewolf_kills >= 50",
+	},
+	"zombie_hunter": {
+		"name": "不死终结者",
+		"description": "累计击杀50只僵尸",
+		"icon": "🧟",
+		"condition": "zombie_kills >= 50",
+	},
+	"exterminator": {
+		"name": "灭绝者",
+		"description": "累计击杀20只自爆者",
+		"icon": "💣",
+		"condition": "exploder_kills >= 20",
+	},
+	"elite_hunter": {
+		"name": "精英猎杀者",
+		"description": "累计击杀30只精英吸血鬼",
+		"icon": "👑",
+		"condition": "elite_kills >= 30",
+	},
+	"prince_slayer": {
+		"name": "亲王克星",
+		"description": "累计击杀10只血族亲王",
+		"icon": "🗡️",
+		"condition": "prince_kills >= 10",
+	},
+
 	# 通关挑战
 	"boss_killer": {
 		"name": "Boss杀手",
@@ -50,7 +80,7 @@ const ACHIEVEMENTS: Dictionary = {
 		"icon": "⚡",
 		"condition": "boss_kill_time <= 600",
 	},
-	
+
 	# 生存挑战
 	"survivor": {
 		"name": "生存专家",
@@ -70,7 +100,7 @@ const ACHIEVEMENTS: Dictionary = {
 		"icon": "🗺️",
 		"condition": "rooms >= 10",
 	},
-	
+
 	# 武器大师
 	"weapon_master": {
 		"name": "武器大师",
@@ -84,7 +114,13 @@ const ACHIEVEMENTS: Dictionary = {
 		"icon": "🎯",
 		"condition": "all_weapon_types_used == true",
 	},
-	
+	"evolutionist": {
+		"name": "进化论者",
+		"description": "单局进化3把武器",
+		"icon": "✨",
+		"condition": "evolved_weapons >= 3",
+	},
+
 	# 经济成就
 	"rich_hunter": {
 		"name": "富有的猎人",
@@ -98,11 +134,32 @@ const ACHIEVEMENTS: Dictionary = {
 		"icon": "⭐",
 		"condition": "level >= 20",
 	},
+
+	# 探索与杂项
+	"shopaholic": {
+		"name": "购物狂",
+		"description": "单局进入3次商店房间",
+		"icon": "🛒",
+		"condition": "shops_visited >= 3",
+	},
+	"treasure_hunter": {
+		"name": "宝藏猎人",
+		"description": "单局进入3次宝箱房间",
+		"icon": "🎁",
+		"condition": "treasures_visited >= 3",
+	},
+	"rest_stop": {
+		"name": "短暂休息",
+		"description": "单局进入2次休息站",
+		"icon": "⛺",
+		"condition": "rests_visited >= 2",
+	},
 }
 
 # 当前局统计（运行时）
 var run_stats: Dictionary = {
 	"kills": 0,
+	"total_kills": 0,
 	"vampire_kills": 0,
 	"werewolf_kills": 0,
 	"bat_kills": 0,
@@ -110,6 +167,10 @@ var run_stats: Dictionary = {
 	"skeleton_kills": 0,
 	"exploder_kills": 0,
 	"elite_kills": 0,
+	"prince_kills": 0,
+	"mage_kills": 0,
+	"summoner_kills": 0,
+	"gargoyle_kills": 0,
 	"boss_killed": false,
 	"flawless_boss_kill": false,
 	"boss_kill_time": 0,
@@ -120,6 +181,10 @@ var run_stats: Dictionary = {
 	"crystals_earned": 0,
 	"weapons_maxed": [],
 	"weapon_types_used": [],
+	"evolved_weapons": 0,
+	"shops_visited": 0,
+	"treasures_visited": 0,
+	"rests_visited": 0,
 	"damage_taken": 0,
 	"start_time": 0,
 }
@@ -138,6 +203,7 @@ func _ready() -> void:
 func start_new_run() -> void:
 	run_stats = {
 		"kills": 0,
+		"total_kills": 0,
 		"vampire_kills": 0,
 		"werewolf_kills": 0,
 		"bat_kills": 0,
@@ -145,6 +211,10 @@ func start_new_run() -> void:
 		"skeleton_kills": 0,
 		"exploder_kills": 0,
 		"elite_kills": 0,
+		"prince_kills": 0,
+		"mage_kills": 0,
+		"summoner_kills": 0,
+		"gargoyle_kills": 0,
 		"boss_killed": false,
 		"flawless_boss_kill": false,
 		"boss_kill_time": 0,
@@ -155,6 +225,10 @@ func start_new_run() -> void:
 		"crystals_earned": 0,
 		"weapons_maxed": [],
 		"weapon_types_used": [],
+		"evolved_weapons": 0,
+		"shops_visited": 0,
+		"treasures_visited": 0,
+		"rests_visited": 0,
 		"damage_taken": 0,
 		"start_time": Time.get_unix_time_from_system(),
 	}
@@ -164,6 +238,7 @@ func start_new_run() -> void:
 # === 更新统计 ===
 func record_kill(enemy_type: String) -> void:
 	run_stats["kills"] += 1
+	run_stats["total_kills"] += 1
 	match enemy_type:
 		"vampire":
 			run_stats["vampire_kills"] += 1
@@ -179,7 +254,15 @@ func record_kill(enemy_type: String) -> void:
 			run_stats["exploder_kills"] += 1
 		"elite":
 			run_stats["elite_kills"] += 1
-	
+		"vampire_prince":
+			run_stats["prince_kills"] += 1
+		"vampire_mage":
+			run_stats["mage_kills"] += 1
+		"summoner":
+			run_stats["summoner_kills"] += 1
+		"gargoyle":
+			run_stats["gargoyle_kills"] += 1
+
 	# 检查成就
 	_check_achievements()
 
@@ -217,6 +300,20 @@ func record_weapon_used(weapon_type: String) -> void:
 	if weapon_type not in run_stats["weapon_types_used"]:
 		run_stats["weapon_types_used"].append(weapon_type)
 
+func record_weapon_evolved(weapon_id: String) -> void:
+	run_stats["evolved_weapons"] += 1
+	_check_achievements()
+
+func record_room_visit(room_type: String) -> void:
+	match room_type:
+		"shop":
+			run_stats["shops_visited"] += 1
+		"treasure":
+			run_stats["treasures_visited"] += 1
+		"rest":
+			run_stats["rests_visited"] += 1
+	_check_achievements()
+
 # === 成就检测 ===
 func _check_achievements() -> void:
 	for achievement_id in ACHIEVEMENTS:
@@ -238,18 +335,18 @@ func _check_condition(condition: String) -> bool:
 	if condition == "all_weapon_types_used == true":
 		# 简化：至少使用3种武器
 		return run_stats["weapon_types_used"].size() >= 3
-	
+
 	# 解析比较条件 (如 "kills >= 100")
 	var parts: PackedStringArray = condition.split(" ")
 	if parts.size() != 3:
 		return false
-	
+
 	var key: String = parts[0]
 	var op: String = parts[1]
 	var value: int = int(parts[2])
-	
+
 	var stat_value: int = run_stats.get(key, 0)
-	
+
 	match op:
 		">=":
 			return stat_value >= value
@@ -261,7 +358,7 @@ func _check_condition(condition: String) -> bool:
 			return stat_value > value
 		"<":
 			return stat_value < value
-	
+
 	return false
 
 func _unlock_achievement(achievement_id: String) -> void:

@@ -139,6 +139,12 @@ func add_weapon(weapon_data) -> void:
 				print("武器升级: %s Lv.%d" % [existing.weapon_name, existing.current_level])
 			return
 	weapons.append(weapon_data)
+
+	# 记录武器使用类型（成就统计）
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr:
+		ach_mgr.record_weapon_used(weapon_data.weapon_id)
+
 	var timer := Timer.new()
 	timer.wait_time = weapon_data.get_scaled_fire_rate()
 	timer.one_shot = true

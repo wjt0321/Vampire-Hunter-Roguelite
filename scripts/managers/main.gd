@@ -235,25 +235,26 @@ func _transition_to_next_room() -> void:
 # === 特殊房间 ===
 func _enter_shop_room() -> void:
 	print("🏪 商店房间!")
-	# 播放商店 BGM
 	AudioManager.play_bgm(_audio_lib.get_shop_bgm())
-	# 简化版：自动回血 + 给一个随机升级
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr:
+		ach_mgr.record_room_visit("shop")
 	if is_instance_valid(player):
 		player.heal(player.max_hp * 0.3)
-	# 延迟后生成传送门
 	await get_tree().create_timer(2.0).timeout
 	if current_room:
 		current_room.spawn_portal()
 
 func _enter_treasure_room() -> void:
 	print("🎁 宝箱房间!")
-	# 给玩家一个随机武器
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr:
+		ach_mgr.record_room_visit("treasure")
 	if weapon_manager:
 		var weapon_script = preload("res://scripts/weapons/weapon_manager.gd")
 		var weapons := [weapon_script.create_shotgun, weapon_script.create_magic_book]
 		var factory: Callable = weapons.pick_random()
 		weapon_manager.add_weapon(factory.call())
-	# 给经验
 	if is_instance_valid(player):
 		player.gain_xp(50)
 	await get_tree().create_timer(2.0).timeout
@@ -262,7 +263,9 @@ func _enter_treasure_room() -> void:
 
 func _enter_rest_room() -> void:
 	print("⛺ 休息站!")
-	# 回复 50% 生命
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr:
+		ach_mgr.record_room_visit("rest")
 	if is_instance_valid(player):
 		player.heal(player.max_hp * 0.5)
 	await get_tree().create_timer(2.0).timeout
@@ -298,23 +301,26 @@ func _enter_boss_room() -> void:
 func _on_boss_defeated() -> void:
 	boss_hp_bar.hide_boss_bar()
 	print("👑 Boss 被击败! 获得丰厚奖励!")
-	
+
 	# 记录Boss击杀成就
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
 	if ach_mgr:
 		ach_mgr.record_boss_kill(int(ach_mgr.run_stats.get("damage_taken", 0)))
-	
+
 	# 给玩家回满血作为奖励
 	if is_instance_valid(player):
 		player.heal(player.max_hp)
-	
+
 	# 延迟后弹出胜利结算界面
 	await get_tree().create_timer(1.5).timeout
+	var run_stats: Dictionary = ach_mgr.get_run_stats() if ach_mgr else {}
 	var stats := {
 		"wave": wave_manager.current_wave,
 		"kills": wave_manager.total_kills,
 		"level": player.current_level if is_instance_valid(player) else 1,
 		"rooms": rooms_cleared,
+		"survival_time": run_stats.get("survival_time", 0),
+		"damage_taken": run_stats.get("damage_taken", 0),
 	}
 	game_over_ui.show_game_over(stats, true)
 
@@ -365,19 +371,24 @@ func _check_weapon_evolutions() -> void:
 func _on_weapon_evolved(weapon, evolution) -> void:
 	## 武器进化回调
 	print("✨ 武器进化: %s -> %s" % [weapon.weapon_name, evolution.evolution_name])
-	
-	# 记录武器大师成就
+
+	# 记录武器大师与进化成就
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
 	if ach_mgr:
 		ach_mgr.record_weapon_maxed(weapon.weapon_name)
+		ach_mgr.record_weapon_evolved(weapon.weapon_id)
 
 func _on_player_died() -> void:
 	wave_manager.stop()
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	var run_stats: Dictionary = ach_mgr.get_run_stats() if ach_mgr else {}
 	var stats := {
 		"wave": wave_manager.current_wave,
 		"kills": wave_manager.total_kills,
 		"level": player.current_level if is_instance_valid(player) else 1,
 		"rooms": rooms_cleared,
+		"survival_time": run_stats.get("survival_time", 0),
+		"damage_taken": run_stats.get("damage_taken", 0),
 	}
 	await get_tree().create_timer(0.8).timeout
 	game_over_ui.show_game_over(stats)

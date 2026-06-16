@@ -66,6 +66,13 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 	text += "存活波次: %d\n" % stats.get("wave", 0)
 	text += "击杀数: %d\n" % stats.get("kills", 0)
 	text += "达到等级: %d\n" % stats.get("level", 1)
+
+	var survival_seconds: int = stats.get("survival_time", 0)
+	var minutes: int = survival_seconds / 60
+	var seconds: int = survival_seconds % 60
+	text += "生存时间: %d:%02d\n" % [minutes, seconds]
+	text += "受到伤害: %.0f\n" % stats.get("damage_taken", 0)
+
 	if save_mgr:
 		text += "\n💎 获得血晶: +%d\n" % crystals
 		text += "💎 总血晶: %d" % save_mgr.get_blood_crystals()
