@@ -357,14 +357,14 @@ AI 更适合做这些：
 - `assets/sprites/boss/boss_idle.png`
 - `assets/sprites/boss/boss_attack1.png`
 - `assets/sprites/boss/boss_attack2.png`
-- `assets/sprites/boss/boss_attack3.png`（占位：复制自 `boss_idle.png`）
+- `assets/sprites/boss/boss_attack3.png`（由 `boss_idle` 生成冲刺残影）
 - `assets/sprites/boss/boss_enraged.png`
-- `assets/sprites/boss/boss_death.png`（占位：复制自 `boss_idle.png`）
+- `assets/sprites/boss/boss_death.png`（由 `boss_idle` 生成死亡崩解）
 
 状态：
 
 - Boss 基础动作已补齐
-- `boss_attack3.png` 和 `boss_death.png` 为临时占位，建议后续替换为正式冲刺/死亡动画
+- `boss_attack3.png` 和 `boss_death.png` 已由脚本生成并接入冲刺/死亡状态
 
 ---
 
@@ -566,17 +566,17 @@ AI 更适合做这些：
 | 状态 | 资源 | 建议方式 | 可临时替代 |
 |---|---|---|---|
 | DONE | `exploder_walk.png` | 从 `zombie_walk.png` 缩放占位 | 已生成 |
-| TODO | `exploder_explode.png` | 爆炸特效包/手工帧 | `death_explosion.png` 放大 |
+| DONE | `exploder_explode.png` | `exploder_walk` 加红发光/膨胀 | 已生成并接入引爆状态 |
 | DONE | `elite_vampire_idle.png` | `vampire_idle.png` 加金边/红眼 | 已生成辉光变体 |
 | DONE | `summoner_cast.png` | NecroGuy GIF 提取 | 已生成 |
-| TODO | `mage_teleport.png` | 紫色消散特效 + 法师帧 | `vampire_run.png` 加透明残影 |
+| DONE | `mage_teleport.png` | `mage_cast` 加紫色透明残影 | 已生成并接入瞬移效果 |
 | DONE | `mage_cast.png` | 法师怪物包 | 已复制缩放 |
 | DONE | `gargoyle_idle.png` | 石像鬼像素包 | 已复制缩放 |
-| TODO | `gargoyle_petrify.png` | `gargoyle_idle` 灰度变化 | 无 |
-| TODO | `gargoyle_wake.png` | 反向石化动画 | 无 |
+| DONE | `gargoyle_petrify.png` | `gargoyle_idle` 灰度/裂缝 | 已生成并接入石化状态 |
+| DONE | `gargoyle_wake.png` | 石化版 + 金色裂纹 | 已生成并接入解除石化 |
 | DONE | `prince_idle.png` | 吸血鬼贵族素材 | 已复制缩放 |
-| TODO | `prince_dash.png` | `prince_idle` 残影帧 | `vampire_run.png` 放大改色 |
-| TODO | `prince_rage.png` | 红色 aura 叠加 | `boss_enraged.png` 缩小参考 |
+| DONE | `prince_dash.png` | `prince_idle` 红色运动模糊 | 已生成并接入冲锋 |
+| DONE | `prince_rage.png` | `prince_idle` 红色 aura | 已生成并接入二阶段狂暴 |
 
 ### 地图瓦片
 

@@ -250,11 +250,11 @@
 - `player_idle.png`
 - `player_run.png`
 - `player_attack.png`
-- `exploder_walk.png`
+- `exploder_walk.png` / `exploder_explode.png`
 - `summoner_cast.png`
-- `mage_cast.png`
-- `gargoyle_idle.png`
-- `prince_idle.png`
+- `mage_cast.png` / `mage_teleport.png`
+- `gargoyle_idle.png` / `gargoyle_petrify.png` / `gargoyle_wake.png`
+- `prince_idle.png` / `prince_dash.png` / `prince_rage.png`
 - `boss_attack3.png`
 - `boss_death.png`
 
@@ -262,6 +262,7 @@
 
 - 玩家主角最终最好定制或重绘，保证辨识度
 - 敌人可以先用成套包，后续逐步替换关键敌人
+- 缺失的状态贴图可先从现有帧通过调色/残影/去饱和等方式派生占位
 - 高级敌人可先用已有敌人改色/缩放/加光效暂代
 
 ---

@@ -115,6 +115,15 @@ func _teleport_effect() -> void:
 	if vfx:
 		vfx.spawn_death_particles(global_position, Color(0.5, 0.0, 0.8, 0.8), 8)
 	
+	# 切换到瞬移残影贴图并淡出
+	if sprite:
+		var tex := TextureManager.instance.get_enemy_texture("vampire_mage", "teleport")
+		if tex:
+			sprite.texture = tex
+			_adjust_sprite_scale()
+		var tween := create_tween()
+		tween.tween_property(sprite, "modulate:a", 0.0, 0.25)
+	
 	# 播放瞬移音效
 	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("teleport"))
@@ -129,8 +138,13 @@ func _teleport_arrive_effect() -> void:
 	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("teleport"))
 	
-	# 淡入
+	# 切换回施法贴图并淡入
 	if sprite:
+		var tex := TextureManager.instance.get_enemy_texture("vampire_mage", "cast")
+		if tex:
+			sprite.texture = tex
+			_adjust_sprite_scale()
+		sprite.modulate = Color(1, 1, 1, 0)
 		var tween := create_tween()
 		tween.tween_property(sprite, "modulate:a", 1.0, 0.2)
 

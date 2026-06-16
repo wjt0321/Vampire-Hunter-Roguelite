@@ -435,10 +435,115 @@ def copy_sfx():
             print(f"Copied {src} -> {dst}")
 
 
+def desaturate(img: Image.Image, factor: float = 1.0) -> Image.Image:
+    """去饱和图像，factor=1 完全灰度。"""
+    gray = img.convert("L").convert("RGBA")
+    return Image.blend(img, gray, factor)
+
+
+def add_glow(img: Image.Image, color: tuple, radius: int = 8, intensity: float = 0.6) -> Image.Image:
+    """为图像添加单色外发光/内发光。"""
+    glow = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    alpha = img.getchannel("A")
+    colored = Image.new("RGBA", img.size, color)
+    glow.paste(colored, (0, 0), alpha)
+    glow = glow.filter(ImageFilter.GaussianBlur(radius=radius))
+    enh = ImageEnhance.Brightness(glow)
+    glow = enh.enhance(intensity)
+    comp = Image.alpha_composite(glow, img)
+    return comp
+
+
+def motion_blur(img: Image.Image, direction: tuple = (1, 0), distance: int = 16) -> Image.Image:
+    """简单的方向运动模糊。"""
+    if "MotionBlur" in dir(ImageFilter):
+        return img.filter(ImageFilter.MotionBlur(int(distance), direction))
+    # fallback：偏移叠加
+    dx, dy = direction
+    base = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    steps = max(2, distance // 2)
+    for i in range(steps):
+        offset = (dx * i, dy * i)
+        layer = img.copy()
+        alpha = layer.getchannel("A").point(lambda a: int(a * 0.3))
+        layer.putalpha(alpha)
+        base = Image.alpha_composite(base, layer.transform(img.size, Image.Transform.AFFINE, (1, 0, -offset[0], 0, 1, -offset[1])))
+    base = Image.alpha_composite(base, img)
+    return base
+
+
+def generate_enemy_states():
+    """从现有敌人贴图派生缺失的状态贴图（爆炸、石化、瞬移、冲刺、狂暴等）。"""
+    enemies = DST / "sprites" / "enemies"
+    boss = DST / "sprites" / "boss"
+
+    # 自爆者爆炸：walk + 红色发光/膨胀
+    exploder = Image.open(enemies / "exploder_walk.png").convert("RGBA")
+    explode = add_glow(exploder, (255, 60, 0), radius=12, intensity=1.2)
+    explode = explode.resize((280, 280), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
+    canvas.paste(explode, (-12, -12), explode)
+    save(canvas, enemies / "exploder_explode.png")
+
+    # 法师瞬移：cast + 紫色透明残影
+    mage = Image.open(enemies / "mage_cast.png").convert("RGBA")
+    alpha = mage.getchannel("A").point(lambda a: int(a * 0.55))
+    mage.putalpha(alpha)
+    mage_teleport = tint(mage, (80, 20, 120, 80))
+    mage_teleport = add_glow(mage_teleport, (120, 40, 200), radius=10, intensity=0.7)
+    save(mage_teleport, enemies / "mage_teleport.png")
+
+    # 石像鬼石化：idle 去饱和 + 石质纹理
+    gargoyle = Image.open(enemies / "gargoyle_idle.png").convert("RGBA")
+    petrify = desaturate(gargoyle, 0.9)
+    # 添加轻微石裂缝：随机深色线条
+    draw = ImageDraw.Draw(petrify)
+    for i in range(6):
+        x1, y1 = 40 + i * 30, 50 + (i % 3) * 60
+        x2, y2 = x1 + 20, y1 + 30
+        draw.line([(x1, y1), (x2, y2)], fill=(40, 40, 40, 160), width=2)
+    save(petrify, enemies / "gargoyle_petrify.png")
+
+    # 石像鬼苏醒：石化版 + 金色裂纹
+    wake = petrify.copy()
+    draw = ImageDraw.Draw(wake)
+    for i in range(8):
+        x1, y1 = 30 + i * 28, 40 + (i % 4) * 50
+        x2, y2 = x1 + 25, y1 + 35
+        draw.line([(x1, y1), (x2, y2)], fill=(201, 162, 39, 200), width=2)
+    save(wake, enemies / "gargoyle_wake.png")
+
+    # 血族亲王冲刺：idle + 红色运动模糊
+    prince = Image.open(enemies / "prince_idle.png").convert("RGBA")
+    prince_dash = motion_blur(prince, (1, 0), 20)
+    prince_dash = tint(prince_dash, (180, 40, 40, 60))
+    prince_dash = add_glow(prince_dash, (200, 40, 40), radius=8, intensity=0.6)
+    save(prince_dash, enemies / "prince_dash.png")
+
+    # 血族亲王狂暴：idle + 红色发光
+    prince_rage = add_glow(prince, (220, 30, 30), radius=14, intensity=1.0)
+    prince_rage = tint(prince_rage, (255, 60, 60, 40))
+    save(prince_rage, enemies / "prince_rage.png")
+
+    # Boss 冲刺：idle + 红色残影
+    boss_idle = Image.open(boss / "boss_idle.png").convert("RGBA")
+    boss_dash = motion_blur(boss_idle, (1, 0), 40)
+    boss_dash = tint(boss_dash, (220, 40, 40, 80))
+    boss_dash = add_glow(boss_dash, (255, 50, 50), radius=16, intensity=0.7)
+    save(boss_dash, boss / "boss_attack3.png")
+
+    # Boss 死亡：idle 变暗 + 红色崩解
+    boss_death = desaturate(boss_idle, 0.6)
+    boss_death = tint(boss_death, (80, 0, 0, 100))
+    boss_death = add_glow(boss_death, (200, 0, 0), radius=20, intensity=0.8)
+    save(boss_death, boss / "boss_death.png")
+
+
 if __name__ == "__main__":
     process_enemies()
     generate_effects()
     generate_ui()
     copy_bgm()
     copy_sfx()
+    generate_enemy_states()
     print("Done")

@@ -73,6 +73,13 @@ func _start_charge() -> void:
 	
 	print("👑 血族亲王开始冲锋!")
 	
+	# 切换到冲刺贴图
+	if sprite:
+		var tex := TextureManager.instance.get_enemy_texture("vampire_prince", "dash")
+		if tex:
+			sprite.texture = tex
+			_adjust_sprite_scale()
+	
 	# 冲锋预警
 	_flash_red()
 	
@@ -92,6 +99,12 @@ func _start_charge() -> void:
 	
 	if not is_dead:
 		is_charging = false
+		# 恢复 idle 贴图
+		if sprite:
+			var tex := TextureManager.instance.get_enemy_texture("vampire_prince", "idle")
+			if tex:
+				sprite.texture = tex
+				_adjust_sprite_scale()
 
 func _flash_red() -> void:
 	## 冲锋预警红色闪烁
@@ -110,8 +123,12 @@ func _enter_second_phase() -> void:
 	
 	print("👑 血族亲王进入狂暴状态!")
 	
-	# 第二阶段特效
+	# 切换到狂暴贴图
 	if sprite:
+		var tex := TextureManager.instance.get_enemy_texture("vampire_prince", "rage")
+		if tex:
+			sprite.texture = tex
+			_adjust_sprite_scale()
 		sprite.modulate = Color(1.2, 0.8, 0.8, 1.0)  # 略微发红
 	
 	# 播放音效

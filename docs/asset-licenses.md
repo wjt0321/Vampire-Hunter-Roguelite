@@ -562,9 +562,17 @@
   - `assets/effects/boss_warning.png`
   - `assets/weapons/shotgun_pellet.png`
   - `assets/weapons/poison_cloud.png`
+  - `assets/sprites/enemies/exploder_explode.png`
+  - `assets/sprites/enemies/mage_teleport.png`
+  - `assets/sprites/enemies/gargoyle_petrify.png`
+  - `assets/sprites/enemies/gargoyle_wake.png`
+  - `assets/sprites/enemies/prince_dash.png`
+  - `assets/sprites/enemies/prince_rage.png`
+  - `assets/sprites/boss/boss_attack3.png`
+  - `assets/sprites/boss/boss_death.png`
 - 用途说明：补齐资产缺口，方便后续替换
-- 修改记录：使用 Python/Pillow 程序化绘制
-- 备注：均为占位，后续可替换为正式美术
+- 修改记录：使用 Python/Pillow 从已有贴图派生生成
+- 备注：均为占位，后续可替换为正式逐帧动画
 
 ---
 

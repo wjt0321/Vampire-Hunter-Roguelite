@@ -69,19 +69,25 @@ func _load_enemy_textures():
 			"shoot": _load_texture("res://assets/sprites/enemies/skeleton_shoot.png")
 		},
 		"exploder": {
-			"walk": _load_texture("res://assets/sprites/enemies/exploder_walk.png")
+			"walk": _load_texture("res://assets/sprites/enemies/exploder_walk.png"),
+			"explode": _load_texture("res://assets/sprites/enemies/exploder_explode.png"),
 		},
 		"gargoyle": {
-			"idle": _load_texture("res://assets/sprites/enemies/gargoyle_idle.png")
+			"idle": _load_texture("res://assets/sprites/enemies/gargoyle_idle.png"),
+			"petrify": _load_texture("res://assets/sprites/enemies/gargoyle_petrify.png"),
+			"wake": _load_texture("res://assets/sprites/enemies/gargoyle_wake.png"),
 		},
 		"vampire_mage": {
-			"cast": _load_texture("res://assets/sprites/enemies/mage_cast.png")
+			"cast": _load_texture("res://assets/sprites/enemies/mage_cast.png"),
+			"teleport": _load_texture("res://assets/sprites/enemies/mage_teleport.png"),
 		},
 		"summoner": {
 			"cast": _load_texture("res://assets/sprites/enemies/summoner_cast.png")
 		},
 		"vampire_prince": {
-			"idle": _load_texture("res://assets/sprites/enemies/prince_idle.png")
+			"idle": _load_texture("res://assets/sprites/enemies/prince_idle.png"),
+			"dash": _load_texture("res://assets/sprites/enemies/prince_dash.png"),
+			"rage": _load_texture("res://assets/sprites/enemies/prince_rage.png"),
 		},
 		"elite_vampire": {
 			"idle": _load_texture("res://assets/sprites/enemies/elite_vampire_idle.png")
@@ -93,7 +99,9 @@ func _load_boss_textures():
 		"idle": _load_texture("res://assets/sprites/boss/boss_idle.png"),
 		"attack1": _load_texture("res://assets/sprites/boss/boss_attack1.png"),
 		"attack2": _load_texture("res://assets/sprites/boss/boss_attack2.png"),
-		"enraged": _load_texture("res://assets/sprites/boss/boss_enraged.png")
+		"attack3": _load_texture("res://assets/sprites/boss/boss_attack3.png"),
+		"enraged": _load_texture("res://assets/sprites/boss/boss_enraged.png"),
+		"death": _load_texture("res://assets/sprites/boss/boss_death.png"),
 	}
 
 func _load_ui_textures():

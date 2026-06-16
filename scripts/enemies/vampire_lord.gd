@@ -107,6 +107,12 @@ func _physics_process(delta: float) -> void:
 			if dash_timer >= dash_duration:
 				dash_timer = 0.0
 				attack_state = AttackState.COOLDOWN
+				# 恢复 idle 贴图
+				if sprite:
+					var tex := TextureManager.instance.get_boss_texture("idle")
+					if tex:
+						sprite.texture = tex
+						_adjust_sprite_scale()
 
 func _check_phase_transition() -> void:
 	if phase_changed:
@@ -120,6 +126,12 @@ func _check_phase_transition() -> void:
 		print("💀 吸血鬼领主进入狂暴模式!")
 
 func _enrage_effect() -> void:
+	# 切换到狂暴贴图
+	if sprite:
+		var tex := TextureManager.instance.get_boss_texture("enraged")
+		if tex:
+			sprite.texture = tex
+			_adjust_sprite_scale()
 	# 闪烁红色
 	var tween := create_tween().set_loops(3)
 	tween.tween_property(sprite, "modulate", Color(2.0, 0.3, 0.3, 1.0), 0.15)
@@ -220,6 +232,12 @@ func _attack_dash() -> void:
 	attack_state = AttackState.DASH
 	dash_timer = 0.0
 	dash_direction = (player.global_position - global_position).normalized()
+	# 切换到冲刺贴图
+	if sprite:
+		var tex := TextureManager.instance.get_boss_texture("attack3")
+		if tex:
+			sprite.texture = tex
+			_adjust_sprite_scale()
 	# 冲刺预警效果
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", Color(3.0, 1.0, 1.0, 1.0), 0.1)
@@ -252,6 +270,12 @@ func _die() -> void:
 	# 禁用碰撞
 	collision_shape.set_deferred("disabled", true)
 	set_physics_process(false)
+	# 切换到死亡贴图
+	if sprite:
+		var tex := TextureManager.instance.get_boss_texture("death")
+		if tex:
+			sprite.texture = tex
+			_adjust_sprite_scale()
 	# Boss 死亡动画（更壮观）
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", Color(5.0, 0.0, 0.0, 1.0), 0.3)
