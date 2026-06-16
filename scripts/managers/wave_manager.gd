@@ -33,6 +33,8 @@ var enemies_alive: int = 0
 var total_kills: int = 0
 var player: Node2D = null
 
+var _current_scene: Node = null
+
 # === 信号 ===
 signal wave_started(wave_number: int)
 signal wave_completed(wave_number: int)
@@ -43,8 +45,13 @@ func _ready() -> void:
 
 func start(player_node: Node2D) -> void:
 	player = player_node
+	_ensure_current_scene()
 	is_active = true
 	_start_next_wave()
+
+func _ensure_current_scene() -> void:
+	if _current_scene == null or not is_instance_valid(_current_scene):
+		_current_scene = get_tree().current_scene
 
 func _process(delta: float) -> void:
 	if not is_active or player == null:
@@ -113,9 +120,11 @@ func _spawn_enemy() -> void:
 		
 		# 连接死亡信号
 		enemy.enemy_died.connect(_on_enemy_died)
-		
+
 		enemies_alive += 1
-		get_tree().current_scene.add_child(enemy)
+		_ensure_current_scene()
+		if _current_scene:
+			_current_scene.add_child(enemy)
 
 func _pick_enemy_type() -> String:
 	## 根据当前波次选择敌人类型（高波次解锁更强敌人）

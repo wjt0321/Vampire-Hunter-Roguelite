@@ -3,6 +3,12 @@ extends Node
 ## 提供粒子特效和屏幕震动功能
 
 var camera: Camera2D = null
+var _current_scene: Node = null
+
+func _ensure_current_scene() -> Node:
+	if _current_scene == null or not is_instance_valid(_current_scene):
+		_current_scene = get_tree().current_scene
+	return _current_scene
 
 # ========== 屏幕震动 ==========
 
@@ -82,7 +88,9 @@ func spawn_evolution_effect(pos: Vector2, theme_color: Color = Color(1.0, 0.85, 
 	var flash_container := Node2D.new()
 	flash_container.global_position = pos
 	flash_container.add_child(flash)
-	get_tree().current_scene.add_child(flash_container)
+	var scene := _ensure_current_scene()
+	if scene:
+		scene.add_child(flash_container)
 	var flash_tween := flash_container.create_tween()
 	flash_tween.tween_property(flash, "modulate:a", 0.0, 0.4)
 	flash_tween.parallel().tween_property(flash, "scale", Vector2(3, 3), 0.4)
@@ -126,18 +134,20 @@ func _create_particle_node(pos: Vector2, color: Color, size: float) -> Node2D:
 	p.size = Vector2(size, size)
 	p.position = Vector2(-size / 2, -size / 2)
 	p.z_index = 100
-	
+
 	var container := Node2D.new()
 	container.global_position = pos
 	container.add_child(p)
-	get_tree().current_scene.add_child(container)
+	var scene := _ensure_current_scene()
+	if scene:
+		scene.add_child(container)
 	return container
 
 func _create_ring(pos: Vector2, color: Color, radius: float) -> Node2D:
 	var ring := Node2D.new()
 	ring.global_position = pos
 	ring.z_index = 100
-	
+
 	# 用多个小矩形模拟环形
 	var segments := 16
 	for i in segments:
@@ -147,8 +157,10 @@ func _create_ring(pos: Vector2, color: Color, radius: float) -> Node2D:
 		dot.size = Vector2(4, 4)
 		dot.position = Vector2(cos(angle) * radius - 2, sin(angle) * radius - 2)
 		ring.add_child(dot)
-	
-	get_tree().current_scene.add_child(ring)
+
+	var scene := _ensure_current_scene()
+	if scene:
+		scene.add_child(ring)
 	return ring
 
 # ========== 新被动道具效果 ==========

@@ -19,6 +19,9 @@ var bullet_scene: PackedScene = preload("res://scenes/player/bullet.tscn")
 # 缓存的 AudioLibrary 实例
 var _audio_lib: AudioLibrary = null
 
+# 缓存当前场景根节点，避免频繁 get_tree().current_scene
+var _current_scene: Node = null
+
 # 敌人方向缓存（降低每帧扫描开销）
 var _nearest_enemy_dir: Vector2 = Vector2.ZERO
 var _nearest_enemy_pos: Vector2 = Vector2.ZERO
@@ -101,14 +104,18 @@ const EVOLUTION_CONFIG: Dictionary = {
 
 func setup(player_node: CharacterBody2D, initial_weapon_id: String = "pistol") -> void:
 	player = player_node
-	# 初始化 AudioLib 缓存
 	_audio_lib = AudioLib
+	_ensure_current_scene()
 	var initial_weapon = _create_weapon_by_id(initial_weapon_id)
 	if initial_weapon:
 		add_weapon(initial_weapon)
 	else:
 		var pistol := _create_pistol()
 		add_weapon(pistol)
+
+func _ensure_current_scene() -> void:
+	if _current_scene == null or not is_instance_valid(_current_scene):
+		_current_scene = get_tree().current_scene
 
 func _process(delta: float) -> void:
 	if player == null or not is_instance_valid(player):
@@ -311,7 +318,9 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 		else:
 			spr.modulate = Color.WHITE
 
-	get_tree().current_scene.add_child(bullet)
+	_ensure_current_scene()
+	if _current_scene:
+		_current_scene.add_child(bullet)
 
 	# 播放射击音效
 	_play_shoot_sound(weapon.weapon_id)
@@ -501,7 +510,9 @@ func _spawn_poison_cloud(weapon) -> void:
 	cloud.damage_multiplier = player.damage_multiplier if player else 1.0
 	cloud.duration = weapon.get_scaled_cloud_duration()
 	cloud.set_size(weapon.get_scaled_cloud_size())
-	get_tree().current_scene.add_child(cloud)
+	_ensure_current_scene()
+	if _current_scene:
+		_current_scene.add_child(cloud)
 	_play_shoot_sound(weapon.weapon_id)
 
 func _spawn_lightning_chain(weapon) -> void:
@@ -511,7 +522,9 @@ func _spawn_lightning_chain(weapon) -> void:
 	lightning.damage_multiplier = player.damage_multiplier if player else 1.0
 	lightning.max_jumps = weapon.get_scaled_lightning_jumps()
 	lightning._current_damage = lightning.base_damage
-	get_tree().current_scene.add_child(lightning)
+	_ensure_current_scene()
+	if _current_scene:
+		_current_scene.add_child(lightning)
 	_play_shoot_sound(weapon.weapon_id)
 
 func _get_nearest_enemy_position(from: Vector2) -> Vector2:

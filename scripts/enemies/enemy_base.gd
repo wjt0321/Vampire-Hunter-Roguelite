@@ -25,13 +25,22 @@ signal enemy_died(enemy: Node2D)
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
+# 缓存 VFXManager，避免每次受击/死亡都查询
+var _vfx_manager: Node = null
+
 func _ready() -> void:
 	current_hp = max_hp
 	add_to_group("enemies")
+	_vfx_manager = get_node_or_null("/root/VFXManager")
 	# 加载精灵图纹理
 	_load_sprite_texture()
 	# 查找玩家节点
 	_find_player()
+
+func _get_vfx() -> Node:
+	if _vfx_manager == null or not is_instance_valid(_vfx_manager):
+		_vfx_manager = get_node_or_null("/root/VFXManager")
+	return _vfx_manager
 
 func _load_sprite_texture() -> void:
 	## 子类覆写此方法加载特定纹理
@@ -101,7 +110,7 @@ func _flash_hit() -> void:
 	tween.tween_property(sprite, "modulate", Color(10.0, 10.0, 10.0, 1.0), 0.03)
 	tween.tween_property(sprite, "modulate", Color.WHITE, 0.07)
 	# 受击粒子
-	var vfx := get_node_or_null("/root/VFXManager")
+	var vfx := _get_vfx()
 	if vfx:
 		vfx.spawn_hit_particles(global_position, sprite.modulate, 4)
 	# 播放受击音效
@@ -116,7 +125,7 @@ func _die() -> void:
 	# 记录击杀成就
 	_record_kill_for_achievement()
 	# 死亡粒子
-	var vfx := get_node_or_null("/root/VFXManager")
+	var vfx := _get_vfx()
 	if vfx:
 		vfx.spawn_death_particles(global_position, sprite.modulate, 10)
 	# 播放死亡音效
