@@ -94,12 +94,16 @@ const EVOLUTION_CONFIG: Dictionary = {
 	},
 }
 
-func setup(player_node: CharacterBody2D) -> void:
+func setup(player_node: CharacterBody2D, initial_weapon_id: String = "pistol") -> void:
 	player = player_node
 	# 初始化 AudioLibrary 缓存
 	_audio_lib = AudioLibraryScript.new()
-	var pistol := _create_pistol()
-	add_weapon(pistol)
+	var initial_weapon = _create_weapon_by_id(initial_weapon_id)
+	if initial_weapon:
+		add_weapon(initial_weapon)
+	else:
+		var pistol := _create_pistol()
+		add_weapon(pistol)
 
 func _process(_delta: float) -> void:
 	if player == null or not is_instance_valid(player):
@@ -381,6 +385,22 @@ static func create_lightning_chain() -> Resource:
 	w.auto_aim = true
 	w.lightning_jumps = 3
 	return w
+
+func _create_weapon_by_id(weapon_id: String):
+	match weapon_id:
+		"pistol":
+			return _create_pistol()
+		"shotgun":
+			return create_shotgun()
+		"magic_book":
+			return create_magic_book()
+		"throwing_knife":
+			return create_throwing_knife()
+		"poison_cloud":
+			return create_poison_cloud()
+		"lightning_chain":
+			return create_lightning_chain()
+	return null
 
 func _spawn_poison_cloud(weapon) -> void:
 	var cloud := PoisonCloudScene.instantiate()

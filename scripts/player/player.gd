@@ -53,6 +53,11 @@ var freeze_chance: float = 0.0  # 冰冻之心
 var lightning_retaliate_damage: float = 0.0  # 闪电护符
 var dodge_chance: float = 0.0  # 影子披风
 
+# === 角色特性 ===
+var character_id: String = "hunter"
+var character_passive_timer: float = 0.0
+var character_passive_interval: float = 10.0  # 牧师被动每10秒触发
+
 # === 信号 ===
 signal hp_changed(current: float, maximum: float)
 signal xp_changed(current_xp: int, xp_needed: int, level: int)
@@ -104,10 +109,28 @@ func _adjust_sprite_scale() -> void:
 			var scale_factor: float = target_size / max(texture_size.x, texture_size.y)
 			sprite.scale = Vector2(scale_factor, scale_factor)
 
+func apply_character_data(char_data: Resource) -> void:
+	## 应用角色数据到玩家
+	if char_data == null:
+		return
+	character_id = char_data.char_id
+	max_hp = char_data.base_hp
+	current_hp = max_hp
+	move_speed = char_data.base_speed
+	damage_multiplier = char_data.base_damage_mult
+	# 猎人直觉：拾取范围 +20%
+	if character_id == "hunter":
+		pickup_range_bonus += 20.0
+	hp_changed.emit(current_hp, max_hp)
+	print("🎭 应用角色: %s (HP:%.0f 速度:%.0f 伤害:x%.2f)" % [
+		char_data.char_name, max_hp, move_speed, damage_multiplier
+	])
+
 func _physics_process(delta: float) -> void:
 	_handle_movement()
 	_handle_rotation()
 	_process_passive_items(delta)
+	_process_character_passive(delta)
 
 func _handle_movement() -> void:
 	var input_dir := Vector2.ZERO
@@ -273,6 +296,20 @@ func _process_passive_items(delta: float) -> void:
 		if regen_timer >= 5.0:  # 每5秒回血
 			regen_timer = 0.0
 			_heal_regen()
+
+func _process_character_passive(delta: float) -> void:
+	## 处理角色专属被动
+	match character_id:
+		"hunter":
+			# 猎人直觉：拾取范围 +20%（只需设置一次即可）
+			pass
+		"priestess":
+			# 神圣庇护：每10秒恢复5%最大生命
+			character_passive_timer += delta
+			if character_passive_timer >= character_passive_interval:
+				character_passive_timer = 0.0
+				heal(max_hp * 0.05)
+				print("✨ 神圣庇护触发，恢复 %.0f 生命" % (max_hp * 0.05))
 
 func _grant_shield() -> void:
 	has_shield = true

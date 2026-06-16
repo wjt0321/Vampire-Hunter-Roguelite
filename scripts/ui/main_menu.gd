@@ -30,14 +30,15 @@ func _ready() -> void:
 	_setup_background()
 	_setup_button_effects()
 	_setup_button_textures()
+	_setup_volume_sliders()
 	_animate_title()
 	_update_crystals()
 	upgrade_shop.shop_closed.connect(_update_crystals)
 	character_select.selection_closed.connect(_update_crystals)
 	
-	# 播放主菜单 BGM (已禁用)
-	# var audio_lib := AudioLibraryScript.new()
-	# AudioManager.play_bgm(audio_lib.get_menu_bgm())
+	# 播放主菜单 BGM
+	var audio_lib := AudioLibraryScript.new()
+	AudioManager.play_bgm(audio_lib.get_menu_bgm())
 
 func _setup_background() -> void:
 	## 设置菜单背景图
@@ -132,11 +133,16 @@ func _on_back_pressed() -> void:
 	tween.tween_property(settings_panel, "modulate:a", 0.0, 0.2)
 	tween.tween_callback(func(): settings_panel.visible = false)
 
-func _on_music_changed(value: float) -> void:
-	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), linear_to_db(value))
+func _setup_volume_sliders() -> void:
+	## 初始化音量滑块为当前设置
+	music_slider.value = AudioManager.get_music_volume()
+	sfx_slider.value = AudioManager.get_sfx_volume()
 
-func _on_sfx_changed(_value: float) -> void:
-	pass
+func _on_music_changed(value: float) -> void:
+	AudioManager.set_music_volume(value)
+
+func _on_sfx_changed(value: float) -> void:
+	AudioManager.set_sfx_volume(value)
 
 func _on_fullscreen_toggled(toggled: bool) -> void:
 	if toggled:

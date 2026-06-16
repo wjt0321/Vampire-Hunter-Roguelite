@@ -29,3 +29,10 @@ Thumbs.db
 
 # OS
 *.tmp
+
+# Raw downloaded assets (organized copies are in assets/)
+assets-downloaded/
+
+# IDE / agent tools
+.codegraph/
+.reasonix/

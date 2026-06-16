@@ -92,6 +92,7 @@ func _create_wall_segment(pos: Vector2, size: Vector2, color: Color) -> void:
 	wall.position = pos + size / 2.0
 	wall.collision_layer = 2  # 环境层
 	wall.collision_mask = 0
+	wall.add_to_group("walls")
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
 	rect.size = size
@@ -204,6 +205,7 @@ func _create_pillar(pos: Vector2) -> void:
 	pillar.position = pos
 	pillar.collision_layer = 2
 	pillar.collision_mask = 0
+	pillar.add_to_group("walls")
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
 	rect.size = Vector2(32, 32)

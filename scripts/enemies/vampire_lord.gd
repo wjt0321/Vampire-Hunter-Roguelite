@@ -197,15 +197,18 @@ func _attack_summon() -> void:
 	if current_phase == BossPhase.ENRAGED:
 		count += 2
 	
+	var wave_manager = null
+	var wave_managers := get_tree().get_nodes_in_group("wave_manager")
+	if wave_managers.size() > 0:
+		wave_manager = wave_managers[0]
+	
 	for i in range(count):
 		var angle: float = TAU * randf()
 		var spawn_pos: Vector2 = global_position + Vector2(cos(angle), sin(angle)) * 100.0
 		var bat := bat_scene.instantiate()
 		bat.global_position = spawn_pos
-		if bat.has_signal("enemy_died"):
-			# 连接到 wave_manager 的信号
-			var wave_managers := get_tree().get_nodes_in_group("wave_manager") 
-			# 小怪不计入波次管理
+		if bat.has_signal("enemy_died") and wave_manager and wave_manager.has_method("record_external_kill"):
+			bat.enemy_died.connect(func(_e): wave_manager.record_external_kill("bat"))
 		get_tree().current_scene.add_child(bat)
 	print("🦇 召唤 %d 只蝙蝠!" % count)
 

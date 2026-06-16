@@ -229,6 +229,9 @@ func _check_condition(condition: String) -> bool:
 	# 解析条件字符串
 	if condition == "flawless_boss_kill == true":
 		return run_stats.get("flawless_boss_kill", false)
+	if condition == "boss_kill_time <= 600":
+		# 速通成就需要实际击败 Boss
+		return run_stats.get("boss_killed", false) and run_stats.get("boss_kill_time", 999999) <= 600
 	if condition == "all_weapons_maxed == true":
 		# 简化：至少3个武器满级
 		return run_stats["weapons_maxed"].size() >= 3

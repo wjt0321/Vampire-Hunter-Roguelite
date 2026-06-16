@@ -39,7 +39,7 @@ signal wave_completed(wave_number: int)
 signal enemy_killed(total_kills: int)
 
 func _ready() -> void:
-	pass
+	add_to_group("wave_manager")
 
 func start(player_node: Node2D) -> void:
 	player = player_node
@@ -204,6 +204,14 @@ func _on_enemy_died(enemy: Node2D) -> void:
 	enemies_alive -= 1
 	total_kills += 1
 	enemy_killed.emit(total_kills)
+
+func record_external_kill(enemy_type: String = "bat") -> void:
+	## 记录非波次生成的敌人击杀（如 Boss 召唤的小怪）
+	total_kills += 1
+	enemy_killed.emit(total_kills)
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr:
+		ach_mgr.record_kill(enemy_type)
 
 func stop() -> void:
 	is_active = false

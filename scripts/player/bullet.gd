@@ -41,6 +41,10 @@ func get_damage() -> float:
 	return base_damage * damage_multiplier
 
 func _on_body_entered(body: Node2D) -> void:
+	# 碰到墙壁
+	if body.is_in_group("walls"):
+		queue_free()
+		return
 	# 碰到敌人
 	if body.has_method("take_damage"):
 		body.take_damage(get_damage())

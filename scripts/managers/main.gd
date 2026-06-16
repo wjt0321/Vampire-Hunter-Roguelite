@@ -5,6 +5,7 @@ extends Node2D
 const GameRoomScript = preload("res://scripts/map/game_room.gd")
 const RoomManagerScript = preload("res://scripts/map/room_manager.gd")
 const AudioLibraryScript = preload("res://scripts/managers/audio_library.gd")
+const CharacterDataScript = preload("res://scripts/player/character_data.gd")
 var boss_scene: PackedScene = preload("res://scenes/enemies/vampire_lord.tscn")
 
 # 缓存的 AudioLibrary 实例
@@ -35,7 +36,10 @@ func _ready() -> void:
 	_create_transition_overlay()
 	
 	_connect_signals()
-	weapon_manager.setup(player)
+	
+	# 应用选中的角色数据
+	var initial_weapon_id := _apply_selected_character()
+	weapon_manager.setup(player, initial_weapon_id)
 	
 	# 生成第一个房间
 	_create_room(1280.0, 768.0, "combat")
@@ -51,14 +55,33 @@ func _ready() -> void:
 	# 启动波次
 	wave_manager.start(player)
 
-	# 初始化 AudioLibrary 缓存并播放战斗 BGM (已禁用)
+	# 初始化 AudioLibrary 缓存并播放战斗 BGM
 	_audio_lib = AudioLibraryScript.new()
-	# AudioManager.play_bgm(_audio_lib.get_battle_bgm())
+	AudioManager.play_bgm(_audio_lib.get_battle_bgm())
 	
 	# 初始化成就系统
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
 	if ach_mgr:
 		ach_mgr.start_new_run()
+
+func _apply_selected_character() -> String:
+	## 读取存档中的选中角色并应用
+	var save_mgr := get_node_or_null("/root/SaveManager")
+	var selected_id := "hunter"
+	if save_mgr:
+		selected_id = save_mgr.get_selected_character()
+	
+	var char_data = null
+	for c in CharacterDataScript.get_all_characters():
+		if c.char_id == selected_id:
+			char_data = c
+			break
+	
+	if char_data and player.has_method("apply_character_data"):
+		player.apply_character_data(char_data)
+		return char_data.initial_weapon
+	
+	return "pistol"
 
 func _connect_signals() -> void:
 	player.hp_changed.connect(hud.update_hp)
@@ -220,8 +243,8 @@ func _enter_rest_room() -> void:
 func _enter_boss_room() -> void:
 	print("💀 Boss 房间! 吸血鬼领主降临!")
 
-	# 切换到 Boss BGM (已禁用)
-	# AudioManager.play_bgm(_audio_lib.get_boss_bgm())
+	# 切换到 Boss BGM
+	AudioManager.play_bgm(_audio_lib.get_boss_bgm())
 	
 	# 生成 Boss
 	var boss := boss_scene.instantiate()
@@ -252,8 +275,8 @@ func _on_boss_defeated() -> void:
 	if ach_mgr:
 		ach_mgr.record_boss_kill(int(ach_mgr.run_stats.get("damage_taken", 0)))
 	
-	# 切换回战斗 BGM (已禁用)
-	# AudioManager.play_bgm(_audio_lib.get_battle_bgm())
+	# 切换回战斗 BGM
+	AudioManager.play_bgm(_audio_lib.get_battle_bgm())
 	
 	# 给玩家额外升级
 	if is_instance_valid(player):

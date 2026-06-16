@@ -6,18 +6,53 @@ extends Node
 # ========== 音效生成参数 ==========
 const SAMPLE_RATE: int = 44100
 
+# ========== 真实音频文件映射 ==========
+const SFX_PATHS: Dictionary = {
+	"shoot_pistol": "res://assets/audio/sfx/sfx_shoot.ogg",
+	"shoot_shotgun": "res://assets/audio/sfx/sfx_shoot.ogg",
+	"shoot_magic": "res://assets/audio/sfx/sfx_shoot.ogg",
+	"hit_enemy": "res://assets/audio/sfx/sfx_hit_enemy.ogg",
+	"enemy_death": "res://assets/audio/sfx/sfx_enemy_death.ogg",
+	"pickup_xp": "res://assets/audio/sfx/sfx_pickup_xp.ogg",
+	"level_up": "res://assets/audio/sfx/sfx_levelup.ogg",
+	"button_click": "res://assets/audio/sfx/sfx_click.ogg",
+	"explosion": "res://assets/audio/sfx/sfx_explosion.ogg",
+	"shield_break": "res://assets/audio/sfx/sfx_shield_break.ogg",
+	"heal": "res://assets/audio/sfx/sfx_coin.ogg",
+	"player_hurt": "res://assets/audio/sfx/sfx_player_hurt.ogg",
+	"hover": "res://assets/audio/sfx/sfx_hover.ogg",
+	"teleport": "res://assets/audio/sfx/sfx_teleport.wav",
+}
+
+const BGM_PATHS: Dictionary = {
+	"menu": "res://assets/audio/bgm/bgm_menu.mp3",
+}
+
 # ========== 缓存 ==========
 var _cached_sounds: Dictionary = {}
+var _cached_bgms: Dictionary = {}
 
 # ========== 公共接口 ==========
 
-func get_sound(sound_name: String) -> AudioStreamWAV:
+func get_sound(sound_name: String) -> AudioStream:
 	if _cached_sounds.has(sound_name):
 		return _cached_sounds[sound_name]
+	
+	# 优先加载真实音频文件
+	if SFX_PATHS.has(sound_name):
+		var stream := _load_audio_file(SFX_PATHS[sound_name])
+		if stream:
+			_cached_sounds[sound_name] = stream
+			return stream
 	
 	var sound := _generate_sound(sound_name)
 	_cached_sounds[sound_name] = sound
 	return sound
+
+func _load_audio_file(path: String) -> AudioStream:
+	if ResourceLoader.exists(path):
+		return load(path) as AudioStream
+	return null
 
 # ========== 音效生成 ==========
 
@@ -108,14 +143,29 @@ func _generate_arpeggio(frequencies: Array, duration: float) -> AudioStreamWAV:
 
 # ========== BGM 生成 ==========
 
-func get_menu_bgm() -> AudioStreamWAV:
-	# 使用更简单的单音，降低音量
+func get_menu_bgm() -> AudioStream:
+	var menu_path: String = BGM_PATHS.get("menu", "")
+	if not menu_path.is_empty():
+		var stream := _load_audio_file(menu_path)
+		if stream:
+			return stream
+	# 回退到程序生成
 	return _generate_simple_ambient(60.0, 174, 0.15)
 
-func get_battle_bgm() -> AudioStreamWAV:
+func get_battle_bgm() -> AudioStream:
+	var battle_path: String = BGM_PATHS.get("battle", "")
+	if not battle_path.is_empty():
+		var stream := _load_audio_file(battle_path)
+		if stream:
+			return stream
 	return _generate_ambient_loop(30.0, [146, 174, 220], 0.4)
 
-func get_boss_bgm() -> AudioStreamWAV:
+func get_boss_bgm() -> AudioStream:
+	var boss_path: String = BGM_PATHS.get("boss", "")
+	if not boss_path.is_empty():
+		var stream := _load_audio_file(boss_path)
+		if stream:
+			return stream
 	return _generate_ambient_loop(20.0, [110, 130, 164], 0.5)
 
 func _generate_ambient_loop(duration: float, base_freqs: Array, volume: float) -> AudioStreamWAV:
