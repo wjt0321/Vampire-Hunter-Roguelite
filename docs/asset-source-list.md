@@ -114,6 +114,30 @@
 
 ---
 
+### FreeGameSprites
+
+- 网站：https://freegamesprites.com
+- 适合：像素角色、敌人、图标、特效、背景
+- 优点：全部 CC0，可直接商用；AI 生成，风格统一度高
+- 风险：部分为 AI 生成，某些平台对 AI 素材可能有额外条款；部分图片带有水印或边框需裁切
+
+推荐搜索：
+
+- `vampire count`
+- `bone mage caster`
+- `lich crowned necromancer`
+- `brimstone gargoyle`
+- `infernal flame skull`
+- `spice merchant`
+
+适合补：
+
+- 高级敌人精灵
+- 商人/NPC 立绘
+- 风格统一的占位素材
+
+---
+
 ### OpenGameArt
 
 - 网站：https://opengameart.org

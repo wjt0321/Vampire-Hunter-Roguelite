@@ -561,7 +561,7 @@ AI 更适合做这些：
 |---|---|---|---|
 | DONE | `exploder_walk.png` | 从 `zombie_walk.png` 缩放占位 | 已生成 |
 | TODO | `exploder_explode.png` | 爆炸特效包/手工帧 | `death_explosion.png` 放大 |
-| TODO | `elite_vampire_idle.png` | `vampire_idle.png` 加金边/红眼 | `vampire_idle.png` |
+| DONE | `elite_vampire_idle.png` | `vampire_idle.png` 加金边/红眼 | 已生成辉光变体 |
 | DONE | `summoner_cast.png` | NecroGuy GIF 提取 | 已生成 |
 | TODO | `mage_teleport.png` | 紫色消散特效 + 法师帧 | `vampire_run.png` 加透明残影 |
 | DONE | `mage_cast.png` | 法师怪物包 | 已复制缩放 |
@@ -609,7 +609,7 @@ AI 更适合做这些：
 | DONE | `assets/ui/shop_slot.png` | Kenney UI Pack | 已复制缩放 |
 | DONE | `assets/ui/price_tag.png` | 程序生成 | 已生成 |
 | DONE | `assets/ui/sold_out.png` | 程序生成 | 已生成 |
-| TODO | `assets/ui/merchant.png` | AI/角色包 | 商人形象 |
+| DONE | `assets/ui/merchant.png` | FreeGameSprites spice-merchant | 已裁切缩放 |
 
 ---
 
@@ -619,13 +619,13 @@ AI 更适合做这些：
 
 | 状态 | 资源 | 建议方式 |
 |---|---|---|
-| TODO | `assets/ui/victory_bg.png` | AI 背景/概念图 |
-| TODO | `assets/ui/defeat_bg.png` | AI 背景/概念图 |
+| DONE | `assets/ui/victory_bg.png` | 程序生成暗金背景 |
+| DONE | `assets/ui/defeat_bg.png` | 程序生成暗红背景 |
 | DONE | `assets/ui/stats_panel.png` | 程序生成占位 | 已生成 |
 | DONE | `assets/ui/achievement_icon.png` | Kenney Game Icons | 已复制缩放 |
 | DONE | `assets/ui/star_gold.png` | Kenney UI Pack | 已复制缩放 |
 | DONE | `assets/ui/star_gray.png` | Kenney UI Pack | 已复制缩放 |
-| TODO | `assets/ui/menu_frame.png` | 哥特 UI 包/AI |
+| DONE | `assets/ui/menu_frame.png` | 程序生成边框 |
 | DONE | `assets/ui/btn_pause.png` | Kenney Game Icons | 已复制缩放 |
 | DONE | `assets/ui/selected_mark.png` | Kenney Game Icons | 已复制缩放 |
 | DONE | `assets/ui/star_icon.png` | Kenney UI Pack | 已复制缩放 |
@@ -661,17 +661,17 @@ AI 更适合做这些：
 | DONE | `bullet_trail.png` | P1 | 程序生成 |
 | DONE | `magic_trail.png` | P2 | Kenney magic 缩放 |
 | DONE | `knife_spin.png` | P2 | Kenney slash 缩放 |
-| TODO | `poison_spread.png` | P2 | 毒雾反馈 |
-| TODO | `chain_lightning.png` | P2 | 闪电链 |
-| TODO | `holy_light.png` | P2 | 进化武器 |
-| TODO | `knife_tornado.png` | P2 | 进化武器 |
-| TODO | `thunder_wrath.png` | P2 | 进化武器 |
+| DONE | `poison_spread.png` | P2 | 程序生成占位 |
+| DONE | `chain_lightning.png` | P2 | 程序生成占位 |
+| DONE | `holy_light.png` | P2 | 程序生成占位 |
+| DONE | `knife_tornado.png` | P2 | 程序生成占位 |
+| DONE | `thunder_wrath.png` | P2 | 程序生成占位 |
 | DONE | `btn_click.png` | P2 | Kenney circle 缩放 |
 | DONE | `achievement_unlock.png` | P2 | Kenney star 缩放 |
-| TODO | `wave_start.png` | P2 | 波次提示 |
+| DONE | `wave_start.png` | P2 | 程序生成占位 |
 | DONE | `damage_numbers.png` | P1 | 占位，需美术字 |
-| TODO | `crit_text.png` | P2 | 暴击反馈 |
-| TODO | `boss_warning.png` | P1 | Boss 登场/危险提示 |
+| DONE | `crit_text.png` | P2 | 程序生成占位 |
+| DONE | `boss_warning.png` | P1 | 程序生成占位 |
 
 ---
 
@@ -683,9 +683,9 @@ AI 更适合做这些：
 |---|---|---|---|
 | DONE | `bgm_menu.mp3` | P1 | OpenGameArt (matthew.pablo, CC-BY) |
 | DONE | `bgm_battle.wav` | P1 | 程序生成占位 |
-| TODO | `bgm_battle1.ogg` | P2 | OpenGameArt / Pixabay |
+| DONE | `bgm_battle.mp3` | P1 | OpenGameArt (CC0) |
 | TODO | `bgm_battle2.ogg` | P2 | OpenGameArt / Pixabay |
-| DONE | `bgm_boss.wav` | P1 | 程序生成占位 |
+| DONE | `bgm_boss.ogg` | P1 | OpenGameArt (CC0) |
 | TODO | `bgm_shop.ogg` | P2 | OpenGameArt / Pixabay |
 | TODO | `bgm_victory.ogg` | P2 | OpenGameArt / Pixabay |
 | TODO | `bgm_defeat.ogg` | P2 | OpenGameArt / Pixabay |
@@ -807,7 +807,7 @@ assets/tiles/props/
 
 ### 第 6-7 天：高级敌人占位
 
-- [ ] `elite_vampire_idle.png`
+- [x] `elite_vampire_idle.png`
 - [x] `exploder_walk.png`（占位）
 - [ ] `exploder_explode.png`
 - [x] `summoner_cast.png`

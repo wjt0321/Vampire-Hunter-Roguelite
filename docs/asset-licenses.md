@@ -374,11 +374,108 @@
   - `assets/effects/damage_numbers.png`（占位）
   - `assets/tiles/props/torch.png` / `window.png` / `coffin.png` / `bookshelf.png` / `cobweb.png` / `blood_splatter.png`（占位）
   - `assets/backgrounds/room_square.png`（占位）
-  - `assets/sprites/enemies/exploder_walk.png`（从 `zombie_walk.png` 缩放）
   - `assets/sprites/boss/boss_attack3.png` / `assets/sprites/boss/boss_death.png`（从 `boss_idle.png` 复制占位）
 - 用途说明：补齐缺口、临时占位
 - 修改记录：程序生成或从已有素材派生
 - 备注：占位素材标注为 placeholder，后续需替换为正式美术资源
+
+---
+
+### 3. 2026-06-16 风格统一补素材
+
+本轮重点：为之前没有贴图的高级敌人补充风格统一的像素精灵，替换程序化占位 BGM，补齐缺失的特效/UI 占位图。
+
+#### 3.1 FreeGameSprites 敌人精灵
+
+- 状态：已使用
+- 风险：低
+- 类型：敌人
+- 来源 URL：https://freegamesprites.com
+- 来源平台：FreeGameSprites
+- 作者 / 版权方：FreeGameSprites（AI 生成，CC0）
+- 授权名称：CC0
+- 是否允许商用：是
+- 是否允许修改：是
+- 是否需要署名：否
+- 下载 / 生成日期：2026-06-16
+- 原始文件保存位置：`assets-downloaded/sprites/freegamesprites/`
+- 项目内使用路径：
+  - `assets/sprites/enemies/exploder_walk.png`（来源：`infernal-flame-skull.png`）
+  - `assets/sprites/enemies/gargoyle_idle.png`（来源：`brimstone-gargoyle.png`）
+  - `assets/sprites/enemies/mage_cast.png`（来源：`bone-mage-caster.png`）
+  - `assets/sprites/enemies/summoner_cast.png`（来源：`lich-crowned-necromancer.png`）
+  - `assets/sprites/enemies/prince_idle.png`（来源：`vampire-count.webp`）
+- 用途说明：为波次中后期敌人提供可见精灵
+- 修改记录：裁切透明边、统一为 256x256 方形、转 PNG
+- 备注：CC0，可直接商用
+
+#### 3.2 FreeGameSprites 商人 / UI 素材
+
+- 状态：已使用
+- 风险：低
+- 类型：UI / 角色
+- 来源 URL：https://freegamesprites.com
+- 来源平台：FreeGameSprites
+- 作者 / 版权方：FreeGameSprites（AI 生成，CC0）
+- 授权名称：CC0
+- 是否允许商用：是
+- 是否允许修改：是
+- 是否需要署名：否
+- 下载 / 生成日期：2026-06-16
+- 原始文件保存位置：`assets-downloaded/sprites/freegamesprites/`
+- 项目内使用路径：
+  - `assets/ui/merchant.png`（来源：`spice-merchant-bearded-robed.png`）
+- 用途说明：商店界面商人立绘
+- 修改记录：裁切透明边、缩放至 128x128
+- 备注：CC0
+
+#### 3.3 OpenGameArt BGM
+
+- 状态：已使用
+- 风险：低
+- 类型：BGM
+- 来源平台：OpenGameArt
+- 授权名称：CC0
+- 是否允许商用：是
+- 是否允许修改：是
+- 是否需要署名：否
+- 下载 / 生成日期：2026-06-16
+- 原始文件保存位置：`assets-downloaded/audio/oga/`
+- 项目内使用路径：
+  - `assets/audio/bgm/bgm_battle.mp3`（来源：`battleThemeA_0.mp3`，作者：Eric Matyas / Pixelsphere，CC0）
+  - `assets/audio/bgm/bgm_boss.ogg`（来源：`basilisk_boss_battle_in_game_0.ogg`，CC0）
+- 用途说明：替换原先程序生成的战斗/Boss BGM
+- 修改记录：重命名
+- 备注：原先程序生成的 `bgm_battle.wav` / `bgm_boss.wav` 已删除
+
+#### 3.4 程序生成占位特效 / UI
+
+- 状态：已使用
+- 风险：低
+- 类型：特效 / UI
+- 来源平台：自制 / 代码生成
+- 授权名称：自制
+- 是否允许商用：是
+- 是否允许修改：是
+- 是否需要署名：否
+- 下载 / 生成日期：2026-06-16
+- 项目内使用路径：
+  - `assets/effects/poison_spread.png`
+  - `assets/effects/chain_lightning.png`
+  - `assets/effects/holy_light.png`
+  - `assets/effects/knife_tornado.png`
+  - `assets/effects/thunder_wrath.png`
+  - `assets/effects/wave_start.png`
+  - `assets/effects/crit_text.png`
+  - `assets/effects/boss_warning.png`
+  - `assets/weapons/shotgun_pellet.png`
+  - `assets/weapons/poison_cloud.png`
+  - `assets/ui/victory_bg.png`
+  - `assets/ui/defeat_bg.png`
+  - `assets/ui/menu_frame.png`
+- 用途说明：补齐资产缺口，方便后续替换
+- 修改记录：使用 Python/Pillow 程序化绘制
+- 备注：均为占位，后续可替换为正式美术
 
 ---
 
@@ -457,7 +554,7 @@
 
 ## 程序化 BGM（战斗 / Boss）
 
-- 状态：已使用
+- 状态：已替换
 - 风险：低
 - 类型：BGM
 - 来源 URL：N/A
@@ -469,7 +566,7 @@
 - 是否需要署名：否
 - 下载 / 生成日期：2026-06-16
 - 原始文件保存位置：scripts/managers/audio_library.gd
-- 项目内使用路径：assets/audio/bgm/bgm_battle.wav、assets/audio/bgm/bgm_boss.wav
-- 用途说明：战斗房间与 Boss 战背景音乐（临时占位，后续可替换为正式作曲）
-- 修改记录：使用 AudioLibrary 中的正弦波/噪声生成算法导出为 WAV
-- 备注：文件由 scripts/tools/generate_bgm.gd 生成
+- 项目内使用路径：~~assets/audio/bgm/bgm_battle.wav、assets/audio/bgm/bgm_boss.wav~~（已删除）
+- 用途说明：战斗房间与 Boss 战背景音乐临时占位，现已替换为 OpenGameArt CC0 音乐
+- 修改记录：使用 AudioLibrary 中的正弦波/噪声生成算法导出为 WAV；2026-06-16 删除并替换
+- 备注：AudioLibrary 中仍保留程序生成作为音频文件缺失时的 fallback

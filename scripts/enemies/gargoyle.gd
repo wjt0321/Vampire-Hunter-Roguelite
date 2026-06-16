@@ -130,3 +130,14 @@ func _flash_hit() -> void:
 
 func _get_enemy_type() -> String:
 	return "gargoyle"
+
+func _load_sprite_texture() -> void:
+	if sprite:
+		var texture := TextureManager.instance.get_enemy_texture("gargoyle", "idle")
+		if texture:
+			sprite.texture = texture
+			sprite.modulate = Color.WHITE
+			_adjust_sprite_scale()
+		else:
+			_ensure_default_texture()
+			_adjust_sprite_scale()

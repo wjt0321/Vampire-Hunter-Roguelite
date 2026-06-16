@@ -164,3 +164,14 @@ func _on_contact_area_body_entered(body: Node2D) -> void:
 
 func _get_enemy_type() -> String:
 	return "vampire_prince"
+
+func _load_sprite_texture() -> void:
+	if sprite:
+		var texture := TextureManager.instance.get_enemy_texture("vampire_prince", "idle")
+		if texture:
+			sprite.texture = texture
+			sprite.modulate = Color.WHITE
+			_adjust_sprite_scale()
+		else:
+			_ensure_default_texture()
+			_adjust_sprite_scale()

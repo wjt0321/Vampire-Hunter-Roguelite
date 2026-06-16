@@ -67,6 +67,24 @@ func _load_enemy_textures():
 		"skeleton": {
 			"idle": _load_texture("res://assets/sprites/enemies/skeleton_idle.png"),
 			"shoot": _load_texture("res://assets/sprites/enemies/skeleton_shoot.png")
+		},
+		"exploder": {
+			"walk": _load_texture("res://assets/sprites/enemies/exploder_walk.png")
+		},
+		"gargoyle": {
+			"idle": _load_texture("res://assets/sprites/enemies/gargoyle_idle.png")
+		},
+		"vampire_mage": {
+			"cast": _load_texture("res://assets/sprites/enemies/mage_cast.png")
+		},
+		"summoner": {
+			"cast": _load_texture("res://assets/sprites/enemies/summoner_cast.png")
+		},
+		"vampire_prince": {
+			"idle": _load_texture("res://assets/sprites/enemies/prince_idle.png")
+		},
+		"elite_vampire": {
+			"idle": _load_texture("res://assets/sprites/enemies/elite_vampire_idle.png")
 		}
 	}
 
@@ -106,6 +124,10 @@ func _load_ui_textures():
 		"evolution_glow": _load_texture("res://assets/ui/evolution_glow.png"),
 		"btn_pause": _load_texture("res://assets/ui/btn_pause.png"),
 		"selected_mark": _load_texture("res://assets/ui/selected_mark.png"),
+		"merchant": _load_texture("res://assets/ui/merchant.png"),
+		"victory_bg": _load_texture("res://assets/ui/victory_bg.png"),
+		"defeat_bg": _load_texture("res://assets/ui/defeat_bg.png"),
+		"menu_frame": _load_texture("res://assets/ui/menu_frame.png"),
 	}
 
 func _load_background_textures():
@@ -138,12 +160,22 @@ func _load_weapon_icons():
 		"frozen": _load_texture("res://assets/weapons/icon_frozen.png"),
 		"lightning_shield": _load_texture("res://assets/weapons/icon_lightning_shield.png"),
 		"shadow": _load_texture("res://assets/weapons/icon_shadow.png"),
+		"shotgun_pellet": _load_texture("res://assets/weapons/shotgun_pellet.png"),
+		"poison_cloud": _load_texture("res://assets/weapons/poison_cloud.png"),
 	}
 
 func _load_effect_textures():
 	effect_textures = {
 		"hit": _load_texture("res://assets/effects/hit_effect.png"),
-		"explosion": _load_texture("res://assets/effects/death_explosion.png")
+		"explosion": _load_texture("res://assets/effects/death_explosion.png"),
+		"poison_spread": _load_texture("res://assets/effects/poison_spread.png"),
+		"chain_lightning": _load_texture("res://assets/effects/chain_lightning.png"),
+		"holy_light": _load_texture("res://assets/effects/holy_light.png"),
+		"knife_tornado": _load_texture("res://assets/effects/knife_tornado.png"),
+		"thunder_wrath": _load_texture("res://assets/effects/thunder_wrath.png"),
+		"wave_start": _load_texture("res://assets/effects/wave_start.png"),
+		"crit_text": _load_texture("res://assets/effects/crit_text.png"),
+		"boss_warning": _load_texture("res://assets/effects/boss_warning.png"),
 	}
 
 func _load_texture(path: String) -> Texture2D:
