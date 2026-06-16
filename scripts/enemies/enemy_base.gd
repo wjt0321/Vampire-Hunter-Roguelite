@@ -18,6 +18,11 @@ var is_dead: bool = false
 var is_frozen: bool = false
 var freeze_timer: float = 0.0
 
+# 受击硬直与击退
+var hit_stun_timer: float = 0.0
+var knockback_velocity: Vector2 = Vector2.ZERO
+const KNOCKBACK_FRICTION: float = 800.0
+
 # === 信号 ===
 signal enemy_died(enemy: Node2D)
 
@@ -75,14 +80,25 @@ func _find_player() -> void:
 func _physics_process(delta: float) -> void:
 	if is_dead or player == null or not is_instance_valid(player):
 		return
-	
+
 	# 处理冻结状态
 	if is_frozen:
 		freeze_timer -= delta
 		if freeze_timer <= 0:
 			_unfreeze()
 		return  # 冻结时不能移动
-	
+
+	# 处理受击硬直与击退
+	if hit_stun_timer > 0:
+		hit_stun_timer -= delta
+		velocity = knockback_velocity
+		move_and_slide()
+		# 击退速度衰减
+		knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, KNOCKBACK_FRICTION * delta)
+		if hit_stun_timer <= 0 and knockback_velocity.length() < 10.0:
+			knockback_velocity = Vector2.ZERO
+		return
+
 	_move_towards_player(delta)
 
 func _move_towards_player(_delta: float) -> void:
@@ -100,6 +116,16 @@ func take_damage(amount: float) -> void:
 	if is_dead:
 		return
 	current_hp -= amount
+	_flash_hit()
+	if current_hp <= 0:
+		_die()
+
+func take_damage_with_knockback(amount: float, knockback_dir: Vector2, knockback_force: float = 120.0, stun_duration: float = 0.08) -> void:
+	if is_dead:
+		return
+	current_hp -= amount
+	hit_stun_timer = maxf(hit_stun_timer, stun_duration)
+	knockback_velocity += knockback_dir.normalized() * knockback_force
 	_flash_hit()
 	if current_hp <= 0:
 		_die()
@@ -188,4 +214,4 @@ func _drop_xp_gem() -> void:
 func _on_contact_area_body_entered(body: Node2D) -> void:
 	## 碰到玩家时造成伤害
 	if body.is_in_group("player") and body.has_method("take_damage"):
-		body.take_damage(contact_damage)
+		body.take_damage(contact_damage, global_position)

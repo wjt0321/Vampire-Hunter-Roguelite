@@ -187,17 +187,17 @@ func apply_upgrade(upgrade_type: String) -> void:
 			pickup_range_bonus += 30.0
 
 # === 生命值相关 ===
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO) -> void:
 	if is_invincible:
 		return
-	
+
 	# 护盾抵挡伤害
 	if has_shield:
 		_break_shield()
 		_start_invincibility()
 		_flash_damage()
 		return
-	
+
 	# 影子披风闪避检查
 	if dodge_chance > 0 and randf() < dodge_chance:
 		print("🌑 闪避成功!")
@@ -206,24 +206,31 @@ func take_damage(amount: float) -> void:
 		if vfx:
 			vfx.spawn_dodge_effect(global_position)
 		return
-	
+
 	var actual_damage := maxf(amount - armor, 1.0)
 	current_hp = clampf(current_hp - actual_damage, 0.0, max_hp)
 	hp_changed.emit(current_hp, max_hp)
 	_start_invincibility()
 	_flash_damage()
-	
+
+	# 受击击退
+	if source_position != Vector2.ZERO:
+		var knockback_dir := (global_position - source_position).normalized()
+		velocity += knockback_dir * 300.0
+
 	# 播放受击音效
 	AudioManager.play_sfx(_audio_lib.get_sound("player_hurt"))
-	
+
 	# 闪电护符反击
 	if lightning_retaliate_damage > 0:
 		_lightning_retaliate()
-	
-	# 受击屏幕震动
+
+	# 受击屏幕震动 + 粒子
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
-		vfx.screen_shake(3.0, 0.1)
+		vfx.screen_shake(4.0, 0.15)
+		vfx.spawn_hit_particles(global_position, Color(0.9, 0.1, 0.1), 6)
+
 	if current_hp <= 0:
 		_die()
 
@@ -282,6 +289,10 @@ func _die() -> void:
 	player_died.emit()
 	set_physics_process(false)
 	collision_shape.set_deferred("disabled", true)
+	# 死亡强烈震动
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx:
+		vfx.screen_shake(12.0, 0.5)
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(queue_free)
