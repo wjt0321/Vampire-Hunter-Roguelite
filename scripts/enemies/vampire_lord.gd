@@ -470,7 +470,9 @@ func _spawn_boss_projectile(direction: Vector2) -> void:
 	# 移动 + 碰撞检测
 	proj.body_entered.connect(func(body: Node2D):
 		if body.is_in_group("player") and body.has_method("take_damage"):
-			body.take_damage(barrage_damage, global_position)
+			# 弹幕是"非接触伤害源"，与接触/爆炸/法术同一口径（波次 × 楼层 × 深渊）。
+			# barrage_damage 始终是形态基础值，缩放只在命中时算一次，不会二次乘法。
+			body.take_damage(_scaled_damage(barrage_damage), global_position)
 		proj.queue_free()
 	)
 

@@ -86,6 +86,26 @@ func _spawn(type: String, pos: Vector2, floor_idx: int = 1, wave: int = 1) -> No
 	return e
 
 
+func _snapshot_area2d() -> Array:
+	var seen: Array = []
+	for child in _host.get_children():
+		if child is Area2D:
+			seen.append(child)
+	return seen
+
+
+func _find_new_boss_projectile(boss: Node, before: Array) -> Node:
+	## 弹幕挂到 get_tree().current_scene；若该值为空，vampire_lord 会退回挂到 Boss 自身。
+	## 用"新增 Area2D"而不是子节点下标区间，避免同帧 queue_free 造成下标漂移。
+	for child in _host.get_children():
+		if child is Area2D and not before.has(child):
+			return child
+	for child in boss.get_children():
+		if child is Area2D:
+			return child
+	return null
+
+
 func _run() -> void:
 	await process_frame
 	print("\n====== 深渊阶梯测试（17.14）======")
@@ -299,6 +319,54 @@ func _run() -> void:
 	rage_boss.queue_free()
 	b2.queue_free()
 	GameConfig.abyss_level = 0
+
+	# ---------- Boss 弹幕伤害 ----------
+	print("\n--- Boss 弹幕伤害 ---")
+	# 弹幕是 Boss 主要的"非接触伤害源"，与爆炸/法术同一契约（波次 × 楼层 × 深渊）。
+	# 期望值按 GDD 手算：基础 15 × 波次 1（×1.0）× 2 层（×1.18）× 深渊 2 级（×1.20）= 21.24
+	var barrage_player := DamageProbe.new()
+	barrage_player.position = Vector2(500, 500)
+	barrage_player.add_to_group("player")
+	_host.add_child(barrage_player)
+	await process_frame
+
+	GameConfig.abyss_level = 2
+	var barrage_boss: Node = _spawn("vampire_lord", Vector2(700, 300), 2, 1)
+	await process_frame
+	await process_frame
+	var barrage_before: Array = _snapshot_area2d()
+	barrage_boss._spawn_boss_projectile(Vector2.RIGHT)
+	await process_frame
+	var bullet: Node = _find_new_boss_projectile(barrage_boss, barrage_before)
+	_check(bullet != null, "Boss 弹幕节点生成")
+	if bullet != null:
+		# 不走物理帧：直接发 body_entered，验证命中结算用的数值
+		bullet.body_entered.emit(barrage_player)
+		await process_frame
+		_check(absf(barrage_player.last_amount - 15.0 * 1.18 * 1.20) < 0.05,
+			"弹幕伤害吃楼层与深渊倍率（%.2f ≈ 21.24）" % barrage_player.last_amount)
+	barrage_boss.queue_free()
+	await process_frame
+
+	# 深渊 0 + 1 层：保持基础值 15（证明没有二次乘法）
+	GameConfig.abyss_level = 0
+	barrage_player.last_amount = 0.0
+	var barrage_boss_lo: Node = _spawn("vampire_lord", Vector2(700, 300), 1, 1)
+	await process_frame
+	await process_frame
+	var barrage_before_lo: Array = _snapshot_area2d()
+	barrage_boss_lo._spawn_boss_projectile(Vector2.RIGHT)
+	await process_frame
+	var bullet_lo: Node = _find_new_boss_projectile(barrage_boss_lo, barrage_before_lo)
+	_check(bullet_lo != null, "低倍率弹幕节点生成")
+	if bullet_lo != null:
+		bullet_lo.body_entered.emit(barrage_player)
+		await process_frame
+		_check(absf(barrage_player.last_amount - 15.0) < 0.05,
+			"深渊 0 的 1 层弹幕保持 15.0（实际 %.2f，无二次乘法）" % barrage_player.last_amount)
+	barrage_boss_lo.queue_free()
+	barrage_player.queue_free()
+	await process_frame
 
 	# ---------- 掉落概率进位（非整数期望） ----------
 	print("\n--- 掉落概率进位 ---")
