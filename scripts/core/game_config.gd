@@ -64,8 +64,14 @@ const EVOLUTION_KILL_COUNT_ADVANCED: int = 60
 
 # ==================== 敌人配置 ====================
 
-# 敌人 HP 随波次复合增长（与玩家 DPS 曲线对齐，保证 TTK 稳定）
-const ENEMY_HP_GROWTH_PER_WAVE: float = 1.115
+# 敌人 HP 随波次**线性**增长（每波 +12%，不是复利）
+#
+# 旧版是 1.115 的复合增长，第 12 波已经 ×3.3；再叠楼层台阶就是 ×5。
+# 玩家第一次试玩的原话是「怪一开始血量太厚了不线性」——问题不在最终数值，
+# 而在曲线形状：复利让前 3 波几乎不动、后面陡增，和玩家能力（每级固定增量）不匹配。
+# 现在改成 `1 + (wave-1) × 0.12`，第 12 波 ×2.32，绝对增量逐波恒定，
+# 玩家每过一间房感受到的"变厚"是等量的。后期总量靠楼层台阶补回来（见 FLOOR_HP_MULTIPLIERS）。
+const ENEMY_HP_LINEAR_PER_WAVE: float = 0.12
 
 # 敌人伤害随波次增长
 const ENEMY_DAMAGE_PER_WAVE: float = 0.05 # 每波+5%
@@ -95,7 +101,10 @@ const DUNGEON_MAX_ROOMS_PER_FLOOR: int = 8
 
 # 每层额外的敌人强度倍率（叠加在波次缩放之上，制造"下潜"的压迫感）
 # 下标 = floor - 1
-const FLOOR_HP_MULTIPLIERS: Array = [1.0, 1.22, 1.50]
+# 波次曲线从复利改成线性后，第 12 波只有 ×2.32（旧版 ×3.3），
+# 差额必须由楼层台阶补回来，否则三层 Boss 前的杂兵会软得没有威胁。
+# 1.0 / 1.40 / 1.85 与线性曲线相乘后，第 3 层第 12 波的等效倍率 ≈ ×4.3（旧版 ×4.98）。
+const FLOOR_HP_MULTIPLIERS: Array = [1.0, 1.40, 1.85]
 const FLOOR_DAMAGE_MULTIPLIERS: Array = [1.0, 1.18, 1.40]
 
 # 层通关奖励：恢复生命百分比 + 血晶
@@ -163,7 +172,8 @@ const CHARACTER_UNLOCK_COSTS: Dictionary = {
 
 ## 计算敌人 HP 缩放系数（复合增长，与玩家 DPS 成长曲线对齐）
 static func get_enemy_hp_multiplier(wave: int) -> float:
-	return pow(ENEMY_HP_GROWTH_PER_WAVE, maxi(wave - 1, 0))
+	## 线性而非复利：绝对增量恒定，玩家每过一间房感受到的"变厚"是等量的
+	return 1.0 + float(maxi(wave - 1, 0)) * ENEMY_HP_LINEAR_PER_WAVE
 
 ## 计算玩家等级带来的敌人 HP 软缩放（橡皮筋）
 static func get_player_level_hp_scale(player_level: int) -> float:
@@ -285,9 +295,23 @@ const GROUND_MARKER_DURATION: float = 0.6
 
 const ELITE_AFFIX_ENABLED: bool = true
 ## 每层精英词缀的出现概率（逐层递增）
-const ELITE_AFFIX_CHANCE_BY_FLOOR: Array = [0.10, 0.15, 0.20]
+const ELITE_AFFIX_CHANCE_BY_FLOOR: Array = [0.08, 0.14, 0.18]
+## 每层允许出现的词缀池。
+##
+## 试玩反馈第一句就是「怎么第一关小怪就有护盾啊」——第 1 层原本 10% 概率随机四选一，
+## 一间房 30 只怪里就有 3 只带盾（血盾 = 血量 ×1.55 × 护盾 1.45 ≈ 2.25 倍），
+## 开局第一间房就撞上肉墙。现在第 1 层**只放「急速」**：它不加血量，
+## 只是把周围小怪催快，是"词缀"这个概念的教学关卡；血盾/裂变这类会改变血量预期的
+## 词缀从第 2 层才开始出现。
+const ELITE_AFFIX_POOL_BY_FLOOR: Array = [
+	["haster"],
+	["haster", "charger", "splitter", "shielded"],
+	["haster", "charger", "splitter", "shielded"],
+]
 ## 词缀统一加成
-const ELITE_AFFIX_HP_MULT: float = 1.55
+## 血盾是"×1.55 血 ×1.45 盾"叠乘，原本 2.25 倍；调到 1.35 后是 1.96 倍，
+## 依然是"需要优先拆掉的硬目标"，但不会拖成 4 秒。
+const ELITE_AFFIX_HP_MULT: float = 1.35
 const ELITE_AFFIX_DAMAGE_MULT: float = 1.20
 const ELITE_AFFIX_SILVER_MULT: float = 4.0
 const ELITE_AFFIX_XP_MULT: float = 2.0
@@ -319,6 +343,11 @@ const AFFIX_HASTE_DURATION: float = 0.75
 static func get_elite_affix_chance(floor_index: int) -> float:
 	var idx: int = clampi(floor_index - 1, 0, ELITE_AFFIX_CHANCE_BY_FLOOR.size() - 1)
 	return float(ELITE_AFFIX_CHANCE_BY_FLOOR[idx])
+
+static func get_elite_affix_pool(floor_index: int) -> Array:
+	## 该层允许的词缀池（第 1 层只有急速，见 ELITE_AFFIX_POOL_BY_FLOOR）
+	var idx: int = clampi(floor_index - 1, 0, ELITE_AFFIX_POOL_BY_FLOOR.size() - 1)
+	return (ELITE_AFFIX_POOL_BY_FLOOR[idx] as Array).duplicate()
 
 # ==================== 武器强度软挂钩（DPS 自适应难度） ====================
 #

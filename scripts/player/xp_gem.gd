@@ -29,6 +29,12 @@ var _base_scale: Vector2 = Vector2.ONE
 
 func _enter_tree() -> void:
 	add_to_group("xp_gems")
+	# ⚠ 必须显式重新打开物理帧。
+	# `_collect()` 里为了停止吸附会 `set_physics_process(false)`，而对象池复用时
+	# 节点不会重跑 `_ready`，`ObjectPool.acquire()` 也只恢复 visible/process_mode/monitoring。
+	# 结果：凡是"被捡过一次"的宝石回到池里就永久僵死——躺在地上不动、也永远不会被捡，
+	# 这就是玩家反馈的"经验点有时候捡不到"（取决于这一枚是不是回收来的）。
+	set_physics_process(true)
 	# 先合并（可能改变 xp_value 与档位），再刷新视觉
 	_merge_nearby()
 	_refresh_visual()
@@ -157,9 +163,27 @@ func _physics_process(delta: float) -> void:
 	if is_attracted:
 		var direction := (player.global_position - global_position).normalized()
 		position += direction * attraction_speed * delta
-		# 足够近时拾取
-		if distance < PICKUP_DISTANCE:
+		# 用移动后的距离判定：用移动前的 distance 会整整慢一帧，
+		# 高速吸引时宝石会在玩家身边"擦过去"再折返，观感像卡了一下
+		if global_position.distance_to(player.global_position) < PICKUP_DISTANCE:
 			_collect()
+
+## 房间结束时的自动结算：把没捡的宝石直接算进经验。
+## 旧版是 `queue_free()` 直接清掉——玩家打了一屋子怪、最后 2 秒掉的宝石
+## 在换房那一瞬间凭空消失，这也是"经验点有时候捡不到"的一半来源。
+func auto_collect() -> void:
+	if xp_value <= 0:
+		return
+	if player == null or not is_instance_valid(player):
+		var players := get_tree().get_nodes_in_group("player")
+		if players.size() > 0:
+			player = players[0]
+	if player != null and is_instance_valid(player) and player.has_method("gain_xp"):
+		player.gain_xp(xp_value)
+	xp_value = 0
+	_kill_pulse()
+	set_physics_process(false)
+	ObjectPool.release(self)
 
 func _collect() -> void:
 	# 通知玩家获得经验

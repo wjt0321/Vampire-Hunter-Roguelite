@@ -1,189 +1,84 @@
-# 🧛 吸血鬼猎人 (Vampire Hunter Roguelite)
+# 吸血鬼猎人 · Vampire Hunter Roguelite
 
-[![Godot Version](https://img.shields.io/badge/Godot-4.6+-478061?style=flat&logo=godot-engine)](https://godotengine.org)
+[![Godot](https://img.shields.io/badge/Godot-4.6+-478061?logo=godot-engine)](https://godotengine.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Mac%20%7C%20Linux-blue.svg)](https://godotengine.org)
 
-一款暗黑哥特风格的 2D Roguelite 动作游戏。玩家扮演猎人在不断涌来的吸血鬼和怪物潮中求生，通过击杀获取经验升级武器，探索随机生成的房间，最终挑战 Boss。
+2D 哥特风 Roguelite 射击。WASD 走位、鼠标瞄准、武器自动开火，三层地下城一路杀到血族女王。
 
----
+## 核心循环
 
-## 📖 游戏简介
+1. **清房**：每间战斗房刷 30 秒怪潮，清完开传送门。
+2. **变强**：升级三选一（可重抽 / 放逐 / 跳过换银币）→ 攒武器与被动，满级武器可进化。
+3. **消费**：局内银币在商店房买武器、被动、消耗品；休息房可选「安息回血」或「缔约换收益」。
+4. **下潜**：每层最后一间是 Boss；通关拿血晶，在元进度界面买永久升级、解锁角色。
 
-### 核心特性
-
-| 特性 | 描述 |
-|------|------|
-| 🎮 动作战斗 | WASD 移动 + 鼠标瞄准射击，多武器自动开火，受击硬直/击退/暴击 |
-| 🗡️ 武器系统 | 9 种武器可堆叠升级与进化（手枪/散弹/激光/魔法书/飞刀/毒雾/闪电链/十字弩/圣光魔杖） |
-| 🛡️ 被动道具 | 11 种被动道具，支持吸血、闪避、暴击、移速等 Build |
-| 🗺️ 地下城结构 | 3 层 × 每层 6–7 间房（共 20 间、12 个战斗波次），战斗/商店/宝箱/休息/Boss 按节奏排布，4 套主题化环境 |
-| 👑 Boss 战 | 三层三形态：吸血鬼领主 / 血族亲王 / 血族女王，弹幕 + 召唤 + 冲刺 + 新星，血量触发狂暴与绝望阶段 |
-| 💎 永久进度 | 血晶货币 + 6 种永久升级 + 2 个可解锁角色 + 成就系统 |
-| 🧛 多角色 | 猎人阿尔忒弥斯（平衡）/ 牧师塞西莉亚（防御） |
-| 🎵 音频系统 | 音效管理、音量控制、BGM 切换 |
-| ✨ 视觉特效 | 粒子系统、屏幕震动、子弹拖尾、进化光环、冰冻/闪避/低血量警告 |
-| ⚡ 性能优化 | 子弹与经验宝石对象池复用，敌人 AI 缓存 |
-
----
-
-## 🎮 游戏截图
-
-> 在此添加游戏截图
-
-![游戏截图](docs/images/screenshot.png)
-
----
-
-## 🎯 操作方式
+## 操作
 
 | 按键 | 功能 |
-|------|------|
+|---|---|
 | `W/A/S/D` | 移动 |
-| `鼠标左键` | 射击 |
-| `ESC` | 暂停菜单 |
+| `鼠标左键` | 射击（按住持续开火） |
+| `R` / `Tab` | 升级界面：重抽 / 跳过 |
+| `B` | 升级界面：放逐（把选项移出本局选池） |
+| `ESC` | 暂停 |
 
----
+## 运行
 
-## 🚀 开始游戏
+需要 [Godot 4.6+](https://godotengine.org/download)。导入 `project.godot`，按 `F5`。
 
-### 环境要求
+Windows 也可直接双击 `RunGame.bat`（自动在常见路径下找 Godot，或把 `Godot.exe` 拖到脚本上）。
 
-- **Godot Engine 4.6+**
-- **操作系统**: Windows / macOS / Linux
+## 内容一览
 
-### 运行步骤
+| 模块 | 数量 | 说明 |
+|---|---|---|
+| 地下城 | 3 层 × 6–7 房 | 20 间房、12 个战斗波次，4 套主题环境 |
+| 武器 | 11 把 | 手枪 / 散弹枪 / 魔法书 / 飞刀 / 苦无 / 毒雾瓶 / 闪电法杖 / 十字弩 / 圣光魔杖 / 火焰喷射器 / 血爆；可叠级，满级可进化，最多同时携带 4 把 |
+| 被动道具 | 11 种 | 吸血、闪避、暴击、护盾、回血、移速等 |
+| 属性卡 | 6 种 | 伤害 / 攻速 / 移速 / 生命 / 护甲 / 拾取范围 |
+| 敌人 | 11 种 + 3 Boss | 另有四类精英词缀（血盾 / 冲锋 / 裂变 / 急速）随机附着在普通敌人身上 |
+| 元进度 | 6 项 × 5 级 | 血晶购买永久伤害、生命、移速、护甲、经验、血晶加成 |
+| 角色 | 2 名 | 猎人阿尔忒弥斯（平衡）/ 牧师塞西莉亚（防御） |
 
-1. 克隆或下载本项目
-2. 安装 [Godot 4.6+](https://godotengine.org/download)
-3. 打开 Godot，点击 "导入" 并选择 `project.godot`
-4. 按 `F5` 运行游戏
-
-### 🪟 Windows 一键运行
-
-如果你已经下载了 Godot 可执行文件，可以直接双击项目根目录的 `RunGame.bat`（无需打开编辑器）：
-
-```batch
-RunGame.bat
-```
-
-脚本会自动查找常见安装路径下的 Godot 4.6+ 并运行游戏。首次运行前请确保 Godot 已解压到以下任一位置：
-
-- `D:\games\Godot_v4.6.3-stable_win64.exe`
-- `C:\Program Files\Godot\Godot.exe`
-- 任意位置的 `Godot*.exe`（脚本会从当前目录向上搜索 3 层）
-
-也可以把 Godot 可执行文件拖到 `RunGame.bat` 上，或在脚本中修改 `GODOT_PATH` 变量。
-
----
-
-## 🗂️ 项目结构
+## 项目结构
 
 ```
-VampireHunter/
-├── scenes/                    # 游戏场景
-│   ├── main.tscn              # 主场景
-│   ├── player/                # 玩家相关
-│   ├── enemies/               # 敌人
-│   └── ui/                    # UI界面
-├── scripts/                   # 源代码
-│   ├── managers/              # 游戏管理器
-│   ├── player/                # 玩家逻辑
-│   ├── enemies/               # 敌人逻辑
-│   ├── weapons/               # 武器系统
-│   └── ui/                    # UI脚本
-├── assets/                    # 资源文件
-│   ├── sprites/               # 精灵图
-│   ├── backgrounds/           # 背景图
-│   ├── ui/                    # UI资源
-│   ├── effects/               # 特效
-│   └── weapons/               # 武器图标
-├── docs/                      # 开发文档
-└── project.godot              # 项目配置
+scenes/          # 主场景、玩家、敌人、UI
+scripts/
+  core/          # GameConfig（全部数值）、ItemCatalog（武器/被动单一数据源）、
+                 # ProjectileVisuals（程序化贴图）、ObjectPool
+  managers/      # main / wave_manager / dungeon_manager / 存档与音频
+  player/        # 玩家、经验宝石、银币、临时增益
+  enemies/       # 敌人基类、各敌人行为、精英词缀
+  weapons/       # 武器基类、武器管理器、进化
+  ui/            # HUD、升级三选一、商店、血之祭坛
+tools/           # 无头测试套件与数值验算脚本（见下）
+docs/            # GDD、路线图、开源竞品拆解
 ```
 
----
+## 开发与自测
 
-## 🎮 已实现内容
-
-### 武器系统 (9种)
-
-| 武器 | 描述 |
-|------|------|
-| 🔫 手枪 | 基础单发 |
-| 💥 散弹枪 | 扇形射击 |
-| 📖 魔法书 | 追踪法术 |
-| 🗡️ 飞刀 | 穿透攻击 |
-| ☠️ 毒雾 | 范围毒伤 |
-| ⚡ 闪电链 | 连锁攻击 |
-| 🏹 十字弩 | 高伤害穿透弩箭 |
-| ✨ 圣光魔杖 | 自动追踪圣光弹 |
-
-### 敌人类型 (6种)
-
-| 敌人 | 描述 |
-|------|------|
-| 🦇 蝙蝠 | 快速小怪 |
-| 🧟 僵尸 | 近战小怪 |
-| 🐺 狼人 | 冲锋精英 |
-| 🧛 吸血鬼 | 中等敌人 |
-| 💀 骷髅射手 | 远程攻击 |
-| 👹 吸血鬼领主 | Boss |
-
-### 被动道具 (11种)
-
-- 🧲 经验磁铁
-- 🛡️ 能量护盾
-- 💚 生命恢复
-- 💍 贪婪戒指
-- 🩸 狂战士之血
-- ❄️ 冰冻之心
-- ⚡ 闪电护符
-- 🌑 影子披风
-- 🦷 吸血獠牙
-- 👟 疾风靴
-- 🍀 幸运四叶草
-
-### 永久升级 (6种)
-
-- ⚔️ 基础伤害 +5%/级
-- ❤️ 基础血量 +10/级
-- 👟 基础速度 +5%/级
-- 🛡️ 基础护甲 +3/级
-- ✨ 经验加成 +10%/级
-- 💎 血晶加成 +10%/级
-
----
-
-## 🗺️ 开发路线图
-
-详见 [docs/ROADMAP.md](docs/ROADMAP.md)
-
----
-
-## 🤝 贡献指南
-
-欢迎提交 Issue 和 Pull Request！
-
-### 开发环境设置
+所有数值集中在 `scripts/core/game_config.gd`，改数值先跑验算工具。
 
 ```bash
-# 克隆项目
-git clone https://github.com/yourusername/VampireHunter.git
+GODOT=/path/to/Godot_v4.x-stable_win64_console.exe
 
-# 安装 Godot 4.6+
-# 导入项目并运行
+# 曲线与房间结构验算（打印 TTK 表，不玩游戏）
+"$GODOT" --headless --path . --script res://tools/balance_report.gd
+"$GODOT" --headless --path . --script res://tools/dungeon_test.gd
+
+# 断言套件（每个都会打印通过/失败计数，失败返回非 0）
+"$GODOT" --headless --path . --script res://tools/xp_gem_test.gd
+"$GODOT" --headless --path . --script res://tools/elite_affix_test.gd
+"$GODOT" --headless --path . --script res://tools/balance_curve_test.gd
+
+# 三层全流程冒烟
+"$GODOT" --headless --path . --script res://tools/run_dungeon_smoke.gd
 ```
 
----
+设计文档：`docs/GDD.md`（含各系统的取舍说明）、`docs/ROADMAP.md`（进度）、
+`docs/reference-deconstruction.md`（开源竞品拆解）。
 
-## 📄 许可证
+## 许可
 
-本项目基于 MIT 许可证开源 - 查看 [LICENSE](LICENSE) 了解详情。
-
----
-
-## 🙏 致谢
-
-- [Godot Engine](https://godotengine.org) - 游戏引擎
-- [itch.io](https://itch.io/game-assets/tag-pixel-art) - 免费像素美术资源
+MIT，见 [LICENSE](LICENSE)。美术资源来源见 `docs/asset-licenses.md`。

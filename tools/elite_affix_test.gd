@@ -78,6 +78,25 @@ func _run() -> void:
 			only_excluded = false
 	_check(only_excluded, "exclude 生效（排除项不会出现）")
 
+	# 白名单：试玩反馈「怎么第一关小怪就有护盾啊」
+	# 第 1 层只允许急速（不加血量），带血盾/裂变的怪从第 2 层才开始出现
+	var pool1: Array = GameConfig.get_elite_affix_pool(1)
+	_check(pool1.size() == 1 and String(pool1[0]) == HASTER,
+		"第 1 层词缀池只有急速（%s）" % str(pool1))
+	var floor1_clean: bool = true
+	for i in range(200):
+		var r1: String = _aff().roll([], pool1)
+		if r1 != HASTER:
+			floor1_clean = false
+	_check(floor1_clean, "第 1 层 roll 永远只出急速，不会出护盾")
+	var pool2: Array = GameConfig.get_elite_affix_pool(2)
+	_check(pool2.size() == 4, "第 2 层词缀池全开（%s）" % str(pool2))
+	_check(GameConfig.get_elite_affix_pool(9).size() == 4, "超出层数时取最后一层的词缀池")
+	var pool_hits := {}
+	for i in range(600):
+		pool_hits[String(_aff().roll([], pool2))] = true
+	_check(pool_hits.size() == 4, "第 2 层四种词缀都能出现（%s）" % str(pool_hits.keys()))
+
 	print("\n=== 2. 逐层概率 ===")
 	var c1: float = GameConfig.get_elite_affix_chance(1)
 	var c2: float = GameConfig.get_elite_affix_chance(2)

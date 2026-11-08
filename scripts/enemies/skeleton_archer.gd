@@ -11,7 +11,7 @@ var attack_timer: float = 0.0
 var projectile_scene: PackedScene = preload("res://scenes/enemies/enemy_projectile.tscn")
 
 func _ready() -> void:
-	base_hp = 12.0
+	base_hp = 10.0
 	move_speed = 70.0
 	base_contact_damage = 5.0
 	xp_value = 8

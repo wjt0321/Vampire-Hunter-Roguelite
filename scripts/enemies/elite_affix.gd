@@ -21,28 +21,28 @@ const HASTER := "haster"
 const DATA: Dictionary = {
 	SHIELDED: {
 		"name": "血盾",
-		"icon": "🛡",
+		"icon": "盾",
 		"color": Color(0.42, 0.74, 1.0),
 		"weight": 3.0,
 		"tip": "开场带一层护盾，护盾打空前不掉血",
 	},
 	CHARGER: {
 		"name": "冲锋",
-		"icon": "💥",
+		"icon": "冲",
 		"color": Color(1.0, 0.44, 0.34),
 		"weight": 3.0,
 		"tip": "地面亮圈后向玩家突进，前摇 0.6 秒",
 	},
 	SPLITTER: {
 		"name": "裂变",
-		"icon": "🌀",
+		"icon": "裂",
 		"color": Color(0.92, 0.52, 1.0),
 		"weight": 2.4,
 		"tip": "死亡时裂成两只小的",
 	},
 	HASTER: {
 		"name": "急速",
-		"icon": "⚡",
+		"icon": "疾",
 		"color": Color(1.0, 0.86, 0.36),
 		"weight": 2.0,
 		"tip": "给周围小怪加速，优先集火",
@@ -67,12 +67,17 @@ static func color(id: String) -> Color:
 	var d: Dictionary = get_data(id)
 	return d.get("color", Color.WHITE)
 
-## 加权随机一个词缀；exclude 用于避免"场上全是同一种词缀"
-static func roll(exclude: Array = []) -> String:
+## 加权随机一个词缀。
+## exclude：本轮不再选这些（避免"场上全是同一种词缀"）。
+## allowed：本层允许出现的词缀白名单（第 1 层只有「急速」，见 GameConfig.ELITE_AFFIX_POOL_BY_FLOOR）。
+##          传空数组表示不限制。
+static func roll(exclude: Array = [], allowed: Array = []) -> String:
 	var candidates: Array = []
 	var total: float = 0.0
 	for id in DATA.keys():
 		if id in exclude:
+			continue
+		if not allowed.is_empty() and id not in allowed:
 			continue
 		var w: float = float(DATA[id].get("weight", 1.0))
 		candidates.append({"id": id, "w": w})

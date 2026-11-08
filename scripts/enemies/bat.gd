@@ -7,7 +7,7 @@ var sine_amplitude: float = 50.0
 var sine_frequency: float = 4.0
 
 func _ready() -> void:
-	base_hp = 7.0
+	base_hp = 6.0
 	move_speed = 140.0
 	base_contact_damage = 5.0
 	xp_value = 3

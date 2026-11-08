@@ -11,7 +11,7 @@ var backstep_timer: float = 0.0
 var is_backstepping: bool = false
 
 func _ready() -> void:
-	base_hp = 15.0
+	base_hp = 12.0
 	move_speed = 90.0
 	base_contact_damage = 10.0
 	xp_value = 5

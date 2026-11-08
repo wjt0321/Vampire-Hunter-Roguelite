@@ -148,13 +148,27 @@ func _update_soft_hp_scale() -> void:
 			_soft_hp_scale, actual, GameConfig.get_expected_dps(level), level])
 
 func _clear_xp_gems() -> void:
-	## 清除所有经验宝石
+	## 波次切换时清场：把还没捡的宝石**结算成经验**再回收，
+	## 而不是 queue_free 掉。否则玩家打了一屋子怪，最后两秒掉的宝石
+	## 会在换波那一瞬间白丢——这正是"经验点有时候捡不到"的另一半。
+	settle_xp_gems()
+
+## 把场上所有未拾取的经验宝石直接折算给玩家（供换波 / 换房调用）。
+## 返回结算掉的 XP 总量，方便测试断言。
+func settle_xp_gems() -> int:
 	var gems := get_tree().get_nodes_in_group("xp_gems")
+	var saved: int = 0
 	for gem in gems:
-		if is_instance_valid(gem):
+		if not is_instance_valid(gem):
+			continue
+		if gem.has_method("auto_collect"):
+			saved += int(gem.get("xp_value"))
+			gem.call("auto_collect")
+		else:
 			gem.queue_free()
-	if gems.size() > 0:
-		print("💎 清除了 %d 个经验宝石" % gems.size())
+	if saved > 0:
+		print("经验结算：自动收取 %d 点未拾取经验（换波/换房）" % saved)
+	return saved
 
 func _end_current_wave() -> void:
 	wave_completed.emit(current_wave)
@@ -247,7 +261,13 @@ func _maybe_assign_affix(enemy: Node) -> void:
 		return
 	if randf() >= GameConfig.get_elite_affix_chance(floor_index):
 		return
-	enemy.elite_affix = EliteAffix.roll()
+	# 第 1 层只放「急速」：不加血量，只是把周围小怪催快，
+	# 让"词缀"这个概念先以教学身份出场（试玩反馈：第一关就撞带盾肉墙）
+	var pool: Array = GameConfig.get_elite_affix_pool(floor_index)
+	var affix := EliteAffix.roll([], pool)
+	if affix.is_empty():
+		return
+	enemy.elite_affix = affix
 
 # 各敌人类型的生成权重（越大越常见）
 const ENEMY_WEIGHTS: Dictionary = {

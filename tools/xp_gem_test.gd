@@ -152,6 +152,42 @@ func _run() -> void:
 	await create_timer(0.5).timeout
 	_check(not is_instance_valid(gem2) or not gem2.is_inside_tree(), "吸附范围内的宝石被自动拾取")
 
+	print("\n=== 6. 对象池复用后还能吸附（玩家反馈：经验点有时候捡不到）===")
+	# 回归点：_collect() 会 set_physics_process(false)，而池化复用不重跑 _ready。
+	# 旧版没有在 _enter_tree 里重新打开，导致"被捡过一次"的宝石回到池里就永久僵死。
+	var pool := root.get_node_or_null("/root/ObjectPool")
+	_check(pool != null, "ObjectPool 自动加载可用")
+	if pool != null:
+		# 手动模拟一枚"捡完回池"的宝石
+		var recycled := _gem_scene.instantiate() as Area2D
+		recycled.xp_value = 3
+		host.add_child(recycled)
+		recycled.set_physics_process(false)      # 这就是 _collect() 留下的状态
+		pool.release(recycled)
+		await process_frame
+		await process_frame
+
+		var again: Area2D = pool.acquire(_gem_scene)
+		again.xp_value = 3
+		again.player = null
+		host.add_child(again)                     # 入树 → _enter_tree 应当重新开物理帧
+		_check(again.is_physics_processing(), "池化复用后入树即恢复物理帧（否则宝石永远躺地上）")
+		again.queue_free()
+
+	print("\n=== 7. 换波/换房时未拾取的经验会被结算，而不是凭空消失 ===")
+	var wm = main_scene.wave_manager
+	p2.current_xp = 0
+	p2.xp_to_next_level = 9999                    # 别让结算顺带升级，好断言数值
+	var leftover := _spawn(p2.global_position + Vector2(500, 0), 11)
+	await process_frame
+	var saved: int = wm.settle_xp_gems()
+	# 前面的用例还留了几枚宝石在地上，所以只断言"至少把这一枚收回来了"
+	_check(saved >= 11, "结算返回未拾取的经验总量（%d）" % saved)
+	await process_frame
+	_check(p2.current_xp == saved, "经验确实进了玩家（current_xp=%d / 结算 %d）" % [p2.current_xp, saved])
+	_check(not is_instance_valid(leftover) or not leftover.is_inside_tree(), "结算后的宝石已回收")
+	_check(wm.settle_xp_gems() == 0, "重复结算不会再发一次经验")
+
 	print("\n========================================")
 	print("通过 %d / 失败 %d" % [_pass, _fail])
 	print("========================================")

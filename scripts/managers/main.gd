@@ -283,6 +283,9 @@ func _on_portal_entered() -> void:
 
 func _transition_to_next_room() -> void:
 	wave_manager.stop()
+	# 换房前先把地上没捡的经验结算掉：宝石是房间节点的子节点，
+	# 房间一释放它们就跟着没了，不结算等于玩家白丢经验
+	wave_manager.settle_xp_gems()
 	# 清除所有敌人与残留掉落物（掉落物带着旧房间的坐标，带过去会出现在墙里）
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		enemy.queue_free()

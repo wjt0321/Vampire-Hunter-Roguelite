@@ -13,7 +13,7 @@ var is_lunging: bool = false
 var lunge_direction: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
-	base_hp = 40.0
+	base_hp = 20.0   # 原 40：开局 16 DPS 要打 2.5 秒，第一间房就堵成墙
 	move_speed = 35.0
 	base_contact_damage = 25.0
 	xp_value = 10

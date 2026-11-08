@@ -10,7 +10,7 @@ var is_charging: bool = false
 var charge_elapsed: float = 0.0
 
 func _ready() -> void:
-	base_hp = 34.0
+	base_hp = 20.0   # 原 34：冲锋精英，但不该在 wave1 比僵尸还难啃
 	move_speed = 60.0
 	base_contact_damage = 20.0
 	xp_value = 15
