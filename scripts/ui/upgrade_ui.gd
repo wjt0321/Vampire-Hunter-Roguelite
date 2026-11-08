@@ -1,21 +1,30 @@
 extends CanvasLayer
 ## 升级选择界面
 ##
-## 三选一 + 重抽 + 跳过：
+## 三选一 + 重抽 + 跳过 + 放逐：
 ## - 每局 3 次免费重抽，之后每次 10 银币 → 让"这手牌太烂"有出口，
 ##   同时把随机性变成一种可以花的资源，而不是纯粹的运气。
 ## - 跳过换 15 银币 → 给"我这把不需要任何一张"的情况一个不亏的选择。
+## - 每局 3 次放逐 → 把某张卡从**本局**选池永久移除。重抽解决"这一手烂"，
+##   放逐解决"这个池子里永远别再来"。二者不共享资源，见 GameConfig 的说明。
 
 var player: Node = null
 var weapon_manager: Node = null
 
 ## 剩余免费重抽次数（每局重置）
 var rerolls_left: int = GameConfig.REROLL_FREE_COUNT
+## 剩余放逐次数（每局重置）
+var banish_left: int = GameConfig.BANISH_COUNT
+## 本局已放逐的选项键（"type:id"）。只影响三选一池，商店仍可买到
+var banished_keys: Array = []
+## 放逐模式：此时点卡片 = 把它从池中移除，而不是选它
+var banish_mode: bool = false
 ## 当前展示的 3 个选项（重抽/测试需要读它）
 var current_options: Array = []
 
 var _reroll_button: Button = null
 var _skip_button: Button = null
+var _banish_button: Button = null
 var _hint_label: Label = null
 
 signal upgrade_selected
@@ -30,6 +39,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_panel_style()
 	rerolls_left = GameConfig.REROLL_FREE_COUNT
+	banish_left = GameConfig.BANISH_COUNT
 	_build_footer()
 
 func _setup_panel_style() -> void:
@@ -43,6 +53,7 @@ func show_upgrade(player_node: Node, weapon_mgr: Node = null) -> void:
 	player = player_node
 	weapon_manager = weapon_mgr
 	visible = true
+	banish_mode = false
 	get_tree().paused = true
 
 	_render_options()
@@ -70,7 +81,15 @@ func _render_options() -> void:
 		options_container.remove_child(child)
 		child.queue_free()
 	for option in current_options:
-		options_container.add_child(_create_option_button(_decorate_option(option)))
+		var decorated := _decorate_option(option)
+		if banish_mode:
+			# 放逐模式下把卡片信息整块换成"这张卡要被删掉"，
+			# 避免玩家在 ban 模式下还以为点下去是选它
+			decorated["badge"] = "🚫 放逐"
+			decorated["badge_color"] = Color(1.0, 0.34, 0.34)
+			decorated["level_text"] = "点这张卡从本局池移除"
+			decorated["desc"] = "本局不会再出现"
+		options_container.add_child(_create_option_button(decorated))
 
 # ==================== 等级信息（卡片上的 Lv 提示） ====================
 
@@ -189,6 +208,10 @@ func _build_footer() -> void:
 	_reroll_button.pressed.connect(_on_reroll)
 	footer.add_child(_reroll_button)
 
+	_banish_button = _make_footer_button("🚫 放逐", Color(1.0, 0.45, 0.45))
+	_banish_button.pressed.connect(_on_banish_toggle)
+	footer.add_child(_banish_button)
+
 	_skip_button = _make_footer_button("⏭ 跳过", Color(1.0, 0.85, 0.45))
 	_skip_button.pressed.connect(_on_skip)
 	footer.add_child(_skip_button)
@@ -247,8 +270,21 @@ func _refresh_footer() -> void:
 	else:
 		_reroll_button.text = "🔄 重抽 (💰%d)" % cost
 	_reroll_button.disabled = not can_reroll()
+
+	if _banish_button != null:
+		if banish_mode:
+			_banish_button.text = "🚫 取消放逐"
+		else:
+			_banish_button.text = "🚫 放逐 (%d)" % banish_left
+		_banish_button.disabled = banish_left <= 0 and not banish_mode
+
 	_skip_button.text = "⏭ 跳过 (+💰%d)" % GameConfig.SKIP_SILVER_REWARD
-	_hint_label.text = "R 重抽　Tab 跳过　　免费重抽剩 %d 次" % rerolls_left
+	if banish_mode:
+		_hint_label.text = "放逐模式：点任意一张卡把它从本局池移除（剩 %d 次）　B 取消" % banish_left
+		_hint_label.add_theme_color_override("font_color", Color(1.0, 0.55, 0.55))
+	else:
+		_hint_label.text = "R 重抽　B 放逐　Tab 跳过　　免费重抽剩 %d 次 · 放逐剩 %d 次" % [rerolls_left, banish_left]
+		_hint_label.add_theme_color_override("font_color", Color(0.66, 0.66, 0.72))
 
 func _on_reroll() -> bool:
 	## 返回是否真的重抽了（测试要用）
@@ -268,6 +304,45 @@ func _on_skip() -> void:
 		player.add_silver(GameConfig.SKIP_SILVER_REWARD)
 	_close_and_emit()
 
+# ==================== 放逐 ====================
+
+func _option_key(option: Dictionary) -> String:
+	## 池子里靠 type+id 唯一识别一个选项（属性卡可重复出现，但同 id 是同一张）
+	return "%s:%s" % [String(option.get("type", "")), String(option.get("id", ""))]
+
+func can_banish() -> bool:
+	return banish_left > 0
+
+func _on_banish_toggle() -> bool:
+	## 进入/退出放逐模式。返回是否处于放逐模式（测试要用）
+	if banish_left <= 0:
+		return false
+	banish_mode = not banish_mode
+	_render_options()
+	_refresh_footer()
+	return banish_mode
+
+func _on_banish_clicked(option: Dictionary) -> bool:
+	## 把这张卡从本局选池移除，并立刻补一手新的。
+	## 注意：这里**不消耗重抽次数**——放逐本身就是一次免费刷新，
+	## 否则玩家每次 ban 都要额外付一次重抽，两个功能的成本会叠乘。
+	if banish_left <= 0:
+		return false
+	var key := _option_key(option)
+	if key in banished_keys:
+		return false
+	banished_keys.append(key)
+	banish_left -= 1
+	banish_mode = false
+	print("🚫 放逐 %s（剩 %d 次，已 ban %d 项）" % [
+		String(option.get("name", key)), banish_left, banished_keys.size()])
+	_render_options()
+	_refresh_footer()
+	return true
+
+func is_banished(option: Dictionary) -> bool:
+	return _option_key(option) in banished_keys
+
 func _input(event: InputEvent) -> void:
 	if not visible:
 		return
@@ -276,6 +351,9 @@ func _input(event: InputEvent) -> void:
 			KEY_R:
 				get_viewport().set_input_as_handled()
 				_on_reroll()
+			KEY_B:
+				get_viewport().set_input_as_handled()
+				_on_banish_toggle()
 			KEY_TAB:
 				get_viewport().set_input_as_handled()
 				_on_skip()
@@ -323,7 +401,16 @@ func _get_available_options() -> Array:
 	for passive_opt in ItemCatalog.PASSIVES:
 		if not _is_passive_maxed(passive_opt["id"]):
 			available.append(passive_opt)
-	
+
+	# 统一过滤放逐清单。放在最后一次遍历里做，
+	# 避免在三个 append 点各抄一遍过滤逻辑（加第四类选项时必然漏掉一处）
+	if not banished_keys.is_empty():
+		var kept: Array = []
+		for opt in available:
+			if not is_banished(opt):
+				kept.append(opt)
+		available = kept
+
 	return available
 
 func _is_weapon_evolved(weapon_id: String) -> bool:
@@ -354,7 +441,10 @@ func _get_basic_rewards() -> Array:
 func _create_option_button(option: Dictionary) -> Button:
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(204, 190)
-	btn.pressed.connect(func(): _on_option_selected(option))
+	if banish_mode:
+		btn.pressed.connect(func(): _on_banish_clicked(option))
+	else:
+		btn.pressed.connect(func(): _on_option_selected(option))
 	
 	# 创建垂直布局容器
 	var vbox := VBoxContainer.new()
@@ -458,7 +548,11 @@ func _create_option_button(option: Dictionary) -> Button:
 		btn.add_theme_stylebox_override("normal", normal_style)
 		btn.add_theme_stylebox_override("hover", hover_style)
 		btn.add_theme_stylebox_override("pressed", hover_style)
-	
+
+	# 放逐模式整卡染红：不用改 stylebox（会丢贴图纹理），直接压色调最省事
+	if banish_mode:
+		btn.modulate = Color(1.0, 0.74, 0.74, 1.0)
+
 	return btn
 
 func _get_option_icon(option: Dictionary) -> Texture2D:

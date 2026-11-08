@@ -344,6 +344,15 @@ func heal(amount: float) -> void:
 	if amount > 0:
 		AudioManager.play_sfx(_audio_lib.get_sound("heal"))
 
+func change_max_hp(delta_value: float) -> void:
+	## 增减最大生命上限（深渊契约这类"临时上限"用）。
+	## 故意不动 current_hp 的语义：扣上限时当前血量被 clamp 下去，
+	## 还上限时也不会凭空把血补回来——不然契约就是个零成本的血包。
+	## 调用方想补血请显式 heal()。
+	max_hp = maxf(max_hp + delta_value, 1.0)
+	current_hp = clampf(current_hp, 0.0, max_hp)
+	hp_changed.emit(current_hp, max_hp)
+
 func roll_crit() -> bool:
 	## 暴击判定
 	return crit_chance > 0 and randf() < crit_chance

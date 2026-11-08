@@ -26,8 +26,12 @@ var room_manager: Node = null
 var dungeon: Node = null
 var floor_banner: CanvasLayer = null
 var room_shop: CanvasLayer = null
+var blood_pact: CanvasLayer = null
 var rooms_cleared: int = 0
 var transition_overlay: ColorRect = null
+## 深渊契约：本层是否生效，以及被扣掉的生命上限绝对值（层末归还）
+var pact_active: bool = false
+var pact_hp_penalty: float = 0.0
 ## Boss 击败结算防重标志（每层 Boss 房重置）
 var _boss_defeat_handled: bool = false
 ## 升级弹窗队列：一次吃下多颗经验宝石时 level_up 会连续发多次，
@@ -54,6 +58,7 @@ func _ready() -> void:
 	_create_transition_overlay()
 	_create_floor_banner()
 	_create_room_shop()
+	_create_blood_pact()
 
 	_connect_signals()
 
@@ -242,6 +247,13 @@ func _create_room_shop() -> void:
 	room_shop.set_script(preload("res://scripts/ui/room_shop.gd"))
 	add_child(room_shop)
 
+func _create_blood_pact() -> void:
+	## 血之祭坛（休息房二选一）。同样全部代码构建。
+	blood_pact = CanvasLayer.new()
+	blood_pact.name = "BloodPact"
+	blood_pact.set_script(preload("res://scripts/ui/blood_pact_ui.gd"))
+	add_child(blood_pact)
+
 # === 房间切换 ===
 func _on_wave_completed(wave_number: int) -> void:
 	# 每完成一波后出现传送门
@@ -419,13 +431,95 @@ func _announce_evolution(evolved: Array) -> void:
 		)
 
 func _enter_rest_room() -> void:
+	## 休息房 = 血之祭坛：安息（回血）或缔约（卖本层上限换本层收益）
 	print("⛺ 休息站!")
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
 	if ach_mgr:
 		ach_mgr.record_room_visit("rest")
+
+	var room: Node2D = current_room
+	if blood_pact == null:
+		# 兜底：祭坛没建起来就退回老行为，绝不能把玩家卡在没有出口的房间里
+		_apply_rest_heal()
+		_open_portal_after_delay(1.5)
+		return
+
+	# 等换房淡入结束再弹，否则玩家只看到黑屏上突然压了个面板
+	await get_tree().create_timer(0.5).timeout
+	if not is_instance_valid(room) or not is_instance_valid(self) or room != current_room:
+		return
+
+	blood_pact.open(player, dungeon.current_floor)
+	blood_pact.pact_chosen.connect(func(kind: String):
+		_on_pact_chosen(kind)
+		if is_instance_valid(room) and is_instance_valid(self) and room == current_room:
+			room.spawn_portal()
+	, CONNECT_ONE_SHOT)
+
+func _on_pact_chosen(kind: String) -> void:
+	if kind == "pact":
+		_apply_blood_pact()
+	else:
+		_apply_rest_heal()
+
+func _apply_rest_heal() -> void:
 	if is_instance_valid(player):
-		player.heal(player.max_hp * 0.5)
-	_open_portal_after_delay(2.0)
+		player.heal(player.max_hp * GameConfig.BLOOD_PACT_REST_HEAL_RATIO)
+		print("🕯 安息：恢复 %.0f 生命" % (player.max_hp * GameConfig.BLOOD_PACT_REST_HEAL_RATIO))
+
+func _apply_blood_pact() -> void:
+	## 缔约：扣本层生命上限，换本层敌人更多 + 掉落更高。
+	## 同一层只允许一次——否则连开两间休息房能把上限卖到 64%，
+	## 而收益是叠乘的，等于逼玩家必须连点两次契约，这就不是选择了。
+	if not is_instance_valid(player):
+		return
+	if pact_active:
+		print("🩸 本层已缔约，改为安息")
+		_apply_rest_heal()
+		return
+
+	var penalty: float = player.max_hp * GameConfig.BLOOD_PACT_HP_RATIO
+	pact_active = true
+	pact_hp_penalty = penalty
+	player.change_max_hp(-penalty)
+	wave_manager.set_run_modifiers(GameConfig.BLOOD_PACT_COUNT_MULT, GameConfig.BLOOD_PACT_LOOT_MULT)
+	if hud and hud.has_method("update_blood_pact"):
+		hud.update_blood_pact(true, "契约：上限 -%d%% · 掉落 +%d%%" % [
+			roundi(GameConfig.BLOOD_PACT_HP_RATIO * 100.0),
+			roundi((GameConfig.BLOOD_PACT_LOOT_MULT - 1.0) * 100.0),
+		])
+
+	print("🩸 缔结契约：本层生命上限 -%.0f（现 %.0f），敌人 +%d%%，掉落 +%d%%" % [
+		penalty, player.max_hp,
+		roundi((GameConfig.BLOOD_PACT_COUNT_MULT - 1.0) * 100.0),
+		roundi((GameConfig.BLOOD_PACT_LOOT_MULT - 1.0) * 100.0),
+	])
+	if floor_banner and floor_banner.has_method("show_card"):
+		floor_banner.show_card(
+			"🩸 契约生效",
+			"本层：生命上限 -%d%%" % roundi(GameConfig.BLOOD_PACT_HP_RATIO * 100.0),
+			"BLOOD PACT",
+			"敌人 +%d%% 数量 · 银币与经验 +%d%%（层末归还）" % [
+				roundi((GameConfig.BLOOD_PACT_COUNT_MULT - 1.0) * 100.0),
+				roundi((GameConfig.BLOOD_PACT_LOOT_MULT - 1.0) * 100.0),
+			],
+			Color(0.85, 0.25, 0.28),
+			1.4
+		)
+
+func _expire_blood_pact() -> void:
+	## 层结束时归还上限与倍率。必须在层通关治疗之前调用，
+	## 否则治疗是按被压过的上限算的（会少回 20%）。
+	if not pact_active:
+		return
+	pact_active = false
+	if is_instance_valid(player) and pact_hp_penalty > 0.0:
+		player.change_max_hp(pact_hp_penalty)
+		print("🩸 契约结束：生命上限归还 +%.0f（现 %.0f）" % [pact_hp_penalty, player.max_hp])
+	pact_hp_penalty = 0.0
+	wave_manager.set_run_modifiers(1.0, 1.0)
+	if hud and hud.has_method("update_blood_pact"):
+		hud.update_blood_pact(false, "")
 
 func _open_portal_after_delay(delay: float) -> void:
 	## 延时给当前房间开传送门
@@ -504,6 +598,8 @@ func _on_boss_defeated() -> void:
 		save_mgr.add_blood_crystals(crystals)
 
 	# 层通关奖励：回复部分生命
+	# 顺序很重要：先归还契约上限，再治疗。反过来治疗会按被压过的上限算，少回 20%
+	_expire_blood_pact()
 	if is_instance_valid(player):
 		player.heal(player.max_hp * GameConfig.FLOOR_CLEAR_HEAL_RATIO)
 

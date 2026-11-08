@@ -11,6 +11,10 @@ class_name EnemyBase
 @export var xp_value: int = 5
 ## 击杀掉落的银币数（局内货币）。精英/Boss 由子类覆盖为更高值。
 @export var silver_value: int = 1
+## 掉落倍率：由 wave_manager 在生成时注入（深渊契约的 +30% 走这里）。
+## 与 silver_value/xp_value 分开，是为了让"这次生成的所有敌人"统一翻倍，
+## 而不是去改每个子类手写的基数。
+var loot_mult: float = 1.0
 
 # 缩放后的实际属性
 var max_hp: float
@@ -312,23 +316,35 @@ func _drop_xp_gem() -> void:
 	var gem_scene := preload("res://scenes/player/xp_gem.tscn")
 	var gem := ObjectPool.acquire(gem_scene) as Area2D
 	gem.global_position = global_position
-	gem.xp_value = xp_value
+	gem.xp_value = _loot_scaled(xp_value)
 	# 对象池复用时重新初始化掉落动画
 	if gem.has_method("_setup_gem"):
 		gem._setup_gem()
 	get_tree().current_scene.call_deferred("add_child", gem)
 
+func _loot_scaled(base_value: int) -> int:
+	## 掉落倍率取整：按小数部分做概率进位，保证长期期望正好等于 base×mult。
+	## 直接 round 的话 1×1.3=1.3 会一直是 1，"银币 +30%" 就等于没写。
+	if is_equal_approx(loot_mult, 1.0) or base_value <= 0:
+		return base_value
+	var exact: float = float(base_value) * loot_mult
+	var whole: int = int(floor(exact))
+	if randf() < (exact - float(whole)):
+		whole += 1
+	return maxi(whole, 1)
+
 func _drop_silver() -> void:
 	## 银币掉落：附近已有银币就"合并金额"，避免同屏堆几十个节点
-	if silver_value <= 0:
+	var amount: int = _loot_scaled(silver_value)
+	if amount <= 0:
 		return
 	for coin in get_tree().get_nodes_in_group("silver_coins"):
 		if is_instance_valid(coin) and coin.global_position.distance_squared_to(global_position) < 900.0:
-			coin.value += silver_value
+			coin.value += amount
 			return
 	var packed: PackedScene = preload("res://scenes/player/silver_coin.tscn")
 	var coin := packed.instantiate()
-	coin.value = silver_value
+	coin.value = amount
 	coin.global_position = global_position
 
 	var parent: Node = get_tree().current_scene

@@ -37,6 +37,17 @@ var player: Node2D = null
 var floor_index: int = 1
 var enemy_pool: Array = []   # 当前层允许出现的敌人类型；空则回退到按波次解锁
 
+# === 外部修正（深渊契约用） ===
+## 每批敌人的数量倍率。用"理论总量对齐"而不是 ceil，长期平均才真的是 +20%
+var spawn_count_mult: float = 1.0
+## 掉落（银币/经验）倍率，生成时传给敌人
+var loot_mult: float = 1.0
+## 数量倍率的小数累积：按"应发总量 vs 实发总量"对齐。
+## 早期写法是每次留小数余量再相加，浮点误差会累积（10 批本该 24 只，实测 23）。
+## 对齐总量后误差不会跨批累积，且每批与理论值最多差 1 只。
+var _spawn_want_total: float = 0.0
+var _spawn_given_total: int = 0
+
 var _current_scene: Node = null
 
 # === 信号 ===
@@ -57,6 +68,17 @@ func set_floor(index: int, pool: Array = []) -> void:
 	## 切换当前楼层：影响敌人池与属性倍率
 	floor_index = maxi(index, 1)
 	enemy_pool = pool.duplicate()
+
+func set_run_modifiers(count_mult: float = 1.0, loot: float = 1.0) -> void:
+	## 深渊契约这类"本层生效"的修正从这里注入。
+	## 数量倍率与掉落倍率分开传，是因为契约只改数量不改强度；
+	## 以后要加"敌人更多但更脆"的契约，也只需要在这里多一个参数。
+	# 倍率一旦变化就重置累计，避免上一层的余量串到下一层
+	if not is_equal_approx(count_mult, spawn_count_mult) or not is_equal_approx(loot, loot_mult):
+		_spawn_want_total = 0.0
+		_spawn_given_total = 0
+	spawn_count_mult = maxf(count_mult, 0.1)
+	loot_mult = maxf(loot, 0.1)
 
 func _ensure_current_scene() -> void:
 	if _current_scene == null or not is_instance_valid(_current_scene):
@@ -113,7 +135,16 @@ func _get_enemies_per_spawn() -> int:
 	# 每波同时生成更多敌人。
 	# 初版是 mini(1 + wave/3, 5)，第 1 波每次只有 1 只，配合 2 秒间隔等于 0.5 只/秒，
 	# 玩家随手就清空全场。现在第 1 波每次 2 只，第 12 波以后每次 5 只。
-	return mini(2 + current_wave / 4, GameConfig.WAVE_MAX_SPAWN_COUNT)
+	var base := mini(2 + current_wave / 4, GameConfig.WAVE_MAX_SPAWN_COUNT)
+	if is_equal_approx(spawn_count_mult, 1.0):
+		return base
+	# 总量对齐：倍率 1.2 时按 2→3→2→3… 发放，长期严格等于 ×1.2。
+	# 不能用 ceil（那是 +50%），也不能用"每次留余量"（浮点误差会跨批累积）。
+	_spawn_want_total += float(base) * spawn_count_mult
+	var count: int = roundi(_spawn_want_total) - _spawn_given_total
+	count = maxi(count, 1)
+	_spawn_given_total += count
+	return count
 
 func _spawn_enemy() -> void:
 	if player == null or not is_instance_valid(player):
@@ -128,6 +159,8 @@ func _spawn_enemy() -> void:
 		# 传入当前波次与楼层用于数值缩放
 		enemy.spawn_wave = current_wave
 		enemy.floor_index = floor_index
+		if "loot_mult" in enemy:
+			enemy.loot_mult = loot_mult
 		_maybe_assign_affix(enemy)
 
 		# 在屏幕外随机位置生成

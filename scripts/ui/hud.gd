@@ -22,6 +22,8 @@ var _build_panel: PanelContainer = null
 var _build_box: VBoxContainer = null
 var _build_signature: String = ""
 var _build_refresh_timer: float = 0.0
+## 深渊契约状态文案（空 = 本层无契约）
+var _pact_text: String = ""
 
 # === 护盾状态条 ===
 var _shield_row: HBoxContainer = null
@@ -163,6 +165,10 @@ func _refresh_build(force: bool = false) -> void:
 
 	var weapons: Array = weapon_manager_ref.weapons
 	_build_panel.visible = true
+	# 契约状态顶在最上面：它是本层最重要的"场上条件"，
+	# 埋在下面玩家会在打完半层之后才发现自己血上限少了 20%
+	if _pact_text != "":
+		_add_build_pact_row(_pact_text)
 	_add_build_header("武器 %d/%d" % [weapons.size(), GameConfig.MAX_WEAPON_SLOTS])
 	if weapons.is_empty():
 		_add_build_hint("（空手）")
@@ -184,12 +190,20 @@ func _refresh_build(force: bool = false) -> void:
 func _build_signature_of() -> String:
 	## 轮询用：只有等级/数量变化才重建控件，避免每帧 new 一堆 Label
 	var parts: PackedStringArray = []
+	parts.append("pact:%s" % _pact_text)
 	for w in weapon_manager_ref.weapons:
 		parts.append("%s:%d" % [String(w.weapon_id), int(w.current_level)])
 	parts.append("|")
 	for p in player_ref.passive_items:
 		parts.append("%s:%d" % [String(p.item_id), int(p.current_level)])
 	return ",".join(parts)
+
+func _add_build_pact_row(text: String) -> void:
+	var lbl := Label.new()
+	lbl.text = "🩸 %s" % text
+	lbl.add_theme_font_size_override("font_size", 11)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.45, 0.45))
+	_build_box.add_child(lbl)
 
 func _add_build_header(text: String) -> void:
 	var lbl := Label.new()
@@ -299,8 +313,15 @@ func _create_silver_label() -> void:
 	silver_label.add_theme_color_override("font_color", Color(1.0, 0.87, 0.45))
 	top_bar.add_child(silver_label)
 
-func update_silver(amount: int) -> void:
-	if silver_label:
+func update_blood_pact(active: bool, text: String = "") -> void:
+	## 契约状态（本层）。传空字符串即清除。
+	var new_text: String = text if active else ""
+	if new_text == _pact_text:
+		return
+	_pact_text = new_text
+	_refresh_build(true)
+
+func update_silver(amount: int) -> void:	if silver_label:
 		silver_label.text = "💰 %d" % amount
 
 func _process(delta: float) -> void:
