@@ -36,7 +36,8 @@ func _aff():
 		_affix = load("res://scripts/enemies/elite_affix.gd")
 	return _affix
 
-func _spawn_enemy(type: String, affix_id: String, pos: Vector2, hp_scale: float = 1.0, suppress: bool = false) -> Node:
+func _spawn_enemy(type: String, affix_id: String, pos: Vector2, hp_scale: float = 1.0, suppress: bool = false,
+		second_affix: String = "") -> Node:
 	var scene: PackedScene = load("res://scenes/enemies/%s.tscn" % type)
 	var e = scene.instantiate()
 	e.spawn_wave = 1
@@ -44,9 +45,19 @@ func _spawn_enemy(type: String, affix_id: String, pos: Vector2, hp_scale: float 
 	e.hp_scale = hp_scale
 	e.suppress_affix = suppress
 	e.elite_affix = affix_id
+	# RED 阶段 enemy_base 还没有 secondary_affix：用属性存在性判断，
+	# 让缺失表现为断言失败而不是脚本报错中断
+	if "secondary_affix" in e:
+		e.secondary_affix = second_affix
 	e.position = pos
 	_host.add_child(e)
 	return e
+
+
+func _second_affix(enemy: Node) -> String:
+	if not ("secondary_affix" in enemy):
+		return ""
+	return String(enemy.get("secondary_affix"))
 
 func _run() -> void:
 	await process_frame
@@ -253,6 +264,63 @@ func _run() -> void:
 	var ev2 := _spawn_enemy("elite_vampire", "", Vector2(260, 650), 1.0, true)
 	await process_frame
 	_check(String(ev2.elite_affix).is_empty(), "suppress_affix 时不继承词缀")
+
+	print("\n=== 9. 双词缀 ===")
+	# 同一场景、同一波次、同类型的三只怪做对照：只有词缀不同
+	var plain := _spawn_enemy("vampire", "", Vector2(700, 550))
+	var single := _spawn_enemy("vampire", HASTER, Vector2(760, 550))
+	var dual := _spawn_enemy("vampire", HASTER, Vector2(820, 550), 1.0, false, SHIELDED)
+	await process_frame
+	await process_frame
+	_check(_second_affix(dual) == SHIELDED, "第二词缀真实挂在敌人上（%s）" % _second_affix(dual))
+	# 统一加成每只精英只结算一次；第二词缀只提供自己的专属效果（这里是血盾）
+	_check(absf(float(dual.max_hp)
+		- float(single.max_hp) * (1.0 + GameConfig.AFFIX_SHIELD_RATIO)) < 0.5,
+		"双词缀血量 = 单词缀血量 + 一份盾（%.0f vs %.0f）" % [dual.max_hp, single.max_hp])
+	_check(absf(float(dual.contact_damage) - float(single.contact_damage)) < 0.01,
+		"伤害不因第二词缀再乘一次（%.1f）" % dual.contact_damage)
+	_check(int(dual.silver_value) == int(single.silver_value)
+		and int(dual.xp_value) == int(single.xp_value),
+		"银币/经验不因第二词缀再乘一次（%d 银 / %d 经验）" % [dual.silver_value, dual.xp_value])
+	var plain_sprite := plain.get_node("Sprite2D") as Sprite2D
+	var dual_sprite := dual.get_node("Sprite2D") as Sprite2D
+	_check(absf(dual_sprite.scale.x / plain_sprite.scale.x - GameConfig.ELITE_AFFIX_SCALE_MULT) < 0.02,
+		"体型只放大一次（×%.2f）" % (dual_sprite.scale.x / plain_sprite.scale.x))
+	# 两个控制器必须可区分，且第一槽位名字保持兼容
+	var dual_ctrl_a = dual.get_node_or_null("AffixController")
+	var dual_ctrl_b = dual.get_node_or_null("AffixController2")
+	_check(dual_ctrl_a != null and dual_ctrl_b != null, "双词缀挂两个控制器")
+	if dual_ctrl_a != null and dual_ctrl_b != null:
+		_check(String(dual_ctrl_a.affix_id) == HASTER and String(dual_ctrl_b.affix_id) == SHIELDED,
+			"控制器槽位 = 主词缀 / 第二词缀（%s / %s）" % [dual_ctrl_a.affix_id, dual_ctrl_b.affix_id])
+		var icon_a = dual_ctrl_a.get_node_or_null("AffixIcon")
+		var icon_b = dual_ctrl_b.get_node_or_null("AffixIcon")
+		_check(icon_a != null and icon_b != null
+			and absf(icon_a.position.x - icon_b.position.x) > 1.0,
+			"两个词缀图标不重叠（x %.0f / %.0f）" % [icon_a.position.x, icon_b.position.x])
+		var ring_a = dual_ctrl_a.get_node_or_null("AffixRing")
+		var ring_b = dual_ctrl_b.get_node_or_null("AffixRing")
+		_check(ring_a != null and ring_b != null
+			and absf(ring_a.scale.x - ring_b.scale.x) > 0.01,
+			"两个光环半径可区分（%.2f / %.2f）" % [ring_a.scale.x, ring_b.scale.x])
+	# 第二词缀（shielded 在第二个控制器上）的盾量与破盾行为必须真实生效
+	var dual_shield: float = float(dual.affix_shield_hp)
+	_check(dual_shield > 0.0 and float(dual.max_hp) > float(single.max_hp),
+		"第二血盾把盾量加进 max_hp（%.0f）" % dual_shield)
+	dual.take_damage(float(dual.max_hp) - dual_shield * 0.5)
+	await physics_frame
+	await physics_frame
+	_check(float(dual.affix_shield_hp) <= 0.0 and not dual.is_dead,
+		"第二个控制器打碎盾且敌人存活（盾 %.0f）" % dual.affix_shield_hp)
+	# 直接给 EnemyBase 重复 id：只允许一份护盾、一个控制器
+	var dupe := _spawn_enemy("vampire", SHIELDED, Vector2(880, 550), 1.0, false, SHIELDED)
+	await process_frame
+	await process_frame
+	_check(dupe.get_node_or_null("AffixController2") == null,
+		"相同 id 不产生第二个控制器")
+	_check(absf(float(dupe.affix_shield_hp)
+		- float(single.max_hp) * GameConfig.AFFIX_SHIELD_RATIO) < 0.5,
+		"相同 id 只结算一份护盾（%.0f）" % dupe.affix_shield_hp)
 
 	print("\n========================================")
 	print("通过 %d / 失败 %d" % [_pass, _fail])

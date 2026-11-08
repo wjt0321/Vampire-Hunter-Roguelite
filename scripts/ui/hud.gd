@@ -27,6 +27,7 @@ var _pact_text: String = ""
 
 # === 护盾状态条 ===
 var _shield_row: HBoxContainer = null
+var event_label: Label = null
 var _shield_text: Label = null
 var _shield_bar: ProgressBar = null
 var _shield_pulse: Tween = null
@@ -44,6 +45,38 @@ func _ready() -> void:
 	_create_evolution_label()
 	_create_shield_indicator()
 	_create_build_panel()
+	_create_event_label()
+
+func _create_event_label() -> void:
+	## 局内目标事件的状态行（"猎杀 12 秒" / "守卫 ×3"）。
+	## 放 TopBar 下一行、居中：事件是全房间的信息，不是某个角落的状态。
+	## 默认隐藏，由 room_event_manager 的 set_event_status() 驱动。
+	var vbox := $MarginContainer/VBoxContainer as VBoxContainer
+	if vbox == null:
+		return
+	event_label = Label.new()
+	event_label.name = "EventLabel"
+	event_label.visible = false
+	event_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	event_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	event_label.add_theme_font_size_override("font_size", 13)
+	event_label.add_theme_color_override("font_color", Color(1.0, 0.62, 0.35))
+	event_label.add_theme_color_override("font_outline_color", Color(0.05, 0.02, 0.04, 0.92))
+	event_label.add_theme_constant_override("outline_size", 3)
+	event_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(event_label)
+	# TopBar(0) 下一行，护盾行(1) 之上
+	vbox.move_child(event_label, 1)
+
+func set_event_status(text: String) -> void:
+	## 事件状态入口。空字符串 = 无事件，整行隐藏（不是留着空行占位）
+	if event_label == null:
+		return
+	if text.is_empty():
+		event_label.visible = false
+		return
+	event_label.text = text
+	event_label.visible = true
 
 func bind_run(player_node: Node, weapon_mgr: Node) -> void:
 	## 由 main 在开局时注入引用：HUD 只在 _process 里轮询状态，
@@ -415,7 +448,10 @@ func update_room(room_number: int) -> void:
 func update_dungeon(floor_index: int, room_in_floor: int, rooms_per_floor: int, floor_name: String) -> void:
 	## 地下城层进度：第N层 · 层名 · X/Y
 	var shown: int = clampi(room_in_floor, 1, maxi(rooms_per_floor, 1))
-	room_label.text = "第%d层 %s  %d/%d" % [floor_index, floor_name, shown, rooms_per_floor]
+	var prefix: String = ""
+	if GameConfig.abyss_level > 0:
+		prefix = "渊%d " % GameConfig.abyss_level
+	room_label.text = "%s第%d层 %s  %d/%d" % [prefix, floor_index, floor_name, shown, rooms_per_floor]
 
 func _show_wave_banner(wave_number: int) -> void:
 	wave_banner.text = "=== WAVE %d ===" % wave_number

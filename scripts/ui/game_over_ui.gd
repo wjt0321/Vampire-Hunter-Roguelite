@@ -4,6 +4,8 @@ extends CanvasLayer
 
 signal restart_requested
 signal menu_requested
+## 深渊阶梯（17.14）：胜利界面"继续深入"按钮
+signal abyss_continue_requested
 
 @onready var stats_label: Label = $CenterContainer/PanelContainer/VBoxContainer/StatsLabel
 @onready var achievement_label: Label = $CenterContainer/PanelContainer/VBoxContainer/AchievementLabel
@@ -12,6 +14,8 @@ signal menu_requested
 var save_mgr: Node
 var achievement_mgr: Node
 var bg_rect: TextureRect
+## 深渊阶梯按钮（胜利界面动态创建）
+var abyss_button: Button = null
 
 func _ready() -> void:
 	visible = false
@@ -85,6 +89,9 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 	
 	var text := title
 	if is_victory:
+		var abyss: int = int(stats.get("abyss_level", 0))
+		if abyss > 0:
+			text += "深渊 %d · " % abyss
 		text += "已征服层数: %d / %d\n" % [
 			stats.get("floors_cleared", GameConfig.DUNGEON_FLOOR_COUNT),
 			GameConfig.DUNGEON_FLOOR_COUNT
@@ -109,6 +116,8 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 	
 	# 显示本局解锁的成就
 	_update_achievement_display()
+	# 深渊阶梯按钮：胜利才出现
+	_setup_abyss_button(is_victory)
 	
 	panel.modulate = Color(1, 1, 1, 0)
 	var tween := create_tween()
@@ -139,3 +148,29 @@ func _on_restart_pressed() -> void:
 func _on_menu_pressed() -> void:
 	get_tree().paused = false
 	menu_requested.emit()
+
+func _on_abyss_pressed() -> void:
+	## 深渊阶梯：+1 等级后重开。先归零 paused（reload 不会自动解）
+	get_tree().paused = false
+	abyss_continue_requested.emit()
+
+func _setup_abyss_button(victory: bool) -> void:
+	## 胜利界面才有"继续深入"。按钮动态创建：
+	## 失败界面出现它只会把挫败感变成"被劝退感"
+	if abyss_button == null:
+		abyss_button = Button.new()
+		abyss_button.name = "AbyssButton"
+		abyss_button.text = "深渊阶梯"
+		var vbox: Node = panel.get_node("VBoxContainer")
+		# 放在"重新开始"前面：胜利时它是主推选项
+		vbox.add_child(abyss_button)
+		vbox.move_child(abyss_button, vbox.get_node("AchievementLabel").get_index() + 1)
+		abyss_button.pressed.connect(_on_abyss_pressed)
+		_setup_button_effects()
+	var next_level: int = GameConfig.abyss_level + 1
+	abyss_button.text = "深入深渊 %d（血 +%d%% · 伤 +%d%% · 掉落 +%d%%）" % [
+		next_level,
+		int(GameConfig.ABYSS_STEP_HP * 100.0 * next_level),
+		int(GameConfig.ABYSS_STEP_DAMAGE * 100.0 * next_level),
+		int(GameConfig.ABYSS_STEP_LOOT * 100.0 * next_level)]
+	abyss_button.visible = victory

@@ -33,8 +33,11 @@ var hp_scale: float = 1.0
 var sprite_scale_mult: float = 1.0
 
 # === 精英词缀（在 _ready 之前由 WaveManager / 子类赋值） ===
-## 空字符串 = 普通怪。取值见 EliteAffix.DATA
+## 主词缀。空字符串 = 普通怪。取值见 EliteAffix.DATA
 var elite_affix: String = ""
+## 第二词缀（深渊猎物的"双词缀"）。只提供自己的专属效果；
+## 统一精英加成（血/伤/银/经验/体型）仍然只按主词缀结算一次。
+var secondary_affix: String = ""
 ## 词缀护盾剩余量。**护盾是直接加到 max_hp 上的**，
 ## 所以任何覆写了 take_damage 的敌人（石像鬼、自爆鬼、亲王…）都不需要改一行代码就自带护盾。
 var affix_shield_hp: float = 0.0
@@ -83,8 +86,9 @@ func _ready() -> void:
 	_apply_wave_scaling()
 	# 词缀加成必须在这里做完：体型倍率要赶在 _load_sprite_texture 归一化之前生效，
 	# 护盾量要赶在 current_hp = max_hp 之前加进 max_hp
-	if not elite_affix.is_empty():
-		_apply_elite_affix_stats()
+	var affix_ids: Array = get_affix_ids()
+	if not affix_ids.is_empty():
+		_apply_elite_affix_stats(affix_ids)
 	current_hp = max_hp
 	add_to_group("enemies")
 	_vfx_manager = get_node_or_null("/root/VFXManager")
@@ -93,25 +97,45 @@ func _ready() -> void:
 	# 查找玩家节点
 	_find_player()
 	# 表现与行为挂在子节点上：一半敌人自己覆写了 _physics_process，基类钩子对它们无效
-	if not elite_affix.is_empty():
-		_attach_affix_controller()
+	if not affix_ids.is_empty():
+		_attach_affix_controllers(affix_ids)
 
-func _apply_elite_affix_stats() -> void:
-	## 词缀统一加成：更肉、更疼、掉更多
+func get_affix_ids() -> Array:
+	## 主词缀在前，只保留合法且不重复的 id。
+	## 装机入口只此一处：重复/非法 id 不会长出第二个控制器，
+	## 也不会把护盾结算两次。
+	var out: Array = []
+	for id in [elite_affix, secondary_affix]:
+		var affix_id := String(id)
+		if affix_id.is_empty() or affix_id in out:
+			continue
+		if EliteAffix.get_data(affix_id).is_empty():
+			continue
+		out.append(affix_id)
+	return out
+
+func _apply_elite_affix_stats(affix_ids: Array) -> void:
+	## 词缀统一加成：更肉、更疼、掉更多。
+	## **每只精英只结算一次**，与词缀数量无关——双词缀的第二条只提供
+	## 自己的专属效果，否则血量会变成 ×1.35²，深渊猎物直接成数值墙。
 	max_hp *= GameConfig.ELITE_AFFIX_HP_MULT
 	contact_damage *= GameConfig.ELITE_AFFIX_DAMAGE_MULT
 	silver_value = int(round(float(silver_value) * GameConfig.ELITE_AFFIX_SILVER_MULT))
 	xp_value = int(round(float(xp_value) * GameConfig.ELITE_AFFIX_XP_MULT))
 	sprite_scale_mult *= GameConfig.ELITE_AFFIX_SCALE_MULT
-	if elite_affix == EliteAffix.SHIELDED:
-		affix_shield_hp = max_hp * GameConfig.AFFIX_SHIELD_RATIO
-		max_hp += affix_shield_hp
+	# 护盾是专属效果：只按真正带血盾的那个词缀加一次（id 已去重）
+	for id in affix_ids:
+		if String(id) == EliteAffix.SHIELDED:
+			affix_shield_hp = max_hp * GameConfig.AFFIX_SHIELD_RATIO
+			max_hp += affix_shield_hp
 
-func _attach_affix_controller() -> void:
-	var controller := EliteAffixController.new()
-	controller.setup(self, elite_affix)
-	add_child(controller)
-	print("⚠️ 精英出现：%s·%s" % [EliteAffix.display_name(elite_affix), _get_enemy_type()])
+func _attach_affix_controllers(affix_ids: Array) -> void:
+	for slot in range(affix_ids.size()):
+		var id := String(affix_ids[slot])
+		var controller := EliteAffixController.new()
+		controller.setup(self, id, slot)
+		add_child(controller)
+		print("⚠️ 精英出现：%s·%s" % [EliteAffix.display_name(id), _get_enemy_type()])
 
 func apply_haste(duration: float) -> void:
 	## 急速光环：临时提速，到期自动还回原速。
@@ -238,8 +262,14 @@ func _apply_wave_scaling() -> void:
 	var level_scale = GameConfig.get_player_level_hp_scale(_get_player_level())
 	var floor_hp = GameConfig.get_floor_hp_multiplier(floor_index)
 	var floor_dmg = GameConfig.get_floor_damage_multiplier(floor_index)
-	max_hp = base_hp * hp_mult * hp_scale * level_scale * floor_hp
-	contact_damage = base_contact_damage * dmg_mult * floor_dmg
+	# 深渊阶梯：全层全局倍率，挂在链最外层（和波次/楼层正交）
+	var abyss_hp = GameConfig.get_abyss_hp_mult()
+	var abyss_dmg = GameConfig.get_abyss_damage_mult()
+	max_hp = base_hp * hp_mult * hp_scale * level_scale * floor_hp * abyss_hp
+	contact_damage = base_contact_damage * dmg_mult * floor_dmg * abyss_dmg
+	# 掉落的深渊加成不在这乘：直接 round 进 silver_value 会让 1×1.1 永远是 1
+	# （xp_gem_test 踩过的坑）。倍率由 wave_manager 乘进 loot_mult，
+	# 走 _loot_scaled 的"小数部分概率进位"，长期期望才准确
 
 func _get_player_level() -> int:
 	## 读取玩家当前等级，用于 HP 橡皮筋缩放

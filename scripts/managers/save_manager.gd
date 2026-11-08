@@ -27,6 +27,8 @@ var save_data: Dictionary = {
 	# 解锁角色
 	"unlocked_characters": ["hunter"],
 	"selected_character": "hunter",
+	# 深渊阶梯：历史最高通关深渊层
+	"best_abyss": 0,
 }
 
 # 升级价格（每级递增）
@@ -143,6 +145,15 @@ func add_blood_crystals(amount: int) -> void:
 
 func get_blood_crystals() -> int:
 	return save_data["blood_crystals"]
+
+# === 深渊阶梯（17.14） ===
+func set_best_abyss(level: int) -> void:
+	if level > int(save_data.get("best_abyss", 0)):
+		save_data["best_abyss"] = level
+		save_game()
+
+func get_best_abyss() -> int:
+	return int(save_data.get("best_abyss", 0))
 
 # === 永久升级 ===
 func get_upgrade_level(upgrade_id: String) -> int:

@@ -7,6 +7,7 @@ const RoomManagerScript = preload("res://scripts/map/room_manager.gd")
 const DungeonManagerScript = preload("res://scripts/map/dungeon_manager.gd")
 const FloorBannerScript = preload("res://scripts/ui/floor_banner.gd")
 const CharacterDataScript = preload("res://scripts/player/character_data.gd")
+const RoomEventScript = preload("res://scripts/managers/room_event_manager.gd")
 var boss_scene: PackedScene = preload("res://scenes/enemies/vampire_lord.tscn")
 
 # 缓存的 AudioLibrary 实例
@@ -29,6 +30,8 @@ var room_shop: CanvasLayer = null
 var blood_pact: CanvasLayer = null
 var rooms_cleared: int = 0
 var transition_overlay: ColorRect = null
+## 局内目标事件（17.14）：战斗房的小目标管理器
+var room_events: Node = null
 ## 测试注入点：非空时忽略存档里选中的角色（见 _apply_selected_character）。
 ## 必须在 add_child 之前赋值，因为 _ready 里就会读。
 var debug_force_character: String = ""
@@ -46,6 +49,15 @@ func _ready() -> void:
 	print("VampireHunter - 游戏启动!")
 	_audio_lib = AudioLib
 
+	# 深渊镜像：存档是 best_abyss 真值源，GameConfig 只是运行时副本
+	var save_mirror := get_node_or_null("/root/SaveManager")
+	if save_mirror:
+		GameConfig.best_abyss = save_mirror.get_best_abyss()
+	if GameConfig.abyss_level > 0:
+		print("🌀 深渊 %d 轮开局：敌人血量 ×%.2f / 伤害 ×%.2f / 掉落 ×%.2f" % [
+			GameConfig.abyss_level, GameConfig.get_abyss_hp_mult(),
+			GameConfig.get_abyss_damage_mult(), GameConfig.get_abyss_loot_mult()])
+
 	# 创建房间管理器
 	room_manager = Node.new()
 	room_manager.set_script(RoomManagerScript)
@@ -56,6 +68,12 @@ func _ready() -> void:
 	dungeon = Node.new()
 	dungeon.set_script(DungeonManagerScript)
 	add_child(dungeon)
+
+	# 局内目标事件（17.14）：必须在 wave_manager/player/hud 都就绪后 setup
+	room_events = Node.new()
+	room_events.set_script(RoomEventScript)
+	add_child(room_events)
+	room_events.setup(wave_manager, player, hud)
 
 	# 创建过渡遮罩与楼层横幅
 	_create_transition_overlay()
@@ -95,6 +113,9 @@ func _ready() -> void:
 	# 提示结束后才正式开战
 	AudioManager.play_bgm(_audio_lib.get_battle_bgm())
 	wave_manager.start(player)
+	# 首房走 autostart=false，但仍要计入本层战斗房数；否则“第 2 间起”会错成第 3 间。
+	if room_events:
+		room_events.on_combat_room_entered(dungeon.current_floor)
 
 	# 初始化成就系统
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
@@ -185,6 +206,7 @@ func _connect_signals() -> void:
 	upgrade_ui.upgrade_selected.connect(_on_upgrade_selected)
 	game_over_ui.restart_requested.connect(_on_restart)
 	game_over_ui.menu_requested.connect(_on_return_to_menu)
+	game_over_ui.abyss_continue_requested.connect(_on_abyss_continue)
 
 func _create_room(width: float, height: float, room_type: String, theme: String = "") -> void:
 	# 清除旧房间
@@ -324,6 +346,9 @@ func _transition_to_next_room() -> void:
 
 func _enter_next_room(autostart: bool = true) -> String:
 	## 从地下城取出下一个房间并布置，返回房间类型
+	# 事件不跨房：玩家迈出房间的那一刻，没做完的事件就算失败（奖励不追发）
+	if room_events:
+		room_events.cancel()
 	var room_type: String = dungeon.consume_room()
 	rooms_cleared = dungeon.rooms_cleared_total
 
@@ -374,6 +399,10 @@ func _enter_next_room(autostart: bool = true) -> String:
 			AudioManager.play_bgm(_audio_lib.get_battle_bgm())
 			if autostart:
 				wave_manager.start(player)
+				# 事件敌人在 start 之后刷（spawn_special_enemy 要挂到当前场景）；
+				# 一间房判定一次，触发与否都由它自己打印
+				if room_events:
+					room_events.on_combat_room_entered(dungeon.current_floor)
 
 	print("📍 第 %d 层 · 房间 %d/%d [%s]" % [
 		dungeon.current_floor,
@@ -633,7 +662,10 @@ func _on_boss_defeated() -> void:
 	wave_manager.stop()
 
 	var cleared_floor: int = dungeon.current_floor
-	var crystals: int = GameConfig.get_floor_clear_crystals(cleared_floor)
+	# 深渊轮的通关血晶也吃掉落加成（floori 保底 1，别让 ×1.0 四舍五入成 0）
+	var crystals: int = maxi(
+		roundi(GameConfig.get_floor_clear_crystals(cleared_floor) * GameConfig.get_abyss_loot_mult()),
+		1)
 	print("👑 第 %d 层 Boss 被击败! 血晶 +%d" % [cleared_floor, crystals])
 
 	# 记录Boss击杀成就
@@ -683,12 +715,16 @@ func _on_boss_defeated() -> void:
 		"floors_cleared": GameConfig.DUNGEON_FLOOR_COUNT,
 		"survival_time": run_stats.get("survival_time", 0),
 		"damage_taken": run_stats.get("damage_taken", 0),
+		"abyss_level": GameConfig.abyss_level,
 	}
 	game_over_ui.show_game_over(stats, true)
 
 # === 楼层流程 ===
 func _on_floor_started(_floor_index: int, _floor_data: Dictionary) -> void:
 	_update_dungeon_hud()
+	# 事件"一层一次"的标记按层重置
+	if room_events:
+		room_events.on_floor_changed(_floor_index)
 
 func _on_floor_cleared(floor_index: int, _floor_data: Dictionary) -> void:
 	print("🚪 第 %d 层已肃清" % floor_index)
@@ -702,8 +738,12 @@ func _show_current_floor_intro() -> void:
 func _show_floor_intro(floor_index: int) -> void:
 	var data_list: Array = dungeon.floors_data
 	var data: Dictionary = data_list[clampi(floor_index - 1, 0, data_list.size() - 1)]
+	var title := "第 %d 层" % floor_index
+	if GameConfig.abyss_level > 0:
+		# 深渊轮：换层横幅必须写明轮次，否则"为什么怪变硬了"无从解释
+		title = "深渊 %d · 第 %d 层" % [GameConfig.abyss_level, floor_index]
 	await floor_banner.show_card(
-		"第 %d 层" % floor_index,
+		title,
 		String(data.get("name", "")),
 		String(data.get("subtitle", "")),
 		String(data.get("hint", "")),
@@ -819,7 +859,24 @@ func _on_player_died() -> void:
 	game_over_ui.show_game_over(stats)
 
 func _on_restart() -> void:
+	# 普通重开 = 放弃深渊进度（深渊只在"连胜式"继续时保留）
+	GameConfig.abyss_level = 0
 	get_tree().reload_current_scene()
 
 func _on_return_to_menu() -> void:
+	GameConfig.abyss_level = 0
 	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+
+func _on_abyss_continue() -> void:
+	## 深渊阶梯（17.14）：+1 等级后重开三层。
+	## 等级挂在 GameConfig 的 static var 上（GameConfig 是静态脚本资源，不是 autoload），
+	## reload 重建 main 后依然在。
+	GameConfig.abyss_level += 1
+	var save_mgr := get_node_or_null("/root/SaveManager")
+	if save_mgr and GameConfig.abyss_level > GameConfig.best_abyss:
+		GameConfig.best_abyss = GameConfig.abyss_level
+		save_mgr.set_best_abyss(GameConfig.abyss_level)
+	print("🌀 深渊阶梯：进入第 %d 级（血 ×%.2f / 伤 ×%.2f / 掉落 ×%.2f）" % [
+		GameConfig.abyss_level, GameConfig.get_abyss_hp_mult(),
+		GameConfig.get_abyss_damage_mult(), GameConfig.get_abyss_loot_mult()])
+	get_tree().reload_current_scene()

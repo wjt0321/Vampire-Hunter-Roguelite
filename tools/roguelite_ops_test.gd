@@ -55,6 +55,8 @@ func _run() -> void:
 	print("====== Roguelite 池子操作回归测试 ======")
 
 	var main_scene = load("res://scenes/main.tscn").instantiate()
+	# 本套断言以猎人的手枪 DPS 与基础移速为基准，不许读取真实存档里的所选角色。
+	main_scene.debug_force_character = "hunter"
 	root.add_child(main_scene)
 	current_scene = main_scene
 	await create_timer(3.2).timeout
@@ -76,7 +78,10 @@ func _run() -> void:
 	var base_total := base_pool.size()
 	_check(base_total > 10, "初始选池 %d 项" % base_total)
 	_check(_count_type(base_pool, "stat") == 6, "属性卡 6 张")
-	_check(_count_type(base_pool, "passive") == 11, "被动 11 项")
+	var catalog = load("res://scripts/core/item_catalog.gd")
+	var passive_count: int = _count_type(base_pool, "passive")
+	_check(passive_count == catalog.PASSIVES.size(),
+		"被动 %d 项（与物品目录同步，不写死）" % passive_count)
 
 	# ==================================================
 	print("")
@@ -344,6 +349,13 @@ func _run() -> void:
 	print("")
 	print("--- ⑩ 战斗内临时增益 ---")
 	# ==================================================
+	# 停掉正常刷怪并清空武器目标：否则被磁力回收的宝石可能立刻被新击杀复用，
+	# 同一节点下一帧又带上 xp_value，形成与玩家机器速度有关的假失败。
+	main_scene.wave_manager.is_active = false
+	wm.set_process(false)
+	for enemy in get_nodes_in_group("enemies"):
+		enemy.queue_free()
+	await process_frame
 	# 1) 生成位置与分组
 	wm_mod._spawn_powerup()
 	await process_frame

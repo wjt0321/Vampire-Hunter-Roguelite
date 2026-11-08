@@ -36,6 +36,8 @@ func _run() -> void:
 
 	_check(dungeon.current_floor == 1, "起始楼层为 1")
 	_check(dungeon.room_in_floor == 1, "起始已进入第 1 间房")
+	_check(main_scene.room_events != null and main_scene.room_events.combat_room_count == 1,
+		"首房已计入事件战斗房数（第 2 间战斗房才可触发）")
 
 	for floor_index in range(1, GameConfig.DUNGEON_FLOOR_COUNT + 1):
 		var expected_rooms: int = dungeon.get_room_count()

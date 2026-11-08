@@ -514,7 +514,64 @@ const POWERUP_HEAL_RATIO: float = 0.25
 ## 狂暴倍率与时长
 const POWERUP_FRENZY_MULT: float = 1.5
 const POWERUP_FRENZY_DURATION: float = 8.0
+
+# ==================== 局内目标事件（17.14） ====================
+# 设计取舍：战斗房里只有"杀与被杀"，30 秒里没有第二个目标。
+# 事件是"房间的钩子"而不是新房间类型——保持 6~7 间房的节奏不变，
+# 只让其中一间（每层最多一间）多一个"这间我要干点什么"的小目标。
+# 两种事件二选一，不叠加：猎杀偏输出检验，守卫偏清场检验。
+
+const ROOM_EVENT_ENABLED: bool = true
+## 本层第几间战斗房起开始判定（第 1 间当教学，别刚进门就加事）
+const ROOM_EVENT_MIN_COMBAT_ROOM: int = 2
+## 触发概率按层（每层最多触发一次）
+const ROOM_EVENT_CHANCE_BY_FLOOR: Array = [0.35, 0.40, 0.45]
+## 猎杀权重 vs 守卫权重（守卫事件更重流程，所以低一些）
+const ROOM_EVENT_HUNT_WEIGHT: float = 0.65
+
+## 猎杀：双词缀精英的额外血量倍率（叠在词缀 1.35 之上）
+const ROOM_EVENT_HUNT_HP_MULT: float = 2.0
+## 猎杀限时（秒）。放太长等于白给，太短则是纯挫败——
+# 20 秒 ≈ 波次时长的 2/3，期间要边躲小怪边集火
+const ROOM_EVENT_HUNT_TIME: float = 20.0
+const ROOM_EVENT_HUNT_SILVER: int = 30
+const ROOM_EVENT_HUNT_XP: int = 80
+
+## 守卫：数量 / 血量倍率 / 奖励。守卫围成一圈守住房间中央的上锁宝箱
+const ROOM_EVENT_GUARD_COUNT: int = 5
+const ROOM_EVENT_GUARD_HP_MULT: float = 1.3
+const ROOM_EVENT_GUARD_SILVER: int = 25
+const ROOM_EVENT_GUARD_XP: int = 60
+## 守卫的视觉标记色（和普通敌人区分开）
+const ROOM_EVENT_GUARD_COLOR: Color = Color(1.0, 0.78, 0.25)
 ## 类型权重表：回血最常见（最容易形成决策），狂暴次之
 const POWERUP_KINDS: Array = ["heal", "heal", "frenzy", "magnet"]
 
 
+
+# ==================== 深渊阶梯（17.14） ====================
+# 通关后可选"继续深入"：+1 深渊等级重开三层，敌人更强、掉落更多。
+# GameConfig 不是 autoload（纯静态类），运行时状态必须用 static var：
+# 静态变量挂在脚本资源本身上，reload_current_scene() 重建 main 后依然在。
+# 离开深渊（普通重开 / 回主菜单 / 游戏失败）时归零。
+
+## 本局当前深渊等级（0 = 首轮正常难度）
+static var abyss_level: int = 0
+## 历史最高通关深渊层（真值在 SaveManager 存档里，这里只是运行时镜像）
+static var best_abyss: int = 0
+
+const ABYSS_STEP_HP: float = 0.15
+const ABYSS_STEP_DAMAGE: float = 0.10
+const ABYSS_STEP_LOOT: float = 0.10
+
+## 每级敌人血量 +15%
+static func get_abyss_hp_mult() -> float:
+	return 1.0 + ABYSS_STEP_HP * float(abyss_level)
+
+## 每级敌人伤害 +10%
+static func get_abyss_damage_mult() -> float:
+	return 1.0 + ABYSS_STEP_DAMAGE * float(abyss_level)
+
+## 每级掉落（银币/经验/血晶）+10%
+static func get_abyss_loot_mult() -> float:
+	return 1.0 + ABYSS_STEP_LOOT * float(abyss_level)

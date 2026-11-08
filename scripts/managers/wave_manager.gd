@@ -257,6 +257,53 @@ func _get_enemies_per_spawn() -> int:
 	_spawn_given_total += count
 	return count
 
+func spawn_special_enemy(enemy_type: String, position: Vector2,
+		affixes: Array = [], hp_mult: float = 1.0, extra_hp_scale: float = 1.0) -> Node:
+	## 局内目标事件用：按指定类型与位置刷一只"剧情怪"（猎物 / 守卫）。
+	## 与 _spawn_enemy 的区别：位置和数值都由调用方指定，不吃同屏上限
+	## （上限的语义是"限制氛围怪"，不该拦住事件目标——猎物被上限卡住
+	## 不出场，玩家对着倒计时干着急，这是最差的一种 bug）。
+	if not enemy_scenes.has(enemy_type):
+		return null
+	_ensure_current_scene()
+	if _current_scene == null:
+		return null
+	var enemy: Node = enemy_scenes[enemy_type].instantiate()
+	enemy.spawn_wave = maxi(current_wave, 1)
+	enemy.floor_index = floor_index
+	if "loot_mult" in enemy:
+		enemy.loot_mult = loot_mult * GameConfig.get_abyss_loot_mult()
+	if "hp_scale" in enemy:
+		enemy.hp_scale *= hp_mult * extra_hp_scale
+	if "suppress_affix" in enemy:
+		enemy.suppress_affix = true
+	# 多词缀装配：主词缀写 enemy.elite_affix（既有词缀管线与测试都认它），
+	# 第二词缀写 secondary_affix。非法与重复 id 在这里就丢掉，
+	# EnemyBase 只负责"合法且去重后"的结算，两边不会各丢一次。
+	if "elite_affix" in enemy:
+		enemy.elite_affix = ""
+		if "secondary_affix" in enemy:
+			enemy.secondary_affix = ""
+		var installed: Array = []
+		for id in affixes:
+			var affix_id := String(id)
+			if affix_id.is_empty() or affix_id in installed:
+				continue
+			if EliteAffix.get_data(affix_id).is_empty():
+				continue
+			if String(enemy.elite_affix).is_empty():
+				enemy.elite_affix = affix_id
+			elif "secondary_affix" in enemy:
+				enemy.secondary_affix = affix_id
+			installed.append(affix_id)
+	enemy.global_position = position
+	enemy.enemy_died.connect(_on_enemy_died)
+	if player and player.has_method("_on_enemy_died"):
+		enemy.enemy_died.connect(player._on_enemy_died)
+	enemies_alive += 1
+	_current_scene.add_child(enemy)
+	return enemy
+
 func _spawn_enemy() -> void:
 	if player == null or not is_instance_valid(player):
 		is_active = false
@@ -271,7 +318,9 @@ func _spawn_enemy() -> void:
 		enemy.spawn_wave = current_wave
 		enemy.floor_index = floor_index
 		if "loot_mult" in enemy:
-			enemy.loot_mult = loot_mult
+			# 深渊掉落加成乘在这里而不是 enemy 里 round：掉落链有概率进位，
+			# 直接 round base 值会复刻"1 银 ×1.1 永远 1"的老 bug
+			enemy.loot_mult = loot_mult * GameConfig.get_abyss_loot_mult()
 		# 软因子走 hp_scale：enemy_base 在 _ready → _apply_wave_scaling 里乘它，
 		# 必须在 add_child 之前设好（这里正好是 instantiate 之后）
 		if "hp_scale" in enemy and not is_equal_approx(_soft_hp_scale, 1.0):

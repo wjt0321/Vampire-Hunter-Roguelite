@@ -17,10 +17,16 @@ class_name EliteAffixController
 ##   splitter —— 监听 enemy_died，死亡瞬间裂成两只小的（裂变体不再带词缀）。
 ##   charger  —— 前摇（地面预警）→ 突进 → 收招，前摇期间剥夺宿主的物理帧。
 ##   haster   —— 周期性给周围小怪上 `apply_haste`，优先集火目标。
+##
+## 多词缀（深渊猎物）：同一只敌人可以挂两个控制器。slot 0 保持旧名字
+## `AffixController` 以兼容既有测试与外部查找；slot 1 用自己的名字、
+## 图标位置和光环半径，避免两个图标叠成一个、两圈光环看起来像一圈。
 
 var host: Node = null
 var affix_id: String = ""
 var color: Color = Color.WHITE
+## 词缀槽位：0 = 主词缀，1 = 第二词缀
+var slot: int = 0
 
 var _ring: Sprite2D = null
 var _icon: Label = null
@@ -40,11 +46,13 @@ var _charge_cd: float = 0.0
 # 急速光环
 var _aura_timer: float = 0.0
 
-func setup(enemy: Node, id: String) -> void:
+func setup(enemy: Node, id: String, affix_slot: int = 0) -> void:
 	host = enemy
 	affix_id = id
+	slot = affix_slot
 	color = EliteAffix.color(id)
-	name = "AffixController"
+	# 第一槽位必须叫 AffixController：既有测试和调试路径都按这个名字找节点
+	name = "AffixController" if slot == 0 else "AffixController%d" % (slot + 1)
 	# 宿主死了就一起消失，不用手动清理
 	add_to_group("elite_affixes")
 
@@ -65,7 +73,8 @@ func is_affix(id: String) -> bool:
 
 func _build_visuals() -> void:
 	# 光环：标出"这只是精英"，同时按词缀区分颜色（和地面预警同一套镂空圆环）
-	_ring = ProjectileVisuals.make_ring_sprite(78.0, color)
+	# 第二词缀的环略大：两圈同心同径会互相盖住，看起来仍然只有一条词缀
+	_ring = ProjectileVisuals.make_ring_sprite(78.0 + 14.0 * slot, color)
 	_ring.name = "AffixRing"
 	# 注意：不能沿用 make_ring_sprite 里的 z_index = -1。
 	# 那只适用于"玩家脚底的光环"（父节点是自己画自己），这里是敌人的子节点，
@@ -77,14 +86,15 @@ func _build_visuals() -> void:
 	_ring_tween.tween_property(_ring, "modulate:a", 0.35, 0.65).set_trans(Tween.TRANS_SINE)
 	_ring_tween.tween_property(_ring, "modulate:a", 0.9, 0.65).set_trans(Tween.TRANS_SINE)
 
-	# 图标：光靠颜色区分四种词缀太难，头顶给一个能一眼读懂的符号
+	# 图标：光靠颜色区分四种词缀太难，头顶给一个能一眼读懂的符号。
+	# 两个词缀时图标向左错开一格，叠在一起等于只显示了一个。
 	_icon = Label.new()
 	_icon.name = "AffixIcon"
 	_icon.text = EliteAffix.icon(affix_id)
 	_icon.add_theme_font_size_override("font_size", 17)
 	_icon.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 	_icon.add_theme_constant_override("outline_size", 4)
-	_icon.position = Vector2(-9, -52)
+	_icon.position = Vector2(-9.0 - 20.0 * slot, -52.0)
 	_icon.z_index = 1
 	_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_icon)
@@ -263,6 +273,8 @@ func _spawn_splitlings() -> void:
 		# 裂变体不再带词缀，否则会无限裂变直到卡死
 		child.suppress_affix = true
 		child.elite_affix = ""
+		if "secondary_affix" in child:
+			child.secondary_affix = ""
 		child.hp_scale = float(host.hp_scale) * GameConfig.AFFIX_SPLIT_HP_RATIO
 		child.sprite_scale_mult = float(host.sprite_scale_mult) * GameConfig.AFFIX_SPLIT_SCALE
 		child.spawn_wave = int(host.spawn_wave)
