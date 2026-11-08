@@ -29,11 +29,13 @@ var current_level: int = 1
 @export var lightning_jumps: int = 3
 
 func get_scaled_damage() -> float:
-	# 每级提升20% (原30%)，降低10%
-	return base_damage * (1.0 + (current_level - 1) * 0.2)
+	# 每级 +15% 伤害（系数集中在 GameConfig）
+	return base_damage * (1.0 + (current_level - 1) * GameConfig.WEAPON_DAMAGE_PER_LEVEL)
 
 func get_scaled_fire_rate() -> float:
-	return fire_rate * (1.0 - (current_level - 1) * 0.08)
+	# 每级 -6% 射击间隔，并设下限避免射速无限增长
+	var interval := fire_rate * (1.0 - (current_level - 1) * GameConfig.WEAPON_FIRE_RATE_PER_LEVEL)
+	return maxf(interval, 0.08)
 
 func get_scaled_projectile_count() -> int:
 	return projectile_count + (current_level - 1) / 2

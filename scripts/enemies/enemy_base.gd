@@ -2,17 +2,44 @@ extends CharacterBody2D
 class_name EnemyBase
 ## 敌人基类脚本
 ## 所有敌人类型继承此类
+## HP 和伤害随波次动态缩放，由 GameConfig 控制
 
-
-# === 属性 ===
-@export var max_hp: float = 39.0
+# === 基础属性（子类设置，会被波次系数缩放） ===
+@export var base_hp: float = 39.0
+@export var base_contact_damage: float = 10.0
 @export var move_speed: float = 80.0
-@export var contact_damage: float = 10.0
 @export var xp_value: int = 5
+## 击杀掉落的银币数（局内货币）。精英/Boss 由子类覆盖为更高值。
+@export var silver_value: int = 1
 
+# 缩放后的实际属性
+var max_hp: float
+var contact_damage: float
 var current_hp: float
 var player: CharacterBody2D = null
 var is_dead: bool = false
+var spawn_wave: int = 1
+## 所在楼层（1-based），用于叠加层难度倍率
+var floor_index: int = 1
+## 额外的 HP 倍率（召唤物/分裂体用），在 _ready 前设置
+var hp_scale: float = 1.0
+## 精灵显示倍率（相对归一化后的 56px）。分裂体设 <1，精英设 >1，在 _ready 前设置。
+## 注意：绝对尺寸请永远通过这个变量表达，不要直接写 sprite.scale = Vector2(x, x)，
+## 那会把归一化比例覆盖掉——精英吸血鬼曾因此变成 333px 的巨图。
+var sprite_scale_mult: float = 1.0
+
+# === 精英词缀（在 _ready 之前由 WaveManager / 子类赋值） ===
+## 空字符串 = 普通怪。取值见 EliteAffix.DATA
+var elite_affix: String = ""
+## 词缀护盾剩余量。**护盾是直接加到 max_hp 上的**，
+## 所以任何覆写了 take_damage 的敌人（石像鬼、自爆鬼、亲王…）都不需要改一行代码就自带护盾。
+var affix_shield_hp: float = 0.0
+## 裂变体用：禁止继承词缀，否则会无限裂变
+var suppress_affix: bool = false
+
+## 急速光环用：记录被加速前的移速，到期还回去
+var _move_speed_base: float = -1.0
+var _haste_token: int = 0
 
 # 冻结状态
 var is_frozen: bool = false
@@ -34,6 +61,12 @@ signal enemy_died(enemy: Node2D)
 var _vfx_manager: Node = null
 
 func _ready() -> void:
+	# 根据波次缩放 HP 和伤害
+	_apply_wave_scaling()
+	# 词缀加成必须在这里做完：体型倍率要赶在 _load_sprite_texture 归一化之前生效，
+	# 护盾量要赶在 current_hp = max_hp 之前加进 max_hp
+	if not elite_affix.is_empty():
+		_apply_elite_affix_stats()
 	current_hp = max_hp
 	add_to_group("enemies")
 	_vfx_manager = get_node_or_null("/root/VFXManager")
@@ -41,6 +74,65 @@ func _ready() -> void:
 	_load_sprite_texture()
 	# 查找玩家节点
 	_find_player()
+	# 表现与行为挂在子节点上：一半敌人自己覆写了 _physics_process，基类钩子对它们无效
+	if not elite_affix.is_empty():
+		_attach_affix_controller()
+
+func _apply_elite_affix_stats() -> void:
+	## 词缀统一加成：更肉、更疼、掉更多
+	max_hp *= GameConfig.ELITE_AFFIX_HP_MULT
+	contact_damage *= GameConfig.ELITE_AFFIX_DAMAGE_MULT
+	silver_value = int(round(float(silver_value) * GameConfig.ELITE_AFFIX_SILVER_MULT))
+	xp_value = int(round(float(xp_value) * GameConfig.ELITE_AFFIX_XP_MULT))
+	sprite_scale_mult *= GameConfig.ELITE_AFFIX_SCALE_MULT
+	if elite_affix == EliteAffix.SHIELDED:
+		affix_shield_hp = max_hp * GameConfig.AFFIX_SHIELD_RATIO
+		max_hp += affix_shield_hp
+
+func _attach_affix_controller() -> void:
+	var controller := EliteAffixController.new()
+	controller.setup(self, elite_affix)
+	add_child(controller)
+	print("⚠️ 精英出现：%s·%s" % [EliteAffix.display_name(elite_affix), _get_enemy_type()])
+
+func apply_haste(duration: float) -> void:
+	## 急速光环：临时提速，到期自动还回原速。
+	## 用计时协程而不是每帧轮询——被加速的可能是二十只怪，没必要让它们各自跑逻辑。
+	if is_dead:
+		return
+	if _move_speed_base < 0.0:
+		_move_speed_base = move_speed
+	move_speed = _move_speed_base * GameConfig.AFFIX_HASTE_MULT
+	_haste_token += 1
+	var token := _haste_token
+	await get_tree().create_timer(duration).timeout
+	if not is_instance_valid(self) or is_dead:
+		return
+	if token != _haste_token:
+		return  # 期间被重新加速过，让最新的那个负责复原
+	if _move_speed_base > 0.0:
+		move_speed = _move_speed_base
+		_move_speed_base = -1.0
+
+func _apply_wave_scaling() -> void:
+	## 根据生成波次与所在楼层缩放敌人属性
+	var hp_mult = GameConfig.get_enemy_hp_multiplier(spawn_wave)
+	var dmg_mult = GameConfig.get_enemy_damage_multiplier(spawn_wave)
+	var level_scale = GameConfig.get_player_level_hp_scale(_get_player_level())
+	var floor_hp = GameConfig.get_floor_hp_multiplier(floor_index)
+	var floor_dmg = GameConfig.get_floor_damage_multiplier(floor_index)
+	max_hp = base_hp * hp_mult * hp_scale * level_scale * floor_hp
+	contact_damage = base_contact_damage * dmg_mult * floor_dmg
+
+func _get_player_level() -> int:
+	## 读取玩家当前等级，用于 HP 橡皮筋缩放
+	var players := get_tree().get_nodes_in_group("player")
+	if players.is_empty():
+		return 1
+	var p = players[0]
+	if p and "current_level" in p:
+		return int(p.current_level)
+	return 1
 
 func _get_vfx() -> Node:
 	if _vfx_manager == null or not is_instance_valid(_vfx_manager):
@@ -62,7 +154,8 @@ func _adjust_sprite_scale() -> void:
 			var target_size: float = 56.0
 			# 计算缩放比例
 			var scale_factor: float = target_size / max(texture_size.x, texture_size.y)
-			sprite.scale = Vector2(scale_factor, scale_factor)
+			# 相对倍率（分裂体缩小、精英放大），必须在归一化之后乘，不能覆盖
+			sprite.scale = Vector2(scale_factor, scale_factor) * sprite_scale_mult
 
 func _ensure_default_texture() -> void:
 	if sprite and sprite.texture == null:
@@ -116,15 +209,24 @@ func take_damage(amount: float) -> void:
 	if is_dead:
 		return
 	current_hp -= amount
+	_apply_hit_freeze()
 	_flash_hit()
 	if current_hp <= 0:
 		_die()
+
+func _apply_hit_freeze() -> void:
+	## 命中冻帧：让受击者停 0.05 秒，给"打中了"一个物理层面的确认。
+	## 刻意不用 Engine.time_scale —— 那会把玩家输入一起冻住，是廉价且容易失控的做法。
+	## Boss 不冻（体型大、动作慢，冻了反而像卡顿）。
+	if is_in_group("boss"):
+		return
+	hit_stun_timer = maxf(hit_stun_timer, GameConfig.HIT_FREEZE_DURATION)
 
 func take_damage_with_knockback(amount: float, knockback_dir: Vector2, knockback_force: float = 120.0, stun_duration: float = 0.08) -> void:
 	if is_dead:
 		return
 	current_hp -= amount
-	hit_stun_timer = maxf(hit_stun_timer, stun_duration)
+	hit_stun_timer = maxf(hit_stun_timer, maxf(stun_duration, GameConfig.HIT_FREEZE_DURATION))
 	knockback_velocity += knockback_dir.normalized() * knockback_force
 	_flash_hit()
 	if current_hp <= 0:
@@ -159,6 +261,8 @@ func _die() -> void:
 	AudioManager.play_sfx(audio_lib.get_sound("enemy_death"))
 	# 掉落经验宝石
 	_drop_xp_gem()
+	# 掉落银币（局内货币）
+	_drop_silver()
 	# 禁用碰撞
 	collision_shape.set_deferred("disabled", true)
 	set_physics_process(false)
@@ -213,6 +317,27 @@ func _drop_xp_gem() -> void:
 	if gem.has_method("_setup_gem"):
 		gem._setup_gem()
 	get_tree().current_scene.call_deferred("add_child", gem)
+
+func _drop_silver() -> void:
+	## 银币掉落：附近已有银币就"合并金额"，避免同屏堆几十个节点
+	if silver_value <= 0:
+		return
+	for coin in get_tree().get_nodes_in_group("silver_coins"):
+		if is_instance_valid(coin) and coin.global_position.distance_squared_to(global_position) < 900.0:
+			coin.value += silver_value
+			return
+	var packed: PackedScene = preload("res://scenes/player/silver_coin.tscn")
+	var coin := packed.instantiate()
+	coin.value = silver_value
+	coin.global_position = global_position
+
+	var parent: Node = get_tree().current_scene
+	if parent == null:
+		parent = get_parent()
+	if parent == null:
+		coin.queue_free()
+		return
+	parent.call_deferred("add_child", coin)
 
 func _on_contact_area_body_entered(body: Node2D) -> void:
 	## 碰到玩家时造成伤害

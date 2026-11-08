@@ -13,6 +13,15 @@ var direction: Vector2 = Vector2.RIGHT
 var damage_multiplier: float = 1.0
 var distance_traveled: float = 0.0
 
+# === 外观 ===
+## 弹道颜色（由武器决定，决定发光色）
+@export var visual_color: Color = Color(1.0, 0.87, 0.35)
+## 视觉长度/厚度（像素）。比碰撞体略大，看着就"打得中"
+@export var visual_length: float = 16.0
+@export var visual_thickness: float = 6.0
+## 是否圆形弹（法术球用）
+@export var visual_round: bool = false
+
 # 追踪相关
 var homing: bool = false
 var homing_strength: float = 8.0
@@ -26,16 +35,22 @@ func _ready() -> void:
 func _setup_visuals() -> void:
 	# 设置子弹旋转方向
 	rotation = direction.angle()
-	# 加载子弹纹理
 	var spr := $Sprite2D as Sprite2D
-	if spr and spr.texture == null:
-		var tex := TextureManager.instance.get_weapon_icon("bullet")
-		if tex:
-			spr.texture = tex
-		else:
-			var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)
-			img.fill(Color.WHITE)
-			spr.texture = ImageTexture.create_from_image(img)
+	if spr == null:
+		return
+	# 统一走"亮芯+柔光"外观：早期 8x8 白方块在混战里基本看不见
+	apply_visual_style(visual_color, visual_length, visual_thickness, visual_round)
+
+func apply_visual_style(color: Color, length: float = 16.0, thickness: float = 6.0, round_shape: bool = false) -> void:
+	## 由武器管理器在每次发射时调用（对象池复用的子弹不会重跑 _ready）
+	visual_color = color
+	visual_length = length
+	visual_thickness = thickness
+	visual_round = round_shape
+	var spr := get_node_or_null("Sprite2D") as Sprite2D
+	if spr == null:
+		return
+	ProjectileVisuals.style_sprite(spr, color, length, thickness, round_shape)
 
 func reset_for_pool() -> void:
 	## 归还对象池前重置状态
@@ -54,10 +69,10 @@ func _physics_process(delta: float) -> void:
 	var move_distance := speed * delta
 	position += direction * move_distance
 	distance_traveled += move_distance
-	# 子弹拖尾
+	# 子弹拖尾（用弹道本身的颜色，拖尾也跟着亮起来）
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx and Engine.get_physics_frames() % 3 == 0:
-		vfx.spawn_bullet_trail(global_position)
+		vfx.spawn_bullet_trail(global_position, Color(visual_color.r, visual_color.g, visual_color.b, 0.55))
 	# 超出射程后归还对象池
 	if distance_traveled >= max_range:
 		ObjectPool.release(self)

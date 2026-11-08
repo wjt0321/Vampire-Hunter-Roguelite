@@ -16,9 +16,9 @@ var charge_direction: Vector2 = Vector2.ZERO
 var is_second_phase: bool = false
 
 func _ready() -> void:
-	max_hp = 350.0  # 高血量（介于普通敌人和Boss之间）
+	base_hp = 180.0  # 高血量（介于普通敌人和Boss之间）
 	move_speed = 70.0
-	contact_damage = 25.0
+	base_contact_damage = 25.0
 	xp_value = 80  # 高经验值
 	super._ready()
 
@@ -119,7 +119,9 @@ func _enter_second_phase() -> void:
 	## 进入第二阶段
 	is_second_phase = true
 	move_speed = 90.0  # 速度提升
-	contact_damage = 30.0  # 伤害提升
+	base_contact_damage = 30.0  # 伤害提升
+	# 只重算伤害，不重算 HP（避免重置 max_hp）
+	contact_damage = base_contact_damage * GameConfig.get_enemy_damage_multiplier(spawn_wave)
 	
 	print("👑 血族亲王进入狂暴状态!")
 	

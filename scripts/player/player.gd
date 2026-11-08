@@ -20,14 +20,14 @@ var is_invincible: bool = false
 # === 经验与升级 ===
 var current_xp: int = 0
 var current_level: int = 1
-var xp_to_next_level: int = 16  # 提升2倍 (原8)
+var xp_to_next_level: int = 20
 
 # === 战斗属性（可被升级修改） ===
 var damage_multiplier: float = 1.0
 var speed_multiplier: float = 1.0
 var shoot_speed_multiplier: float = 1.0
 var pickup_range_bonus: float = 0.0
-var armor: float = 0.0
+var armor: float = 0.0  # 护甲值，通过百分比公式换算减伤
 
 func get_total_damage_multiplier() -> float:
 	## 获取总伤害倍率（包含狂战士之血效果）
@@ -41,6 +41,7 @@ func get_total_damage_multiplier() -> float:
 var passive_items: Array = []
 var magnet_multiplier: float = 1.0
 var has_shield: bool = false
+var has_shield_item: bool = false
 var shield_cooldown: float = 30.0
 var shield_timer: float = 0.0
 var regen_rate: float = 0.0
@@ -62,11 +63,26 @@ var character_id: String = "hunter"
 var character_passive_timer: float = 0.0
 var character_passive_interval: float = 10.0  # 牧师被动每10秒触发
 
+# === 局内货币（银币） ===
+## 只在本局有效，结算清零。血晶是局外 Meta 货币，两者不要混。
+var silver: int = 0
+
+# === 开火反馈（纯视觉，绝不产生位移） ===
+## 早期版本这里存的是"向后速度"，会被加进 velocity 里真正推着人走，
+## 用户的反馈就是"发射的时候人物有轻微回退"。
+## 现在改成精灵挤压回弹：位置不动，只有 0.08s 的形变，收枪感还在，位移没有了。
+var _sprite_base_scale: Vector2 = Vector2.ONE
+var _fire_punch_tween: Tween = null
+# 护盾光环节点（有护盾时才存在）
+var _shield_aura: Sprite2D = null
+var _shield_pulse: Tween = null
+
 # === 信号 ===
 signal hp_changed(current: float, maximum: float)
 signal xp_changed(current_xp: int, xp_needed: int, level: int)
 signal level_up(new_level: int)
 signal player_died
+signal silver_changed(amount: int)
 
 # === 节点引用 ===
 @onready var sprite: Sprite2D = $Sprite2D
@@ -76,6 +92,7 @@ signal player_died
 func _ready() -> void:
 	add_to_group("player")
 	current_hp = max_hp
+	xp_to_next_level = GameConfig.get_xp_required(current_level)
 	# 初始化 AudioLib 缓存
 	_audio_lib = AudioLib
 	# 加载精灵图纹理
@@ -112,6 +129,9 @@ func _adjust_sprite_scale() -> void:
 			# 计算缩放比例
 			var scale_factor: float = target_size / max(texture_size.x, texture_size.y)
 			sprite.scale = Vector2(scale_factor, scale_factor)
+			# 记下基准缩放：开火挤压是"在基准上乘一个系数再回到基准"，
+			# 不能直接写死 1.0，否则会把按碰撞体算出来的缩放覆盖掉（精英怪巨型贴图就是这么来的）
+			_sprite_base_scale = sprite.scale
 
 func apply_character_data(char_data: Resource) -> void:
 	## 应用角色数据到玩家
@@ -136,12 +156,41 @@ func _physics_process(delta: float) -> void:
 	_process_passive_items(delta)
 	_process_character_passive(delta)
 
+func apply_recoil(backward_dir: Vector2, speed: float = -1.0) -> void:
+	## 名字保留（外部/测试都按这个接口调用），但语义已经改成"开火挤压"。
+	## backward_dir 只用来决定挤压方向，不参与任何位移计算。
+	_fire_punch(backward_dir)
+
+func _fire_punch(direction: Vector2) -> void:
+	## 开火反馈：沿开火轴的垂直方向压扁一点点，再弹回。
+	## 53px 的精灵压 6% ≈ 3px 的视觉变化，读作"枪有后劲"，但角色坐标一动不动。
+	if sprite == null or not is_instance_valid(sprite):
+		return
+	if _sprite_base_scale == Vector2.ONE:
+		_sprite_base_scale = sprite.scale
+	var punch: float = GameConfig.PLAYER_FIRE_PUNCH_SCALE
+	# 竖直方向开火时压在横轴上，横向开火时压在纵轴上，观感更贴近"后坐"
+	var axis_vertical: bool = absf(direction.normalized().y) > absf(direction.normalized().x)
+	var squashed: Vector2 = _sprite_base_scale
+	if axis_vertical:
+		squashed = Vector2(punch, 2.0 - punch) * _sprite_base_scale
+	else:
+		squashed = Vector2(2.0 - punch, punch) * _sprite_base_scale
+
+	if _fire_punch_tween != null and _fire_punch_tween.is_valid():
+		_fire_punch_tween.kill()
+	sprite.scale = squashed
+	_fire_punch_tween = create_tween()
+	_fire_punch_tween.tween_property(sprite, "scale", _sprite_base_scale,
+		GameConfig.PLAYER_FIRE_PUNCH_TIME).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+
 func _handle_movement() -> void:
 	var input_dir := Vector2.ZERO
 	input_dir.x = Input.get_axis("move_left", "move_right")
 	input_dir.y = Input.get_axis("move_up", "move_down")
 	input_dir = input_dir.normalized()
 	var total_speed_mult := speed_multiplier * (1.0 + move_speed_bonus_multiplier)
+	# 注意：这里只由输入决定速度。开火反馈是纯视觉的，不许再往 velocity 里塞东西。
 	velocity = input_dir * move_speed * total_speed_mult
 	move_and_slide()
 
@@ -165,7 +214,7 @@ func gain_xp(amount: int) -> void:
 
 func _level_up() -> void:
 	current_level += 1
-	xp_to_next_level = 16 + (current_level - 1) * 8  # 提升2倍
+	xp_to_next_level = GameConfig.get_xp_required(current_level)
 	level_up.emit(current_level)
 	# 升级光效
 	var vfx := get_node_or_null("/root/VFXManager")
@@ -174,23 +223,40 @@ func _level_up() -> void:
 	# 播放升级音效
 	AudioManager.play_sfx(_audio_lib.get_sound("level_up"))
 
+# === 银币（局内货币） ===
+func add_silver(amount: int) -> void:
+	if amount <= 0:
+		return
+	silver += amount
+	silver_changed.emit(silver)
+
+func spend_silver(amount: int) -> bool:
+	## 够就扣并返回 true；不够返回 false（调用方据此禁用按钮/提示）
+	if amount <= 0:
+		return true
+	if silver < amount:
+		return false
+	silver -= amount
+	silver_changed.emit(silver)
+	return true
+
 # === 升级效果应用 ===
 func apply_upgrade(upgrade_type: String) -> void:
 	match upgrade_type:
 		"damage":
-			damage_multiplier += 0.2
+			damage_multiplier += GameConfig.UPGRADE_DAMAGE_MULT
 		"speed":
-			speed_multiplier += 0.15
+			speed_multiplier += GameConfig.UPGRADE_SPEED_MULT
 		"shoot_speed":
-			shoot_speed_multiplier += 0.2
+			shoot_speed_multiplier += GameConfig.UPGRADE_SHOOT_SPEED_MULT
 		"max_hp":
-			max_hp += 20.0
-			current_hp += 20.0
+			max_hp += GameConfig.UPGRADE_MAX_HP
+			current_hp += GameConfig.UPGRADE_MAX_HP
 			hp_changed.emit(current_hp, max_hp)
 		"armor":
-			armor += 5.0
+			armor += GameConfig.UPGRADE_ARMOR
 		"pickup_range":
-			pickup_range_bonus += 30.0
+			pickup_range_bonus += GameConfig.UPGRADE_PICKUP_RANGE
 
 # === 生命值相关 ===
 func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO) -> void:
@@ -213,7 +279,9 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO) -> void
 			vfx.spawn_dodge_effect(global_position)
 		return
 
-	var actual_damage := maxf(amount - armor, 1.0)
+	# 护甲改为百分比减伤（上限 75%），避免后期固定减伤导致免疫
+	var reduction: float = GameConfig.calculate_damage_reduction(armor)
+	var actual_damage: float = maxf(amount * (1.0 - reduction), 1.0)
 	current_hp = clampf(current_hp - actual_damage, 0.0, max_hp)
 	hp_changed.emit(current_hp, max_hp)
 	_start_invincibility()
@@ -319,8 +387,8 @@ func _die() -> void:
 
 # === 被动道具处理 ===
 func _process_passive_items(delta: float) -> void:
-	# 护盾计时
-	if shield_cooldown < 30.0:  # 有护盾道具才计时
+	# 护盾计时（只有拿到护盾道具才计时）
+	if has_shield_item:
 		shield_timer += delta
 		if shield_timer >= shield_cooldown and not has_shield:
 			_grant_shield()
@@ -350,10 +418,28 @@ func _grant_shield() -> void:
 	has_shield = true
 	shield_timer = 0.0
 	print("🛡️ 护盾生成!")
-	# 护盾视觉效果
-	var tween := create_tween().set_loops()
-	tween.tween_property(sprite, "modulate", Color(0.5, 0.8, 1.0, 1.0), 0.3)
-	tween.tween_property(sprite, "modulate", Color.WHITE, 0.3)
+	_spawn_shield_aura()
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx:
+		vfx.spawn_hit_particles(global_position, GameConfig.SHIELD_AURA_COLOR, 8)
+
+func _spawn_shield_aura() -> void:
+	## 护盾的"实体"表现：一圈青蓝色光环。
+	## 早期版本是给 sprite 挂一个 set_loops() 的 modulate 循环 —— 有两个致命问题：
+	## ① 那个 tween 从来没有被 kill，护盾破了人物还在一直闪蓝；
+	## ② modulate 和受击闪红抢同一个属性，挨打时护盾完全看不出来。
+	## 现在光环是独立子节点，护盾破时整圈扩散淡出，谁也不会覆盖谁。
+	if _shield_aura != null and is_instance_valid(_shield_aura):
+		return
+	_shield_aura = ProjectileVisuals.make_ring_sprite(GameConfig.SHIELD_AURA_RADIUS, GameConfig.SHIELD_AURA_COLOR)
+	_shield_aura.name = "ShieldAura"
+	add_child(_shield_aura)
+	_shield_aura.modulate.a = 0.0
+	var fade_in := create_tween()
+	fade_in.tween_property(_shield_aura, "modulate:a", 0.9, 0.16)
+	_shield_pulse = create_tween().set_loops()
+	_shield_pulse.tween_property(_shield_aura, "modulate:a", 0.5, 0.55)
+	_shield_pulse.tween_property(_shield_aura, "modulate:a", 0.9, 0.55)
 
 func _break_shield() -> void:
 	has_shield = false
@@ -361,6 +447,43 @@ func _break_shield() -> void:
 	print("💥 护盾破碎!")
 	# 播放护盾破碎音效
 	AudioManager.play_sfx(_audio_lib.get_sound("shield_break"))
+	_break_shield_aura()
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx:
+		vfx.spawn_hit_particles(global_position, GameConfig.SHIELD_AURA_COLOR, 10)
+		vfx.screen_shake(3.0, 0.12)
+
+func _break_shield_aura() -> void:
+	if _shield_pulse != null and _shield_pulse.is_valid():
+		_shield_pulse.kill()
+	_shield_pulse = null
+	if _shield_aura == null or not is_instance_valid(_shield_aura):
+		_shield_aura = null
+		return
+	var ring: Sprite2D = _shield_aura
+	_shield_aura = null
+	ring.modulate = Color(1.6, 1.9, 2.0, 1.0)
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(ring, "scale", ring.scale * 1.5, 0.26)
+	tw.tween_property(ring, "modulate:a", 0.0, 0.26)
+	tw.chain().tween_callback(ring.queue_free)
+
+func get_shield_status() -> Dictionary:
+	## 给 HUD 用：是否拥有护盾道具 / 当前是否顶着护盾 / 充能进度
+	if not has_shield_item and not has_shield:
+		return {"has_item": false, "active": false, "progress": 0.0, "remain": 0.0}
+	var progress: float = 1.0
+	var remain: float = 0.0
+	if not has_shield:
+		progress = clampf(shield_timer / maxf(shield_cooldown, 0.01), 0.0, 1.0)
+		remain = maxf(shield_cooldown - shield_timer, 0.0)
+	return {
+		"has_item": has_shield_item,
+		"active": has_shield,
+		"progress": progress,
+		"remain": remain,
+	}
 
 func _heal_regen() -> void:
 	var heal_amount := max_hp * regen_rate
@@ -386,8 +509,12 @@ func _apply_passive_effect(item) -> void:
 			magnet_multiplier = item.get_scaled_value()
 			pickup_range_bonus = 50.0 * magnet_multiplier
 		1:  # SHIELD
-			shield_cooldown = item.get_scaled_value()
+			has_shield_item = true
+			shield_cooldown = maxf(item.get_scaled_value(), 8.0)
 			shield_timer = 0.0
+			# 拿到道具立刻亮一层：原来要空等 30 秒冷却，玩家会以为"这东西没生效"
+			if GameConfig.SHIELD_FIRST_GRANT_IMMEDIATE and not has_shield:
+				_grant_shield()
 		2:  # REGENERATION
 			regen_rate = item.get_scaled_value()
 		3:  # GREED
@@ -395,17 +522,17 @@ func _apply_passive_effect(item) -> void:
 		4:  # BERSERKER
 			berserker_bonus = item.get_scaled_value()
 		5:  # FROZEN
-			freeze_chance = item.get_scaled_value()
+			freeze_chance = minf(item.get_scaled_value(), GameConfig.PASSIVE_MAX_FREEZE)
 		6:  # LIGHTNING_SHIELD
 			lightning_retaliate_damage = item.get_scaled_value()
 		7:  # SHADOW
-			dodge_chance = item.get_scaled_value()
+			dodge_chance = minf(item.get_scaled_value(), GameConfig.PASSIVE_MAX_DODGE)
 		8:  # VAMPIRIC
-			lifesteal_chance = item.get_scaled_value()
+			lifesteal_chance = minf(item.get_scaled_value(), GameConfig.PASSIVE_MAX_LIFESTEAL)
 		9:  # SWIFT
 			move_speed_bonus_multiplier = item.get_scaled_value()
 		10: # CLOVER
-			crit_chance = item.get_scaled_value()
+			crit_chance = minf(item.get_scaled_value(), GameConfig.PASSIVE_MAX_CRIT)
 
 func get_owned_passive_items() -> Array[String]:
 	## 获取已拥有的被动道具ID列表

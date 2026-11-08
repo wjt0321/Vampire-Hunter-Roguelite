@@ -29,12 +29,20 @@ func _setup_bar_textures() -> void:
 func show_boss_bar(boss_name: String) -> void:
 	visible = true
 	name_label.text = "👑 " + boss_name
-	phase_label.text = "Phase 1"
-	hp_bar.value = 100.0
+	# 登场阶段：血条先空着，Boss 免疫伤害，填满后才真正开打
+	phase_label.text = "登场中 · 无敌"
+	phase_label.modulate = Color(0.75, 0.9, 1.0, 1.0)
+	hp_bar.modulate = Color.WHITE
+	hp_bar.value = 0.0
 	# 入场动画
 	container.modulate = Color(1, 1, 1, 0)
 	var tween := create_tween()
 	tween.tween_property(container, "modulate:a", 1.0, 0.5)
+
+func end_intro() -> void:
+	## 登场演出结束：血条已填满，进入正常战斗状态
+	phase_label.text = "Phase 1"
+	phase_label.modulate = Color.WHITE
 
 func update_hp(current: float, max_val: float) -> void:
 	hp_bar.value = (current / max_val) * 100.0

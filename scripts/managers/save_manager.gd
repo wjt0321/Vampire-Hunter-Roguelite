@@ -4,8 +4,12 @@ extends Node
 
 const SAVE_PATH: String = "user://save_data.json"
 
+## 存档版本号：结构或数值体系变化时 +1，并在 _migrate_save 中补迁移逻辑
+const SAVE_VERSION: int = 2
+
 # === 默认存档数据 ===
 var save_data: Dictionary = {
+	"version": SAVE_VERSION,
 	"blood_crystals": 0,         # 血晶货币
 	"total_runs": 0,             # 总局数
 	"best_wave": 0,              # 最高波次
@@ -64,9 +68,54 @@ func load_game() -> void:
 		return
 	var loaded: Variant = json.data
 	if loaded is Dictionary:
-		# 合并数据（保留新增字段）
-		_merge_dict(save_data, loaded)
-		print("📂 存档已加载")
+		var old_version: int = int(loaded.get("version", 1))
+		if old_version < SAVE_VERSION:
+			loaded = _migrate_save(loaded, old_version)
+			print("🔄 存档从 v%d 迁移到 v%d" % [old_version, SAVE_VERSION])
+			# 合并数据（保留新增字段）
+			_merge_dict(save_data, loaded)
+			_sanitize_save()
+			save_game()
+		else:
+			# 合并数据（保留新增字段）
+			_merge_dict(save_data, loaded)
+			_sanitize_save()
+		print("📂 存档已加载 (v%d)" % SAVE_VERSION)
+
+func _migrate_save(data: Dictionary, from_version: int) -> Dictionary:
+	## 逐版本升级存档结构
+	var d := data.duplicate(true)
+	# v1 -> v2：护甲从"固定减伤"改为"百分比减伤"，护甲等级含义不变，
+	# 但需要保证新字段存在、旧字段类型正确。
+	if from_version < 2:
+		if not d.has("unlocked_characters") or not (d["unlocked_characters"] is Array):
+			d["unlocked_characters"] = ["hunter"]
+		if not d.has("upgrades") or not (d["upgrades"] is Dictionary):
+			d["upgrades"] = {}
+		for key in UPGRADE_COSTS.keys():
+			if not d["upgrades"].has(key):
+				d["upgrades"][key] = 0
+	d["version"] = SAVE_VERSION
+	return d
+
+func _sanitize_save() -> void:
+	## 洗一遍数据，避免手改存档或旧档导致的崩溃
+	save_data["version"] = SAVE_VERSION
+	save_data["blood_crystals"] = maxi(int(save_data.get("blood_crystals", 0)), 0)
+	save_data["total_runs"] = maxi(int(save_data.get("total_runs", 0)), 0)
+	save_data["total_kills"] = maxi(int(save_data.get("total_kills", 0)), 0)
+	var ups: Dictionary = save_data.get("upgrades", {})
+	for key in UPGRADE_COSTS.keys():
+		ups[key] = clampi(int(ups.get(key, 0)), 0, MAX_UPGRADE_LEVEL)
+	save_data["upgrades"] = ups
+	var unlocked = save_data.get("unlocked_characters", [])
+	if not (unlocked is Array):
+		unlocked = ["hunter"]
+	if "hunter" not in unlocked:
+		unlocked.append("hunter")
+	save_data["unlocked_characters"] = unlocked
+	if not (save_data.get("selected_character", "") in unlocked):
+		save_data["selected_character"] = "hunter"
 
 func _merge_dict(target: Dictionary, source: Dictionary) -> void:
 	for key in source:
@@ -153,16 +202,16 @@ func end_run(stats: Dictionary) -> int:
 
 # === 获取永久加成数值 ===
 func get_bonus_damage() -> float:
-	return get_upgrade_level("base_damage") * 0.05
+	return get_upgrade_level("base_damage") * GameConfig.PERMANENT_DAMAGE_PER_LEVEL
 
 func get_bonus_hp() -> float:
-	return get_upgrade_level("base_hp") * 10.0
+	return get_upgrade_level("base_hp") * GameConfig.PERMANENT_HP_PER_LEVEL
 
 func get_bonus_speed() -> float:
-	return get_upgrade_level("base_speed") * 0.05
+	return get_upgrade_level("base_speed") * GameConfig.PERMANENT_SPEED_PER_LEVEL
 
 func get_bonus_armor() -> float:
-	return get_upgrade_level("base_armor") * 3.0
+	return get_upgrade_level("base_armor") * GameConfig.PERMANENT_ARMOR_PER_LEVEL
 
 func get_bonus_xp() -> float:
-	return get_upgrade_level("xp_bonus") * 0.1
+	return get_upgrade_level("xp_bonus") * GameConfig.PERMANENT_XP_PER_LEVEL

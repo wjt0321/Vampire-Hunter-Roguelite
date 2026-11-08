@@ -4,42 +4,48 @@ extends Area2D
 
 @export var speed: float = 250.0
 @export var max_range: float = 500.0
+## 存活时间（秒）。<= 0 表示只靠 max_range 销毁。
+## 吸血鬼法师会把这里设成 3.0，之前脚本没有这个属性，导致每次施法都报错刷屏。
+@export var lifetime: float = 0.0
+## 弹道颜色（法师改成紫色，射手保持血红）
+@export var visual_color: Color = Color(1.0, 0.28, 0.22)
+## 视觉尺寸（像素）。刻意比碰撞体略大：看着够大，判定仍然好躲
+@export var visual_length: float = 16.0
+@export var visual_thickness: float = 10.0
 var direction: Vector2 = Vector2.RIGHT
 var damage: float = 10.0
 var distance_traveled: float = 0.0
+var _age: float = 0.0
 
 @onready var sprite: Sprite2D = $Sprite2D
 
 func _ready() -> void:
-	# 自动创建纹理
-	if sprite and sprite.texture == null:
-		var img := Image.create(8, 4, false, Image.FORMAT_RGBA8)
-		img.fill(Color(0.8, 0.2, 0.2, 1.0))  # 暗红色
-		sprite.texture = ImageTexture.create_from_image(img)
-
-	# 根据碰撞体大小调整精灵缩放
-	_adjust_sprite_scale()
-
+	# "亮芯 + 柔光"外观：早期 8x4 暗红方块在混战里几乎看不见
+	apply_visual_style(visual_color, visual_length, visual_thickness)
 	# 设置旋转朝向
 	rotation = direction.angle()
 
-func _adjust_sprite_scale() -> void:
-	## 根据碰撞体大小调整精灵缩放
-	var collision_shape := get_node_or_null("CollisionShape2D")
-	if collision_shape and collision_shape.shape is RectangleShape2D:
-		var collision_size: Vector2 = collision_shape.shape.size
-		if sprite and sprite.texture:
-			var texture_size: Vector2 = sprite.texture.get_size()
-			if texture_size.x > 0 and texture_size.y > 0:
-				# 先重置为原始大小，再按比例缩放
-				sprite.scale = Vector2.ONE
-				sprite.scale = collision_size / texture_size
+func apply_visual_style(color: Color, length: float = 16.0, thickness: float = 10.0) -> void:
+	visual_color = color
+	visual_length = length
+	visual_thickness = thickness
+	if sprite == null:
+		sprite = get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null:
+		return
+	ProjectileVisuals.style_sprite(sprite, color, length, thickness, true)
 
 func _physics_process(delta: float) -> void:
 	var move_distance := speed * delta
 	position += direction * move_distance
 	distance_traveled += move_distance
-	
+	_age += delta
+
+	# 时间寿命（法师法术弹幕用）
+	if lifetime > 0.0 and _age >= lifetime:
+		queue_free()
+		return
+
 	# 超出射程后销毁
 	if distance_traveled >= max_range:
 		queue_free()

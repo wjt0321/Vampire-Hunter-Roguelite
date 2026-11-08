@@ -13,9 +13,9 @@ var petrify_timer: float = 0.0
 var has_petrified: bool = false  # 是否已经使用过石化
 
 func _ready() -> void:
-	max_hp = 200.0  # 高血量
+	base_hp = 90.0  # 高血量
 	move_speed = 25.0  # 移动慢
-	contact_damage = 40.0  # 高伤害
+	base_contact_damage = 40.0  # 高伤害
 	xp_value = 30
 	super._ready()
 
@@ -113,8 +113,9 @@ func take_damage(amount: float) -> void:
 	if is_petrified:
 		return
 	
-	# 应用护甲减伤
-	var actual_damage := maxf(amount - armor, 1.0)
+	# 应用护甲减伤（百分比）
+	var reduction: float = GameConfig.calculate_damage_reduction(armor)
+	var actual_damage: float = amount * (1.0 - reduction)
 	current_hp -= actual_damage
 	_flash_hit()
 	

@@ -18,10 +18,10 @@ var enemy_scenes: Dictionary = {
 	"vampire_prince": preload("res://scenes/enemies/vampire_prince.tscn"),
 }
 
-# === 波次配置 ===
-@export var wave_duration: float = 30.0         # 每波持续时间（秒）
-@export var base_spawn_interval: float = 2.0    # 基础生成间隔
-@export var min_spawn_interval: float = 0.3     # 最小生成间隔
+# === 波次配置（从 GameConfig 读取） ===
+@export var wave_duration: float = GameConfig.WAVE_DURATION
+@export var base_spawn_interval: float = GameConfig.WAVE_BASE_SPAWN_INTERVAL
+@export var min_spawn_interval: float = GameConfig.WAVE_MIN_SPAWN_INTERVAL
 @export var spawn_distance: float = 500.0       # 生成距离（屏幕外）
 
 # === 状态 ===
@@ -32,6 +32,10 @@ var is_active: bool = false
 var enemies_alive: int = 0
 var total_kills: int = 0
 var player: Node2D = null
+
+# === 地下城楼层 ===
+var floor_index: int = 1
+var enemy_pool: Array = []   # 当前层允许出现的敌人类型；空则回退到按波次解锁
 
 var _current_scene: Node = null
 
@@ -48,6 +52,11 @@ func start(player_node: Node2D) -> void:
 	_ensure_current_scene()
 	is_active = true
 	_start_next_wave()
+
+func set_floor(index: int, pool: Array = []) -> void:
+	## 切换当前楼层：影响敌人池与属性倍率
+	floor_index = maxi(index, 1)
+	enemy_pool = pool.duplicate()
 
 func _ensure_current_scene() -> void:
 	if _current_scene == null or not is_instance_valid(_current_scene):
@@ -97,12 +106,14 @@ func _end_current_wave() -> void:
 
 func _get_spawn_interval() -> float:
 	# 每波生成速度加快
-	var interval := base_spawn_interval - (current_wave - 1) * 0.15
+	var interval := base_spawn_interval - (current_wave - 1) * GameConfig.WAVE_SPAWN_INTERVAL_DECREASE
 	return maxf(interval, min_spawn_interval)
 
 func _get_enemies_per_spawn() -> int:
-	# 每波同时生成更多敌人
-	return mini(1 + current_wave / 3, 5)
+	# 每波同时生成更多敌人。
+	# 初版是 mini(1 + wave/3, 5)，第 1 波每次只有 1 只，配合 2 秒间隔等于 0.5 只/秒，
+	# 玩家随手就清空全场。现在第 1 波每次 2 只，第 12 波以后每次 5 只。
+	return mini(2 + current_wave / 4, GameConfig.WAVE_MAX_SPAWN_COUNT)
 
 func _spawn_enemy() -> void:
 	if player == null or not is_instance_valid(player):
@@ -114,7 +125,11 @@ func _spawn_enemy() -> void:
 		var enemy_type := _pick_enemy_type()
 		var enemy_scene: PackedScene = enemy_scenes[enemy_type]
 		var enemy := enemy_scene.instantiate()
-		
+		# 传入当前波次与楼层用于数值缩放
+		enemy.spawn_wave = current_wave
+		enemy.floor_index = floor_index
+		_maybe_assign_affix(enemy)
+
 		# 在屏幕外随机位置生成
 		enemy.global_position = _get_spawn_position()
 		
@@ -128,72 +143,83 @@ func _spawn_enemy() -> void:
 		if _current_scene:
 			_current_scene.add_child(enemy)
 
-func _pick_enemy_type() -> String:
-	## 根据当前波次选择敌人类型（高波次解锁更强敌人）
-	var available_types: Array[String] = ["vampire"]
-	
+func _maybe_assign_affix(enemy: Node) -> void:
+	## 精英词缀：逐层提升概率。Boss 不参与（Boss 自己有三形态），
+	## 已经自带词缀的（精英吸血鬼）也不再覆盖。
+	if not GameConfig.ELITE_AFFIX_ENABLED:
+		return
+	if not ("elite_affix" in enemy):
+		return
+	if not String(enemy.elite_affix).is_empty():
+		return
+	if bool(enemy.get("suppress_affix")):
+		return
+	if randf() >= GameConfig.get_elite_affix_chance(floor_index):
+		return
+	enemy.elite_affix = EliteAffix.roll()
+
+# 各敌人类型的生成权重（越大越常见）
+const ENEMY_WEIGHTS: Dictionary = {
+	"vampire": 10.0,
+	"bat": 8.0,
+	"zombie": 5.0,
+	"skeleton_archer": 4.0,
+	"werewolf": 3.0,
+	"exploder": 2.0,
+	"elite_vampire": 1.0,
+	"summoner": 1.5,
+	"vampire_mage": 1.2,
+	"gargoyle": 0.8,
+	"vampire_prince": 0.3,
+}
+
+func _get_wave_based_pool() -> Array:
+	## 无楼层池时的回退逻辑：按波次逐步解锁敌人
+	var pool: Array = ["vampire"]
 	if current_wave >= 2:
-		available_types.append("bat")
+		pool.append("bat")
 	if current_wave >= 3:
-		available_types.append("zombie")
+		pool.append("zombie")
 	if current_wave >= 4:
-		available_types.append("skeleton_archer")
+		pool.append("skeleton_archer")
 	if current_wave >= 5:
-		available_types.append("werewolf")
+		pool.append("werewolf")
 	if current_wave >= 6:
-		available_types.append("exploder")
+		pool.append("exploder")
 	if current_wave >= 8:
-		available_types.append("elite_vampire")
-	# 新敌人解锁
+		pool.append("elite_vampire")
 	if current_wave >= 10:
-		available_types.append("summoner")
+		pool.append("summoner")
 	if current_wave >= 12:
-		available_types.append("vampire_mage")
+		pool.append("vampire_mage")
 	if current_wave >= 15:
-		available_types.append("gargoyle")
+		pool.append("gargoyle")
 	if current_wave >= 18:
-		available_types.append("vampire_prince")
-	
-	# 每种类型权重不同
-	var weights: Array[float] = []
-	for type in available_types:
-		match type:
-			"vampire":
-				weights.append(10.0)
-			"bat":
-				weights.append(8.0)
-			"zombie":
-				weights.append(5.0)
-			"skeleton_archer":
-				weights.append(4.0)
-			"werewolf":
-				weights.append(3.0)
-			"exploder":
-				weights.append(2.0)
-			"elite_vampire":
-				weights.append(1.0)
-			"summoner":
-				weights.append(1.5)
-			"vampire_mage":
-				weights.append(1.2)
-			"gargoyle":
-				weights.append(0.8)
-			"vampire_prince":
-				weights.append(0.3)
-	
-	# 加权随机选择
+		pool.append("vampire_prince")
+	return pool
+
+func _pick_enemy_type() -> String:
+	## 从当前楼层的敌人池中加权随机；池为空则回退到波次解锁表
+	var candidates: Array = []
+	var source: Array = enemy_pool if not enemy_pool.is_empty() else _get_wave_based_pool()
+	for type in source:
+		if enemy_scenes.has(type):
+			candidates.append(type)
+	if candidates.is_empty():
+		return "vampire"
+
 	var total_weight: float = 0.0
-	for w in weights:
-		total_weight += w
-	
+	for type in candidates:
+		total_weight += float(ENEMY_WEIGHTS.get(type, 1.0))
+
 	var roll := randf() * total_weight
 	var cumulative: float = 0.0
-	for j in range(available_types.size()):
-		cumulative += weights[j]
+	for type in candidates:
+		cumulative += float(ENEMY_WEIGHTS.get(type, 1.0))
 		if roll <= cumulative:
-			return available_types[j]
-	
-	return available_types[0]
+			return type
+
+	return candidates[0]
 
 func _get_spawn_position() -> Vector2:
 	## 在玩家周围的圆圈外随机位置生成，但限制在房间范围内

@@ -7,9 +7,9 @@ var sine_amplitude: float = 50.0
 var sine_frequency: float = 4.0
 
 func _ready() -> void:
-	max_hp = 16.5  # 增加10% (原15.0)
+	base_hp = 7.0
 	move_speed = 140.0
-	contact_damage = 5.0
+	base_contact_damage = 5.0
 	xp_value = 3
 	# 随机偏移，避免所有蝙蝠同步
 	sine_offset = randf() * TAU

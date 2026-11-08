@@ -15,9 +15,9 @@ var is_teleporting: bool = false
 var spell_scene: PackedScene = preload("res://scenes/enemies/enemy_projectile.tscn")
 
 func _ready() -> void:
-	max_hp = 45.0
+	base_hp = 26.0
 	move_speed = 50.0
-	contact_damage = 5.0
+	base_contact_damage = 5.0
 	xp_value = 25
 	super._ready()
 
@@ -166,8 +166,11 @@ func _cast_spell() -> void:
 	spell.damage = 15.0
 	spell.lifetime = 3.0
 	
-	# 设置颜色（紫色魔法）
-	spell.modulate = Color(0.8, 0.2, 0.9, 1.0)
+	# 设置颜色（紫色魔法）—— 用 visual_color 而不是 modulate，
+	# 否则会把程序化光晕的加色混合整体压暗
+	spell.visual_color = Color(0.78, 0.32, 1.0)
+	spell.visual_length = 18.0
+	spell.visual_thickness = 12.0
 	
 	get_tree().current_scene.add_child(spell)
 	

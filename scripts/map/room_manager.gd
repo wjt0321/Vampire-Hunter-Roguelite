@@ -27,6 +27,8 @@ func setup(player_node: CharacterBody2D) -> void:
 	player = player_node
 
 func get_next_room_type() -> String:
+	## [已废弃] 房间类型改由 DungeonManager 按层内节奏生成
+	## 保留此方法仅为兼容旧调用点，不要在新代码里使用
 	rooms_cleared += 1
 	current_room_index += 1
 	

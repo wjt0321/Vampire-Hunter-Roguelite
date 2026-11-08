@@ -36,3 +36,15 @@ assets-downloaded/
 # IDE / agent tools
 .codegraph/
 .reasonix/
+
+# Build output
+builds/
+
+# Local agent workspace
+.workbuddy/
+
+# Screenshot debris
+/gem_shot.png.import
+/gem_crop_*.png.import
+/run_log.txt
+/run_err.txt

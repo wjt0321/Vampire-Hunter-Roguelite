@@ -9,6 +9,11 @@ var direction: Vector2 = Vector2.RIGHT
 var damage_multiplier: float = 1.0
 var distance_traveled: float = 0.0
 
+# === 外观 ===
+@export var visual_color: Color = Color(0.72, 0.86, 1.0)
+@export var visual_length: float = 20.0
+@export var visual_thickness: float = 5.0
+
 # 穿透相关
 var max_pierce: int = 3          # 最大穿透数
 var pierce_count: int = 0        # 已穿透数
@@ -22,15 +27,18 @@ func _ready() -> void:
 func _setup_visuals() -> void:
 	# 设置飞刀旋转方向
 	rotation = direction.angle()
-	# 加载飞刀纹理
-	if sprite and sprite.texture == null:
-		var tex := TextureManager.instance.get_weapon_icon("knife")
-		if tex:
-			sprite.texture = tex
-		else:
-			var img := Image.create(16, 4, false, Image.FORMAT_RGBA8)
-			img.fill(Color.SILVER)
-			sprite.texture = ImageTexture.create_from_image(img)
+	apply_visual_style(visual_color, visual_length, visual_thickness)
+
+func apply_visual_style(color: Color, length: float = 20.0, thickness: float = 5.0, _round_shape: bool = false) -> void:
+	## 由武器管理器在发射时调用（对象池复用的弹丸不会重跑 _ready）
+	visual_color = color
+	visual_length = length
+	visual_thickness = thickness
+	if sprite == null:
+		sprite = get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null:
+		return
+	ProjectileVisuals.style_sprite(sprite, color, length, thickness)
 
 func reset_for_pool() -> void:
 	## 归还对象池前重置状态
@@ -46,10 +54,10 @@ func _physics_process(delta: float) -> void:
 	position += direction * move_distance
 	distance_traveled += move_distance
 	
-	# 飞刀拖尾（较少）
+	# 飞刀拖尾（用自身颜色）
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx and Engine.get_physics_frames() % 5 == 0:
-		vfx.spawn_bullet_trail(global_position)
+		vfx.spawn_bullet_trail(global_position, Color(visual_color.r, visual_color.g, visual_color.b, 0.5))
 	
 	# 超出射程后归还对象池
 	if distance_traveled >= max_range:

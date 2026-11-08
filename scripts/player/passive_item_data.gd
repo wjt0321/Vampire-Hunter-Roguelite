@@ -18,8 +18,22 @@ enum EffectType { MAGNET, SHIELD, REGENERATION, GREED, BERSERKER, FROZEN, LIGHTN
 var current_level: int = 1
 const MAX_LEVEL: int = 5
 
+## 每级增益递减系数：第 n 级只吃到 0.85^(n-1) 的增量
+const LEVEL_DECAY: float = 0.85
+
 func get_scaled_value() -> float:
-	return base_value + (current_level - 1) * value_per_level
+	return get_scaled_value_at(current_level)
+
+func get_scaled_value_at(level: int) -> float:
+	## 指定等级的数值（升级卡要显示 "当前 → 下一级"，不能靠临时改等级去试算）
+	var lv: int = maxi(level, 1)
+	# 负增长（如护盾冷却缩减）保持线性，避免递减后反而变弱
+	if value_per_level < 0.0:
+		return base_value + (lv - 1) * value_per_level
+	var total := base_value
+	for i in range(1, lv):
+		total += value_per_level * pow(LEVEL_DECAY, i - 1)
+	return total
 
 func level_up() -> bool:
 	if current_level >= MAX_LEVEL:

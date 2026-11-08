@@ -1,125 +1,37 @@
 extends "res://scripts/enemies/enemy_base.gd"
 class_name EliteVampire
-## 精英吸血鬼 — 带有随机词缀的强化敌人
+## 精英吸血鬼 —— 高体质敌人，必带一个精英词缀
+##
+## 词缀已统一到 `EliteAffix` / `EliteAffixController`：
+## 早期这里有一套私有 enum（速度/护甲/分裂）和自绘的 modulate 循环，
+## 与通用系统并存会变成"两套精英规则"，而且那个永不停歇的 modulate 循环
+## 会和受击闪白抢同一个属性（玩家盾那次踩的就是同一个坑）。
 
-enum Affix { SPEED, ARMOR, SPLIT }
-
-var affix: Affix = Affix.SPEED
 var is_elite: bool = true
-var glow_tween: Tween = null
-
-# 词缀效果
-const SPEED_MULTIPLIER: float = 1.5
-const ARMOR_REDUCTION: float = 0.5
-const SPLIT_COUNT: int = 2
 
 func _ready() -> void:
-	# 随机选择词缀
-	affix = Affix.values().pick_random()
-	
-	# 基础属性提升
-	max_hp = 66.0  # 增加10% (原60.0)
+	# 词缀必须在 super._ready() 之前定好：加成与表现形式都依赖它
+	if not suppress_affix and elite_affix.is_empty():
+		elite_affix = EliteAffix.roll()
+
+	base_hp = 35.0
 	move_speed = 80.0
-	contact_damage = 15.0
+	base_contact_damage = 15.0
 	xp_value = 25
-	
-	# 应用词缀效果
-	_apply_affix()
-	
+	silver_value = 5
+
+	# 体型走倍率，交给归一化统一相乘（直接写 sprite.scale 会被归一化覆盖，曾导致 333px 巨图）
+	sprite_scale_mult *= 1.12
+
 	super._ready()
-	
-	# 添加精英视觉效果
-	_add_elite_visuals()
 
-func _apply_affix() -> void:
-	match affix:
-		Affix.SPEED:
-			move_speed *= SPEED_MULTIPLIER
-			print("⚡ 精英吸血鬼：速度词缀")
-		Affix.ARMOR:
-			print("🛡️ 精英吸血鬼：护甲词缀")
-		Affix.SPLIT:
-			print("👥 精英吸血鬼：分裂词缀")
-
-func _add_elite_visuals() -> void:
-	# 根据词缀设置不同颜色
-	var elite_color: Color
-	match affix:
-		Affix.SPEED:
-			elite_color = Color(0.3, 0.8, 1.0, 1.0)  # 青色
-		Affix.ARMOR:
-			elite_color = Color(1.0, 0.8, 0.2, 1.0)  # 金色
-		Affix.SPLIT:
-			elite_color = Color(0.8, 0.3, 0.8, 1.0)  # 紫色
-	
-	# 发光效果
-	glow_tween = create_tween().set_loops()
-	glow_tween.tween_property(sprite, "modulate", elite_color, 0.5)
-	glow_tween.tween_property(sprite, "modulate", Color.WHITE, 0.5)
-	
-	# 增大体型
-	sprite.scale = Vector2(1.3, 1.3)
-
-func take_damage(amount: float) -> void:
-	if is_dead:
-		return
-	
-	# 护甲词缀减少伤害
-	var actual_damage := amount
-	if affix == Affix.ARMOR:
-		actual_damage *= (1.0 - ARMOR_REDUCTION)
-	
-	current_hp -= actual_damage
-	_flash_hit()
-	
-	if current_hp <= 0:
-		_die()
-
-func _die() -> void:
-	if is_dead:
-		return
-	
-	# 分裂词缀：死亡时分裂
-	if affix == Affix.SPLIT:
-		_split()
-	
-	# 停止发光动画
-	if glow_tween and glow_tween.is_valid():
-		glow_tween.kill()
-	
-	# 调用父类死亡逻辑
-	super._die()
-
-func _split() -> void:
-	print("👥 精英吸血鬼分裂!")
-	
-	for i in range(SPLIT_COUNT):
-		var mini_vampire := preload("res://scenes/enemies/vampire.tscn").instantiate()
-		if mini_vampire:
-			# 在死亡位置周围随机生成
-			var offset := Vector2(randf_range(-30, 30), randf_range(-30, 30))
-			mini_vampire.global_position = global_position + offset
-			
-			# 缩小体型
-			if mini_vampire.has_node("Sprite2D"):
-				mini_vampire.get_node("Sprite2D").scale = Vector2(0.6, 0.6)
-			
-			# 减少属性
-			if mini_vampire.has_method("max_hp"):
-				mini_vampire.max_hp *= 0.5
-				mini_vampire.current_hp = mini_vampire.max_hp
-			
-			get_tree().current_scene.call_deferred("add_child", mini_vampire)
+	# 一点点冷色提亮，和普通吸血鬼区分开；用 self_modulate 而不是 modulate，
+	# 这样受击闪白（改 modulate）不会和它打架
+	if sprite:
+		sprite.self_modulate = Color(1.0, 0.88, 0.94, 1.0)
 
 func get_affix_name() -> String:
-	match affix:
-		Affix.SPEED:
-			return "疾速"
-		Affix.ARMOR:
-			return "铁甲"
-		Affix.SPLIT:
-			return "分裂"
-	return "未知"
+	return EliteAffix.display_name(elite_affix)
 
 func _get_enemy_type() -> String:
 	return "elite"

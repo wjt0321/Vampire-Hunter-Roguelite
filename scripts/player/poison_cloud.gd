@@ -6,6 +6,8 @@ extends Area2D
 @export var tick_interval: float = 0.5
 @export var duration: float = 5.0
 var damage_multiplier: float = 1.0
+## 颜色（毒雾=绿，血爆=红），在生成后、入树前设置
+var tint: Color = Color(0.2, 0.8, 0.2, 0.5)
 
 var _timer: float = 0.0
 var _tick_timer: float = 0.0
@@ -15,11 +17,14 @@ var _enemies_in_cloud: Array = []
 @onready var sprite: Sprite2D = $Sprite2D
 
 func _ready() -> void:
-	# 创建毒雾视觉效果
-	if sprite and sprite.texture == null:
-		var img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
-		img.fill(Color(0.2, 0.8, 0.2, 0.5))
-		sprite.texture = ImageTexture.create_from_image(img)
+	# 创建范围视觉效果（颜色由 tint 决定：毒雾绿 / 血爆红）
+	if sprite:
+		if sprite.texture == null:
+			var img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+			img.fill(tint)
+			sprite.texture = ImageTexture.create_from_image(img)
+		else:
+			sprite.modulate = tint
 	
 	# 连接信号（使用一次性连接避免重复）
 	if not body_entered.is_connected(_on_body_entered):

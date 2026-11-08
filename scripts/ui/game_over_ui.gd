@@ -84,6 +84,13 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 		AudioManager.play_bgm(AudioLib.get_defeat_bgm())
 	
 	var text := title
+	if is_victory:
+		text += "已征服层数: %d / %d\n" % [
+			stats.get("floors_cleared", GameConfig.DUNGEON_FLOOR_COUNT),
+			GameConfig.DUNGEON_FLOOR_COUNT
+		]
+	else:
+		text += "止步于: 第 %d 层\n" % stats.get("floor", 1)
 	text += "探索房间: %d\n" % stats.get("rooms", 0)
 	text += "存活波次: %d\n" % stats.get("wave", 0)
 	text += "击杀数: %d\n" % stats.get("kills", 0)

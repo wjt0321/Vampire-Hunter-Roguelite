@@ -64,9 +64,21 @@ const ACHIEVEMENTS: Dictionary = {
 	# 通关挑战
 	"boss_killer": {
 		"name": "Boss杀手",
-		"description": "首次击败吸血鬼领主",
+		"description": "首次击败楼层 Boss",
 		"icon": "👑",
 		"condition": "boss_killed >= 1",
+	},
+	"crypt_breaker": {
+		"name": "墓穴闯入者",
+		"description": "击败第二层的血族亲王",
+		"icon": "🦴",
+		"condition": "floors_cleared >= 2",
+	},
+	"throne_breaker": {
+		"name": "王座终结者",
+		"description": "通关地下城，击败血族女王",
+		"icon": "🏆",
+		"condition": "dungeon_cleared >= 1",
 	},
 	"flawless_victory": {
 		"name": "无伤通关",
@@ -186,6 +198,8 @@ var run_stats: Dictionary = {
 	"treasures_visited": 0,
 	"rests_visited": 0,
 	"damage_taken": 0,
+	"floors_cleared": 0,
+	"dungeon_cleared": 0,
 	"start_time": 0,
 }
 
@@ -230,6 +244,8 @@ func start_new_run() -> void:
 		"treasures_visited": 0,
 		"rests_visited": 0,
 		"damage_taken": 0,
+		"floors_cleared": 0,
+		"dungeon_cleared": 0,
 		"start_time": Time.get_unix_time_from_system(),
 	}
 	unlocked_this_run.clear()
@@ -270,6 +286,15 @@ func record_boss_kill(damage_taken_in_boss_fight: int) -> void:
 	run_stats["boss_killed"] = true
 	run_stats["boss_kill_time"] = int(Time.get_unix_time_from_system() - run_stats["start_time"])
 	run_stats["flawless_boss_kill"] = (damage_taken_in_boss_fight == 0)
+	_check_achievements()
+
+func record_floor_cleared(floor_index: int) -> void:
+	## 记录某层已通过（取最大值，避免重复累计）
+	run_stats["floors_cleared"] = maxi(int(run_stats.get("floors_cleared", 0)), floor_index)
+	_check_achievements()
+
+func record_dungeon_clear() -> void:
+	run_stats["dungeon_cleared"] = 1
 	_check_achievements()
 
 func record_damage_taken(amount: float) -> void:

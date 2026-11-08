@@ -11,9 +11,9 @@ var backstep_timer: float = 0.0
 var is_backstepping: bool = false
 
 func _ready() -> void:
-	max_hp = 33.0  # 增加10% (原30.0)
+	base_hp = 15.0
 	move_speed = 90.0
-	contact_damage = 10.0
+	base_contact_damage = 10.0
 	xp_value = 5
 	super._ready()
 

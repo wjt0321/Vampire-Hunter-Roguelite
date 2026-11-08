@@ -14,9 +14,9 @@ var summon_count: int = 2  # 每次召唤数量
 var summon_particles: CPUParticles2D = null
 
 func _ready() -> void:
-	max_hp = 50.0
+	base_hp = 28.0
 	move_speed = 60.0
-	contact_damage = 8.0
+	base_contact_damage = 8.0
 	xp_value = 20
 	super._ready()
 	
@@ -103,7 +103,11 @@ func _summon() -> void:
 		var angle := randf() * TAU
 		var offset := Vector2(cos(angle), sin(angle)) * 40.0
 		bat.global_position = global_position + offset
-		
+		# 召唤物继承召唤师的波次与楼层缩放，并略微削弱
+		bat.spawn_wave = spawn_wave
+		bat.floor_index = floor_index
+		bat.hp_scale = 0.6
+
 		get_tree().current_scene.add_child(bat)
 
 func _get_enemy_type() -> String:

@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/enemies/enemy_projectile.gd" id="1_script"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_proj"]
-size = Vector2(8, 4)
+size = Vector2(12, 7)
 
 [node name="EnemyProjectile" type="Area2D"]
 collision_layer = 8
@@ -11,7 +11,6 @@ collision_mask = 5
 script = ExtResource("1_script")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-modulate = Color(0.8, 0.2, 0.2, 1.0)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_proj")

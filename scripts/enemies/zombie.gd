@@ -13,9 +13,9 @@ var is_lunging: bool = false
 var lunge_direction: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
-	max_hp = 132.0  # 增加10% (原120.0)
+	base_hp = 40.0
 	move_speed = 35.0
-	contact_damage = 25.0
+	base_contact_damage = 25.0
 	xp_value = 10
 	super._ready()
 

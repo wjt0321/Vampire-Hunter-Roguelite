@@ -4,6 +4,7 @@ class_name WeaponManager
 
 const WeaponDataScript = preload("res://scripts/weapons/weapon_data.gd")
 const WeaponEvolutionScript = preload("res://scripts/weapons/weapon_evolution.gd")
+const OrbitBladeScript = preload("res://scripts/weapons/orbit_blade.gd")
 
 # 场景预加载常量
 const KnifeBulletScene = preload("res://scenes/player/knife_bullet.tscn")
@@ -17,6 +18,8 @@ var weapon_evolutions: Dictionary = {}  # weapon_id -> WeaponEvolution
 var shoot_timers: Dictionary = {}
 var player: CharacterBody2D = null
 var bullet_scene: PackedScene = preload("res://scenes/player/bullet.tscn")
+## 环绕刀刃实例（进化飞刀）。同一时间只保留一组，避免重复叠加。
+var _orbit_blades: Array = []
 
 # 缓存的 AudioLibrary 实例
 var _audio_lib: AudioLibrary = null
@@ -35,94 +38,133 @@ signal weapon_leveled_up(weapon: Resource)
 signal weapon_evolved(weapon: Resource, evolution: WeaponEvolution)
 
 # 进化条件配置
+# 进化 = 武器满级 + 指定被动至少 Lv1 + 打开宝箱（事件触发）。
+# 以前是"击杀数 50 自动进化"，玩家看不见进度、也无法为它做取舍，已废弃。
+# behavior 是"行为级差异"，不是数值堆叠：
+#   double_barrel → 双管齐射（并排两发，横向覆盖）
+#   orbit         → 刀阵环绕（飞刀围绕玩家旋转，持续接触伤害）
+#   radial        → 环形弹幕（放弃瞄准，向四周均匀喷射）
 const EVOLUTION_CONFIG: Dictionary = {
 	"pistol": {
-		"evolution_name": "神圣手枪",
-		"evolution_description": "发射神圣光芒，伤害大幅提升",
+		"evolution_name": "神圣双管",
+		"evolution_description": "并排双发，横向覆盖翻倍",
 		"evolution_icon": "✨",
-		"required_passive_items": [],
-		"required_kill_count": 50,
-		"damage_multiplier": 3.0,
-		"fire_rate_multiplier": 0.3,
-		"size_multiplier": 1.5,
-		"special_effect": "神圣光芒",
+		"required_passive_items": ["lucky_clover"],
+		"damage_multiplier": 2.4,
+		"fire_rate_multiplier": 0.45,
+		"size_multiplier": 1.3,
+		"special_effect": "双管齐射",
+		"behavior": "double_barrel",
 	},
 	"shotgun": {
 		"evolution_name": "毁灭者",
 		"evolution_description": "散射更多子弹，覆盖更广范围",
 		"evolution_icon": "💥",
-		"required_passive_items": [],
-		"required_kill_count": 50,
+		"required_passive_items": ["berserker_blood"],
 		"damage_multiplier": 2.5,
 		"fire_rate_multiplier": 0.4,
 		"size_multiplier": 1.3,
 		"special_effect": "额外散射",
+		"behavior": "",
 	},
 	"magic_book": {
 		"evolution_name": "大魔导书",
-		"evolution_description": "同时追踪多个敌人",
+		"evolution_description": "放弃瞄准，向四周倾泻环形弹幕",
 		"evolution_icon": "📚",
-		"required_passive_items": [],
-		"required_kill_count": 50,
-		"damage_multiplier": 2.5,
-		"fire_rate_multiplier": 0.4,
+		"required_passive_items": ["magnet"],
+		"damage_multiplier": 2.2,
+		"fire_rate_multiplier": 0.5,
 		"size_multiplier": 1.4,
-		"special_effect": "多重追踪",
+		"special_effect": "环形弹幕",
+		"behavior": "radial",
 	},
 	"throwing_knife": {
 		"evolution_name": "刀阵旋风",
-		"evolution_description": "飞刀围绕玩家旋转",
+		"evolution_description": "飞刀不再掷出，而是环绕你旋转绞杀",
 		"evolution_icon": "🌪️",
-		"required_passive_items": [],
-		"required_kill_count": 50,
+		"required_passive_items": ["swift_boots"],
 		"damage_multiplier": 2.0,
 		"fire_rate_multiplier": 0.5,
 		"size_multiplier": 1.5,
 		"special_effect": "刀阵环绕",
+		"behavior": "orbit",
 	},
 	"poison_cloud": {
 		"evolution_name": "瘟疫之源",
 		"evolution_description": "更大范围的致命毒雾",
 		"evolution_icon": "☣️",
-		"required_passive_items": [],
-		"required_kill_count": 50,
+		"required_passive_items": ["regeneration"],
 		"damage_multiplier": 2.5,
 		"fire_rate_multiplier": 0.5,
 		"size_multiplier": 2.0,
 		"special_effect": "范围扩大",
+		"behavior": "",
 	},
 	"lightning_chain": {
 		"evolution_name": "雷神之怒",
 		"evolution_description": "全屏闪电链",
 		"evolution_icon": "🌩️",
-		"required_passive_items": [],
-		"required_kill_count": 50,
+		"required_passive_items": ["lightning_shield"],
 		"damage_multiplier": 3.0,
 		"fire_rate_multiplier": 0.4,
 		"size_multiplier": 1.5,
 		"special_effect": "全屏连锁",
+		"behavior": "",
 	},
 	"crossbow": {
 		"evolution_name": "圣光弩",
 		"evolution_description": "穿透力更强的神圣弩箭",
 		"evolution_icon": "🏹",
-		"required_passive_items": [],
-		"required_kill_count": 50,
+		"required_passive_items": ["lucky_clover"],
 		"damage_multiplier": 2.5,
 		"fire_rate_multiplier": 0.4,
 		"size_multiplier": 1.3,
 		"special_effect": "穿透强化",
+		"behavior": "",
 	},
 	"holy_wand": {
 		"evolution_name": "大天使之杖",
 		"evolution_description": "自动追踪多个敌人的圣光弹",
 		"evolution_icon": "✨",
-		"required_passive_items": [],
-		"required_kill_count": 50,
+		"required_passive_items": ["regeneration"],
 		"damage_multiplier": 2.5,
 		"fire_rate_multiplier": 0.4,
 		"size_multiplier": 1.4,
 		"special_effect": "神圣追踪",
+		"behavior": "",
+	},
+	"kunai": {
+		"evolution_name": "影刃风暴",
+		"evolution_description": "高速投掷的暗影苦无",
+		"evolution_icon": "🗡️",
+		"required_passive_items": ["shadow_cloak"],
+		"damage_multiplier": 1.8,
+		"fire_rate_multiplier": 0.6,
+		"size_multiplier": 1.2,
+		"special_effect": "极速连投",
+		"behavior": "",
+	},
+	"flame_thrower": {
+		"evolution_name": "地狱火",
+		"evolution_description": "永不熄灭的烈焰喷流",
+		"evolution_icon": "🔥",
+		"required_passive_items": ["berserker_blood"],
+		"damage_multiplier": 2.0,
+		"fire_rate_multiplier": 0.7,
+		"size_multiplier": 1.6,
+		"special_effect": "持续灼烧",
+		"behavior": "",
+	},
+	"blood_burst": {
+		"evolution_name": "血海",
+		"evolution_description": "以血为引的范围爆发",
+		"evolution_icon": "🩸",
+		"required_passive_items": ["vampiric_fang"],
+		"damage_multiplier": 2.2,
+		"fire_rate_multiplier": 0.7,
+		"size_multiplier": 1.8,
+		"special_effect": "血腥爆发",
+		"behavior": "",
 	},
 }
 
@@ -160,6 +202,11 @@ func _process(delta: float) -> void:
 				timer.start(weapon.get_scaled_fire_rate())
 
 func add_weapon(weapon_data) -> void:
+	if weapon_data == null:
+		# ItemCatalog 里不存在的 id（例如起始武器 "pistol"）会造出 null，
+		# 直接往下走会崩在 existing.weapon_id 上，这里挡一道。
+		push_warning("add_weapon 收到 null，已忽略")
+		return
 	for existing in weapons:
 		if existing.weapon_id == weapon_data.weapon_id:
 			if existing.level_up():
@@ -199,20 +246,92 @@ func _create_weapon_evolution(weapon) -> void:
 	evolution.evolution_icon = config.get("evolution_icon", "✨")
 	evolution.required_passive_items = config.get("required_passive_items", [])
 	evolution.required_kill_count = config.get("required_kill_count", 50)
-	evolution.damage_multiplier = config.get("damage_multiplier", 2.0)
-	evolution.fire_rate_multiplier = config.get("fire_rate_multiplier", 0.5)
-	evolution.size_multiplier = config.get("size_multiplier", 1.5)
+	# 进化倍率统一钳制到设计区间，避免单次进化让 DPS 指数爆炸
+	evolution.damage_multiplier = clampf(
+		config.get("damage_multiplier", 2.0),
+		GameConfig.EVOLUTION_DAMAGE_MIN, GameConfig.EVOLUTION_DAMAGE_MAX)
+	evolution.fire_rate_multiplier = clampf(
+		config.get("fire_rate_multiplier", 0.8),
+		GameConfig.EVOLUTION_FIRE_RATE_MIN, GameConfig.EVOLUTION_FIRE_RATE_MAX)
+	evolution.size_multiplier = clampf(
+		config.get("size_multiplier", 1.5),
+		GameConfig.EVOLUTION_SIZE_MIN, GameConfig.EVOLUTION_SIZE_MAX)
 	evolution.special_effect = config.get("special_effect", "")
+	evolution.behavior = String(config.get("behavior", ""))
 	
 	weapon_evolutions[weapon.weapon_id] = evolution
-	print("⚔️ %s 已达到满级，满足条件后可进化为 %s" % [weapon.weapon_name, evolution.evolution_name])
+	print("⚔️ %s 已达到满级，满足条件后可进化为 %s（需被动：%s）" % [
+		weapon.weapon_name,
+		evolution.evolution_name,
+		_passive_names(evolution.required_passive_items)
+	])
 
-func check_evolution_conditions(kill_count: int, owned_passives: Array) -> void:
-	## 检查是否有武器可以进化
+func _passive_names(ids: Array) -> String:
+	var names: Array = []
+	for id in ids:
+		names.append(ItemCatalog.get_display_name(String(id)))
+	return "、".join(names) if not names.is_empty() else "无"
+
+func get_evolution_status(owned_passives: Array) -> Dictionary:
+	## 进化准备度（HUD 三态）：
+	##   none    —— 没有任何武器满级
+	##   waiting —— 有满级武器，但缺被动（missing 给出名字）
+	##   ready   —— 全部条件满足，开宝箱即可进化
+	if weapon_evolutions.is_empty():
+		return {"state": "none", "text": ""}
+
 	for weapon_id in weapon_evolutions:
 		var evolution: WeaponEvolution = weapon_evolutions[weapon_id]
-		if evolution.can_evolve(kill_count, owned_passives):
-			_evolve_weapon(weapon_id, evolution)
+		if evolution.is_evolved:
+			continue
+		var missing: Array = evolution.get_missing_passives(owned_passives)
+		if missing.is_empty():
+			return {
+				"state": "ready",
+				"weapon_id": weapon_id,
+				"text": "宝箱可进化：%s" % evolution.evolution_name,
+			}
+
+	# 没有 ready 的，退回"缺被动"提示，取第一个满级未进化武器
+	for weapon_id in weapon_evolutions:
+		var evolution: WeaponEvolution = weapon_evolutions[weapon_id]
+		if evolution.is_evolved:
+			continue
+		var missing: Array = evolution.get_missing_passives(owned_passives)
+		return {
+			"state": "waiting",
+			"weapon_id": weapon_id,
+			"text": "进化 %s：还差 %s" % [
+				evolution.evolution_name,
+				_passive_names(missing),
+			],
+		}
+
+	return {"state": "none", "text": ""}
+
+func get_ready_evolutions(owned_passives: Array) -> Array:
+	## 返回所有"满级 + 被动齐"的 weapon_id
+	var ready: Array = []
+	for weapon_id in weapon_evolutions:
+		var evolution: WeaponEvolution = weapon_evolutions[weapon_id]
+		if evolution.is_evolved:
+			continue
+		if evolution.can_evolve(owned_passives):
+			ready.append(weapon_id)
+	return ready
+
+func try_evolve_from_chest(owned_passives: Array) -> Array:
+	## 打开宝箱时调用：把所有满足条件的武器进化掉。
+	## 返回值供 UI/音效消费：[{weapon_id, name}]
+	var evolved: Array = []
+	for weapon_id in get_ready_evolutions(owned_passives):
+		var evolution: WeaponEvolution = weapon_evolutions[weapon_id]
+		var evo_name: String = evolution.evolution_name
+		_evolve_weapon(weapon_id, evolution)
+		evolved.append({"weapon_id": weapon_id, "name": evo_name})
+		if evolution.behavior == "orbit":
+			_spawn_orbit_blades(weapon_id)
+	return evolved
 
 func _evolve_weapon(weapon_id: String, evolution: WeaponEvolution) -> void:
 	## 执行武器进化
@@ -265,11 +384,38 @@ func _get_evolution_color(weapon_id: String) -> Color:
 			return Color(0.95, 0.85, 0.4, 0.9) # 圣光金
 		"holy_wand":
 			return Color(0.9, 0.95, 1.0, 0.9)  # 圣洁白
+		"kunai":
+			return Color(0.45, 0.55, 0.75, 0.9) # 暗影蓝
+		"flame_thrower":
+			return Color(1.0, 0.45, 0.1, 0.9)   # 烈焰橙
+		"blood_burst":
+			return Color(0.7, 0.05, 0.1, 0.9)   # 血海红
 	return Color(1.0, 0.85, 0.3, 0.9)
+
+func get_projectile_visual(weapon_id: String) -> Dictionary:
+	## 弹道外观配置：颜色 / 视觉长度 / 视觉厚度 / 是否圆形
+	## 视觉尺寸刻意比碰撞体大一圈——"看着够大、判定不亏"，
+	## 这是让玩家觉得弹道看得清、又不会因为贴图变大而变难的关键。
+	match weapon_id:
+		"shotgun":
+			return {"color": Color(1.0, 0.62, 0.22), "length": 12.0, "thickness": 6.0, "round": false}
+		"magic_book":
+			return {"color": Color(0.72, 0.42, 1.0), "length": 16.0, "thickness": 10.0, "round": true}
+		"throwing_knife":
+			return {"color": Color(0.75, 0.9, 1.0), "length": 22.0, "thickness": 5.0, "round": false}
+		"crossbow":
+			return {"color": Color(1.0, 0.93, 0.55), "length": 26.0, "thickness": 6.0, "round": false}
+		"holy_wand":
+			return {"color": Color(1.0, 0.97, 0.72), "length": 16.0, "thickness": 10.0, "round": true}
+		"kunai":
+			return {"color": Color(0.62, 0.74, 1.0), "length": 16.0, "thickness": 5.0, "round": false}
+		"flame_thrower":
+			return {"color": Color(1.0, 0.44, 0.12), "length": 14.0, "thickness": 9.0, "round": true}
+	# 手枪 / 默认
+	return {"color": Color(1.0, 0.86, 0.35), "length": 16.0, "thickness": 6.0, "round": false}
 
 func get_weapon_evolution(weapon_id: String) -> WeaponEvolution:
 	return weapon_evolutions.get(weapon_id, null)
-
 func is_weapon_evolved(weapon_id: String) -> bool:
 	if weapon_evolutions.has(weapon_id):
 		return weapon_evolutions[weapon_id].is_evolved
@@ -277,6 +423,11 @@ func is_weapon_evolved(weapon_id: String) -> bool:
 
 func _fire_weapon(weapon) -> void:
 	if player == null or not is_instance_valid(player):
+		return
+	
+	# 进化行为「刀阵环绕」不靠开火，靠旋转持续伤害
+	if _get_behavior(weapon.weapon_id) == "orbit":
+		_ensure_orbit_blades(weapon.weapon_id)
 		return
 	
 	# 特殊武器类型处理
@@ -287,6 +438,9 @@ func _fire_weapon(weapon) -> void:
 		"lightning_chain":
 			_spawn_lightning_chain(weapon)
 			return
+		"blood_burst":
+			_spawn_blood_burst(weapon)
+			return
 	
 	var origin: Vector2 = player.global_position
 	var base_direction: Vector2
@@ -296,6 +450,26 @@ func _fire_weapon(weapon) -> void:
 		base_direction = (player.get_global_mouse_position() - origin).normalized()
 	if base_direction == Vector2.ZERO:
 		return
+
+	# 打击感：枪口闪光 + 轻微后坐（每"次"开火一次，不是每颗子弹一次）
+	_muzzle_flash(origin, base_direction, weapon.weapon_id)
+	_apply_recoil(base_direction)
+
+	# 进化行为：环形弹幕（放弃瞄准，向四周均匀喷射）
+	if _get_behavior(weapon.weapon_id) == "radial":
+		var ring_count: int = 8
+		for i in range(ring_count):
+			var ring_dir := Vector2.RIGHT.rotated(TAU * float(i) / float(ring_count))
+			_spawn_bullet(origin, ring_dir, weapon)
+		return
+
+	# 进化行为：双管齐射（并排两发，横向覆盖）
+	if _get_behavior(weapon.weapon_id) == "double_barrel":
+		var perp: Vector2 = base_direction.orthogonal() * 9.0
+		_spawn_bullet(origin + perp, base_direction, weapon)
+		_spawn_bullet(origin - perp, base_direction, weapon)
+		return
+
 	var count: int = weapon.get_scaled_projectile_count()
 	var total_spread: float = weapon.spread_angle
 	for i in range(count):
@@ -305,10 +479,88 @@ func _fire_weapon(weapon) -> void:
 		var direction := base_direction.rotated(angle_offset)
 		_spawn_bullet(origin, direction, weapon)
 
+func _get_behavior(weapon_id: String) -> String:
+	## 已进化武器的行为标识；未进化返回空串
+	var evo: WeaponEvolution = weapon_evolutions.get(weapon_id, null)
+	if evo == null or not evo.is_evolved:
+		return ""
+	return evo.behavior
+
+func _muzzle_flash(origin: Vector2, direction: Vector2, weapon_id: String) -> void:
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx == null:
+		return
+	var vis: Dictionary = get_projectile_visual(weapon_id)
+	vfx.spawn_muzzle_flash(origin + direction * 18.0, direction, vis["color"])
+
+func _apply_recoil(direction: Vector2) -> void:
+	## 开火反馈由玩家自己处理（纯视觉挤压），这里只负责把方向传过去。
+	if player and player.has_method("apply_recoil"):
+		player.apply_recoil(-direction)
+
+func _ensure_orbit_blades(weapon_id: String) -> void:
+	## 刀阵只需要存在一组；每帧 fire 都会被调用，所以这里必须幂等
+	if not _orbit_blades.is_empty():
+		var alive: bool = false
+		for b in _orbit_blades:
+			if is_instance_valid(b):
+				alive = true
+				break
+		if alive:
+			return
+		_orbit_blades.clear()
+	_spawn_orbit_blades(weapon_id)
+
+func _spawn_orbit_blades(weapon_id: String) -> void:
+	if player == null or not is_instance_valid(player):
+		return
+	if not _orbit_blades.is_empty():
+		return
+
+	var weapon = null
+	for w in weapons:
+		if w.weapon_id == weapon_id:
+			weapon = w
+			break
+	if weapon == null:
+		return
+
+	var mult: float = 1.0
+	if player.has_method("get_total_damage_multiplier"):
+		mult = player.get_total_damage_multiplier()
+	# 单把刀伤害刻意压到武器的 55%：6 把刀同时贴脸也不能比原来的穿透飞刀高太多
+	var per_blade_damage: float = weapon.get_scaled_damage() * 0.55
+	var blade_count: int = 6
+	var tint: Color = _get_evolution_color(weapon_id)
+
+	_ensure_current_scene()
+	if _current_scene == null:
+		return
+	for i in range(blade_count):
+		var blade = OrbitBladeScript.new()
+		blade.init_orbit(
+			player,
+			TAU * float(i) / float(blade_count),
+			92.0,
+			per_blade_damage,
+			mult,
+			tint
+		)
+		_current_scene.add_child(blade)
+		_orbit_blades.append(blade)
+	print("🌪️ 刀阵环绕：%d 把飞刀（单把 %.1f 伤害）" % [blade_count, per_blade_damage])
+
+func get_weapon_decay(weapon) -> float:
+	## 多武器收益递减：第 N 把武器伤害 × 0.9^(N-1)
+	var idx := weapons.find(weapon)
+	if idx <= 0:
+		return 1.0
+	return GameConfig.get_weapon_damage_multiplier(idx)
+
 func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 	# 根据武器类型创建不同的子弹
 	var bullet: Area2D
-	if weapon.weapon_id == "throwing_knife":
+	if weapon.weapon_id == "throwing_knife" or weapon.weapon_id == "kunai":
 		bullet = ObjectPool.acquire(KnifeBulletScene)
 		# 设置穿透数
 		if bullet.has_method("set_pierce_count"):
@@ -337,23 +589,26 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 			room_size = room.get_room_size()
 	# 子弹射程不超过房间对角线的一半
 	bullet.max_range = minf(weapon.bullet_range, room_size * 0.6)
-	# 使用玩家的总伤害倍率（包含狂战士之血等被动效果）
+	# 使用玩家的总伤害倍率（包含狂战士之血等被动效果），并叠加多武器递减
+	var player_mult: float = player.damage_multiplier if player else 1.0
 	if player and player.has_method("get_total_damage_multiplier"):
-		bullet.damage_multiplier = player.get_total_damage_multiplier()
-	else:
-		bullet.damage_multiplier = player.damage_multiplier if player else 1.0
+		player_mult = player.get_total_damage_multiplier()
+	bullet.damage_multiplier = player_mult * get_weapon_decay(weapon)
+
+	# 弹道外观：每把武器一个颜色/粗细，混战时也能一眼分出是谁在打
+	# 注意：对象池复用的子弹不会重跑 _ready，所以必须在这里每次重新上色
+	var vis: Dictionary = get_projectile_visual(weapon.weapon_id)
+	if bullet.has_method("apply_visual_style"):
+		bullet.apply_visual_style(vis["color"], vis["length"], vis["thickness"], vis["round"])
 
 	# 进化后视觉强化
 	var is_evolved: bool = is_weapon_evolved(weapon.weapon_id)
-	if bullet.has_node("Sprite2D"):
+	if is_evolved and bullet.has_node("Sprite2D"):
 		var spr := bullet.get_node("Sprite2D") as Sprite2D
-		if is_evolved:
-			spr.modulate = _get_evolution_color(weapon.weapon_id)
-			var evo: WeaponEvolution = weapon_evolutions.get(weapon.weapon_id, null)
-			if evo:
-				spr.scale *= evo.size_multiplier
-		else:
-			spr.modulate = Color.WHITE
+		spr.modulate = _get_evolution_color(weapon.weapon_id)
+		var evo: WeaponEvolution = weapon_evolutions.get(weapon.weapon_id, null)
+		if evo:
+			spr.scale *= evo.size_multiplier
 
 	_ensure_current_scene()
 	if _current_scene:
@@ -411,8 +666,8 @@ func _create_pistol() -> Resource:
 	w.weapon_id = "pistol"
 	w.description = "可靠的基础武器"
 	w.icon_emoji = "🔫"
-	w.base_damage = 2.5
-	w.fire_rate = 0.35
+	w.base_damage = 4.0
+	w.fire_rate = 0.25
 	w.bullet_speed = 500.0
 	w.bullet_range = 800.0
 	w.projectile_count = 1
@@ -427,8 +682,8 @@ static func create_shotgun() -> Resource:
 	w.weapon_id = "shotgun"
 	w.description = "近距离扇形射击"
 	w.icon_emoji = "💥"
-	w.base_damage = 3.0
-	w.fire_rate = 0.8
+	w.base_damage = 4.0
+	w.fire_rate = 0.75
 	w.bullet_speed = 400.0
 	w.bullet_range = 400.0
 	w.projectile_count = 3
@@ -461,7 +716,11 @@ func _play_shoot_sound(weapon_id: String) -> void:
 			sound_name = "shoot_magic"
 		"throwing_knife", "crossbow":
 			sound_name = "knife_throw"
-		"poison_cloud":
+		"kunai":
+			sound_name = "knife_throw"
+		"flame_thrower":
+			sound_name = "shoot_magic"
+		"blood_burst", "poison_cloud":
 			sound_name = "poison_cloud"
 		"lightning_chain":
 			sound_name = "lightning_chain"
@@ -571,7 +830,64 @@ func _create_weapon_by_id(weapon_id: String):
 			return create_crossbow()
 		"holy_wand":
 			return create_holy_wand()
+		"kunai":
+			return create_kunai()
+		"flame_thrower":
+			return create_flame_thrower()
+		"blood_burst":
+			return create_blood_burst()
 	return null
+
+static func create_kunai() -> Resource:
+	var script = preload("res://scripts/weapons/weapon_data.gd")
+	var w = script.new()
+	w.weapon_name = "苦无"
+	w.weapon_id = "kunai"
+	w.description = "极高速投掷的暗器"
+	w.icon_emoji = "🗡️"
+	w.base_damage = 3.2
+	w.fire_rate = 0.16
+	w.bullet_speed = 560.0
+	w.bullet_range = 600.0
+	w.projectile_count = 1
+	w.spread_angle = 0.06
+	w.auto_aim = true
+	w.pierce_count = 1
+	return w
+
+static func create_flame_thrower() -> Resource:
+	var script = preload("res://scripts/weapons/weapon_data.gd")
+	var w = script.new()
+	w.weapon_name = "火焰喷射器"
+	w.weapon_id = "flame_thrower"
+	w.description = "近距离持续火焰，几乎没有间隙"
+	w.icon_emoji = "🔥"
+	w.base_damage = 1.1
+	w.fire_rate = 0.08
+	w.bullet_speed = 330.0
+	w.bullet_range = 230.0
+	w.projectile_count = 1
+	w.spread_angle = 0.3
+	w.auto_aim = false
+	return w
+
+static func create_blood_burst() -> Resource:
+	var script = preload("res://scripts/weapons/weapon_data.gd")
+	var w = script.new()
+	w.weapon_name = "血爆"
+	w.weapon_id = "blood_burst"
+	w.description = "在敌群中引爆一片血海"
+	w.icon_emoji = "🩸"
+	w.base_damage = 9.0
+	w.fire_rate = 1.3
+	w.bullet_speed = 0.0
+	w.bullet_range = 0.0
+	w.projectile_count = 1
+	w.spread_angle = 0.0
+	w.auto_aim = true
+	w.cloud_duration = 1.0
+	w.cloud_size = 1.5
+	return w
 
 func _spawn_poison_cloud(weapon) -> void:
 	var cloud := PoisonCloudScene.instantiate()
@@ -581,8 +897,26 @@ func _spawn_poison_cloud(weapon) -> void:
 		target_pos = player.global_position + Vector2(randf_range(-100, 100), randf_range(-100, 100))
 	cloud.global_position = target_pos
 	cloud.base_damage = weapon.get_scaled_damage()
-	cloud.damage_multiplier = player.damage_multiplier if player else 1.0
+	cloud.damage_multiplier = (player.get_total_damage_multiplier() if player else 1.0) * get_weapon_decay(weapon)
 	cloud.duration = weapon.get_scaled_cloud_duration()
+	cloud.set_size(weapon.get_scaled_cloud_size())
+	_ensure_current_scene()
+	if _current_scene:
+		_current_scene.add_child(cloud)
+	_play_shoot_sound(weapon.weapon_id)
+
+func _spawn_blood_burst(weapon) -> void:
+	## 血爆：在敌群中瞬间炸开一片血海（短时高频范围伤害）
+	var cloud := PoisonCloudScene.instantiate()
+	var target_pos := _get_nearest_enemy_position(player.global_position)
+	if target_pos == Vector2.ZERO:
+		target_pos = player.global_position + Vector2(randf_range(-80, 80), randf_range(-80, 80))
+	cloud.global_position = target_pos
+	cloud.base_damage = weapon.get_scaled_damage()
+	cloud.damage_multiplier = (player.get_total_damage_multiplier() if player else 1.0) * get_weapon_decay(weapon)
+	cloud.duration = weapon.get_scaled_cloud_duration()
+	cloud.tick_interval = 0.12
+	cloud.tint = Color(0.72, 0.06, 0.12, 0.6)
 	cloud.set_size(weapon.get_scaled_cloud_size())
 	_ensure_current_scene()
 	if _current_scene:
@@ -593,7 +927,7 @@ func _spawn_lightning_chain(weapon) -> void:
 	var lightning := LightningChainScene.instantiate()
 	lightning.global_position = player.global_position
 	lightning.base_damage = weapon.get_scaled_damage()
-	lightning.damage_multiplier = player.damage_multiplier if player else 1.0
+	lightning.damage_multiplier = (player.get_total_damage_multiplier() if player else 1.0) * get_weapon_decay(weapon)
 	lightning.max_jumps = weapon.get_scaled_lightning_jumps()
 	lightning._current_damage = lightning.base_damage
 	_ensure_current_scene()

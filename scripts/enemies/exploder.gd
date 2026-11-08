@@ -13,9 +13,9 @@ var detonation_timer: float = 0.0
 var blink_timer: float = 0.0
 
 func _ready() -> void:
-	max_hp = 44.0  # 增加10% (原40.0)
+	base_hp = 22.0
 	move_speed = 120.0
-	contact_damage = 5.0
+	base_contact_damage = 5.0
 	xp_value = 12
 	super._ready()
 

@@ -10,9 +10,9 @@ var is_charging: bool = false
 var charge_elapsed: float = 0.0
 
 func _ready() -> void:
-	max_hp = 88.0  # 增加10% (原80.0)
+	base_hp = 34.0
 	move_speed = 60.0
-	contact_damage = 20.0
+	base_contact_damage = 20.0
 	xp_value = 15
 	super._ready()
 

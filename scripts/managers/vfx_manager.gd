@@ -114,6 +114,92 @@ func spawn_boss_warning(pos: Vector2) -> void:
 		tween.parallel().tween_property(ring, "modulate:a", 0.0, 0.8)
 		tween.tween_callback(ring.queue_free)
 
+# ========== 打击感：枪口闪光 / 地面预警 ==========
+
+func spawn_muzzle_flash(pos: Vector2, direction: Vector2, color: Color = Color(1.0, 0.86, 0.35)) -> Node2D:
+	## 枪口闪光：60ms 的锥形亮片，加色混合。
+	## 为什么不用粒子：粒子有随机性、会飘走；枪口闪光必须"钉在枪口、朝向正确"，
+	## 玩家靠它判断"这一枪真的打出去了"，飘走的特效反而削弱可读性。
+	var container := Node2D.new()
+	container.global_position = pos
+	container.rotation = direction.angle()
+	container.z_index = 101
+
+	var poly := Polygon2D.new()
+	poly.polygon = PackedVector2Array([
+		Vector2(0, -5.0),
+		Vector2(18.0, 0.0),
+		Vector2(0, 5.0),
+		Vector2(5.0, 0.0),
+	])
+	poly.color = Color(color.r, color.g, color.b, 0.95)
+	container.add_child(poly)
+
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	container.material = mat
+
+	var scene := _ensure_current_scene()
+	if scene == null:
+		container.queue_free()
+		return null
+	scene.add_child(container)
+
+	var tween := container.create_tween()
+	tween.tween_property(container, "scale", Vector2(1.7, 0.55), GameConfig.MUZZLE_FLASH_DURATION)
+	tween.parallel().tween_property(poly, "modulate:a", 0.0, GameConfig.MUZZLE_FLASH_DURATION)
+	tween.tween_callback(container.queue_free)
+	return container
+
+func spawn_ground_marker(pos: Vector2, radius: float, color: Color = Color(1.0, 0.15, 0.15), duration: float = -1.0) -> Node2D:
+	## 地面预警：在落点画一个逐渐填满的圆环。
+	## 参考 Halls of Torment —— 玩家需要知道"打到哪里"，而不是只能看到 Boss 自己在闪。
+	var dur: float = duration if duration > 0.0 else GameConfig.GROUND_MARKER_DURATION
+
+	var root := Node2D.new()
+	root.global_position = pos
+	root.z_index = 2  # 地面层：压在地板之上、角色之下
+
+	var fill := Polygon2D.new()
+	fill.polygon = _circle_points(radius, 28)
+	fill.color = Color(color.r, color.g, color.b, 0.16)
+	root.add_child(fill)
+
+	var outline := Line2D.new()
+	var pts := _circle_points(radius, 32)
+	pts.append(pts[0])
+	outline.points = pts
+	outline.width = 3.0
+	outline.default_color = Color(color.r, color.g, color.b, 0.9)
+	root.add_child(outline)
+
+	var scene := _ensure_current_scene()
+	if scene == null:
+		root.queue_free()
+		return null
+	scene.add_child(root)
+
+	# 从 35% 缩放长到 100%：玩家看到"圈在长大"，自然知道该躲开哪里
+	root.scale = Vector2(0.35, 0.35)
+	var tween := root.create_tween()
+	tween.tween_property(root, "scale", Vector2.ONE, dur).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tween.parallel().tween_method(
+		func(v: float): outline.width = v, 3.0, 6.0, dur
+	)
+	# 落点瞬间：闪一下再消失
+	tween.tween_property(fill, "color", Color(color.r, color.g, color.b, 0.55), 0.08)
+	tween.parallel().tween_property(outline, "default_color", Color(1, 1, 1, 1), 0.08)
+	tween.tween_property(root, "modulate:a", 0.0, 0.16)
+	tween.tween_callback(root.queue_free)
+	return root
+
+func _circle_points(radius: float, segments: int) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for i in range(segments):
+		var a := TAU * float(i) / float(segments)
+		pts.append(Vector2(cos(a), sin(a)) * radius)
+	return pts
+
 # ========== 内部工具 ==========
 
 func _create_particle(pos: Vector2, color: Color, size: float, speed: float, lifetime: float) -> void:
