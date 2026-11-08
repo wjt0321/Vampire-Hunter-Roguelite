@@ -35,6 +35,8 @@ var room_events: Node = null
 ## 测试注入点：非空时忽略存档里选中的角色（见 _apply_selected_character）。
 ## 必须在 add_child 之前赋值，因为 _ready 里就会读。
 var debug_force_character: String = ""
+## 测试注入点：非空时深渊推进/结算用这个存档对象，不碰真实 SaveManager。
+var debug_save_manager: Node = null
 ## 深渊契约：本层是否生效，以及被扣掉的生命上限绝对值（层末归还）
 var pact_active: bool = false
 var pact_hp_penalty: float = 0.0
@@ -102,10 +104,12 @@ func _ready() -> void:
 	_refresh_evolution_hint()
 
 	# 开始地下城：生成楼层房间序列并进入第一间（先不启动波次，等提示播完）
-	dungeon.start_dungeon()
+	# 先连信号再 start_dungeon()：start_dungeon 会同步 emit floor_started，
+	# 晚连会让首层 on_floor_changed 根本不执行（一层一次的标记就不会重置）
 	dungeon.floor_started.connect(_on_floor_started)
 	dungeon.floor_cleared.connect(_on_floor_cleared)
 	dungeon.dungeon_cleared.connect(_on_dungeon_cleared)
+	dungeon.start_dungeon()
 	_enter_next_room(false)
 	await get_tree().create_timer(0.3).timeout
 	await _show_current_floor_intro()
@@ -651,6 +655,29 @@ func _on_boss_intro_finished() -> void:
 	if boss_hp_bar and boss_hp_bar.has_method("end_intro"):
 		boss_hp_bar.end_intro()
 
+func _save_manager_ref() -> Node:
+	## 存档读取统一入口：测试注入优先，避免碰真实 user:// 存档
+	if debug_save_manager != null:
+		return debug_save_manager
+	return get_node_or_null("/root/SaveManager")
+
+func _floor_clear_crystals(floor_index: int) -> int:
+	## 通关血晶结算：基础值 × 深渊掉落倍率，至少 1（别让四舍五入吃掉奖励）
+	return maxi(
+		roundi(GameConfig.get_floor_clear_crystals(floor_index) * GameConfig.get_abyss_loot_mult()),
+		1)
+
+func _advance_abyss() -> int:
+	## 深渊阶梯（17.14）：+1 等级，并把"最深到达"同步到存档。
+	## 抽成纯推进函数：UI 回调只负责 reload，数值推进可被测试真实调用。
+	GameConfig.abyss_level += 1
+	if GameConfig.abyss_level > GameConfig.best_abyss:
+		GameConfig.best_abyss = GameConfig.abyss_level
+		var save_mgr := _save_manager_ref()
+		if save_mgr:
+			save_mgr.set_best_abyss(GameConfig.abyss_level)
+	return GameConfig.abyss_level
+
 func _on_boss_defeated() -> void:
 	# 防重：同一层只结算一次（历史上曾因为换房重复调用生成两个 Boss，
 	# 导致血晶翻倍、层数连跳两次）
@@ -662,10 +689,8 @@ func _on_boss_defeated() -> void:
 	wave_manager.stop()
 
 	var cleared_floor: int = dungeon.current_floor
-	# 深渊轮的通关血晶也吃掉落加成（floori 保底 1，别让 ×1.0 四舍五入成 0）
-	var crystals: int = maxi(
-		roundi(GameConfig.get_floor_clear_crystals(cleared_floor) * GameConfig.get_abyss_loot_mult()),
-		1)
+	# 深渊轮的通关血晶也吃掉落加成
+	var crystals: int = _floor_clear_crystals(cleared_floor)
 	print("👑 第 %d 层 Boss 被击败! 血晶 +%d" % [cleared_floor, crystals])
 
 	# 记录Boss击杀成就
@@ -860,22 +885,18 @@ func _on_player_died() -> void:
 
 func _on_restart() -> void:
 	# 普通重开 = 放弃深渊进度（深渊只在"连胜式"继续时保留）
-	GameConfig.abyss_level = 0
+	GameConfig.abandon_abyss()
 	get_tree().reload_current_scene()
 
 func _on_return_to_menu() -> void:
-	GameConfig.abyss_level = 0
+	GameConfig.abandon_abyss()
 	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
 
 func _on_abyss_continue() -> void:
 	## 深渊阶梯（17.14）：+1 等级后重开三层。
 	## 等级挂在 GameConfig 的 static var 上（GameConfig 是静态脚本资源，不是 autoload），
 	## reload 重建 main 后依然在。
-	GameConfig.abyss_level += 1
-	var save_mgr := get_node_or_null("/root/SaveManager")
-	if save_mgr and GameConfig.abyss_level > GameConfig.best_abyss:
-		GameConfig.best_abyss = GameConfig.abyss_level
-		save_mgr.set_best_abyss(GameConfig.abyss_level)
+	_advance_abyss()
 	print("🌀 深渊阶梯：进入第 %d 级（血 ×%.2f / 伤 ×%.2f / 掉落 ×%.2f）" % [
 		GameConfig.abyss_level, GameConfig.get_abyss_hp_mult(),
 		GameConfig.get_abyss_damage_mult(), GameConfig.get_abyss_loot_mult()])

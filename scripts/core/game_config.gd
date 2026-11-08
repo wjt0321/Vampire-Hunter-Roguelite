@@ -557,12 +557,18 @@ const POWERUP_KINDS: Array = ["heal", "heal", "frenzy", "magnet"]
 
 ## 本局当前深渊等级（0 = 首轮正常难度）
 static var abyss_level: int = 0
-## 历史最高通关深渊层（真值在 SaveManager 存档里，这里只是运行时镜像）
+## 历史最深到达的深渊等级（真值在 SaveManager 存档里，这里只是运行时镜像）。
+## 只在"继续深入"真正进入该级时记录，不是"通关过多少层"。
 static var best_abyss: int = 0
 
 const ABYSS_STEP_HP: float = 0.15
 const ABYSS_STEP_DAMAGE: float = 0.10
 const ABYSS_STEP_LOOT: float = 0.10
+
+## 放弃深渊：回主菜单 / 普通重开 / 失败结算都走这一个入口。
+## 只归零当前等级，不动 best_abyss（历史最深到达是存档成就，不该被清掉）。
+static func abandon_abyss() -> void:
+	abyss_level = 0
 
 ## 每级敌人血量 +15%
 static func get_abyss_hp_mult() -> float:

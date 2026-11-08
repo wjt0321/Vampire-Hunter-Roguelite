@@ -74,7 +74,10 @@ func _ready() -> void:
 
 	# Boss HP 只由形态 tier 决定，并随玩家等级软性放大
 	# 注意：Boss 不再叠加层倍率与波次倍率，否则会出现"第三次方乘"的数值爆炸
-	max_hp = base_hp * GameConfig.get_player_level_hp_scale(_get_player_level())
+	# 深渊倍率必须在这里手动乘：Boss 覆写 _ready、不走 EnemyBase 的缩放链
+	max_hp = base_hp * GameConfig.get_player_level_hp_scale(_get_player_level()) \
+		* GameConfig.get_abyss_hp_mult()
+	loot_mult = GameConfig.get_abyss_loot_mult()
 	_recalc_damage()
 	current_hp = max_hp
 
@@ -229,7 +232,9 @@ func _apply_variant() -> void:
 
 func _recalc_damage() -> void:
 	## 统一从基础伤害推导实际接触伤害（阶段切换时复用，避免 HP 被误重置）
-	contact_damage = base_contact_damage * GameConfig.get_enemy_damage_multiplier(spawn_wave)
+	## 深渊伤害倍率放在这里，狂暴/绝望重算时不会丢掉
+	contact_damage = base_contact_damage * GameConfig.get_enemy_damage_multiplier(spawn_wave) \
+		* GameConfig.get_abyss_damage_mult()
 
 func _create_variant_aura() -> void:
 	## 用不同颜色的光晕区分三种 Boss 形态

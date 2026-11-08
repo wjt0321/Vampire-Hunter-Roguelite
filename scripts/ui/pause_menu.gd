@@ -7,9 +7,16 @@ extends CanvasLayer
 signal resume_requested
 signal menu_requested
 
+## 导航出口：默认切主菜单场景。做成可注入 Callable，
+## 是为了让"返回主菜单必须放弃深渊"这条行为能在不换场景的前提下被真实驱动。
+var go_to_main_menu: Callable = Callable()
+
 func _ready() -> void:
 	visible = false
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	if not go_to_main_menu.is_valid():
+		go_to_main_menu = func() -> void:
+			get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
 	_setup_panel_style()
 	_setup_button_effects()
 
@@ -65,7 +72,11 @@ func _on_resume_pressed() -> void:
 	_resume()
 
 func _on_menu_pressed() -> void:
+	# 回主菜单 = 放弃深渊：与 main._on_return_to_menu 同一语义，
+	# 不能因为走了暂停菜单这条更短的路径就把深渊等级带进下一局。
+	GameConfig.abandon_abyss()
 	get_tree().paused = false
 	visible = false
 	menu_requested.emit()
-	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+	if go_to_main_menu.is_valid():
+		go_to_main_menu.call()

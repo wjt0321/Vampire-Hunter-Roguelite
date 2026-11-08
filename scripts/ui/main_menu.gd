@@ -27,6 +27,8 @@ var save_mgr: Node
 var _button_tweens: Dictionary = {}
 
 func _ready() -> void:
+	# 主菜单是新一局的入口：从任何路径回到这里都等于放弃深渊
+	GameConfig.abandon_abyss()
 	settings_panel.visible = false
 	save_mgr = get_node_or_null("/root/SaveManager")
 	_setup_background()

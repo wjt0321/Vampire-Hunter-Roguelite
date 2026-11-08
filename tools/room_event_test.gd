@@ -22,6 +22,8 @@ var _xp_before: int = 0
 var _player_ref = null
 ## 信号 lambda 对局部变量是值拷贝，必须写进成员（老坑）
 var _last_started_kind: String = ""
+## event_finished 的完整记录：超时/取消后再被击杀，不应追加第二次结束
+var _finish_log: Array = []
 
 
 class FakePlayer extends CharacterBody2D:
@@ -75,6 +77,17 @@ func _finish() -> void:
 func _affix_all_ids() -> Array:
 	## 词缀 class_name 在 --script 模式下不能静态引用（编译早于 autoload 注册）
 	return load("res://scripts/enemies/elite_affix.gd").all_ids()
+
+func _count_chests() -> int:
+	## 受诅宝箱是 current_scene 的直接子节点（不是 GameRoom 的），
+	## 按脚本路径数，别按名字（Node2D.new() 的名字会被自动去重成 Node2D2 之类）
+	var count: int = 0
+	var chest_script: String = "res://scripts/managers/cursed_chest.gd"
+	for n in _host.get_children():
+		var scr = n.get_script()
+		if scr != null and String(scr.resource_path) == chest_script:
+			count += 1
+	return count
 
 
 func _secondary_affix(enemy: Node) -> String:
@@ -143,6 +156,8 @@ func _setup() -> void:
 	_ev.set_script(EventScript)
 	_host.add_child(_ev)
 	_ev.setup(_wm, player, _hud)
+	_ev.event_finished.connect(func(kind: String, success: bool):
+		_finish_log.append({"kind": kind, "success": success}))
 
 
 func _run() -> void:
@@ -253,8 +268,69 @@ func _run() -> void:
 		await _wait_until(func() -> bool:
 			return _ev.kind == "", 2.0)
 		_check(_ev.kind == "", "超时后事件结束")
+		# 遁走是 0.5 秒淡出，用条件等待而不是固定帧数，避免帧时序假红
+		await _wait_until(func() -> bool:
+			return not is_instance_valid(enemy_ref) or float(enemy_ref.modulate.a) < 1.0, 1.0)
 		_check(not is_instance_valid(enemy_ref) or float(enemy_ref.modulate.a) < 1.0,
 			"超时猎物开始遁走（透明化）")
+	_ev.cancel()
+
+	# ---------- 超时 / 取消后不得结算 ----------
+	print("\n--- 超时 / 取消后不得结算 ---")
+	# 超时后淡出期间，流血这类 DoT 仍可能把猎物打死。它已经算"逃走"，
+	# 再给奖励等于玩家什么都不做白拿一份。
+	_ev.floor_fired = -1
+	_ev._start_hunt()
+	await _wait_until(func() -> bool:
+		return _ev._hunt_enemy != null and is_instance_valid(_ev._hunt_enemy))
+	var timeout_target: Node = _ev._hunt_enemy
+	var silver_t0: int = _ev.player.silver
+	var xp_t0: int = _ev.player.current_xp
+	_ev._hunt_timer = 0.05
+	await _wait_until(func() -> bool: return _ev.kind == "", 2.0)
+	# 结束计数在"逃走"结算之后取：要证明的是致死不再**追加**一次
+	var finishes_t0: int = _finish_log.size()
+	if is_instance_valid(timeout_target):
+		timeout_target.take_damage(999999.0)
+	await process_frame
+	await process_frame
+	_check(_ev.player.silver == silver_t0 and _ev.player.current_xp == xp_t0,
+		"超时后淡出期间被 DoT 打死不发奖励（银 %+d / 经验 %+d）"
+		% [_ev.player.silver - silver_t0, _ev.player.current_xp - xp_t0])
+	_check(_finish_log.size() == finishes_t0,
+		"超时后致死不再追加一次事件结束（%d 次）" % (_finish_log.size() - finishes_t0))
+	_ev.cancel()
+
+	# 换房 cancel() 后同样不许补发
+	_ev.floor_fired = -1
+	_ev._start_hunt()
+	await _wait_until(func() -> bool:
+		return _ev._hunt_enemy != null and is_instance_valid(_ev._hunt_enemy))
+	var cancel_target: Node = _ev._hunt_enemy
+	var silver_c0: int = _ev.player.silver
+	var xp_c0: int = _ev.player.current_xp
+	_ev.cancel()
+	# cancel 本身会结束事件，计数必须在它之后取
+	var finishes_c0: int = _finish_log.size()
+	if is_instance_valid(cancel_target):
+		cancel_target.take_damage(999999.0)
+	await process_frame
+	await process_frame
+	_check(_ev.player.silver == silver_c0 and _ev.player.current_xp == xp_c0,
+		"cancel 后猎物死亡不发奖励")
+	_check(_finish_log.size() == finishes_c0,
+		"cancel 后猎物死亡不追加事件结束（%d 次）" % (_finish_log.size() - finishes_c0))
+
+	# 猎物被外部释放（换房清场 / 对象池回收）：事件必须结束，HUD 不能卡在倒计时
+	_ev.floor_fired = -1
+	_ev._start_hunt()
+	await _wait_until(func() -> bool:
+		return _ev._hunt_enemy != null and is_instance_valid(_ev._hunt_enemy))
+	var vanished: Node = _ev._hunt_enemy
+	vanished.queue_free()
+	await _wait_until(func() -> bool: return _ev.kind == "", 2.0)
+	_check(_ev.kind == "", "猎物被外部释放后事件结束（不会永久停在 hunt）")
+	_check(_ev.hud.event_text == "", "猎物消失后 HUD 事件行被清空（实际 '%s'）" % _ev.hud.event_text)
 	_ev.cancel()
 
 	# ---------- 双词缀装配 ----------
@@ -334,6 +410,20 @@ func _run() -> void:
 		_check(bad.get_node_or_null("AffixController") != null
 			and bad.get_node_or_null("AffixController2") == null,
 			"非法 id 不产生控制器")
+	# 第三个合法 id 不得顶掉第二词缀
+	var triple: Node = _wm.spawn_special_enemy("zombie", Vector2(600, 150),
+		["haster", "shielded", "charger"], 1.0, 1.0)
+	await process_frame
+	await process_frame
+	if triple != null:
+		_check(String(triple.elite_affix) == "haster" and _secondary_affix(triple) == "shielded",
+			"只取前两个不同合法词缀（%s / %s）" % [triple.elite_affix, _secondary_affix(triple)])
+		var triple_ctrls: int = 0
+		for child in triple.get_children():
+			if child is Node2D and child.get("affix_id") != null:
+				triple_ctrls += 1
+		_check(triple_ctrls == 2, "第三个词缀不产生第三个控制器（%d 个）" % triple_ctrls)
+		triple.queue_free()
 	for n in [plain, dual, dup, bad]:
 		if n != null and is_instance_valid(n):
 			n.queue_free()
@@ -404,6 +494,67 @@ func _run() -> void:
 		"开箱给 %d 经验（实际 +%d）" % [GC.ROOM_EVENT_GUARD_XP, _ev.player.current_xp - xp1])
 	_check(_ev.kind == "", "开箱后事件关闭")
 
+	# ---------- 宝箱不与玩家重合 ----------
+	print("\n--- 宝箱位置 ---")
+	# 玩家站在房间正中央时，宝箱不能刷在同一个点上（会互相遮挡、也读不出"守卫圈"）
+	_player_ref.global_position = Vector2(640, 360)
+	_ev.floor_fired = -1
+	_ev._start_guard()
+	var center_chest: Node = _ev._chest
+	if center_chest != null:
+		_check(center_chest.global_position.distance_to(_player_ref.global_position) > 40.0,
+			"玩家在房间中心时宝箱错开（%.0fpx）"
+			% center_chest.global_position.distance_to(_player_ref.global_position))
+	# 清掉本次守卫，避免污染后面的取消测试
+	for g in _host.get_children():
+		if g is Node2D and g.get_node_or_null("EventTag") != null \
+				and String(g.get_node("EventTag").text).contains("守"):
+			g.queue_free()
+	_ev.cancel()
+
+	# ---------- 守卫 / 宝箱异常路径 ----------
+	print("\n--- 守卫异常路径 ---")
+	# 守卫全刷失败：宝箱不能留在场上（玩家会对着一个永远打不开的箱子发呆）
+	# 直接数场景里的宝箱节点：只查 _ev._chest 会因为 _end() 把它置空而恒真。
+	# 先等两帧，让前面 cancel() 延迟释放的宝箱结算完，基线才是干净的。
+	await process_frame
+	await process_frame
+	var chests_before: int = _count_chests()
+	var saved_scenes: Dictionary = _wm.enemy_scenes
+	_wm.enemy_scenes = {}
+	_ev.floor_fired = -1
+	_ev._start_guard()
+	await process_frame
+	await process_frame
+	_check(_ev.kind == "", "守卫刷不出来时事件结束")
+	_check(_count_chests() == chests_before,
+		"守卫刷不出来时宝箱被回收（场上 %d → %d 个）"
+		% [chests_before, _count_chests()])
+	_wm.enemy_scenes = saved_scenes
+
+	# 换房 cancel() 之后守卫再死：不能再开箱发奖励
+	_ev.floor_fired = -1
+	_ev._start_guard()
+	var late_guards: Array = []
+	for g in _host.get_children():
+		if g is Node2D and g.get_node_or_null("EventTag") != null \
+				and String(g.get_node("EventTag").text).contains("守"):
+			late_guards.append(g)
+	var silver_late: int = _ev.player.silver
+	var xp_late: int = _ev.player.current_xp
+	_ev.cancel()
+	# 同上：cancel 的事件结束先计入，之后守卫死亡不能再追加
+	var finishes_late: int = _finish_log.size()
+	for g in late_guards:
+		if is_instance_valid(g):
+			g.take_damage(999999.0)
+	await process_frame
+	await process_frame
+	_check(_ev.player.silver == silver_late and _ev.player.current_xp == xp_late,
+		"cancel 后守卫死亡不发奖励")
+	_check(_finish_log.size() == finishes_late,
+		"cancel 后守卫死亡不追加事件结束（%d 次）" % (_finish_log.size() - finishes_late))
+
 	# ---------- 跨房清理 ----------
 	print("\n--- 跨房清理 ---")
 	_ev.floor_fired = -1
@@ -430,9 +581,25 @@ func _run() -> void:
 
 	# ---------- HUD ----------
 	print("\n--- HUD 事件标签 ---")
-	var real_hud = load("res://scripts/ui/hud.gd").new()
-	_check(real_hud.has_method("set_event_status"), "HUD 提供 set_event_status 接口")
-	real_hud.free()
+	var hud_scene: PackedScene = load("res://scenes/ui/hud.tscn")
+	var live_hud: Node = hud_scene.instantiate()
+	_host.add_child(live_hud)
+	await process_frame
+	_check(live_hud.has_method("set_event_status"), "HUD 提供 set_event_status 接口")
+	var ev_label = live_hud.event_label
+	_check(ev_label != null and is_instance_valid(ev_label), "真实 HUD 场景创建了 event_label")
+	if ev_label != null:
+		# 事件行必须是独立节点：复用 wave_label 会让波次编号和倒计时互相覆盖
+		_check(ev_label != live_hud.get_node("MarginContainer/VBoxContainer/TopBar/WaveLabel"),
+			"event_label 是独立节点（不复用 wave_label）")
+		_check(not ev_label.visible, "无事件时 event_label 默认隐藏")
+		live_hud.set_event_status("猎杀 12 秒")
+		_check(ev_label.visible and ev_label.text == "猎杀 12 秒",
+			"非空状态显示事件行（'%s'）" % ev_label.text)
+		live_hud.set_event_status("")
+		_check(not ev_label.visible, "空字符串隐藏事件行（不是留空行占位）")
+	live_hud.queue_free()
+	await process_frame
 
 	# ---------- 收尾 ----------
 	# FakeHUD 不在树上：SceneTree 退出时不会替我们释放它，不显式 free 会留下
@@ -441,6 +608,13 @@ func _run() -> void:
 	if _hud != null and is_instance_valid(_hud):
 		_hud.free()
 	_hud = null
+	# 本测试打死不少敌人 → 掉落的经验宝石进了 ObjectPool（已 remove_child 的孤儿节点）。
+	# 池子不主动清的话，退出检查会把这些 Area2D/Sprite2D/CollisionShape2D 当成泄漏。
+	var pool: Node = root.get_node_or_null("ObjectPool")
+	if pool != null:
+		pool.clear_all()
+	await process_frame
+	await process_frame
 	# 本测试让敌人受伤/死亡，AudioManager 的 SFX 若还在响，Ogg playback 资源会被
 	# 带进退出检查（间歇性出现）。停掉播放器并清空 stream，再等一次混音。
 	await _stop_audio()

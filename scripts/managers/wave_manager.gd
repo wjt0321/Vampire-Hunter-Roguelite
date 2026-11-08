@@ -286,6 +286,9 @@ func spawn_special_enemy(enemy_type: String, position: Vector2,
 			enemy.secondary_affix = ""
 		var installed: Array = []
 		for id in affixes:
+			# 规格是"双词缀"：第三及后续合法 id 不能再顶掉第二词缀
+			if installed.size() >= 2:
+				break
 			var affix_id := String(id)
 			if affix_id.is_empty() or affix_id in installed:
 				continue

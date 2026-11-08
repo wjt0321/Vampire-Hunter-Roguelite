@@ -22,6 +22,9 @@ const HuntDelay: float = 1.5       # 进房后多久刷猎物（给玩家半秒�
 var kind: String = ""              # "" = 本房无事件
 var floor_fired: int = -1          # 已触发过事件的层号（一层一次）
 var combat_room_count: int = 0     # 本层已进入的战斗房计数
+## 最近一次 on_floor_changed 收到的层号（-1 = 还没换过层）。
+## main 用它确认首层 floor_started 确实走到了事件管理器。
+var last_floor_index: int = -1
 
 var wave_manager: Node = null
 var player: Node = null
@@ -42,6 +45,7 @@ func setup(wm: Node, player_node: Node, hud_node: Node) -> void:
 
 func on_floor_changed(floor_index: int) -> void:
 	## 换层重置"一层一次"的标记；进行中的事件随 cancel() 结束
+	last_floor_index = floor_index
 	combat_room_count = 0
 	if floor_fired != floor_index:
 		floor_fired = -1
@@ -106,6 +110,9 @@ func _process_hunt(delta: float, hud_dirty: bool) -> void:
 			if _hunt_delay <= 0.0:
 				_spawn_hunt_enemy()
 			return
+		# 已出场却失效（换房清场 / 对象池回收 / 被别的系统释放）：
+		# 不能一直等一个不存在的敌人，否则事件永远停在 hunt、HUD 卡在倒计时
+		_end(false, "猎物失踪")
 		return
 	# 敌人出场后才开始走倒计时（1.5 秒延迟不算在 20 秒里）
 	_hunt_timer -= delta
@@ -171,11 +178,16 @@ func _spawn_hunt_enemy() -> void:
 	_tag_enemy(_hunt_enemy, "猎 物", Color(1.0, 0.42, 0.3))
 
 func _on_hunt_killed(_enemy: Node) -> void:
+	# 事件已结束（超时遁走 / cancel）后补发的死亡信号不能结算：
+	# 淡出期间 DoT 打死、或换房后清场，都不该再给一次奖励。
+	if kind != "hunt":
+		return
 	_reward(GameConfig.ROOM_EVENT_HUNT_SILVER, GameConfig.ROOM_EVENT_HUNT_XP,
 		"猎物已诛 +%d 银" % GameConfig.ROOM_EVENT_HUNT_SILVER)
 	_end(true, "猎物已诛")
 
 func _hunt_escape() -> void:
+	_disconnect_hunt_killed()
 	if _hunt_enemy != null and is_instance_valid(_hunt_enemy):
 		# 遁走动画：变透明 + 放大，然后消失。直接 queue_free 会像"凭空蒸发"
 		var tw := create_tween()
@@ -193,10 +205,21 @@ func _hunt_escape() -> void:
 # ==================== 守卫 / 宝箱 ====================
 
 func _spawn_chest() -> void:
-	var center: Vector2 = _room_bounds().get_center()
+	var bounds: Rect2 = _room_bounds()
+	var center: Vector2 = bounds.get_center()
+	var spawn_pos: Vector2 = center
+	# 玩家站在房间中央时，宝箱不能刷在同一个点上：互相遮挡，也读不出"守卫圈"
+	# 的中心在哪。沿远离玩家的方向推开，再夹回房间内。
+	if player != null and is_instance_valid(player):
+		var away: Vector2 = center - player.global_position
+		if away.length() < 80.0:
+			var dir: Vector2 = away.normalized() if away.length() > 0.01 else Vector2.RIGHT
+			spawn_pos = center + dir * 110.0
+			spawn_pos.x = clampf(spawn_pos.x, bounds.position.x + 40.0, bounds.end.x - 40.0)
+			spawn_pos.y = clampf(spawn_pos.y, bounds.position.y + 40.0, bounds.end.y - 40.0)
 	_chest = Node2D.new()
 	_chest.set_script(preload("res://scripts/managers/cursed_chest.gd"))
-	_chest.position = center
+	_chest.position = spawn_pos
 	var scene := get_tree().current_scene
 	if scene:
 		scene.add_child(_chest)
@@ -231,9 +254,18 @@ func _spawn_guards() -> void:
 		_tag_enemy(guard, "守 卫", GameConfig.ROOM_EVENT_GUARD_COLOR)
 		_guards_left += 1
 	if _guards_left == 0:
+		# 一只守卫都没刷出来：宝箱必须一起收回，否则玩家会对着一个
+		# 永远打不开的箱子发呆（而且它还会留到下一房）
+		var orphan: Node2D = _chest
+		_chest = null
+		if orphan != null and is_instance_valid(orphan):
+			orphan.queue_free()
 		_end(false, "守卫未现身")
 
 func _on_guard_died(_enemy: Node) -> void:
+	# 同猎杀：cancel / 超时后守卫才被清场打死，不能补开箱给奖励
+	if kind != "guard":
+		return
 	_guards_left = maxi(_guards_left - 1, 0)
 	if _guards_left > 0:
 		return
@@ -286,6 +318,14 @@ func _room_bounds() -> Rect2:
 			return room.get_room_bounds()
 	return Rect2(Vector2(64, 64), Vector2(1152, 592))
 
+func _disconnect_hunt_killed() -> void:
+	## 猎物在淡出/清场期间仍可能被 DoT 打死。提前断线，
+	## 别让"已经逃走/已经离房"的怪再结算一次。
+	if _hunt_enemy != null and is_instance_valid(_hunt_enemy) \
+			and _hunt_enemy.has_signal("enemy_died") \
+			and _hunt_enemy.enemy_died.is_connected(_on_hunt_killed):
+		_hunt_enemy.enemy_died.disconnect(_on_hunt_killed)
+
 func _end(success: bool, reason: String) -> void:
 	var finished_kind := kind
 	kind = ""
@@ -303,6 +343,7 @@ func cancel() -> void:
 	## 换房/换层调用：事件不跨房。没事件时是纯空操作。
 	if kind.is_empty():
 		return
+	_disconnect_hunt_killed()
 	# 宝箱是 current_scene 的子节点，不随 GameRoom 释放；必须显式清理，否则会留到下一房。
 	if _chest != null and is_instance_valid(_chest):
 		_chest.queue_free()

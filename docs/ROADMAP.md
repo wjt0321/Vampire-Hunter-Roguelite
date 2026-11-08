@@ -441,9 +441,9 @@
 
 | 项 | 状态 | 说明 |
 |---|---|---|
-| 局内目标事件 | ✅ | 深渊猎物（限时**真双词缀**精英：主词缀走逐层池，第二词缀从完整合法池排除主词缀后取；统一加成只结算一次，第二词缀提供专属效果）与受诅宝箱（守卫圈）二选一，每层一次，第 2 间战斗房起判定（35/40/45%）。事件不跨房、不吃同屏上限。`room_event_manager.gd` + `cursed_chest.gd` + HUD 独立 event_label |
-| 深渊阶梯 | ✅ | 通关界面「深入深渊 N」：+1 级重开三层（血 +15% / 伤 +10% / 掉落 +10%）。等级存 GameConfig `static var`（跨 reload 存活），`best_abyss` 进存档 |
-| 测试 | ✅ | `room_event_test.gd`（54 项，含双词缀装配/第二血盾/重复与非法 id 去重、每层猎物双词缀、宝箱跨房回收）+ `abyss_ladder_test.gd`（18 项，SaveManager 只增不减走内存子类行为测试）+ `elite_affix_test.gd`（63 项，含双词缀语义）；全流程额外断言首房计数 |
+| 局内目标事件 | ✅ | 深渊猎物（限时**真双词缀**精英：主词缀走逐层池，第二词缀从完整合法池排除主词缀后取，超过两个只取前两个不同合法 id；统一加成只结算一次，第二词缀提供专属效果）与受诅宝箱（守卫圈）二选一，每层一次，第 2 间战斗房起判定（35/40/45%）。事件不跨房、不吃同屏上限、已结束后（超时/换房）不再结算；固定奖励不吃深渊掉落倍率。`room_event_manager.gd` + `cursed_chest.gd` + HUD 独立 event_label |
+| 深渊阶梯 | ✅ | 通关界面「深入深渊 N」：+1 级重开三层（血 +15% / 伤 +10% / 掉落 +10%），Boss 血量/接触伤害/掉落同样吃倍率。等级存 GameConfig `static var`（跨 reload 存活），`best_abyss` 记录历史最深到达并进存档；放弃深渊统一走 `GameConfig.abandon_abyss()` |
+| 测试 | ✅ | `room_event_test.gd`（72 项，含双词缀装配/第二血盾/重复与非法 id 去重/第三词缀不覆盖、每层猎物双词缀、超时与 cancel 后致死不结算、宝箱错位与回收、真实 HUD 场景）+ `abyss_ladder_test.gd`（39 项，Boss 倍率、真实 `_floor_clear_crystals` / `_advance_abyss`、真实暂停菜单与通关界面、SaveManager 只增不减走内存子类行为测试）+ `elite_affix_test.gd`（63 项，含双词缀语义）；全流程额外断言首房计数与首层 `on_floor_changed` |
 
 ### 17.15 下一批（未开始）
 

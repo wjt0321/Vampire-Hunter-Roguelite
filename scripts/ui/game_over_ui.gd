@@ -44,25 +44,38 @@ func _setup_panel_style() -> void:
 	_setup_button_effects()
 
 func _setup_button_effects() -> void:
+	for btn in panel.find_children("", "Button", true):
+		_apply_button_style(btn)
+
+func _apply_button_style(btn: Button) -> void:
+	## 只作用单个按钮：动态创建的深渊按钮不能走"整面板重连"，
+	## 那会给已有的 Restart/Menu 再叠一次音效连接（hover/click 双播）。
 	var normal := TextureManager.instance.get_ui_texture("btn_normal")
 	var hover := TextureManager.instance.get_ui_texture("btn_hover")
 	var pressed := TextureManager.instance.get_ui_texture("btn_pressed")
-	for btn in panel.find_children("", "Button", true):
-		if normal and hover:
-			var normal_style := StyleBoxTexture.new()
-			normal_style.texture = normal
-			var hover_style := StyleBoxTexture.new()
-			hover_style.texture = hover
-			var pressed_style := StyleBoxTexture.new()
-			pressed_style.texture = pressed if pressed else hover
-			btn.add_theme_stylebox_override("normal", normal_style)
-			btn.add_theme_stylebox_override("hover", hover_style)
-			btn.add_theme_stylebox_override("pressed", pressed_style)
-			btn.add_theme_color_override("font_color", Color.WHITE)
-			btn.add_theme_color_override("font_hover_color", Color(1, 0.9, 0.7, 1))
-			btn.add_theme_color_override("font_pressed_color", Color(0.9, 0.9, 0.9, 1))
-		btn.mouse_entered.connect(func(): AudioManager.play_sfx(AudioLib.get_sound("hover")))
-		btn.pressed.connect(func(): AudioManager.play_sfx(AudioLib.get_sound("button_click")))
+	if normal and hover:
+		var normal_style := StyleBoxTexture.new()
+		normal_style.texture = normal
+		var hover_style := StyleBoxTexture.new()
+		hover_style.texture = hover
+		var pressed_style := StyleBoxTexture.new()
+		pressed_style.texture = pressed if pressed else hover
+		btn.add_theme_stylebox_override("normal", normal_style)
+		btn.add_theme_stylebox_override("hover", hover_style)
+		btn.add_theme_stylebox_override("pressed", pressed_style)
+		btn.add_theme_color_override("font_color", Color.WHITE)
+		btn.add_theme_color_override("font_hover_color", Color(1, 0.9, 0.7, 1))
+		btn.add_theme_color_override("font_pressed_color", Color(0.9, 0.9, 0.9, 1))
+	if not btn.mouse_entered.is_connected(_on_button_hover_sfx):
+		btn.mouse_entered.connect(_on_button_hover_sfx)
+	if not btn.pressed.is_connected(_on_button_click_sfx):
+		btn.pressed.connect(_on_button_click_sfx)
+
+func _on_button_hover_sfx() -> void:
+	AudioManager.play_sfx(AudioLib.get_sound("hover"))
+
+func _on_button_click_sfx() -> void:
+	AudioManager.play_sfx(AudioLib.get_sound("button_click"))
 
 func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 	visible = true
@@ -156,7 +169,12 @@ func _on_abyss_pressed() -> void:
 
 func _setup_abyss_button(victory: bool) -> void:
 	## 胜利界面才有"继续深入"。按钮动态创建：
-	## 失败界面出现它只会把挫败感变成"被劝退感"
+	## 失败界面出现它只会把挫败感变成"被劝退感"——连创建都不做，
+	## 隐藏按钮仍会留一条无意义的音效连接。
+	if not victory:
+		if abyss_button != null and is_instance_valid(abyss_button):
+			abyss_button.visible = false
+		return
 	if abyss_button == null:
 		abyss_button = Button.new()
 		abyss_button.name = "AbyssButton"
@@ -166,7 +184,8 @@ func _setup_abyss_button(victory: bool) -> void:
 		vbox.add_child(abyss_button)
 		vbox.move_child(abyss_button, vbox.get_node("AchievementLabel").get_index() + 1)
 		abyss_button.pressed.connect(_on_abyss_pressed)
-		_setup_button_effects()
+		# 只给新按钮上样式/音效，绝不再遍历整面板（旧按钮会双播）
+		_apply_button_style(abyss_button)
 	var next_level: int = GameConfig.abyss_level + 1
 	abyss_button.text = "深入深渊 %d（血 +%d%% · 伤 +%d%% · 掉落 +%d%%）" % [
 		next_level,

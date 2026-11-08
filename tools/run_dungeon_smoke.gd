@@ -38,6 +38,10 @@ func _run() -> void:
 	_check(dungeon.room_in_floor == 1, "起始已进入第 1 间房")
 	_check(main_scene.room_events != null and main_scene.room_events.combat_room_count == 1,
 		"首房已计入事件战斗房数（第 2 间战斗房才可触发）")
+	# 首层 floor_started 必须在连接之后发出：否则"一层一次"的标记不会按层重置
+	_check(main_scene.room_events != null and int(main_scene.room_events.last_floor_index) == 1,
+		"首层 on_floor_changed 真实执行（last_floor_index=%s）"
+		% str(main_scene.room_events.last_floor_index if main_scene.room_events else "null"))
 
 	for floor_index in range(1, GameConfig.DUNGEON_FLOOR_COUNT + 1):
 		var expected_rooms: int = dungeon.get_room_count()
