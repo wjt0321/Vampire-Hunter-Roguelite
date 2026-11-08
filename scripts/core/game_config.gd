@@ -451,7 +451,12 @@ const AFFIX_HASTE_DURATION: float = 0.75
 
 static func get_elite_affix_chance(floor_index: int) -> float:
 	var idx: int = clampi(floor_index - 1, 0, ELITE_AFFIX_CHANCE_BY_FLOOR.size() - 1)
-	return float(ELITE_AFFIX_CHANCE_BY_FLOOR[idx])
+	var chance := float(ELITE_AFFIX_CHANCE_BY_FLOOR[idx])
+	# 每日「精英之夜」在这里乘，不改表本身。
+	# 表是回归测试的基线（第 3 层 18% 必须 ≤ 20%），每日没开时必须原样返回。
+	if has_daily("elite"):
+		chance = minf(chance * DAILY_ELITE_CHANCE_MULT, 0.95)
+	return chance
 
 static func get_elite_affix_pool(floor_index: int) -> Array:
 	## 该层允许的词缀池（第 1 层只有急速，见 ELITE_AFFIX_POOL_BY_FLOOR）
@@ -583,3 +588,174 @@ static func get_abyss_damage_mult() -> float:
 ## _floor_clear_crystals，避免银币基础值被 round 吃掉（1×1.2 永远 1）。
 static func get_abyss_loot_mult() -> float:
 	return 1.0 + ABYSS_STEP_LOOT * float(abyss_level)
+
+# ==================== 深渊词缀（17.15） ====================
+# 深渊前两级仍然只是数值（血/伤/掉落）。从这里开始加“规则变了”，
+# 否则无尽模式只是同一局打得更肉。
+# 远程 +1 从 2 级起，双词缀从 3 级起：两条分开解锁，玩家能感到“这一级多了一条新规矩”。
+# Boss 弹幕不吃 +1。Boss 的阶段演出是按弹数设计的，多一圈就从“能躲”变成墙。
+
+const ABYSS_RANGED_EXTRA_LEVEL: int = 2
+const ABYSS_DUAL_AFFIX_LEVEL: int = 3
+
+static func get_abyss_extra_projectiles() -> int:
+	if abyss_level >= ABYSS_RANGED_EXTRA_LEVEL:
+		return 1
+	return 0
+
+static func abyss_forces_dual_affix() -> bool:
+	return abyss_level >= ABYSS_DUAL_AFFIX_LEVEL
+
+static func abyss_rule_tags() -> PackedStringArray:
+	var out := PackedStringArray()
+	if abyss_level >= ABYSS_RANGED_EXTRA_LEVEL:
+		out.append("弹+1")
+	if abyss_level >= ABYSS_DUAL_AFFIX_LEVEL:
+		out.append("双缀")
+	return out
+
+static func abyss_rule_text() -> String:
+	var parts := PackedStringArray()
+	if abyss_level >= ABYSS_RANGED_EXTRA_LEVEL:
+		parts.append("远程敌人额外 1 发")
+	if abyss_level >= ABYSS_DUAL_AFFIX_LEVEL:
+		parts.append("精英必带双词缀")
+	return "、".join(parts)
+
+# ==================== 地图事件房（17.15） ====================
+# 岔路挂在“下一间本来是战斗房”的门口，不增加层内房间数，也不改商店/宝箱/休息的配额。
+# 不选就还是原来的战斗房，所以旧的房间序列测试不用改。
+
+const MAP_EVENT_TYPES: Array = ["mutation", "fog", "mirror"]
+const MAP_EVENT_FORKS_BY_FLOOR: Array = [1, 2, 2]
+const MUTATION_HP_RATIO: float = 0.25
+const MUTATION_WIN_CHANCE: float = 0.55
+const MUTATION_WIN_SILVER: int = 55
+const MUTATION_WIN_XP: int = 90
+const MUTATION_LOSE_SILVER: int = 8
+const FOG_LOOT_MULT: float = 1.55
+const FOG_VISION_RADIUS: float = 220.0
+const FOG_VISION_SOFTNESS: float = 70.0
+
+static func map_event_forks(floor_index: int) -> int:
+	var idx := clampi(floor_index - 1, 0, MAP_EVENT_FORKS_BY_FLOOR.size() - 1)
+	return int(MAP_EVENT_FORKS_BY_FLOOR[idx])
+
+static func mutation_cost(max_hp: float) -> float:
+	return maxf(max_hp, 0.0) * MUTATION_HP_RATIO
+
+static func can_mutation_gamble(current_hp: float, max_hp: float) -> bool:
+	## 献血不能把自己扣死。残血时关掉按钮，而不是让玩家自愿自杀。
+	return current_hp - mutation_cost(max_hp) >= 1.0
+
+static func roll_mutation(roll: float) -> Dictionary:
+	var win := roll < MUTATION_WIN_CHANCE
+	return {
+		"win": win,
+		"silver": MUTATION_WIN_SILVER if win else MUTATION_LOSE_SILVER,
+		"xp": MUTATION_WIN_XP if win else 0,
+	}
+
+static func mirror_x(x: float, center_x: float) -> float:
+	## 绕一条竖轴翻转。布局用房间中心，刷怪用房间中心的全局坐标，同一条公式。
+	return center_x * 2.0 - x
+
+static func room_choice_info(room_type: String) -> Dictionary:
+	var fog_pct := roundi((FOG_LOOT_MULT - 1.0) * 100.0)
+	var hp_pct := roundi(MUTATION_HP_RATIO * 100.0)
+	var table := {
+		"combat": {"title": "深入", "detail": "普通战斗", "color": Color(0.62, 0.38, 1.0)},
+		"mutation": {
+			"title": "变异房",
+			"detail": "献出 %d%% 生命豪赌，可能血本无归" % hp_pct,
+			"color": Color(0.86, 0.22, 0.28),
+		},
+		"fog": {
+			"title": "迷雾房",
+			"detail": "视野受限，掉落与经验 +%d%%" % fog_pct,
+			"color": Color(0.55, 0.68, 0.78),
+		},
+		"mirror": {"title": "镜像房", "detail": "敌人与障碍左右对调", "color": Color(0.95, 0.78, 0.32)},
+		"shop": {"title": "商店", "detail": "交易与少量回复", "color": Color(0.95, 0.78, 0.28)},
+		"treasure": {"title": "宝箱", "detail": "武器或进化", "color": Color(0.95, 0.72, 0.25)},
+		"rest": {"title": "休息", "detail": "治疗或契约", "color": Color(0.45, 0.75, 0.55)},
+		"boss": {"title": "Boss", "detail": "本层首领", "color": Color(0.9, 0.15, 0.18)},
+	}
+	var info: Dictionary = table.get(room_type, {
+		"title": room_type,
+		"detail": "",
+		"color": Color(0.7, 0.5, 1.0),
+	})
+	info["type"] = room_type
+	return info
+
+# ==================== 每日挑战（17.15） ====================
+# 词缀组合由 UTC 日期决定，所有人同一天看到同一组。
+# 数值挂在这里，文案和 id 挂在同一张表上，避免“描述写 +40%、代码乘 1.25”。
+
+const DAILY_HASTE_MULT: float = 1.40
+const DAILY_BOUNTY_MULT: float = 1.30
+const DAILY_GLASS_MULT: float = 1.25
+const DAILY_ELITE_CHANCE_MULT: float = 2.0
+const DAILY_SLOW_MULT: float = 0.85
+const DAILY_PARTICIPATION_CRYSTALS: int = 50
+const DAILY_BEST_BONUS_CRYSTALS: int = 200
+
+const DAILY_MODIFIERS: Array = [
+	{"id": "haste", "name": "狂奔", "desc": "小怪移速 +40%"},
+	{"id": "no_heal", "name": "枯井", "desc": "无法获得治疗"},
+	{"id": "bounty", "name": "赏金", "desc": "银币与经验 +30%"},
+	{"id": "glass", "name": "脆骨", "desc": "受到的伤害 +25%"},
+	{"id": "elite", "name": "精英之夜", "desc": "精英出现率翻倍"},
+	{"id": "slow", "name": "泥沼", "desc": "自身移速 -15%"},
+]
+
+static var daily_active: bool = false
+static var daily_date: String = ""
+static var daily_seed: int = 0
+static var daily_modifier_ids: Array = []
+
+static func start_daily(spec: Dictionary) -> void:
+	daily_active = true
+	daily_date = String(spec.get("date", ""))
+	daily_seed = int(spec.get("seed", 0))
+	daily_modifier_ids = []
+	for entry in spec.get("modifiers", []):
+		if entry is Dictionary:
+			var id := String(entry.get("id", ""))
+			if id != "":
+				daily_modifier_ids.append(id)
+
+static func clear_daily() -> void:
+	daily_active = false
+	daily_date = ""
+	daily_seed = 0
+	daily_modifier_ids = []
+
+static func has_daily(id: String) -> bool:
+	return daily_active and id in daily_modifier_ids
+
+static func daily_def(id: String) -> Dictionary:
+	for entry in DAILY_MODIFIERS:
+		if String(entry.get("id", "")) == id:
+			return entry
+	return {}
+
+static func daily_name_list() -> String:
+	var parts := PackedStringArray()
+	for id in daily_modifier_ids:
+		var info := daily_def(String(id))
+		if info.is_empty():
+			continue
+		parts.append(String(info.get("name", id)))
+	return "、".join(parts)
+
+static func daily_enemy_speed_mult() -> float:
+	if has_daily("haste"):
+		return DAILY_HASTE_MULT
+	return 1.0
+
+static func scale_incoming_damage(amount: float) -> float:
+	if has_daily("glass"):
+		return amount * DAILY_GLASS_MULT
+	return amount

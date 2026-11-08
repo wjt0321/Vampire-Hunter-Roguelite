@@ -82,8 +82,13 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 	get_tree().paused = true
 	
 	var crystals: int = 0
+	var daily_line := ""
 	if save_mgr:
 		crystals = save_mgr.end_run(stats)
+		if bool(stats.get("daily", false)) and save_mgr.has_method("record_daily_run"):
+			var rec: Dictionary = save_mgr.record_daily_run(String(stats.get("daily_date", "")), stats)
+			crystals += int(rec.get("crystals", 0))
+			daily_line = String(rec.get("summary", ""))
 	
 	var title := ""
 	if is_victory:
@@ -125,12 +130,15 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 	if save_mgr:
 		text += "\n💎 获得血晶: +%d\n" % crystals
 		text += "💎 总血晶: %d" % save_mgr.get_blood_crystals()
+	if daily_line != "":
+		text += "\n" + daily_line
 	stats_label.text = text
 	
 	# 显示本局解锁的成就
 	_update_achievement_display()
 	# 深渊阶梯按钮：胜利才出现
-	_setup_abyss_button(is_victory)
+	# 每日挑战不接深渊。两套规则叠在一起，排行榜和词缀都说不清是哪一局。
+	_setup_abyss_button(is_victory and not bool(stats.get("daily", false)))
 	
 	panel.modulate = Color(1, 1, 1, 0)
 	var tween := create_tween()

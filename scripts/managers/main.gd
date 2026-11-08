@@ -28,6 +28,8 @@ var dungeon: Node = null
 var floor_banner: CanvasLayer = null
 var room_shop: CanvasLayer = null
 var blood_pact: CanvasLayer = null
+var mutation_ui: CanvasLayer = null
+var fog_overlay: Node2D = null
 var rooms_cleared: int = 0
 var transition_overlay: ColorRect = null
 ## 局内目标事件（17.14）：战斗房的小目标管理器
@@ -82,6 +84,7 @@ func _ready() -> void:
 	_create_floor_banner()
 	_create_room_shop()
 	_create_blood_pact()
+	_create_mutation_ui()
 
 	_connect_signals()
 
@@ -106,6 +109,7 @@ func _ready() -> void:
 	# 开始地下城：生成楼层房间序列并进入第一间（先不启动波次，等提示播完）
 	# 先连信号再 start_dungeon()：start_dungeon 会同步 emit floor_started，
 	# 晚连会让首层 on_floor_changed 根本不执行（一层一次的标记就不会重置）
+	_apply_daily_rules()
 	dungeon.floor_started.connect(_on_floor_started)
 	dungeon.floor_cleared.connect(_on_floor_cleared)
 	dungeon.dungeon_cleared.connect(_on_dungeon_cleared)
@@ -237,6 +241,10 @@ func _create_room(width: float, height: float, room_type: String, theme: String 
 			current_room.setup_treasure_room()
 		"rest":
 			current_room.setup_rest_room()
+		"mutation":
+			current_room.setup_mutation_room()
+		"fog", "mirror":
+			current_room.room_theme = theme if theme != "" else "dungeon"
 		_:
 			current_room.room_theme = theme if theme != "" else _get_combat_theme()
 
@@ -246,14 +254,17 @@ func _create_room(width: float, height: float, room_type: String, theme: String 
 
 	# 连接传送门信号
 	current_room.portal_entered.connect(_on_portal_entered)
+	current_room.portal_chosen.connect(_on_portal_chosen)
 
 	# 根据房间类型添加障碍物与装饰（在场景树中操作）
 	match room_type:
-		"combat":
+		"combat", "fog", "mirror":
 			if rooms_cleared > 1:
 				current_room.add_pillars(randi_range(2, 4))
 				current_room.add_props(randi_range(1, 3))
 			current_room.add_decorations(randi_range(2, 5))
+			if room_type == "mirror":
+				current_room.apply_mirror()
 		"boss":
 			current_room.add_pillars(randi_range(4, 7))
 			current_room.add_props(randi_range(2, 4))
@@ -298,6 +309,12 @@ func _create_room_shop() -> void:
 	room_shop.set_script(preload("res://scripts/ui/room_shop.gd"))
 	add_child(room_shop)
 
+func _create_mutation_ui() -> void:
+	mutation_ui = CanvasLayer.new()
+	mutation_ui.name = "MutationAltar"
+	mutation_ui.set_script(preload("res://scripts/ui/mutation_altar_ui.gd"))
+	add_child(mutation_ui)
+
 func _create_blood_pact() -> void:
 	## 血之祭坛（休息房二选一）。同样全部代码构建。
 	blood_pact = CanvasLayer.new()
@@ -309,10 +326,15 @@ func _create_blood_pact() -> void:
 func _on_wave_completed(wave_number: int) -> void:
 	# 每完成一波后出现传送门
 	if current_room != null and not current_room.portal_spawned:
-		current_room.spawn_portal()
+		_open_room_exit(current_room)
 	# 波次标签别继续挂着 "Wave N" 让人以为还有活怪——写明已清
 	if hud and hud.has_method("set_wave_status"):
 		hud.set_wave_status("Wave %d 已清 · 走传送门" % wave_number, true)
+
+func _on_portal_chosen(room_type: String) -> void:
+	if dungeon:
+		dungeon.choose_next(room_type)
+	_on_portal_entered()
 
 func _on_portal_entered() -> void:
 	# 播放传送音效
@@ -353,6 +375,10 @@ func _enter_next_room(autostart: bool = true) -> String:
 	# 事件不跨房：玩家迈出房间的那一刻，没做完的事件就算失败（奖励不追发）
 	if room_events:
 		room_events.cancel()
+	_clear_fog()
+	if wave_manager:
+		wave_manager.mirror_spawns = false
+		wave_manager.set_room_loot_mult(1.0)
 	var room_type: String = dungeon.consume_room()
 	rooms_cleared = dungeon.rooms_cleared_total
 
@@ -362,7 +388,8 @@ func _enter_next_room(autostart: bool = true) -> String:
 		maxi(dungeon.room_in_floor - 1, 0))
 
 	var template: Dictionary = room_manager.get_random_template()
-	var theme: String = dungeon.get_combat_theme() if room_type == "combat" else ""
+	var themed := room_type == "combat" or room_type == "fog" or room_type == "mirror"
+	var theme: String = dungeon.get_combat_theme() if themed else ""
 	_create_room(
 		template["width"] * 32.0,
 		template["height"] * 32.0,
@@ -385,8 +412,15 @@ func _enter_next_room(autostart: bool = true) -> String:
 			"treasure": "宝 箱",
 			"rest": "休 息",
 			"boss": "BOSS",
+			"mutation": "变 异",
+			"fog": "迷 雾",
+			"mirror": "镜 像",
 		}
 		hud.set_wave_status(String(wave_text.get(room_type, "—")))
+
+	# 上一间的事件行不要带到这间。迷雾/镜像/变异会在自己的入口里重写。
+	if hud and hud.has_method("set_event_status"):
+		hud.set_event_status("")
 
 	# 处理特殊房间
 	match room_type:
@@ -396,6 +430,12 @@ func _enter_next_room(autostart: bool = true) -> String:
 			_enter_treasure_room()
 		"rest":
 			_enter_rest_room()
+		"mutation":
+			_enter_mutation_room()
+		"fog":
+			_enter_fog_room(autostart)
+		"mirror":
+			_enter_mirror_room(autostart)
 		"boss":
 			_enter_boss_room()
 		_:
@@ -451,7 +491,7 @@ func _enter_shop_room() -> void:
 	room_shop.open(player, weapon_manager)
 	room_shop.shop_closed.connect(func():
 		if is_instance_valid(room) and is_instance_valid(self) and room == current_room:
-			room.spawn_portal()
+			_open_room_exit(room)
 	, CONNECT_ONE_SHOT)
 
 func _enter_treasure_room() -> void:
@@ -537,7 +577,7 @@ func _enter_rest_room() -> void:
 	blood_pact.pact_chosen.connect(func(kind: String):
 		_on_pact_chosen(kind)
 		if is_instance_valid(room) and is_instance_valid(self) and room == current_room:
-			room.spawn_portal()
+			_open_room_exit(room)
 	, CONNECT_ONE_SHOT)
 
 func _on_pact_chosen(kind: String) -> void:
@@ -611,7 +651,123 @@ func _open_portal_after_delay(delay: float) -> void:
 	var room: Node2D = current_room
 	await get_tree().create_timer(delay).timeout
 	if is_instance_valid(room) and is_instance_valid(self) and room == current_room:
+		_open_room_exit(room)
+
+func _enter_mutation_room() -> void:
+	print("🩸 变异房!")
+	AudioManager.play_bgm(_audio_lib.get_shop_bgm())
+	if hud and hud.has_method("set_event_status"):
+		hud.set_event_status("献出生命换奖励，也可能什么都换不到")
+	var room: Node2D = current_room
+	if mutation_ui == null:
+		_open_portal_after_delay(1.0)
+		return
+	await get_tree().create_timer(0.5).timeout
+	if not is_instance_valid(room) or not is_instance_valid(self) or room != current_room:
+		return
+	mutation_ui.open(player)
+	mutation_ui.decided.connect(func(kind: String):
+		_on_mutation_decided(kind)
+		if is_instance_valid(room) and is_instance_valid(self) and room == current_room:
+			_open_room_exit(room)
+	, CONNECT_ONE_SHOT)
+
+func _on_mutation_decided(kind: String) -> void:
+	if kind != "gamble" or not is_instance_valid(player):
+		if hud and hud.has_method("set_event_status"):
+			hud.set_event_status("你离开了祭坛")
+		return
+	var cost := GameConfig.mutation_cost(player.max_hp)
+	if not player.spend_hp(cost):
+		return
+	var result := GameConfig.roll_mutation(randf())
+	player.add_silver(int(result.get("silver", 0)))
+	var xp := int(result.get("xp", 0))
+	if xp > 0:
+		player.gain_xp(xp)
+	var won: bool = bool(result.get("win", false))
+	var text := "祭坛应验：银币 +%d　经验 +%d" % [int(result.get("silver", 0)), xp] if won \
+		else "祭坛沉默：血已献上，只剩银币 +%d" % int(result.get("silver", 0))
+	if hud and hud.has_method("set_event_status"):
+		hud.set_event_status(text)
+	if hud and hud.has_method("set_wave_status"):
+		hud.set_wave_status("变异 · %s" % ("应验" if won else "落空"))
+	print("🩸 %s" % text)
+
+func _enter_fog_room(autostart: bool) -> void:
+	## 迷雾是战斗房，但不要再叠一层猎物/宝箱事件——这间房的规则就是看不见。
+	print("🌫 迷雾房!")
+	wave_manager.set_room_loot_mult(GameConfig.FOG_LOOT_MULT)
+	_enable_fog()
+	var pct := roundi((GameConfig.FOG_LOOT_MULT - 1.0) * 100.0)
+	if hud and hud.has_method("set_event_status"):
+		hud.set_event_status("视野受限 · 掉落与经验 +%d%%" % pct)
+	AudioManager.play_bgm(_audio_lib.get_battle_bgm())
+	if autostart:
+		wave_manager.start(player)
+
+func _enter_mirror_room(autostart: bool) -> void:
+	print("🪞 镜像房!")
+	wave_manager.mirror_spawns = true
+	if hud and hud.has_method("set_event_status"):
+		hud.set_event_status("敌人与障碍已左右对调")
+	AudioManager.play_bgm(_audio_lib.get_battle_bgm())
+	if autostart:
+		wave_manager.start(player)
+
+func _enable_fog() -> void:
+	_clear_fog()
+	fog_overlay = Node2D.new()
+	fog_overlay.name = "FogOverlay"
+	fog_overlay.set_script(preload("res://scripts/map/fog_overlay.gd"))
+	add_child(fog_overlay)
+	fog_overlay.setup(player)
+
+func _clear_fog() -> void:
+	if fog_overlay != null and is_instance_valid(fog_overlay):
+		fog_overlay.queue_free()
+	fog_overlay = null
+
+func _open_room_exit(room: Node2D) -> void:
+	## 离开当前房间。下一间如果挂了岔路，就开两扇门，否则还是一扇。
+	if not is_instance_valid(room) or room != current_room:
+		return
+	if room.get("portal_spawned"):
+		return
+	var choices: Array = dungeon.peek_room_choices() if dungeon else []
+	if choices.size() >= 2 and room.has_method("spawn_choice_portals"):
+		room.spawn_choice_portals(choices)
+		_announce_door_choice(choices)
+	elif room.has_method("spawn_portal"):
 		room.spawn_portal()
+
+func _announce_door_choice(choices: Array) -> void:
+	if choices.size() < 2 or hud == null:
+		return
+	var left: Dictionary = choices[0]
+	var right: Dictionary = choices[1]
+	if hud.has_method("set_wave_status"):
+		hud.set_wave_status("选路 · 左%s / 右%s" % [left.get("title", ""), right.get("title", "")])
+	if hud.has_method("set_event_status"):
+		hud.set_event_status("左：%s　　右：%s" % [left.get("detail", ""), right.get("detail", "")])
+
+func _apply_daily_rules() -> void:
+	## 重开同一场景会再走一遍：每日状态挂在 GameConfig 上，重开仍是今天的挑战。
+	## 回主菜单才会清掉。这样“再来一局”比的是同一组词缀，而不是不小心开了一局普通的。
+	if not GameConfig.daily_active:
+		return
+	if GameConfig.has_daily("bounty") and wave_manager:
+		wave_manager.loot_bonus_mult = GameConfig.DAILY_BOUNTY_MULT
+	if GameConfig.has_daily("slow") and is_instance_valid(player):
+		player.move_speed *= GameConfig.DAILY_SLOW_MULT
+	if GameConfig.daily_seed != 0 and dungeon:
+		var map_rng := RandomNumberGenerator.new()
+		map_rng.seed = GameConfig.daily_seed
+		dungeon.use_rng(map_rng)
+		var combat_rng := RandomNumberGenerator.new()
+		combat_rng.seed = GameConfig.daily_seed ^ 0x5A17
+		wave_manager.combat_rng = combat_rng
+	print("☀ 每日挑战 %s · %s" % [GameConfig.daily_date, GameConfig.daily_name_list()])
 
 func _enter_boss_room() -> void:
 	var boss_name: String = dungeon.get_boss_name()
@@ -741,6 +897,8 @@ func _on_boss_defeated() -> void:
 		"survival_time": run_stats.get("survival_time", 0),
 		"damage_taken": run_stats.get("damage_taken", 0),
 		"abyss_level": GameConfig.abyss_level,
+		"daily": GameConfig.daily_active,
+		"daily_date": GameConfig.daily_date,
 	}
 	game_over_ui.show_game_over(stats, true)
 
@@ -767,11 +925,22 @@ func _show_floor_intro(floor_index: int) -> void:
 	if GameConfig.abyss_level > 0:
 		# 深渊轮：换层横幅必须写明轮次，否则"为什么怪变硬了"无从解释
 		title = "深渊 %d · 第 %d 层" % [GameConfig.abyss_level, floor_index]
+	if GameConfig.daily_active:
+		title = "每日 · " + title
+	var hint := String(data.get("hint", ""))
+	var extras: PackedStringArray = PackedStringArray()
+	if GameConfig.daily_active and GameConfig.daily_name_list() != "":
+		extras.append("每日 " + GameConfig.daily_name_list())
+	var rules := GameConfig.abyss_rule_text()
+	if rules != "":
+		extras.append("深渊 " + rules)
+	if extras.size() > 0:
+		hint += "　" + "　".join(extras)
 	await floor_banner.show_card(
 		title,
 		String(data.get("name", "")),
 		String(data.get("subtitle", "")),
-		String(data.get("hint", "")),
+		hint,
 		data.get("accent", Color(0.8, 0.15, 0.2)),
 		1.6
 	)
@@ -879,12 +1048,15 @@ func _on_player_died() -> void:
 		"floor": dungeon.current_floor if dungeon else 1,
 		"survival_time": run_stats.get("survival_time", 0),
 		"damage_taken": run_stats.get("damage_taken", 0),
+		"daily": GameConfig.daily_active,
+		"daily_date": GameConfig.daily_date,
 	}
 	await get_tree().create_timer(0.8).timeout
 	game_over_ui.show_game_over(stats)
 
 func _on_restart() -> void:
 	# 普通重开 = 放弃深渊进度（深渊只在"连胜式"继续时保留）
+	# 每日不在这里清：重开仍是今天的词缀和种子，只有回主菜单才退出每日。
 	GameConfig.abandon_abyss()
 	get_tree().reload_current_scene()
 

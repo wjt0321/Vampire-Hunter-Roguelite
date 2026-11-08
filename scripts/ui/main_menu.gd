@@ -2,6 +2,8 @@ extends CanvasLayer
 ## 主菜单
 ## 暗黑哥特风格
 
+const DailyChallengeScript = preload("res://scripts/core/daily_challenge.gd")
+
 
 @onready var title_label: Label = $CenterContainer/VBoxContainer/TitleLabel
 @onready var subtitle_label: Label = $CenterContainer/VBoxContainer/SubtitleLabel
@@ -26,9 +28,14 @@ var save_mgr: Node
 # 按钮动画缓动缓存，避免快速悬停时 tween 堆积
 var _button_tweens: Dictionary = {}
 
+var daily_btn: Button
+var daily_panel: CanvasLayer
+
 func _ready() -> void:
-	# 主菜单是新一局的入口：从任何路径回到这里都等于放弃深渊
+	# 主菜单是新一局的入口：从任何路径回到这里都等于放弃深渊，也退出每日挑战
 	GameConfig.abandon_abyss()
+	GameConfig.clear_daily()
+	_create_daily_button()
 	settings_panel.visible = false
 	save_mgr = get_node_or_null("/root/SaveManager")
 	_setup_background()
@@ -72,8 +79,25 @@ func _update_crystals() -> void:
 	if save_mgr:
 		crystals_label.text = "💎 血晶: %d" % save_mgr.get_blood_crystals()
 
+func _create_daily_button() -> void:
+	var box := $CenterContainer/VBoxContainer/ButtonContainer
+	daily_btn = Button.new()
+	daily_btn.name = "DailyButton"
+	daily_btn.text = "☀ 每日挑战"
+	daily_btn.custom_minimum_size = Vector2(280, 45)
+	daily_btn.add_theme_font_size_override("font_size", 18)
+	daily_btn.pivot_offset = Vector2(140, 22)
+	box.add_child(daily_btn)
+	box.move_child(daily_btn, shop_btn.get_index() + 1)
+	daily_btn.pressed.connect(_on_daily_pressed)
+	daily_panel = CanvasLayer.new()
+	daily_panel.name = "DailyPanel"
+	daily_panel.set_script(preload("res://scripts/ui/daily_challenge_panel.gd"))
+	add_child(daily_panel)
+	daily_panel.start_requested.connect(_on_daily_start)
+
 func _setup_button_effects() -> void:
-	for btn in [start_btn, char_btn, shop_btn, settings_btn, quit_btn, back_btn]:
+	for btn in [start_btn, char_btn, shop_btn, daily_btn, settings_btn, quit_btn, back_btn]:
 		btn.mouse_entered.connect(func(): _on_button_hover(btn))
 		btn.mouse_exited.connect(func(): _on_button_unhover(btn))
 		btn.pressed.connect(_on_button_click)
@@ -85,7 +109,7 @@ func _setup_button_textures() -> void:
 	var pressed_texture := TextureManager.instance.get_ui_texture("btn_pressed")
 	
 	if normal_texture and hover_texture:
-		for btn in [start_btn, char_btn, shop_btn, settings_btn, quit_btn, back_btn]:
+		for btn in [start_btn, char_btn, shop_btn, daily_btn, settings_btn, quit_btn, back_btn]:
 			# 创建纹理按钮样式
 			var normal_style := StyleBoxTexture.new()
 			normal_style.texture = normal_texture
@@ -135,9 +159,20 @@ func _animate_title() -> void:
 	tween.tween_property(title_label, "modulate:a", 1.0, 2.0)
 
 func _on_start_pressed() -> void:
+	GameConfig.clear_daily()
 	var tween := create_tween()
 	tween.tween_property(bg, "color:a", 1.0, 0.5)
 	tween.tween_callback(func(): get_tree().change_scene_to_file("res://scenes/main.tscn"))
+
+func _on_daily_pressed() -> void:
+	if daily_panel and daily_panel.has_method("open_today"):
+		daily_panel.open_today(save_mgr)
+
+func _on_daily_start() -> void:
+	var spec: Dictionary = DailyChallengeScript.build(DailyChallengeScript.today())
+	GameConfig.abandon_abyss()
+	GameConfig.start_daily(spec)
+	get_tree().change_scene_to_file("res://scenes/main.tscn")
 
 func _on_char_pressed() -> void:
 	character_select.show_selection()

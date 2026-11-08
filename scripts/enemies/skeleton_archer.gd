@@ -75,8 +75,11 @@ func _attack() -> void:
 		return
 
 	# 三连发按层解锁：第 1 层永远单发，第 3 层才 30%
+	# 深渊 2 级起每次多 1 发。extra == 0 时扇形角度和原来完全一样，
+	# 别为了新规则把第 3 层的 15° 三连发改掉。
+	var extra: int = GameConfig.get_abyss_extra_projectiles()
 	var is_triple_shot: bool = randf() < GameConfig.get_ranged_triple_chance(floor_index)
-	var shot_count: int = 3 if is_triple_shot else 1
+	var shot_count: int = (3 if is_triple_shot else 1) + extra
 	var base_direction := _get_predicted_aim_direction()
 
 	for i in range(shot_count):
@@ -84,10 +87,14 @@ func _attack() -> void:
 		projectile.global_position = global_position
 
 		var direction := base_direction
-		if is_triple_shot:
-			# 三发呈扇形：-15° / 0° / +15°
-			var spread: float = deg_to_rad(15.0) * (i - 1)
-			direction = base_direction.rotated(spread)
+		if extra == 0:
+			if is_triple_shot:
+				# 三发呈扇形：-15° / 0° / +15°
+				var spread: float = deg_to_rad(15.0) * (i - 1)
+				direction = base_direction.rotated(spread)
+		else:
+			var mid := (shot_count - 1) * 0.5
+			direction = base_direction.rotated(deg_to_rad(12.0) * (float(i) - mid))
 
 		projectile.direction = direction
 		projectile.damage = contact_damage * 2

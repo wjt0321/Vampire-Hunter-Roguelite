@@ -82,6 +82,11 @@ signal enemy_died(enemy: Node2D)
 var _vfx_manager: Node = null
 
 func _ready() -> void:
+	# 每日「狂奔」乘在基础移速上，赶在急速/减速把 _speed_base 记下来之前。
+	# Boss 不走这里（它自己的 _ready 不调 super），冲刺速度不该被这条日常词缀改掉。
+	var speed_mult := GameConfig.daily_enemy_speed_mult()
+	if not is_equal_approx(speed_mult, 1.0):
+		move_speed *= speed_mult
 	# 根据波次缩放 HP 和伤害
 	_apply_wave_scaling()
 	# 词缀加成必须在这里做完：体型倍率要赶在 _load_sprite_texture 归一化之前生效，

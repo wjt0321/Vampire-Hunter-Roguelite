@@ -21,6 +21,10 @@ var portal_spawned: bool = false
 
 signal room_cleared
 signal portal_entered
+signal portal_chosen(room_type: String)
+
+const DoorLabelScript = preload("res://scripts/map/door_label.gd")
+var _choice_taken: bool = false
 
 func _ready() -> void:
 	_generate_room()
@@ -227,6 +231,80 @@ func spawn_portal() -> void:
 
 	print("🌀 传送门已出现!")
 
+func spawn_choice_portals(choices: Array) -> void:
+	## 清完一间之后的岔路。左门是原计划，右门是事件房。
+	if portal_spawned:
+		return
+	if choices.size() < 2:
+		spawn_portal()
+		return
+	portal_spawned = true
+	is_cleared = true
+	room_cleared.emit()
+	var offsets: Array = [Vector2(-180, 48), Vector2(180, 48)]
+	var portals: Array = []
+	for i in range(2):
+		portals.append(_build_choice_portal(get_center() + offsets[i], choices[i]))
+	await get_tree().create_timer(0.5).timeout
+	for portal in portals:
+		if not is_instance_valid(portal):
+			return
+		portal.monitoring = true
+	print("🌀 两条路已打开")
+
+func _build_choice_portal(pos: Vector2, info: Dictionary) -> Area2D:
+	var room_type := String(info.get("type", "combat"))
+	var portal := Area2D.new()
+	portal.name = "Portal_%s" % room_type
+	portal.collision_layer = 0
+	portal.collision_mask = 1
+	portal.global_position = pos
+	portal.z_index = 2
+	portal.modulate = info.get("color", Color(0.7, 0.5, 1.0))
+
+	var portal_shape := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = 24.0
+	portal_shape.shape = circle
+	portal.add_child(portal_shape)
+
+	var portal_texture := TextureManager.instance.get_effect_texture("portal")
+	if portal_texture:
+		var portal_visual := Sprite2D.new()
+		portal_visual.texture = portal_texture
+		portal_visual.scale = Vector2(0.6, 0.6)
+		portal.add_child(portal_visual)
+	else:
+		var portal_visual := ColorRect.new()
+		portal_visual.color = Color(0.5, 0.0, 1.0, 0.8)
+		portal_visual.size = Vector2(48, 48)
+		portal_visual.position = Vector2(-24, -24)
+		portal.add_child(portal_visual)
+
+	var label := Node2D.new()
+	label.set_script(DoorLabelScript)
+	label.text = String(info.get("title", room_type))
+	label.color = info.get("color", Color.WHITE)
+	portal.add_child(label)
+
+	portal.monitoring = false
+	portal.body_entered.connect(func(body: Node2D) -> void:
+		_emit_choice(body, room_type)
+	)
+	add_child(portal)
+
+	var tween := create_tween().set_loops()
+	tween.tween_property(portal, "modulate:a", 0.45, 0.8)
+	tween.tween_property(portal, "modulate:a", 1.0, 0.8)
+	return portal
+
+func _emit_choice(body: Node2D, room_type: String) -> void:
+	if _choice_taken:
+		return
+	if body.is_in_group("player"):
+		_choice_taken = true
+		portal_chosen.emit(room_type)
+
 func _on_portal_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		portal_entered.emit()
@@ -244,6 +322,7 @@ func _create_pillar(pos: Vector2) -> void:
 	pillar.collision_layer = 2
 	pillar.collision_mask = 0
 	pillar.add_to_group("walls")
+	pillar.add_to_group("mirrorable")
 
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
@@ -303,6 +382,7 @@ func _create_prop(prop_name: String, pos: Vector2) -> void:
 	prop.collision_layer = 2
 	prop.collision_mask = 0
 	prop.add_to_group("walls")
+	prop.add_to_group("mirrorable")
 
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
@@ -334,6 +414,7 @@ func _create_decoration(dec_name: String, pos: Vector2) -> void:
 	deco.texture = texture
 	deco.position = pos
 	deco.z_index = -8 if dec_name == "blood_splatter" else -1
+	deco.add_to_group("mirrorable")
 	add_child(deco)
 
 # === 特殊房间布置 ===
@@ -353,6 +434,21 @@ func setup_treasure_room() -> void:
 	_add_prop_at("gold_pile", get_center() + Vector2(-50, 40))
 	_add_prop_at("gold_pile", get_center() + Vector2(50, 40))
 	add_decorations(2)
+
+func setup_mutation_room() -> void:
+	## 变异房：中央一座祭坛，没有战斗。赌博发生在弹窗里。
+	room_theme = "dungeon"
+	_add_prop_at("altar", get_center())
+	add_decorations(3)
+
+func apply_mirror() -> void:
+	## 只翻带 mirrorable 标记的障碍和装饰。边界墙也在 "walls" 组里，
+	## 跟着翻会把左墙搬到右边，房间就漏了。
+	var center_x := room_width * 0.5
+	for child in get_children():
+		if child.is_in_group("mirrorable") and child is Node2D:
+			var node := child as Node2D
+			node.position.x = GameConfig.mirror_x(node.position.x, center_x)
 
 func setup_rest_room() -> void:
 	## 休息站：篝火、睡袋

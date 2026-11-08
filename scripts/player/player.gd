@@ -302,9 +302,21 @@ func apply_upgrade(upgrade_type: String) -> void:
 			pickup_range_bonus += GameConfig.UPGRADE_PICKUP_RANGE
 
 # === 生命值相关 ===
+func spend_hp(amount: float) -> bool:
+	## 变异房献血。不走 take_damage：护甲、闪避、无敌帧都会把“赌注”变成折扣，
+	## 而且扣到 0 会直接死亡。这里保证至少留下 1 点。
+	if amount <= 0.0:
+		return true
+	if current_hp - amount < 1.0:
+		return false
+	current_hp -= amount
+	hp_changed.emit(current_hp, max_hp)
+	return true
+
 func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO) -> void:
 	if is_invincible:
 		return
+	amount = GameConfig.scale_incoming_damage(amount)
 
 	# 护盾抵挡伤害
 	if has_shield:
@@ -382,9 +394,12 @@ func _lightning_retaliate() -> void:
 		AudioManager.play_sfx(_audio_lib.get_sound("lightning_chain"))
 
 func heal(amount: float) -> void:
+	# 每日「枯井」：治疗全灭，包括休息房、商店和吸血。升级加的上限不走这里。
+	if amount > 0.0 and GameConfig.has_daily("no_heal"):
+		return
 	current_hp = clampf(current_hp + amount, 0.0, max_hp)
 	hp_changed.emit(current_hp, max_hp)
-	if amount > 0:
+	if amount > 0 and _audio_lib != null:
 		AudioManager.play_sfx(_audio_lib.get_sound("heal"))
 
 func change_max_hp(delta_value: float) -> void:

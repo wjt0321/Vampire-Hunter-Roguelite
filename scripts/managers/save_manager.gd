@@ -29,6 +29,13 @@ var save_data: Dictionary = {
 	"selected_character": "hunter",
 	# 深渊阶梯：历史最高通关深渊层
 	"best_abyss": 0,
+	# 每日挑战：只留当天的本地排名。换日清空，不跟历史最佳混在一张表里。
+	"daily_board": {
+		"date": "",
+		"participation_claimed": false,
+		"best_bonus_claimed": false,
+		"runs": [],
+	},
 }
 
 # 升级价格（每级递增）
@@ -118,6 +125,7 @@ func _sanitize_save() -> void:
 	save_data["unlocked_characters"] = unlocked
 	if not (save_data.get("selected_character", "") in unlocked):
 		save_data["selected_character"] = "hunter"
+	_sanitize_daily_board()
 
 func _merge_dict(target: Dictionary, source: Dictionary) -> void:
 	for key in source:
@@ -154,6 +162,100 @@ func set_best_abyss(level: int) -> void:
 
 func get_best_abyss() -> int:
 	return int(save_data.get("best_abyss", 0))
+
+# === 每日挑战（17.15） ===
+const DAILY_BOARD_LIMIT: int = 8
+
+func _sanitize_daily_board() -> void:
+	var bucket: Variant = save_data.get("daily_board", {})
+	if not (bucket is Dictionary):
+		bucket = {}
+	if not (bucket.get("runs", []) is Array):
+		bucket["runs"] = []
+	bucket["date"] = String(bucket.get("date", ""))
+	bucket["participation_claimed"] = bool(bucket.get("participation_claimed", false))
+	bucket["best_bonus_claimed"] = bool(bucket.get("best_bonus_claimed", false))
+	save_data["daily_board"] = bucket
+
+func _ensure_daily_bucket(date_key: String) -> Dictionary:
+	_sanitize_daily_board()
+	var bucket: Dictionary = save_data["daily_board"]
+	if String(bucket.get("date", "")) != date_key:
+		bucket = {
+			"date": date_key,
+			"participation_claimed": false,
+			"best_bonus_claimed": false,
+			"runs": [],
+		}
+		save_data["daily_board"] = bucket
+	return bucket
+
+func get_daily_runs(date_key: String) -> Array:
+	## 只读。换日清空放在 record 里，打开面板不该把昨天的榜从内存里抹掉。
+	_sanitize_daily_board()
+	var bucket: Dictionary = save_data.get("daily_board", {})
+	if String(bucket.get("date", "")) != date_key:
+		return []
+	return (bucket.get("runs", []) as Array).duplicate(true)
+
+func record_daily_run(date_key: String, stats: Dictionary) -> Dictionary:
+	## 参与奖只在当天第一局发。最佳奖只在“打赢了自己的上一条记录”时发一次。
+	## 第一局永远是当天最佳，如果也发最佳奖，玩家不用打第二局就能把 250 拿满。
+	if date_key == "":
+		return {"crystals": 0, "summary": "", "rank": 0}
+	var bucket := _ensure_daily_bucket(date_key)
+	var runs: Array = bucket["runs"]
+	var had_runs := not runs.is_empty()
+	var prev_best: Dictionary = (runs[0] as Dictionary).duplicate(true) if had_runs else {}
+	var entry := {
+		"id": Time.get_ticks_usec(),
+		"wave": int(stats.get("wave", 0)),
+		"kills": int(stats.get("kills", 0)),
+		"rooms": int(stats.get("rooms", 0)),
+		"time": int(stats.get("survival_time", 0)),
+		"level": int(stats.get("level", 1)),
+	}
+	runs.append(entry)
+	runs.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return _daily_better(a, b)
+	)
+	while runs.size() > DAILY_BOARD_LIMIT:
+		runs.pop_back()
+	bucket["runs"] = runs
+	var rank := 0
+	for i in runs.size():
+		if int(runs[i].get("id", -1)) == int(entry["id"]):
+			rank = i
+			break
+	var crystals := 0
+	var notes: PackedStringArray = PackedStringArray()
+	if not bool(bucket.get("participation_claimed", false)):
+		bucket["participation_claimed"] = true
+		crystals += GameConfig.DAILY_PARTICIPATION_CRYSTALS
+		notes.append("参与 +%d" % GameConfig.DAILY_PARTICIPATION_CRYSTALS)
+	if had_runs and rank == 0 and _daily_better(entry, prev_best) \
+			and not bool(bucket.get("best_bonus_claimed", false)):
+		bucket["best_bonus_claimed"] = true
+		crystals += GameConfig.DAILY_BEST_BONUS_CRYSTALS
+		notes.append("今日最佳 +%d" % GameConfig.DAILY_BEST_BONUS_CRYSTALS)
+	if crystals > 0:
+		save_data["blood_crystals"] = int(save_data.get("blood_crystals", 0)) + crystals
+	save_data["daily_board"] = bucket
+	save_game()
+	var summary := "☀ 每日第 %d 名" % (rank + 1)
+	if notes.size() > 0:
+		summary += " · " + "，".join(notes)
+	return {"crystals": crystals, "summary": summary, "rank": rank + 1}
+
+func _daily_better(a: Dictionary, b: Dictionary) -> bool:
+	## 排序：波次高的在前，击杀次之，用时短的再其次。
+	if int(a.get("wave", 0)) != int(b.get("wave", 0)):
+		return int(a.get("wave", 0)) > int(b.get("wave", 0))
+	if int(a.get("kills", 0)) != int(b.get("kills", 0)):
+		return int(a.get("kills", 0)) > int(b.get("kills", 0))
+	if int(a.get("time", 0)) != int(b.get("time", 0)):
+		return int(a.get("time", 0)) < int(b.get("time", 0))
+	return false
 
 # === 永久升级 ===
 func get_upgrade_level(upgrade_id: String) -> int:

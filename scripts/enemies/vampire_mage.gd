@@ -161,29 +161,31 @@ func _cast_spell() -> void:
 	if player == null or not is_instance_valid(player):
 		return
 	
-	# 创建法术投射物
+	var direction := (player.global_position - global_position).normalized()
+	_launch_spell(direction)
+	# 深渊 2 级起多 1 发，偏开一个角度。叠在同一条线上只会看起来像一发、打到两次。
+	var extra: int = GameConfig.get_abyss_extra_projectiles()
+	for i in range(extra):
+		var sign := 1.0 if i % 2 == 0 else -1.0
+		var step := 1.0 + float(i / 2)
+		_launch_spell(direction.rotated(deg_to_rad(14.0) * sign * step))
+	var audio_lib := AudioLib
+	AudioManager.play_sfx(audio_lib.get_sound("shoot_magic"))
+
+func _launch_spell(direction: Vector2) -> void:
 	var spell := spell_scene.instantiate()
 	spell.global_position = global_position
-	
-	# 计算方向
-	var direction := (player.global_position - global_position).normalized()
 	spell.direction = direction
 	spell.speed = 200.0
 	# 法术是"非接触伤害源"：与接触伤害同一口径（波次 × 楼层 × 深渊）
 	spell.damage = _scaled_damage(SPELL_DAMAGE)
 	spell.lifetime = 3.0
-	
 	# 设置颜色（紫色魔法）—— 用 visual_color 而不是 modulate，
 	# 否则会把程序化光晕的加色混合整体压暗
 	spell.visual_color = Color(0.78, 0.32, 1.0)
 	spell.visual_length = 18.0
 	spell.visual_thickness = 12.0
-	
 	get_tree().current_scene.add_child(spell)
-	
-	# 播放音效
-	var audio_lib := AudioLib
-	AudioManager.play_sfx(audio_lib.get_sound("shoot_magic"))
 
 func _get_enemy_type() -> String:
 	return "vampire_mage"

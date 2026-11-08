@@ -228,10 +228,15 @@ func _run() -> void:
 	mage._cast_spell()
 	await process_frame
 	var spells: Array = get_nodes_in_group("enemy_projectiles")
-	_check(spells.size() == 1, "法师法术弹道生成（%d 发）" % spells.size())
-	if spells.size() == 1:
-		_check(absf(float(spells[0].damage) - 15.0 * 1.18 * 1.20) < 0.05,
-			"法术伤害吃楼层与深渊倍率（%.2f ≈ 21.24）" % float(spells[0].damage))
+	# 深渊 2 级起远程多 1 发。伤害口径不变，只是多一颗同样的法术。
+	var extra_shots: int = GameConfig.get_abyss_extra_projectiles()
+	_check(spells.size() == 1 + extra_shots, "法师法术弹道生成（%d 发，含深渊额外 %d）" % [spells.size(), extra_shots])
+	if spells.size() == 1 + extra_shots:
+		var spell_ok := true
+		for spell in spells:
+			if absf(float(spell.damage) - 15.0 * 1.18 * 1.20) >= 0.05:
+				spell_ok = false
+		_check(spell_ok, "法术伤害吃楼层与深渊倍率（每发 ≈ 21.24）")
 	for s in spells:
 		s.queue_free()
 	mage.queue_free()

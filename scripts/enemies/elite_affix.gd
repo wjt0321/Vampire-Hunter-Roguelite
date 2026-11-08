@@ -71,7 +71,7 @@ static func color(id: String) -> Color:
 ## exclude：本轮不再选这些（避免"场上全是同一种词缀"）。
 ## allowed：本层允许出现的词缀白名单（第 1 层只有「急速」，见 GameConfig.ELITE_AFFIX_POOL_BY_FLOOR）。
 ##          传空数组表示不限制。
-static func roll(exclude: Array = [], allowed: Array = []) -> String:
+static func roll(exclude: Array = [], allowed: Array = [], rng: RandomNumberGenerator = null) -> String:
 	var candidates: Array = []
 	var total: float = 0.0
 	for id in DATA.keys():
@@ -84,7 +84,8 @@ static func roll(exclude: Array = [], allowed: Array = []) -> String:
 		total += w
 	if candidates.is_empty():
 		return ""
-	var roll_v := randf() * total
+	var unit := rng.randf() if rng != null else randf()
+	var roll_v := unit * total
 	var acc: float = 0.0
 	for c in candidates:
 		acc += float(c["w"])

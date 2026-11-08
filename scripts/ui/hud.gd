@@ -448,9 +448,16 @@ func update_room(room_number: int) -> void:
 func update_dungeon(floor_index: int, room_in_floor: int, rooms_per_floor: int, floor_name: String) -> void:
 	## 地下城层进度：第N层 · 层名 · X/Y
 	var shown: int = clampi(room_in_floor, 1, maxi(rooms_per_floor, 1))
-	var prefix: String = ""
+	var tags: PackedStringArray = PackedStringArray()
+	if GameConfig.daily_active:
+		tags.append("每日")
 	if GameConfig.abyss_level > 0:
-		prefix = "渊%d " % GameConfig.abyss_level
+		tags.append("渊%d" % GameConfig.abyss_level)
+	for rule in GameConfig.abyss_rule_tags():
+		tags.append(rule)
+	var prefix := ""
+	if tags.size() > 0:
+		prefix = " ".join(tags) + " "
 	room_label.text = "%s第%d层 %s  %d/%d" % [prefix, floor_index, floor_name, shown, rooms_per_floor]
 
 func _show_wave_banner(wave_number: int) -> void:

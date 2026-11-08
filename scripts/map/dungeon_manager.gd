@@ -67,6 +67,11 @@ var room_in_floor: int = 0
 var rooms_cleared_total: int = 0
 var _room_plan: Array = []
 var _combat_theme_cursor: int = 0
+## 岔路：房间下标 → 事件房类型。计划表本身仍写 "combat"，不选就走原计划。
+var _forks: Dictionary = {}
+var _pending_choice: String = ""
+## 每日挑战把地图随机从全局 RNG 里拆出来。为空时仍用 randf/shuffle，普通局不变。
+var _rng: RandomNumberGenerator = null
 
 # === 信号 ===
 signal floor_started(floor_index: int, floor_data: Dictionary)
@@ -106,9 +111,31 @@ func advance_floor() -> bool:
 
 # ==================== 房间节奏 ====================
 
+func use_rng(rng: RandomNumberGenerator) -> void:
+	## 必须在 start_dungeon / advance_floor 之前调用。
+	## 传 null 等于回到全局随机。
+	_rng = rng
+
+func _randf() -> float:
+	if _rng != null:
+		return _rng.randf()
+	return randf()
+
+func _shuffle(items: Array) -> void:
+	if _rng == null:
+		items.shuffle()
+		return
+	for i in range(items.size() - 1, 0, -1):
+		var j: int = _rng.randi_range(0, i)
+		var tmp: Variant = items[i]
+		items[i] = items[j]
+		items[j] = tmp
+
 func _generate_room_plan() -> void:
 	## 生成本层房间序列：最后一间固定 Boss，前面按配置穿插特殊房间
 	_room_plan.clear()
+	_forks.clear()
+	_pending_choice = ""
 	var total: int = get_room_count()
 	var boss_index: int = total - 1
 
@@ -119,16 +146,32 @@ func _generate_room_plan() -> void:
 	var candidates: Array = []
 	for i in range(1, boss_index):
 		candidates.append(i)
-	candidates.shuffle()
+	_shuffle(candidates)
 
 	var special_count: int = mini(get_special_count(), candidates.size())
 	for k in range(special_count):
 		_room_plan[candidates[k]] = _roll_special_type()
 
 	_room_plan[boss_index] = "boss"
+	_place_forks()
+
+func _place_forks() -> void:
+	## 只挂在“仍是战斗房”的格子上。第一间和 Boss 房不挂，
+	## 商店/宝箱/休息的数量也不被岔路吃掉——岔路是战斗房的替代选项。
+	var boss_index: int = _room_plan.size() - 1
+	var slots: Array = []
+	for i in range(1, boss_index):
+		if String(_room_plan[i]) == "combat":
+			slots.append(i)
+	_shuffle(slots)
+	var types: Array = GameConfig.MAP_EVENT_TYPES.duplicate()
+	_shuffle(types)
+	var want: int = mini(GameConfig.map_event_forks(current_floor), slots.size())
+	for k in range(want):
+		_forks[int(slots[k])] = String(types[k % types.size()])
 
 func _roll_special_type() -> String:
-	var roll := randf()
+	var roll := _randf()
 	if roll < WEIGHT_SHOP:
 		return "shop"
 	elif roll < WEIGHT_SHOP + WEIGHT_TREASURE:
@@ -141,10 +184,38 @@ func consume_room() -> String:
 		_generate_room_plan()
 
 	var idx: int = clampi(room_in_floor, 0, _room_plan.size() - 1)
-	var room_type: String = _room_plan[idx]
+	var room_type: String = String(_room_plan[idx])
+	if _pending_choice != "":
+		var event_type := String(_forks.get(idx, ""))
+		if _pending_choice == room_type or _pending_choice == event_type:
+			room_type = _pending_choice
+		_pending_choice = ""
 	room_in_floor += 1
 	rooms_cleared_total += 1
 	return room_type
+
+func peek_room_choices() -> Array:
+	## 下一间的门口选项。没有岔路时只有计划中的那一间。
+	if _room_plan.is_empty() or room_in_floor < 0 or room_in_floor >= _room_plan.size():
+		return [GameConfig.room_choice_info("combat")]
+	var planned := String(_room_plan[room_in_floor])
+	var choices: Array = [GameConfig.room_choice_info(planned)]
+	if _forks.has(room_in_floor):
+		var event_type := String(_forks[room_in_floor])
+		if event_type != planned:
+			choices.append(GameConfig.room_choice_info(event_type))
+	return choices
+
+func choose_next(room_type: String) -> bool:
+	## 只接受当前门口真正摆出来的那几扇门。乱传一个 "boss" 不能跳关。
+	for choice in peek_room_choices():
+		if String(choice.get("type", "")) == room_type:
+			_pending_choice = room_type
+			return true
+	return false
+
+func get_forks() -> Dictionary:
+	return _forks.duplicate()
 
 func peek_next_room_type() -> String:
 	if _room_plan.is_empty():

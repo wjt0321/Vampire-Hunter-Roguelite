@@ -68,6 +68,8 @@ func _build_ui() -> void:
 	vbox.add_child(spacer)
 
 	_hint = _make_label("提示文字", 18, Color(0.82, 0.78, 0.8))
+	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_hint.custom_minimum_size = Vector2(760, 0)
 	vbox.add_child(_hint)
 
 	visible = false

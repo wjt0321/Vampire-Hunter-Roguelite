@@ -44,6 +44,15 @@ var floor_rooms_cleared: int = 0
 var spawn_count_mult: float = 1.0
 ## 掉落（银币/经验）倍率，生成时传给敌人
 var loot_mult: float = 1.0
+## 每日赏金这类“整局都在”的掉落倍率。契约的 set_run_modifiers 会改写 loot_mult，
+## 所以赏金不能写进 loot_mult，否则一间休息房就把每日加成清掉。
+var loot_bonus_mult: float = 1.0
+## 迷雾房这一间的掉落倍率。换房时由 main 归 1。
+var room_loot_mult: float = 1.0
+## 镜像房：刷怪点绕房间中心左右翻转。
+var mirror_spawns: bool = false
+## 每日挑战的敌人种类/词缀随机流。为空时走全局 randf。
+var combat_rng: RandomNumberGenerator = null
 ## 难度软因子：由外部 dps_provider 提供的实际 DPS 与等级期望值比出来
 var _soft_hp_scale: float = 1.0
 ## 提供玩家当前 DPS 的回调（main 注入）。为空则不做软修正
@@ -119,6 +128,21 @@ func set_run_modifiers(count_mult: float = 1.0, loot: float = 1.0) -> void:
 		_spawn_given_total = 0
 	spawn_count_mult = maxf(count_mult, 0.1)
 	loot_mult = maxf(loot, 0.1)
+
+func set_room_loot_mult(mult: float) -> void:
+	room_loot_mult = maxf(mult, 0.1)
+
+func effective_loot_mult() -> float:
+	## 契约 × 每日赏金 × 本房间（迷雾）× 深渊。四段分开，谁被清掉都不连坐。
+	return loot_mult * loot_bonus_mult * room_loot_mult * GameConfig.get_abyss_loot_mult()
+
+func _roll01() -> float:
+	if combat_rng != null:
+		return combat_rng.randf()
+	return randf()
+
+func reflect_spawn(spawn_pos: Vector2, center: Vector2) -> Vector2:
+	return Vector2(GameConfig.mirror_x(spawn_pos.x, center.x), spawn_pos.y)
 
 func _ensure_current_scene() -> void:
 	if _current_scene == null or not is_instance_valid(_current_scene):
@@ -272,7 +296,7 @@ func spawn_special_enemy(enemy_type: String, position: Vector2,
 	enemy.spawn_wave = maxi(current_wave, 1)
 	enemy.floor_index = floor_index
 	if "loot_mult" in enemy:
-		enemy.loot_mult = loot_mult * GameConfig.get_abyss_loot_mult()
+		enemy.loot_mult = effective_loot_mult()
 	if "hp_scale" in enemy:
 		enemy.hp_scale *= hp_mult * extra_hp_scale
 	if "suppress_affix" in enemy:
@@ -321,9 +345,9 @@ func _spawn_enemy() -> void:
 		enemy.spawn_wave = current_wave
 		enemy.floor_index = floor_index
 		if "loot_mult" in enemy:
-			# 深渊掉落加成乘在这里而不是 enemy 里 round：掉落链有概率进位，
-			# 直接 round base 值会复刻"1 银 ×1.1 永远 1"的老 bug
-			enemy.loot_mult = loot_mult * GameConfig.get_abyss_loot_mult()
+			# 深渊掉落加成乘在 effective_loot_mult 里，不在 enemy 里 round：
+			# 掉落链有概率进位，直接 round base 值会复刻"1 银 ×1.1 永远 1"。
+			enemy.loot_mult = effective_loot_mult()
 		# 软因子走 hp_scale：enemy_base 在 _ready → _apply_wave_scaling 里乘它，
 		# 必须在 add_child 之前设好（这里正好是 instantiate 之后）
 		if "hp_scale" in enemy and not is_equal_approx(_soft_hp_scale, 1.0):
@@ -370,18 +394,40 @@ func _maybe_assign_affix(enemy: Node) -> void:
 	if not ("elite_affix" in enemy):
 		return
 	if not String(enemy.elite_affix).is_empty():
+		apply_abyss_dual(enemy)
 		return
 	if bool(enemy.get("suppress_affix")):
 		return
-	if randf() >= GameConfig.get_elite_affix_chance(floor_index):
+	if _roll01() >= GameConfig.get_elite_affix_chance(floor_index):
 		return
 	# 第 1 层只放「急速」：不加血量，只是把周围小怪催快，
 	# 让"词缀"这个概念先以教学身份出场（试玩反馈：第一关就撞带盾肉墙）
 	var pool: Array = GameConfig.get_elite_affix_pool(floor_index)
-	var affix := EliteAffix.roll([], pool)
+	var affix := EliteAffix.roll([], pool, combat_rng)
 	if affix.is_empty():
 		return
 	enemy.elite_affix = affix
+	apply_abyss_dual(enemy)
+
+func apply_abyss_dual(enemy: Node) -> void:
+	## 深渊 3 级起，已经是精英的敌人再带一条不同的词缀。
+	## 第二词缀走完整词缀表，不走本层池：第 1 层池里只有急速，
+	## 再从本层池抽一次，这条规则在第一层等于没写。
+	if not GameConfig.abyss_forces_dual_affix():
+		return
+	if enemy == null or not ("secondary_affix" in enemy):
+		return
+	if bool(enemy.get("suppress_affix")):
+		return
+	if not String(enemy.secondary_affix).is_empty():
+		return
+	var primary := String(enemy.get("elite_affix"))
+	if primary.is_empty() or EliteAffix.get_data(primary).is_empty():
+		return
+	var second := EliteAffix.roll([primary], EliteAffix.all_ids(), combat_rng)
+	if second.is_empty() or second == primary:
+		return
+	enemy.secondary_affix = second
 
 # 各敌人类型的生成权重（越大越常见）
 const ENEMY_WEIGHTS: Dictionary = {
@@ -443,7 +489,7 @@ func _pick_enemy_type() -> String:
 	for type in candidates:
 		total_weight += float(ENEMY_WEIGHTS.get(type, 1.0))
 
-	var roll := randf() * total_weight
+	var roll := _roll01() * total_weight
 	var cumulative: float = 0.0
 	for type in candidates:
 		cumulative += float(ENEMY_WEIGHTS.get(type, 1.0))
@@ -465,6 +511,11 @@ func _get_spawn_position() -> Vector2:
 		var margin := 50.0
 		spawn_pos.x = clampf(spawn_pos.x, bounds.position.x + margin, bounds.end.x - margin)
 		spawn_pos.y = clampf(spawn_pos.y, bounds.position.y + margin, bounds.end.y - margin)
+		if mirror_spawns and room is Node2D and room.has_method("get_center"):
+			var center_global: Vector2 = (room as Node2D).to_global(room.get_center())
+			spawn_pos = reflect_spawn(spawn_pos, center_global)
+			spawn_pos.x = clampf(spawn_pos.x, bounds.position.x + margin, bounds.end.x - margin)
+			spawn_pos.y = clampf(spawn_pos.y, bounds.position.y + margin, bounds.end.y - margin)
 	
 	return spawn_pos
 
