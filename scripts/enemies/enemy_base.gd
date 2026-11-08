@@ -315,12 +315,28 @@ func _unfreeze() -> void:
 func _drop_xp_gem() -> void:
 	var gem_scene := preload("res://scenes/player/xp_gem.tscn")
 	var gem := ObjectPool.acquire(gem_scene) as Area2D
-	gem.global_position = global_position
+	gem.global_position = _clamp_drop_position(global_position)
 	gem.xp_value = _loot_scaled(xp_value)
 	# 对象池复用时重新初始化掉落动画
 	if gem.has_method("_setup_gem"):
 		gem._setup_gem()
 	get_tree().current_scene.call_deferred("add_child", gem)
+
+func _clamp_drop_position(pos: Vector2) -> Vector2:
+	## 掉落点必须落在可走区域里。
+	## 冲锋/击退/自爆会把敌人推出墙外，死在墙里就掉在墙里——
+	## 那枚宝石玩家永远走不到（吸附半径再大也够不着），正是"有经验点捡不到"的另一半来源。
+	var node: Node = get_parent()
+	while node != null:
+		if node.has_method("get_room_bounds"):
+			var bounds: Rect2 = node.call("get_room_bounds")
+			var margin := 24.0
+			return Vector2(
+				clampf(pos.x, bounds.position.x + margin, bounds.end.x - margin),
+				clampf(pos.y, bounds.position.y + margin, bounds.end.y - margin)
+			)
+		node = node.get_parent()
+	return pos
 
 func _loot_scaled(base_value: int) -> int:
 	## 掉落倍率取整：按小数部分做概率进位，保证长期期望正好等于 base×mult。

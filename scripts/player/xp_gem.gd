@@ -14,12 +14,17 @@ extends Area2D
 
 @export var xp_value: int = 2
 @export var attraction_speed: float = 320.0
-@export var attraction_range: float = 88.0
+## 基础吸附半径。原 88 太小：玩家跑过一堆宝石时全靠"擦身而过"才吸得到，
+## 稍微偏一点就留在原地，体感就是"经验点有时候捡不到"。
+## 120 大约是一个身位，走位时能自然带上一片。
+@export var attraction_range: float = 120.0
 
 ## 合并半径：这段距离内的经验宝石并成一枚，避免"一地看不清的小点"
 const MERGE_RADIUS: float = 30.0
 ## 吸附到这个距离就拾取
 const PICKUP_DISTANCE: float = 16.0
+## 被强制吸走时（波次结束结算）的速度，要明显快过玩家跑速
+const FORCED_ATTRACT_SPEED: float = 1600.0
 
 var is_attracted: bool = false
 var player: Node2D = null
@@ -58,6 +63,8 @@ func reset_for_pool() -> void:
 	scale = Vector2.ONE
 	modulate = Color.WHITE
 	xp_value = 0
+	# magnetize() 会把速度顶到 1600，不复位的话下一枚掉落的宝石会像炮弹一样飞过来
+	attraction_speed = 320.0
 
 # ==================== 视觉 ====================
 
@@ -153,20 +160,54 @@ func _physics_process(delta: float) -> void:
 
 	var distance := global_position.distance_to(player.global_position)
 
-	# 进入吸附范围后自动靠近玩家（戒指/磁铁会扩大这个范围）
+	# 贴身就直接捡：不再依赖 is_attracted。
+	# 旧版只有"先被吸附、再走到 16px 内"才拾取，一旦 is_attracted 没被置上
+	# （玩家刚好从远处擦过、或宝石是从池里复用来的），宝石就在脚边也不响应。
+	if distance < PICKUP_DISTANCE:
+		_collect()
+		return
+
+	# 进入吸附范围后自动靠近玩家（磁力戒指/拾取范围升级会扩大这个范围）
+	# ⚠ 玩家字段名是 pickup_range_bonus。旧代码写的是 pickup_range（字段不存在），
+	# 于是磁力戒指与"拾取范围 +30"全部是空转——这也是"感觉捡不到"的主因之一。
 	var range_now := attraction_range
-	if "pickup_range" in player:
+	if "pickup_range_bonus" in player:
+		range_now += float(player.pickup_range_bonus)
+	elif "pickup_range" in player:
 		range_now += float(player.pickup_range)
 	if distance < range_now:
 		is_attracted = true
 
 	if is_attracted:
 		var direction := (player.global_position - global_position).normalized()
-		position += direction * attraction_speed * delta
+		position += direction * _current_speed() * delta
 		# 用移动后的距离判定：用移动前的 distance 会整整慢一帧，
 		# 高速吸引时宝石会在玩家身边"擦过去"再折返，观感像卡了一下
 		if global_position.distance_to(player.global_position) < PICKUP_DISTANCE:
 			_collect()
+
+func _current_speed() -> float:
+	## 吸引速度必须严格快过玩家跑速，否则玩家一边跑宝石一边追，
+	## 相对速度接近 0，宝石会一路跟着却永远吃不到（"捡不到"的另一种形态）。
+	if player == null or not is_instance_valid(player):
+		return attraction_speed
+	var pv := Vector2.ZERO
+	if player.has_method("get_velocity"):
+		pv = player.get_velocity()
+	elif "velocity" in player:
+		pv = player.velocity
+	var want: float = pv.length() * 1.6 + 120.0
+	return maxf(attraction_speed, want)
+
+func magnetize() -> void:
+	## 波次结束时把地上剩下的宝石一次性吸过来。
+	## 不走 auto_collect() 的直接入账：玩家需要看到"经验飞过来了"，
+	## 而不是打完一波地上东西凭空消失。
+	if xp_value <= 0:
+		return
+	is_attracted = true
+	attraction_speed = maxf(attraction_speed, FORCED_ATTRACT_SPEED)
+	set_physics_process(true)
 
 ## 房间结束时的自动结算：把没捡的宝石直接算进经验。
 ## 旧版是 `queue_free()` 直接清掉——玩家打了一屋子怪、最后 2 秒掉的宝石

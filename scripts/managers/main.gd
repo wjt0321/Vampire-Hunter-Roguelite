@@ -315,8 +315,10 @@ func _enter_next_room(autostart: bool = true) -> String:
 	var room_type: String = dungeon.consume_room()
 	rooms_cleared = dungeon.rooms_cleared_total
 
-	# 同步层敌人池与层倍率
-	wave_manager.set_floor(dungeon.current_floor, dungeon.get_enemy_pool())
+	# 同步层敌人池与层倍率。第三个参数是"本层已清房间数"，
+	# 远程敌人靠它逐间解禁（room_in_floor 在 consume_room 里已经 +1，所以要 -1）
+	wave_manager.set_floor(dungeon.current_floor, dungeon.get_enemy_pool(),
+		maxi(dungeon.room_in_floor - 1, 0))
 
 	var template: Dictionary = room_manager.get_random_template()
 	var theme: String = dungeon.get_combat_theme() if room_type == "combat" else ""

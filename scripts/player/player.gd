@@ -73,6 +73,8 @@ func _process_powerup(delta: float) -> void:
 # === 被动道具 ===
 var passive_items: Array = []
 var magnet_multiplier: float = 1.0
+## 磁力被动已经贡献过的拾取加成（升级时只补差额，见 _apply_passive_effect）
+var _magnet_bonus_applied: float = 0.0
 var has_shield: bool = false
 var has_shield_item: bool = false
 var shield_cooldown: float = 30.0
@@ -550,7 +552,12 @@ func _apply_passive_effect(item) -> void:
 	match item.effect_type:
 		0:  # MAGNET
 			magnet_multiplier = item.get_scaled_value()
-			pickup_range_bonus = 50.0 * magnet_multiplier
+			# 只补"磁力这一项"的差额，不能直接赋值：
+			# 直接写 pickup_range_bonus = 50×倍率 会把猎人自带的 +20 和
+			# "拾取范围 +30" 升级一起冲掉，而且再升一级又会重算。
+			var want_bonus: float = 50.0 * magnet_multiplier
+			pickup_range_bonus += want_bonus - _magnet_bonus_applied
+			_magnet_bonus_applied = want_bonus
 		1:  # SHIELD
 			has_shield_item = true
 			shield_cooldown = maxf(item.get_scaled_value(), 8.0)

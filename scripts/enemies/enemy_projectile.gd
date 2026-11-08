@@ -20,6 +20,9 @@ var _age: float = 0.0
 @onready var sprite: Sprite2D = $Sprite2D
 
 func _ready() -> void:
+	# 进组是为了让远程敌人能查"场上现在有几发在飞"，
+	# 超过 GameConfig.ENEMY_PROJECTILE_CAP_BY_FLOOR 就暂停开火
+	add_to_group("enemy_projectiles")
 	# "亮芯 + 柔光"外观：早期 8x4 暗红方块在混战里几乎看不见
 	apply_visual_style(visual_color, visual_length, visual_thickness)
 	# 设置旋转朝向

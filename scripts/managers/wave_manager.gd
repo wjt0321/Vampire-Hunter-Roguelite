@@ -36,6 +36,8 @@ var player: Node2D = null
 # === 地下城楼层 ===
 var floor_index: int = 1
 var enemy_pool: Array = []   # 当前层允许出现的敌人类型；空则回退到按波次解锁
+## 本层已清房间数（从 0 开始）。远程敌人按这个数逐间解禁，见 GameConfig.RANGED_UNLOCK_ROOM_BY_FLOOR
+var floor_rooms_cleared: int = 0
 
 # === 外部修正（深渊契约用） ===
 ## 每批敌人的数量倍率。用"理论总量对齐"而不是 ceil，长期平均才真的是 +20%
@@ -73,10 +75,11 @@ func start(player_node: Node2D) -> void:
 	_powerup_timer = GameConfig.POWERUP_INTERVAL - GameConfig.POWERUP_FIRST_DELAY
 	_start_next_wave()
 
-func set_floor(index: int, pool: Array = []) -> void:
+func set_floor(index: int, pool: Array = [], rooms_cleared_in_floor: int = 0) -> void:
 	## 切换当前楼层：影响敌人池与属性倍率
 	floor_index = maxi(index, 1)
 	enemy_pool = pool.duplicate()
+	floor_rooms_cleared = maxi(rooms_cleared_in_floor, 0)
 
 func set_run_modifiers(count_mult: float = 1.0, loot: float = 1.0) -> void:
 	## 深渊契约这类"本层生效"的修正从这里注入。
@@ -170,9 +173,19 @@ func settle_xp_gems() -> int:
 		print("经验结算：自动收取 %d 点未拾取经验（换波/换房）" % saved)
 	return saved
 
+func magnetize_xp_gems() -> void:
+	## 波次结束时把地上剩下的宝石吸到玩家身上。
+	## 跟 settle_xp_gems() 的区别：这个不直接入账，宝石真的会飞过来——
+	## 玩家打完一波能看见"战利品自己回来了"，而不是地上的东西凭空消失。
+	for gem in get_tree().get_nodes_in_group("xp_gems"):
+		if is_instance_valid(gem) and gem.has_method("magnetize"):
+			gem.call("magnetize")
+
 func _end_current_wave() -> void:
 	wave_completed.emit(current_wave)
 	is_active = false
+	# 打完一波先把地上的经验收干净，否则玩家要么回头捡、要么白丢
+	magnetize_xp_gems()
 	print("=== Wave %d 完成! ===" % current_wave)
 
 func _get_spawn_interval() -> float:
@@ -313,9 +326,15 @@ func _pick_enemy_type() -> String:
 	## 从当前楼层的敌人池中加权随机；池为空则回退到波次解锁表
 	var candidates: Array = []
 	var source: Array = enemy_pool if not enemy_pool.is_empty() else _get_wave_based_pool()
+	# 远程敌人按"本层第几间房"逐间解禁：第 1 层前几间房纯近战，
+	# 避免开局就被三四条弹道追着跑（见 GameConfig 里那一段说明）
+	var allow_ranged: bool = GameConfig.is_ranged_allowed(floor_index, floor_rooms_cleared)
 	for type in source:
-		if enemy_scenes.has(type):
-			candidates.append(type)
+		if not enemy_scenes.has(type):
+			continue
+		if not allow_ranged and type in GameConfig.RANGED_ENEMY_TYPES:
+			continue
+		candidates.append(type)
 	if candidates.is_empty():
 		return "vampire"
 

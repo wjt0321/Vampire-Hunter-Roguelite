@@ -81,6 +81,56 @@ const ENEMY_HP_PER_PLAYER_LEVEL: float = 0.03   # 玩家 3 级后每级 +3%
 const ENEMY_HP_LEVEL_START: int = 3             # 从该等级开始计入
 const ENEMY_HP_LEVEL_SCALE_CAP: float = 2.0     # 等级缩放上限
 
+# ==================== 敌人远程火力 ====================
+#
+# 试玩反馈「小怪投射物太多了，需要到后期慢慢增多才合理」。
+# 原来只要敌人在池子里就可能被选中：第 1 层 5 种敌人里有骷髅射手，
+# 6 个房间从第一间就可能是弓箭手，配合 2 秒冷却 + 20% 三连发，
+# 一间房同时有 4-6 个射手 → 每秒 2-3 发弹幕，开局就被迫站桩躲弹。
+#
+# 三层控制，从"有没有"到"多不多"逐级放开：
+#   1) 逐层解禁：第 1 层前几间房根本不刷远程怪（RANGED_UNLOCK_ROOM_BY_FLOOR）
+#   2) 开火节奏：层数越深冷却越短（ENEMY_FIRE_COOLDOWN_MULT_BY_FLOOR）
+#   3) 同屏上限：场上敌人投射物超过上限就不再开火（ENEMY_PROJECTILE_CAP_BY_FLOOR）
+# 用"同屏上限"而不是"减伤害"：玩家抱怨的是屏幕被弹幕糊住，那是视觉与闪避空间问题，
+# 不是数值问题——改伤害只会让弹幕依旧糊屏但没那么痛。
+
+## 远程敌人类型（用于逐层解禁判断）
+const RANGED_ENEMY_TYPES: Array = ["skeleton_archer", "vampire_mage"]
+
+## 该层的第几间房开始允许刷远程怪（下标 = floor - 1；按本层已清房间数算）
+## 第 1 层前 3 间房纯近战，第 4 间房开始出现射手，最后 2 间与 Boss 房才真正有压力
+const RANGED_UNLOCK_ROOM_BY_FLOOR: Array = [4, 2, 1]
+
+## 敌人开火冷却倍率（下标 = floor - 1）。第 1 层射手 2.0s → 3.4s，几乎是原来的两倍
+const ENEMY_FIRE_COOLDOWN_MULT_BY_FLOOR: Array = [1.7, 1.25, 1.0]
+
+## 同屏敌人投射物数量上限（下标 = floor - 1）
+const ENEMY_PROJECTILE_CAP_BY_FLOOR: Array = [3, 7, 12]
+
+## 三连发概率（下标 = floor - 1）。第 1 层永远单发
+const RANGED_TRIPLE_SHOT_CHANCE_BY_FLOOR: Array = [0.0, 0.18, 0.30]
+
+static func get_ranged_unlock_room(floor_index: int) -> int:
+	var idx: int = clampi(floor_index - 1, 0, RANGED_UNLOCK_ROOM_BY_FLOOR.size() - 1)
+	return int(RANGED_UNLOCK_ROOM_BY_FLOOR[idx])
+
+static func is_ranged_allowed(floor_index: int, rooms_cleared: int) -> bool:
+	## rooms_cleared 传"本层已清房间数"，从 0 开始
+	return rooms_cleared >= get_ranged_unlock_room(floor_index)
+
+static func get_enemy_fire_cooldown_mult(floor_index: int) -> float:
+	var idx: int = clampi(floor_index - 1, 0, ENEMY_FIRE_COOLDOWN_MULT_BY_FLOOR.size() - 1)
+	return float(ENEMY_FIRE_COOLDOWN_MULT_BY_FLOOR[idx])
+
+static func get_enemy_projectile_cap(floor_index: int) -> int:
+	var idx: int = clampi(floor_index - 1, 0, ENEMY_PROJECTILE_CAP_BY_FLOOR.size() - 1)
+	return int(ENEMY_PROJECTILE_CAP_BY_FLOOR[idx])
+
+static func get_ranged_triple_chance(floor_index: int) -> float:
+	var idx: int = clampi(floor_index - 1, 0, RANGED_TRIPLE_SHOT_CHANCE_BY_FLOOR.size() - 1)
+	return float(RANGED_TRIPLE_SHOT_CHANCE_BY_FLOOR[idx])
+
 # ==================== 波次配置 ====================
 
 const WAVE_DURATION: float = 30.0

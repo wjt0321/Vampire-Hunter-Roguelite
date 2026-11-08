@@ -61,13 +61,21 @@ func _physics_process(delta: float) -> void:
 		sprite.flip_h = false
 
 func _attack() -> void:
-	attack_timer = ATTACK_COOLDOWN
+	# 冷却按层放长：第 1 层 ×1.7（2.0s → 3.4s），第 3 层才是原始节奏。
+	# 同屏弹道上限也一样——上限不是"减伤害"，是给玩家留出走位缝隙。
+	attack_timer = ATTACK_COOLDOWN * GameConfig.get_enemy_fire_cooldown_mult(floor_index)
 
 	if projectile_scene == null or player == null:
 		return
 
-	# 20% 概率散射三发
-	var is_triple_shot: bool = randf() < 0.2
+	# 场上弹道已经够多了，这一发先憋着（0.35s 后重试，不至于彻底哑火）
+	var cap: int = GameConfig.get_enemy_projectile_cap(floor_index)
+	if get_tree().get_nodes_in_group("enemy_projectiles").size() >= cap:
+		attack_timer = 0.35
+		return
+
+	# 三连发按层解锁：第 1 层永远单发，第 3 层才 30%
+	var is_triple_shot: bool = randf() < GameConfig.get_ranged_triple_chance(floor_index)
 	var shot_count: int = 3 if is_triple_shot else 1
 	var base_direction := _get_predicted_aim_direction()
 

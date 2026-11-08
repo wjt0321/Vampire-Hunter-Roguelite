@@ -42,8 +42,14 @@ func _physics_process(delta: float) -> void:
 	cast_timer -= delta
 	var distance_to_player := global_position.distance_to(player.global_position)
 	if cast_timer <= 0 and distance_to_player <= cast_range and not is_teleporting:
-		_cast_spell()
-		cast_timer = cast_cooldown
+		# 同屏弹道封顶：法师是第 2 层起才出现的远程，但一层里也会叠好几只，
+		# 不封顶的话玩家看到的是一整片紫球（见 GameConfig.ENEMY_PROJECTILE_CAP_BY_FLOOR）
+		var cap: int = GameConfig.get_enemy_projectile_cap(floor_index)
+		if get_tree().get_nodes_in_group("enemy_projectiles").size() >= cap:
+			cast_timer = 0.35
+		else:
+			_cast_spell()
+			cast_timer = cast_cooldown * GameConfig.get_enemy_fire_cooldown_mult(floor_index)
 	
 	# 移动逻辑：保持距离
 	_move_maintain_distance(delta, distance_to_player)
@@ -152,8 +158,6 @@ func _cast_spell() -> void:
 	## 施放法术投射物
 	if player == null or not is_instance_valid(player):
 		return
-	
-	print("🔮 吸血鬼法师施放法术!")
 	
 	# 创建法术投射物
 	var spell := spell_scene.instantiate()
