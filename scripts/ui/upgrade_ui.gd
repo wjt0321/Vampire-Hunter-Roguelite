@@ -35,6 +35,9 @@ signal upgrade_selected
 
 func _ready() -> void:
 	visible = false
+	# 必须压在所有演出层之上：楼层横幅是 layer 90，商店 95，祭坛 96。
+	# 之前这里没设 layer（默认 1），换层横幅播放期间升级会看到三选一被横幅文字盖住。
+	layer = 100
 	# 界面会在 get_tree().paused = true 时使用，必须能继续收输入
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_panel_style()
@@ -85,7 +88,7 @@ func _render_options() -> void:
 		if banish_mode:
 			# 放逐模式下把卡片信息整块换成"这张卡要被删掉"，
 			# 避免玩家在 ban 模式下还以为点下去是选它
-			decorated["badge"] = "🚫 放逐"
+			decorated["badge"] = "放逐"
 			decorated["badge_color"] = Color(1.0, 0.34, 0.34)
 			decorated["level_text"] = "点这张卡从本局池移除"
 			decorated["desc"] = "本局不会再出现"
@@ -204,15 +207,15 @@ func _build_footer() -> void:
 	footer.alignment = BoxContainer.ALIGNMENT_CENTER
 	footer.add_theme_constant_override("separation", 16)
 
-	_reroll_button = _make_footer_button("🔄 重抽", Color(0.55, 0.75, 1.0))
+	_reroll_button = _make_footer_button("重抽", Color(0.55, 0.75, 1.0))
 	_reroll_button.pressed.connect(_on_reroll)
 	footer.add_child(_reroll_button)
 
-	_banish_button = _make_footer_button("🚫 放逐", Color(1.0, 0.45, 0.45))
+	_banish_button = _make_footer_button("放逐", Color(1.0, 0.45, 0.45))
 	_banish_button.pressed.connect(_on_banish_toggle)
 	footer.add_child(_banish_button)
 
-	_skip_button = _make_footer_button("⏭ 跳过", Color(1.0, 0.85, 0.45))
+	_skip_button = _make_footer_button("跳过", Color(1.0, 0.85, 0.45))
 	_skip_button.pressed.connect(_on_skip)
 	footer.add_child(_skip_button)
 
@@ -266,19 +269,19 @@ func _refresh_footer() -> void:
 		return
 	var cost := reroll_cost()
 	if cost == 0:
-		_reroll_button.text = "🔄 重抽 (%d)" % rerolls_left
+		_reroll_button.text = "重抽 (%d)" % rerolls_left
 	else:
-		_reroll_button.text = "🔄 重抽 (💰%d)" % cost
+		_reroll_button.text = "重抽 (-%d 银)" % cost
 	_reroll_button.disabled = not can_reroll()
 
 	if _banish_button != null:
 		if banish_mode:
-			_banish_button.text = "🚫 取消放逐"
+			_banish_button.text = "取消放逐"
 		else:
-			_banish_button.text = "🚫 放逐 (%d)" % banish_left
+			_banish_button.text = "放逐 (%d)" % banish_left
 		_banish_button.disabled = banish_left <= 0 and not banish_mode
 
-	_skip_button.text = "⏭ 跳过 (+💰%d)" % GameConfig.SKIP_SILVER_REWARD
+	_skip_button.text = "跳过 (+%d 银)" % GameConfig.SKIP_SILVER_REWARD
 	if banish_mode:
 		_hint_label.text = "放逐模式：点任意一张卡把它从本局池移除（剩 %d 次）　B 取消" % banish_left
 		_hint_label.add_theme_color_override("font_color", Color(1.0, 0.55, 0.55))

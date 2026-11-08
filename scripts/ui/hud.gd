@@ -306,7 +306,7 @@ func _stop_evo_pulse() -> void:
 
 func show_evolution_banner(text: String) -> void:
 	## 宝箱进化时的横幅
-	wave_banner.text = "✨ 进化：%s" % text
+	wave_banner.text = "进化：%s" % text
 	wave_banner.visible = true
 	wave_banner.modulate = Color(1, 1, 1, 1)
 	var tween := create_tween()
@@ -324,7 +324,7 @@ func _create_silver_label() -> void:
 	top_bar.add_child(spacer)
 	silver_label = Label.new()
 	silver_label.name = "SilverLabel"
-	silver_label.text = "💰 0"
+	silver_label.text = "银币 0"
 	silver_label.add_theme_color_override("font_color", Color(1.0, 0.87, 0.45))
 	top_bar.add_child(silver_label)
 
@@ -337,7 +337,7 @@ func update_blood_pact(active: bool, text: String = "") -> void:
 	_refresh_build(true)
 
 func update_silver(amount: int) -> void:	if silver_label:
-		silver_label.text = "💰 %d" % amount
+		silver_label.text = "银币 %d" % amount
 
 func _process(delta: float) -> void:
 	game_time += delta

@@ -99,7 +99,7 @@ func _build_ui() -> void:
 	panel.add_child(vbox)
 
 	var title := Label.new()
-	title.text = "🩸 血之祭坛"
+	title.text = "血 之 祭 坛"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 26)
 	title.add_theme_color_override("font_color", Color(1.0, 0.84, 0.72))
@@ -122,7 +122,7 @@ func _build_ui() -> void:
 	vbox.add_child(row)
 
 	_rest_btn = _make_card(
-		"🕯 安息",
+		"安　息",
 		"恢复 %d%% 最大生命" % roundi(GameConfig.BLOOD_PACT_REST_HEAL_RATIO * 100.0),
 		"稳妥，但这间房就白跑了",
 		Color(0.62, 0.85, 1.0)
@@ -131,7 +131,7 @@ func _build_ui() -> void:
 	row.add_child(_rest_btn)
 
 	_pact_btn = _make_card(
-		"🩸 缔结契约",
+		"缔 结 契 约",
 		"本层最大生命 -%d%%" % roundi(GameConfig.BLOOD_PACT_HP_RATIO * 100.0),
 		"本层：敌人 +%d%% 数量 · 银币与经验 +%d%%" % [
 			roundi((GameConfig.BLOOD_PACT_COUNT_MULT - 1.0) * 100.0),

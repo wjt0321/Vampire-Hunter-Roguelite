@@ -440,7 +440,7 @@ func _announce_evolution(evolved: Array) -> void:
 		vfx.screen_shake(6.0, 0.3)
 	if floor_banner and floor_banner.has_method("show_card"):
 		floor_banner.show_card(
-			"✨ 武器进化",
+			"武器进化",
 			text,
 			"EVOLVED",
 			"宝箱的力量已注入你的武器",
@@ -514,7 +514,7 @@ func _apply_blood_pact() -> void:
 	])
 	if floor_banner and floor_banner.has_method("show_card"):
 		floor_banner.show_card(
-			"🩸 契约生效",
+			"契约生效",
 			"本层：生命上限 -%d%%" % roundi(GameConfig.BLOOD_PACT_HP_RATIO * 100.0),
 			"BLOOD PACT",
 			"敌人 +%d%% 数量 · 银币与经验 +%d%%（层末归还）" % [

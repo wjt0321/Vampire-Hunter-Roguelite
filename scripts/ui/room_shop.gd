@@ -153,7 +153,7 @@ func _build_ui() -> void:
 	panel.add_child(vbox)
 
 	var title := Label.new()
-	title.text = "🏪  银 币 商 店"
+	title.text = "银 币 商 店"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 26)
 	title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
@@ -217,7 +217,7 @@ func _refresh() -> void:
 	if not _built:
 		return
 
-	_silver_label.text = "持有银币：💰 %d" % _get_silver()
+	_silver_label.text = "持有银币：%d" % _get_silver()
 
 	for child in _slots_box.get_children():
 		child.queue_free()
@@ -225,7 +225,7 @@ func _refresh() -> void:
 		_slots_box.add_child(_make_card(i))
 
 	var cost := _current_reroll_cost()
-	_reroll_btn.text = "🎲 重抽 (%d 💰)" % cost
+	_reroll_btn.text = "重抽 (%d 银)" % cost
 	_reroll_btn.disabled = _get_silver() < cost
 
 func _make_card(index: int) -> Control:

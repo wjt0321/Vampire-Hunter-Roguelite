@@ -42,7 +42,7 @@ func _run() -> void:
 	_check(player.silver == 150, "余额 150")
 	_check(not player.spend_silver(9999), "余额不足时拒付")
 	_check(player.silver == 150, "拒付后余额不变")
-	_check(main_scene.hud.silver_label != null and main_scene.hud.silver_label.text == "💰 150",
+	_check(main_scene.hud.silver_label != null and main_scene.hud.silver_label.text == "银币 150",
 		"HUD 银币同步（%s）" % (main_scene.hud.silver_label.text if main_scene.hud.silver_label else "null"))
 
 	# ---------- 掉落拾取 ----------
