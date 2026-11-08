@@ -6,6 +6,8 @@ class_name VampireMageEnemy
 @export var teleport_range: float = 200.0  # 瞬移距离
 @export var cast_range: float = 250.0  # 施法距离
 @export var cast_cooldown: float = 2.0  # 施法冷却
+## 法术基础伤害（换层/波次/深渊倍率由 _scaled_damage() 统一叠加）
+const SPELL_DAMAGE: float = 15.0
 
 var teleport_timer: float = 0.0
 var cast_timer: float = 0.0
@@ -167,7 +169,8 @@ func _cast_spell() -> void:
 	var direction := (player.global_position - global_position).normalized()
 	spell.direction = direction
 	spell.speed = 200.0
-	spell.damage = 15.0
+	# 法术是"非接触伤害源"：与接触伤害同一口径（波次 × 楼层 × 深渊）
+	spell.damage = _scaled_damage(SPELL_DAMAGE)
 	spell.lifetime = 3.0
 	
 	# 设置颜色（紫色魔法）—— 用 visual_color 而不是 modulate，

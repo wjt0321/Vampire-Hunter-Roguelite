@@ -80,7 +80,9 @@ func _explode() -> void:
 		var distance := global_position.distance_to(player.global_position)
 		if distance <= EXPLOSION_RANGE:
 			if player.has_method("take_damage"):
-				player.take_damage(EXPLOSION_DAMAGE)
+				# 爆炸是"非接触伤害源"，与接触伤害同一口径（波次 × 楼层 × 深渊），
+				# 否则 GDD 写的"敌人伤害每级 +10%"对自爆者等于不存在
+				player.take_damage(_scaled_damage(EXPLOSION_DAMAGE))
 	
 	# 播放爆炸音效
 	var audio_lib := AudioLib

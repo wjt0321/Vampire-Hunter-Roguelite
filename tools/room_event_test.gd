@@ -455,6 +455,41 @@ func _run() -> void:
 	_check(pair_ok, "每层猎物都是两个不同合法词缀（%s）" % str(pair_labels))
 	_wm.floor_index = 1
 
+	# ---------- 事件标记布局 ----------
+	print("\n--- 事件标记布局 ---")
+	# 事件标签（"猎 物"）和两个词缀图标都在敌人头顶：图标在 y=-52，
+	# 标签原先在 y=-46，两者直接压在一起 → 玩家读到的是乱码。
+	_ev.floor_fired = -1
+	_ev._start_hunt()
+	await _wait_until(func() -> bool:
+		return _ev._hunt_enemy != null and is_instance_valid(_ev._hunt_enemy), 3.0)
+	var tagged: Node = _ev._hunt_enemy
+	if tagged != null and is_instance_valid(tagged):
+		var tag := tagged.get_node_or_null("EventTag") as Label
+		_check(tag != null, "猎物带事件标签")
+		var icon_count: int = 0
+		for ctrl_name in ["AffixController", "AffixController2"]:
+			var ctrl := tagged.get_node_or_null(ctrl_name)
+			if ctrl == null:
+				continue
+			var icon := ctrl.get_node_or_null("AffixIcon") as Label
+			if icon == null:
+				continue
+			icon_count += 1
+			if tag == null:
+				continue
+			# 图标是 17px 字号，按 24×24 估计占位；标签的 size 是代码里设的 64×14
+			var icon_rect := Rect2(icon.position, Vector2(24, 24))
+			var tag_rect := Rect2(tag.position, tag.size)
+			_check(not icon_rect.intersects(tag_rect),
+				"事件标签不压词缀图标（%s 图标 %s / 标签 %s）"
+				% [ctrl_name, str(icon_rect), str(tag_rect)])
+		_check(icon_count == 2, "猎物同时带事件标签与两个词缀图标（图标 %d 个）" % icon_count)
+	else:
+		_check(false, "猎物出场用于标记布局检查")
+	_ev.cancel()
+	await process_frame
+
 	# ---------- 守卫 ----------
 	print("\n--- 守卫事件 ---")
 	_ev.floor_fired = -1
@@ -532,6 +567,44 @@ func _run() -> void:
 		% [chests_before, _count_chests()])
 	_wm.enemy_scenes = saved_scenes
 
+	# wave_manager 缺失：_spawn_guards 的早退路径同样不能留下宝箱
+	# （早退直接 _end，宝箱回收必须收敛到 _end 才不漏）
+	await process_frame
+	await process_frame
+	var chests_wmnull_before: int = _count_chests()
+	var saved_wm: Node = _ev.wave_manager
+	_ev.wave_manager = null
+	_ev.floor_fired = -1
+	_ev._start_guard()
+	await process_frame
+	await process_frame
+	_check(_ev.kind == "", "wave_manager 缺失时事件结束")
+	_check(_count_chests() == chests_wmnull_before,
+		"wave_manager 缺失时宝箱被回收（场上 %d → %d 个）"
+		% [chests_wmnull_before, _count_chests()])
+	_ev.wave_manager = saved_wm
+
+	# 换层：on_floor_changed 自己 cancel 进行中的事件（不依赖换房流程先调 cancel）
+	await process_frame
+	await process_frame
+	var chests_floor_before: int = _count_chests()
+	_ev.floor_fired = -1
+	_ev._start_guard()
+	_check(_ev.kind == "guard", "换层前事件进行中")
+	_ev.on_floor_changed(_wm.floor_index + 1)
+	await process_frame
+	await process_frame
+	_check(_ev.kind == "", "on_floor_changed 取消进行中的事件")
+	_check(_count_chests() == chests_floor_before,
+		"换层时宝箱被回收（场上 %d → %d 个）"
+		% [chests_floor_before, _count_chests()])
+	_ev.on_floor_changed(_wm.floor_index)
+	# 守卫本身是普通敌人，换层由 main 的清场回收；这里只清理测试宿主，避免污染后续用例
+	for g in _host.get_children():
+		if g is Node2D and g.get_node_or_null("EventTag") != null \
+				and String(g.get_node("EventTag").text).contains("守"):
+			g.queue_free()
+
 	# 换房 cancel() 之后守卫再死：不能再开箱发奖励
 	_ev.floor_fired = -1
 	_ev._start_guard()
@@ -599,6 +672,57 @@ func _run() -> void:
 		live_hud.set_event_status("")
 		_check(not ev_label.visible, "空字符串隐藏事件行（不是留空行占位）")
 	live_hud.queue_free()
+	await process_frame
+
+	# ---------- 事件状态写入真实 HUD ----------
+	print("\n--- 事件状态写入真实 HUD ---")
+	# 开场信息原先走 hud.show_toast()，而复用 wave_banner 的位置：
+	# 事件与 "Wave N 开始" 同帧时两者互相覆盖。开场信息必须写独立 event_label。
+	var real_hud: Node = hud_scene.instantiate()
+	_host.add_child(real_hud)
+	await process_frame
+	_ev.setup(_wm, _player_ref, real_hud)
+	var real_label = real_hud.event_label
+	var real_banner = real_hud.wave_banner
+	_check(real_label != null and real_banner != null, "真实 HUD 提供事件行与波次横幅")
+
+	_ev.floor_fired = -1
+	_ev._start_hunt()
+	_check(real_label != null and real_label.visible and real_label.text.contains("猎"),
+		"猎杀开场信息写进独立事件行（'%s'）" % (real_label.text if real_label else ""))
+	_check(real_banner != null and not real_banner.visible,
+		"猎杀开场信息不占用 wave_banner（不与波次横幅互相覆盖）")
+	# 倒计时继续正常更新同一行
+	await _wait_until(func() -> bool:
+		return _ev._hunt_enemy != null and is_instance_valid(_ev._hunt_enemy), 3.0)
+	var saw_countdown: bool = await _wait_until(func() -> bool:
+		return real_label != null and real_label.visible and real_label.text.contains("猎杀"), 2.0)
+	_check(saw_countdown, "猎物出场后事件行切换为倒计时（'%s'）"
+		% (real_label.text if real_label != null else ""))
+	_ev.cancel()
+	await process_frame
+
+	_ev.floor_fired = -1
+	_ev._start_guard()
+	_check(real_label != null and real_label.visible and real_label.text.contains("宝 箱"),
+		"守卫开场信息写进独立事件行（'%s'）" % (real_label.text if real_label else ""))
+	_check(real_banner != null and not real_banner.visible,
+		"守卫开场信息不占用 wave_banner")
+	# 状态行每 0.2 秒刷一次；不留一拍的话，"守卫苏醒"会在第一次刷新时
+	# 被"守卫 ×5"顶掉，开场信息等于没显示（等 0.3s 确保至少跨过一次刷新）
+	await create_timer(0.3).timeout
+	_check(real_label != null and real_label.visible and real_label.text.contains("宝 箱"),
+		"守卫开场信息在一次状态刷新后仍可读（'%s'）"
+		% (real_label.text if real_label != null else ""))
+	var saw_guard_status: bool = await _wait_until(func() -> bool:
+		return real_label != null and real_label.visible and real_label.text.contains("守卫 ×"), 2.5)
+	_check(saw_guard_status, "守卫事件行继续显示剩余数量（'%s'）"
+		% (real_label.text if real_label != null else ""))
+	_ev.cancel()
+	await process_frame
+	_check(real_label != null and not real_label.visible, "事件结束后事件行隐藏")
+	_ev.setup(_wm, _player_ref, _hud)
+	real_hud.queue_free()
 	await process_frame
 
 	# ---------- 收尾 ----------

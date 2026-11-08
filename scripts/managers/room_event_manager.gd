@@ -18,6 +18,9 @@ signal event_started(kind: String)
 signal event_finished(kind: String, success: bool)
 
 const HuntDelay: float = 1.5       # 进房后多久刷猎物（给玩家半秒认清房间）
+## 开场信息在事件行上停留多久（秒）。不留这一拍，守卫的
+## "受 诅 宝 箱 · 守 卫 苏 醒" 会在 0.2 秒后被"守卫 ×5"顶掉，等于没显示。
+const AnnounceHold: float = 1.2
 
 var kind: String = ""              # "" = 本房无事件
 var floor_fired: int = -1          # 已触发过事件的层号（一层一次）
@@ -37,6 +40,8 @@ var _guards_left: int = 0
 var _chest: Node2D = null
 ## HUD 文本降频：每 0.2 秒写一次，别每帧拼字符串
 var _hud_tick: float = 0.0
+## 开场信息占位倒计时（秒）：> 0 时状态刷新不覆盖事件行
+var _announce_timer: float = 0.0
 
 func setup(wm: Node, player_node: Node, hud_node: Node) -> void:
 	wave_manager = wm
@@ -44,7 +49,10 @@ func setup(wm: Node, player_node: Node, hud_node: Node) -> void:
 	hud = hud_node
 
 func on_floor_changed(floor_index: int) -> void:
-	## 换层重置"一层一次"的标记；进行中的事件随 cancel() 结束
+	## 换层重置"一层一次"的标记；进行中的事件随 cancel() 结束。
+	## 这里自己 cancel：事件不跨层，不能指望换房流程恰好先 cancel 过
+	## （Boss 房直进、换层路径都会绕开 _enter_next_room 的常规清理）。
+	cancel()
 	last_floor_index = floor_index
 	combat_room_count = 0
 	if floor_fired != floor_index:
@@ -91,8 +99,12 @@ func _start_guard() -> void:
 func _process(delta: float) -> void:
 	if kind.is_empty():
 		return
+	# 开场信息优先占住事件行：状态刷新每 0.2 秒一次，不留这一拍的话
+	# "守卫苏醒"会被"守卫 ×5"立刻顶掉
+	if _announce_timer > 0.0:
+		_announce_timer -= delta
 	_hud_tick += delta
-	var hud_dirty := _hud_tick >= 0.2
+	var hud_dirty := _hud_tick >= 0.2 and _announce_timer <= 0.0
 	if hud_dirty:
 		_hud_tick = 0.0
 
@@ -254,12 +266,7 @@ func _spawn_guards() -> void:
 		_tag_enemy(guard, "守 卫", GameConfig.ROOM_EVENT_GUARD_COLOR)
 		_guards_left += 1
 	if _guards_left == 0:
-		# 一只守卫都没刷出来：宝箱必须一起收回，否则玩家会对着一个
-		# 永远打不开的箱子发呆（而且它还会留到下一房）
-		var orphan: Node2D = _chest
-		_chest = null
-		if orphan != null and is_instance_valid(orphan):
-			orphan.queue_free()
+		# 一只守卫都没刷出来：宝箱由 _end() 统一回收
 		_end(false, "守卫未现身")
 
 func _on_guard_died(_enemy: Node) -> void:
@@ -271,6 +278,8 @@ func _on_guard_died(_enemy: Node) -> void:
 		return
 	if _chest != null and is_instance_valid(_chest) and _chest.has_method("open"):
 		_chest.open()
+	# 开箱动画自己会 queue_free：把引用交还出去，别让 _end() 的回收抢在动画前
+	_chest = null
 	_reward(GameConfig.ROOM_EVENT_GUARD_SILVER, GameConfig.ROOM_EVENT_GUARD_XP,
 		"诅咒解除 +%d 银" % GameConfig.ROOM_EVENT_GUARD_SILVER)
 	_end(true, "宝箱开启")
@@ -285,7 +294,9 @@ func _tag_enemy(enemy: Node, text: String, color: Color) -> void:
 	label.text = text
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.size = Vector2(64, 14)
-	label.position = Vector2(-32, -46)
+	# 词缀图标在 y=-52（占位约 24px 高）。Label 的实际高度也是 24px（字号 + 描边），
+	# 所以标签必须抬到 -80 才能和图标留出空隙；-46 会直接压上去。
+	label.position = Vector2(-32, -80)
 	label.add_theme_font_size_override("font_size", 11)
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.03, 0.9))
@@ -303,8 +314,10 @@ func _reward(silver: int, xp: int, toast: String) -> void:
 		hud.show_toast(toast)
 
 func _notify(text: String) -> void:
-	if hud and hud.has_method("show_toast"):
-		hud.show_toast(text)
+	## 事件开场信息写独立事件行（不借用 wave_banner）：
+	## 事件与 "Wave N 开始" 可能同帧，共用横幅会互相覆盖
+	_set_hud(text)
+	_announce_timer = AnnounceHold
 
 func _set_hud(text: String) -> void:
 	if hud and hud.has_method("set_event_status"):
@@ -333,19 +346,28 @@ func _end(success: bool, reason: String) -> void:
 	_hunt_timer = 0.0
 	_hunt_delay = 0.0
 	_guards_left = 0
-	_chest = null
+	_announce_timer = 0.0
+	# 宝箱回收收敛在这里（幂等）：任何结束路径——守卫刷失败、wave_manager 缺失、
+	# 换房 cancel、换层——都不会把上锁宝箱留在场上。开箱成功那条路径已经
+	# 把 _chest 交还给宝箱自己的开箱动画（见 _on_guard_died），不会被这里抢走。
+	_recycle_chest()
 	_set_hud("")
 	print("🎯 局内事件结束：%s（%s）" % [finished_kind, reason])
 	if not finished_kind.is_empty():
 		event_finished.emit(finished_kind, success)
+
+func _recycle_chest() -> void:
+	## 宝箱是 current_scene 的子节点，不随 GameRoom 释放；必须显式清理。
+	## 幂等：引用先置空再释放，重复调用不会二次 free。
+	var chest := _chest
+	_chest = null
+	if chest != null and is_instance_valid(chest):
+		chest.queue_free()
 
 func cancel() -> void:
 	## 换房/换层调用：事件不跨房。没事件时是纯空操作。
 	if kind.is_empty():
 		return
 	_disconnect_hunt_killed()
-	# 宝箱是 current_scene 的子节点，不随 GameRoom 释放；必须显式清理，否则会留到下一房。
-	if _chest != null and is_instance_valid(_chest):
-		_chest.queue_free()
-	# 猎物与普通敌人由 main 的换房清场统一回收。
+	# 猎物与普通敌人由 main 的换房清场统一回收；宝箱由 _end() 回收。
 	_end(false, "离开房间")

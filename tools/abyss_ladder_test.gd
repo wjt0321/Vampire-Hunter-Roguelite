@@ -64,11 +64,23 @@ func _stop_audio() -> void:
 	await create_timer(0.8).timeout
 
 
-func _spawn(type: String, pos: Vector2) -> Node:
+class DamageProbe extends CharacterBody2D:
+	## 站在 group("player") 里的替身：只记录最后一次受到多少伤害。
+	## 必须是 CharacterBody2D——EnemyBase._find_player() 会 `as CharacterBody2D`，
+	## 用 Node2D 会被转成 null，敌人根本拿不到玩家。
+	var last_amount: float = 0.0
+	var hits: int = 0
+
+	func take_damage(amount: float, _from: Vector2 = Vector2.ZERO) -> void:
+		last_amount = amount
+		hits += 1
+
+
+func _spawn(type: String, pos: Vector2, floor_idx: int = 1, wave: int = 1) -> Node:
 	var scene: PackedScene = load("res://scenes/enemies/%s.tscn" % type)
 	var e = scene.instantiate()
-	e.spawn_wave = 1
-	e.floor_index = 1
+	e.spawn_wave = wave
+	e.floor_index = floor_idx
 	e.position = pos
 	_host.add_child(e)
 	return e
@@ -121,6 +133,129 @@ func _run() -> void:
 	z2.queue_free()
 	GameConfig.abyss_level = 0
 
+	# ---------- 普通刷怪的真实 loot_mult 路径 ----------
+	print("\n--- 普通刷怪 loot_mult ---")
+	# 直接走 wave_manager._spawn_enemy()：这是战斗里真正生成怪物的入口，
+	# 深渊掉落倍率必须落在敌人的 loot_mult 上（而不是 round 进 silver_value）
+	var WaveScript = load("res://scripts/managers/wave_manager.gd")
+	var spawn_wm = Node.new()
+	spawn_wm.set_script(WaveScript)
+	_host.add_child(spawn_wm)
+	var loot_player := DamageProbe.new()
+	loot_player.position = Vector2(500, 500)
+	loot_player.add_to_group("player")
+	_host.add_child(loot_player)
+	spawn_wm.player = loot_player
+	spawn_wm.is_active = false
+	spawn_wm.floor_index = 1
+	spawn_wm.enemy_pool = ["zombie"]
+	spawn_wm.current_wave = 1
+	GameConfig.abyss_level = 2
+	var before_children: int = _host.get_child_count()
+	spawn_wm._spawn_enemy()
+	await process_frame
+	var spawned: Node = null
+	for i in range(before_children, _host.get_child_count()):
+		var n: Node = _host.get_child(i)
+		if n != null and n.has_method("_get_enemy_type") \
+				and String(n.call("_get_enemy_type")) == "zombie":
+			spawned = n
+	_check(spawned != null, "普通刷怪真的生成了敌人")
+	if spawned != null:
+		# 1.0（无契约修正）× 1.2（深渊 2 级）
+		_check(absf(float(spawned.loot_mult) - 1.2) < 0.001,
+			"普通刷怪的 loot_mult 含深渊倍率（%.3f ≈ 1.200）" % float(spawned.loot_mult))
+		spawned.queue_free()
+	GameConfig.abyss_level = 0
+	spawn_wm.queue_free()
+	loot_player.queue_free()
+	await process_frame
+
+	# ---------- 非接触伤害源（爆炸 / 法术） ----------
+	print("\n--- 非接触伤害源 ---")
+	var dmg_player := DamageProbe.new()
+	dmg_player.position = Vector2(640, 360)
+	dmg_player.add_to_group("player")
+	_host.add_child(dmg_player)
+	await process_frame
+
+	# 自爆者：爆炸固定 30，规格上必须吃楼层与深渊伤害倍率
+	# 2 层（×1.18）× 深渊 2 级（×1.20）→ 30 × 1.18 × 1.20 = 42.48
+	GameConfig.abyss_level = 2
+	var boom_hi: Node = _spawn("exploder", Vector2(600, 360), 2, 1)
+	await process_frame
+	await process_frame
+	boom_hi._explode()
+	await process_frame
+	_check(absf(dmg_player.last_amount - 30.0 * 1.18 * 1.20) < 0.05,
+		"爆炸伤害吃楼层与深渊倍率（%.2f ≈ 42.48）" % dmg_player.last_amount)
+	await process_frame
+
+	GameConfig.abyss_level = 0
+	var boom_lo: Node = _spawn("exploder", Vector2(600, 360), 1, 1)
+	await process_frame
+	await process_frame
+	boom_lo._explode()
+	await process_frame
+	_check(absf(dmg_player.last_amount - 30.0) < 0.05,
+		"深渊 0 的 1 层爆炸保持 30.0（实际 %.2f）" % dmg_player.last_amount)
+
+	# 法师：法术固定 15，同样要接楼层与深渊伤害倍率
+	GameConfig.abyss_level = 2
+	var mage: Node = _spawn("vampire_mage", Vector2(600, 360), 2, 1)
+	await process_frame
+	await process_frame
+	mage._cast_spell()
+	await process_frame
+	var spells: Array = get_nodes_in_group("enemy_projectiles")
+	_check(spells.size() == 1, "法师法术弹道生成（%d 发）" % spells.size())
+	if spells.size() == 1:
+		_check(absf(float(spells[0].damage) - 15.0 * 1.18 * 1.20) < 0.05,
+			"法术伤害吃楼层与深渊倍率（%.2f ≈ 21.24）" % float(spells[0].damage))
+	for s in spells:
+		s.queue_free()
+	mage.queue_free()
+	GameConfig.abyss_level = 0
+	dmg_player.queue_free()
+	await process_frame
+
+	# ---------- 血族亲王二阶段 ----------
+	print("\n--- 血族亲王二阶段 ---")
+	# 二阶段把 contact_damage 重算成 base × 波次时，曾丢掉楼层与深渊倍率。
+	# 用真实场景走到 50% 血以下，期望值按 GDD 手算：
+	# 二阶段 base 30 × 波次 1（×1.0）× 2 层（×1.18）× 深渊 2 级（×1.20）= 42.48
+	var prince_player := DamageProbe.new()
+	prince_player.position = Vector2(200, 200)
+	prince_player.add_to_group("player")
+	_host.add_child(prince_player)
+	GameConfig.abyss_level = 2
+	var prince_hi: Node = _spawn("vampire_prince", Vector2(600, 360), 2, 1)
+	await process_frame
+	await process_frame
+	prince_hi.current_hp = float(prince_hi.max_hp) * 0.45
+	prince_hi._physics_process(0.016)
+	await process_frame
+	_check(prince_hi.is_second_phase, "亲王在 50% 血以下进入二阶段")
+	_check(absf(float(prince_hi.contact_damage) - 30.0 * 1.18 * 1.20) < 0.05,
+		"二阶段接触伤害保留楼层与深渊倍率（%.2f ≈ 42.48）"
+		% float(prince_hi.contact_damage))
+	prince_hi.queue_free()
+	await process_frame
+
+	# 深渊 0 时楼层倍率也不能丢
+	GameConfig.abyss_level = 0
+	var prince_lo: Node = _spawn("vampire_prince", Vector2(600, 360), 2, 1)
+	await process_frame
+	await process_frame
+	prince_lo.current_hp = float(prince_lo.max_hp) * 0.45
+	prince_lo._physics_process(0.016)
+	await process_frame
+	_check(absf(float(prince_lo.contact_damage) - 30.0 * 1.18) < 0.05,
+		"深渊 0 的二阶段仍含楼层倍率（%.2f ≈ 35.40）" % float(prince_lo.contact_damage))
+	prince_lo.queue_free()
+	prince_player.queue_free()
+	await process_frame
+
 	# ---------- Boss 属性 ----------
 	print("\n--- Boss 属性 ---")
 	# Boss 覆写 _ready 且不调 super._ready()，所以 EnemyBase 的深渊倍率对它完全无效。
@@ -144,35 +279,49 @@ func _run() -> void:
 	_check(absf(float(b2.loot_mult) / boss_loot0 - 1.20) < 0.01,
 		"2 级 Boss 掉落倍率 ×1.20（实际 ×%.2f，loot_mult 走概率进位链）"
 		% (float(b2.loot_mult) / boss_loot0))
-	# 狂暴/绝望只重算伤害，不能把深渊倍率丢掉
-	b2.base_contact_damage = 30.0
-	b2.spawn_wave = 1
-	b2._enrage_effect()
+	# 狂暴/绝望只重算伤害，不能把深渊倍率丢掉。
+	# 显式指定形态，期望值按 GDD 手算而不是复用生产公式：
+	# 形态 1 狂暴 base = 30 + 1×4 = 34；波次 1（×1.0）× 深渊 2 级（×1.20）= 40.8
+	GameConfig.abyss_level = 2
+	var rage_scene: PackedScene = load("res://scenes/enemies/vampire_lord.tscn")
+	var rage_boss = rage_scene.instantiate()
+	rage_boss.boss_variant = 1
+	rage_boss.spawn_wave = 1
+	rage_boss.floor_index = 1
+	rage_boss.position = Vector2(900, 300)
+	_host.add_child(rage_boss)
 	await process_frame
-	_check(absf(float(b2.contact_damage) - 30.0 * 1.20) < 0.5,
-		"狂暴重算伤害仍含深渊倍率（%.1f ≈ %.1f）" % [b2.contact_damage, 30.0 * 1.20])
+	rage_boss._enrage_effect()
+	await process_frame
+	_check(absf(float(rage_boss.contact_damage) - 34.0 * 1.20) < 0.01,
+		"狂暴重算伤害仍含深渊倍率（%.2f ≈ 40.80，形态 1 base 34 × 1.20）"
+		% float(rage_boss.contact_damage))
+	rage_boss.queue_free()
 	b2.queue_free()
 	GameConfig.abyss_level = 0
 
-	# ---------- 掉落概率进位 ----------
+	# ---------- 掉落概率进位（非整数期望） ----------
 	print("\n--- 掉落概率进位 ---")
-	# 期望 10 × 1.2 = 12：跑 600 次统计，长期均值应接近 12（±0.3）
+	# 1 × 1.2 期望 1.2：整数值（10×1.2=12）用 roundi 也能对，
+	# 抓不到"直接 round 进 base 值"的错误。用小数期望才有区分度：
+	# roundi 逻辑会恒得 1（均值 1.0），概率进位才是 1.2。
 	var loot_script = load("res://scripts/enemies/enemy_base.gd")
 	# enemy_base 继承 CharacterBody2D：Node2D.new() 挂不上这个脚本
-	var probe: CharacterBody2D = CharacterBody2D.new()
-	probe.set_script(loot_script)
+	var loot_probe: CharacterBody2D = CharacterBody2D.new()
+	loot_probe.set_script(loot_script)
 	# 只测纯函数，不进树：裸探针没有正式敌人场景里的 Sprite2D/CollisionShape2D，
 	# 进树触发 _ready 只会制造两条与掉落无关的 Node not found。
-	probe.loot_mult = 1.2
+	loot_probe.loot_mult = 1.2
 	seed(20261108)
 	var total: int = 0
-	var rounds: int = 600
+	var rounds: int = 4000
 	for i in range(rounds):
-		total += int(probe.call("_loot_scaled", 10))
+		total += int(loot_probe.call("_loot_scaled", 1))
 	var avg: float = float(total) / float(rounds)
-	_check(absf(avg - 12.0) < 0.3,
-		"10 × 1.2 期望 12，实测均值 %.2f（概率进位活着）" % avg)
-	probe.free()
+	# 二项分布 p=0.2、n=4000 → 标准差 0.0063；±0.05 是 8σ，不会 flake
+	_check(absf(avg - 1.2) < 0.05,
+		"1 × 1.2 期望 1.2，实测均值 %.3f（roundi 会得 1.0）" % avg)
+	loot_probe.free()
 
 	# ---------- 通关血晶（真实生产函数） ----------
 	print("\n--- 通关血晶 ---")
@@ -268,8 +417,12 @@ func _run() -> void:
 	if abyss_btn != null:
 		_check(abyss_btn.text.contains("深入深渊 3"),
 			"按钮文本指向下一级（'%s'）" % abyss_btn.text)
+		# 3 级的百分比是"下一轮总计"（3 × 15% / 10% / 10%），不是这一次的增量；
+		# 文本必须写明口径，否则会被读成"+45% 以外的再加成"
+		_check(abyss_btn.text.contains("下一轮总计"),
+			"按钮文本标明百分比是下一轮总倍率（'%s'）" % abyss_btn.text)
 		_check(abyss_btn.text.contains("血 +45%") and abyss_btn.text.contains("掉落 +30%"),
-			"按钮文本给出 3 级的实际加成（'%s'）" % abyss_btn.text)
+			"按钮文本给出 3 级的总倍率（'%s'）" % abyss_btn.text)
 	# 旧按钮不得因为新按钮而重复连接（会让 hover 音效双播）
 	_check(restart_btn.mouse_entered.get_connections().size() == conns_before,
 		"旧按钮的音效连接数不因创建深渊按钮而变化（%d）" % conns_before)

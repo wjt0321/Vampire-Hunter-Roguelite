@@ -121,7 +121,8 @@ func _enter_second_phase() -> void:
 	move_speed = 90.0  # 速度提升
 	base_contact_damage = 30.0  # 伤害提升
 	# 只重算伤害，不重算 HP（避免重置 max_hp）
-	contact_damage = base_contact_damage * GameConfig.get_enemy_damage_multiplier(spawn_wave)
+	# 必须走 _scaled_damage()：直接 base × 波次会丢掉楼层与深渊倍率
+	contact_damage = _scaled_damage(base_contact_damage)
 	
 	print("👑 血族亲王进入狂暴状态!")
 	

@@ -257,19 +257,22 @@ func dot_damage(amount: float) -> void:
 
 func _apply_wave_scaling() -> void:
 	## 根据生成波次与所在楼层缩放敌人属性
-	var hp_mult = GameConfig.get_enemy_hp_multiplier(spawn_wave)
-	var dmg_mult = GameConfig.get_enemy_damage_multiplier(spawn_wave)
-	var level_scale = GameConfig.get_player_level_hp_scale(_get_player_level())
-	var floor_hp = GameConfig.get_floor_hp_multiplier(floor_index)
-	var floor_dmg = GameConfig.get_floor_damage_multiplier(floor_index)
-	# 深渊阶梯：全层全局倍率，挂在链最外层（和波次/楼层正交）
-	var abyss_hp = GameConfig.get_abyss_hp_mult()
-	var abyss_dmg = GameConfig.get_abyss_damage_mult()
-	max_hp = base_hp * hp_mult * hp_scale * level_scale * floor_hp * abyss_hp
-	contact_damage = base_contact_damage * dmg_mult * floor_dmg * abyss_dmg
+	## 深渊阶梯：全层全局倍率，挂在链最外层（和波次/楼层正交）
+	max_hp = base_hp * GameConfig.get_enemy_hp_multiplier(spawn_wave) * hp_scale \
+		* GameConfig.get_player_level_hp_scale(_get_player_level()) \
+		* GameConfig.get_floor_hp_multiplier(floor_index) \
+		* GameConfig.get_abyss_hp_mult()
+	contact_damage = _scaled_damage(base_contact_damage)
 	# 掉落的深渊加成不在这乘：直接 round 进 silver_value 会让 1×1.1 永远是 1
 	# （xp_gem_test 踩过的坑）。倍率由 wave_manager 乘进 loot_mult，
 	# 走 _loot_scaled 的"小数部分概率进位"，长期期望才准确
+
+func _scaled_damage(base: float) -> float:
+	## 敌人伤害的统一口径：波次 × 楼层 × 深渊。
+	## 接触伤害、二阶段重算、爆炸、法术都从这里取，避免各技能自己漏一个倍率。
+	return base * GameConfig.get_enemy_damage_multiplier(spawn_wave) \
+		* GameConfig.get_floor_damage_multiplier(floor_index) \
+		* GameConfig.get_abyss_damage_mult()
 
 func _get_player_level() -> int:
 	## 读取玩家当前等级，用于 HP 橡皮筋缩放

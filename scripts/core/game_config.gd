@@ -514,6 +514,8 @@ const POWERUP_HEAL_RATIO: float = 0.25
 ## 狂暴倍率与时长
 const POWERUP_FRENZY_MULT: float = 1.5
 const POWERUP_FRENZY_DURATION: float = 8.0
+## 类型权重表：回血最常见（最容易形成决策），狂暴次之
+const POWERUP_KINDS: Array = ["heal", "heal", "frenzy", "magnet"]
 
 # ==================== 局内目标事件（17.14） ====================
 # 设计取舍：战斗房里只有"杀与被杀"，30 秒里没有第二个目标。
@@ -544,16 +546,14 @@ const ROOM_EVENT_GUARD_SILVER: int = 25
 const ROOM_EVENT_GUARD_XP: int = 60
 ## 守卫的视觉标记色（和普通敌人区分开）
 const ROOM_EVENT_GUARD_COLOR: Color = Color(1.0, 0.78, 0.25)
-## 类型权重表：回血最常见（最容易形成决策），狂暴次之
-const POWERUP_KINDS: Array = ["heal", "heal", "frenzy", "magnet"]
-
-
 
 # ==================== 深渊阶梯（17.14） ====================
 # 通关后可选"继续深入"：+1 深渊等级重开三层，敌人更强、掉落更多。
 # GameConfig 不是 autoload（纯静态类），运行时状态必须用 static var：
 # 静态变量挂在脚本资源本身上，reload_current_scene() 重建 main 后依然在。
-# 离开深渊（普通重开 / 回主菜单 / 游戏失败）时归零。
+# 等级在"普通重开 / 返回主菜单（结算界面与暂停菜单两条路径）"时归零；
+# 失败本身不归零（玩家停在结算界面，可能还要点"继续深入"），
+# 只有从失败界面走重开/返回主菜单才会放弃深渊。
 
 ## 本局当前深渊等级（0 = 首轮正常难度）
 static var abyss_level: int = 0
@@ -565,7 +565,7 @@ const ABYSS_STEP_HP: float = 0.15
 const ABYSS_STEP_DAMAGE: float = 0.10
 const ABYSS_STEP_LOOT: float = 0.10
 
-## 放弃深渊：回主菜单 / 普通重开 / 失败结算都走这一个入口。
+## 放弃深渊：普通重开 / 返回主菜单（结算界面、暂停菜单、主菜单 _ready）都走这里。
 ## 只归零当前等级，不动 best_abyss（历史最深到达是存档成就，不该被清掉）。
 static func abandon_abyss() -> void:
 	abyss_level = 0
@@ -574,10 +574,12 @@ static func abandon_abyss() -> void:
 static func get_abyss_hp_mult() -> float:
 	return 1.0 + ABYSS_STEP_HP * float(abyss_level)
 
-## 每级敌人伤害 +10%
+## 每级敌人伤害 +10%（接触、爆炸、法术统一走 EnemyBase._scaled_damage）
 static func get_abyss_damage_mult() -> float:
 	return 1.0 + ABYSS_STEP_DAMAGE * float(abyss_level)
 
-## 每级掉落（银币/经验/血晶）+10%
+## 每级敌人银币/经验掉落与层通关血晶 +10%。
+## 不含事件固定奖励（猎物/宝箱的定额银币经验），倍率只乘进 loot_mult 与
+## _floor_clear_crystals，避免银币基础值被 round 吃掉（1×1.2 永远 1）。
 static func get_abyss_loot_mult() -> float:
 	return 1.0 + ABYSS_STEP_LOOT * float(abyss_level)

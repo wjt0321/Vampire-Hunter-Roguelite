@@ -187,7 +187,9 @@ func _setup_abyss_button(victory: bool) -> void:
 		# 只给新按钮上样式/音效，绝不再遍历整面板（旧按钮会双播）
 		_apply_button_style(abyss_button)
 	var next_level: int = GameConfig.abyss_level + 1
-	abyss_button.text = "深入深渊 %d（血 +%d%% · 伤 +%d%% · 掉落 +%d%%）" % [
+	# 百分比是"下一轮的总倍率"（等级 × 每级步进），不是这一次继续的增量。
+	# 不写明口径的话，"血 +45%" 会被读成"在现有基础上再加 45%"。
+	abyss_button.text = "深入深渊 %d（下一轮总计：血 +%d%% · 伤 +%d%% · 掉落 +%d%%）" % [
 		next_level,
 		int(GameConfig.ABYSS_STEP_HP * 100.0 * next_level),
 		int(GameConfig.ABYSS_STEP_DAMAGE * 100.0 * next_level),
