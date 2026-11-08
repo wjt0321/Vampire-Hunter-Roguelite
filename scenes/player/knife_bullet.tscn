@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/player/knife_bullet.gd" id="1_knife"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_knife"]
-size = Vector2(16, 4)
+size = Vector2(18, 6)
 
 [node name="KnifeBullet" type="Area2D"]
 collision_layer = 4

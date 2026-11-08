@@ -11,8 +11,8 @@ var distance_traveled: float = 0.0
 
 # === 外观 ===
 @export var visual_color: Color = Color(0.72, 0.86, 1.0)
-@export var visual_length: float = 20.0
-@export var visual_thickness: float = 5.0
+@export var visual_length: float = 22.0
+@export var visual_thickness: float = 8.0
 
 # 穿透相关
 var max_pierce: int = 3          # 最大穿透数
@@ -29,7 +29,7 @@ func _setup_visuals() -> void:
 	rotation = direction.angle()
 	apply_visual_style(visual_color, visual_length, visual_thickness)
 
-func apply_visual_style(color: Color, length: float = 20.0, thickness: float = 5.0, _round_shape: bool = false) -> void:
+func apply_visual_style(color: Color, length: float = 22.0, thickness: float = 8.0, _round_shape: bool = false) -> void:
 	## 由武器管理器在发射时调用（对象池复用的弹丸不会重跑 _ready）
 	visual_color = color
 	visual_length = length

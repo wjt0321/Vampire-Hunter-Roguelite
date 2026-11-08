@@ -8,7 +8,9 @@ var sine_frequency: float = 4.0
 
 func _ready() -> void:
 	base_hp = 6.0
-	move_speed = 140.0
+	# 140 时被急速光环一带就 182，贴着玩家的 200 跑，玩家全程只顾着走位。
+	# 降到 128（带急速 151），仍是全场最快的小怪，但留出了回头捡宝石的窗口。
+	move_speed = 128.0
 	base_contact_damage = 5.0
 	xp_value = 3
 	# 随机偏移，避免所有蝙蝠同步

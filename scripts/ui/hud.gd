@@ -36,6 +36,8 @@ var _low_hp_tween: Tween = null
 var _evo_pulse: Tween = null
 
 func _ready() -> void:
+	# 其他 UI（升级卡）要给玩家即时反馈时按组找 HUD，不去猜节点路径
+	add_to_group("hud")
 	wave_banner.visible = false
 	_setup_bar_textures()
 	_create_silver_label()
@@ -314,6 +316,20 @@ func show_evolution_banner(text: String) -> void:
 	tween.tween_property(wave_banner, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(func(): wave_banner.visible = false)
 
+func show_toast(text: String) -> void:
+	## 一行短提示，复用波次横幅的位置。
+	## 用在"选项生效了"这种需要立刻被看见、但不值得开面板的时刻
+	## （例如补给卡把攻击 ×1.30 抬到 ×1.40）。
+	if wave_banner == null:
+		return
+	wave_banner.text = text
+	wave_banner.visible = true
+	wave_banner.modulate = Color(1, 1, 1, 1)
+	var tween := create_tween()
+	tween.tween_interval(1.1)
+	tween.tween_property(wave_banner, "modulate:a", 0.0, 0.4)
+	tween.tween_callback(func(): wave_banner.visible = false)
+
 func _create_silver_label() -> void:
 	## 银币计数放在击杀数旁边：代码建，避免为一个 Label 去改 hud.tscn
 	var top_bar := $MarginContainer/VBoxContainer/TopBar as HBoxContainer
@@ -377,7 +393,18 @@ func update_xp(current_xp: int, xp_needed: int, level: int) -> void:
 
 func update_wave(wave_number: int) -> void:
 	wave_label.text = "Wave %d" % wave_number
+	wave_label.modulate = Color(1, 1, 1, 1)
 	_show_wave_banner(wave_number)
+
+func set_wave_status(text: String, dim: bool = false) -> void:
+	## 非战斗状态下改写波次标签。
+	## 为什么需要：wave_label 只在 wave_started 时刷新，进宝箱房/商店房时
+	## 它还挂着上一波的编号，房间里却一个人都没有——试玩反馈
+	## 「wave4 没有任何东西」说的就是这个：HUD 显示 Wave 4，房里是宝箱房。
+	if wave_label == null:
+		return
+	wave_label.text = text
+	wave_label.modulate = Color(1, 1, 1, 0.45) if dim else Color(1, 1, 1, 1)
 
 func update_kills(total_kills: int) -> void:
 	kills_label.text = "击杀: %d" % total_kills

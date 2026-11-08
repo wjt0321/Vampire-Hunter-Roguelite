@@ -138,6 +138,13 @@ func _decorate_option(option: Dictionary) -> Dictionary:
 			opt["badge"] = "属性"
 			opt["badge_color"] = Color(0.6, 0.76, 1.0)
 			opt["level_text"] = _stat_preview(opt_id)
+		"basic":
+			# 满级后的补给卡。原本只写一句"攻击力+10%（本局）"，
+			# 玩家既不知道自己现在多少、也不知道加完是多少——
+			# 「攻击力提升没有具体数值，可以有体感提升」说的就是这个。
+			opt["badge"] = "补给"
+			opt["badge_color"] = Color(0.95, 0.72, 0.42)
+			opt["level_text"] = _basic_preview(opt_id)
 		_:
 			opt["badge"] = ""
 			opt["level_text"] = ""
@@ -193,6 +200,26 @@ func _stat_preview(stat_id: String) -> String:
 		"pickup_range":
 			return "拾取 %.0f → %.0f" % [player.pickup_range_bonus,
 				player.pickup_range_bonus + GameConfig.UPGRADE_PICKUP_RANGE]
+	return ""
+
+func _basic_preview(reward_id: String) -> String:
+	## 补给卡的"现在 → 选完"。right side 必须有数字，
+	## 否则玩家选完只有一句 print，完全不知道发生了什么变化。
+	if player == null:
+		return ""
+	match reward_id:
+		"damage_boost":
+			var now: float = player.damage_multiplier
+			var nxt: float = now + GameConfig.BASIC_REWARD_DAMAGE
+			return "攻击 ×%.2f → ×%.2f" % [now, nxt]
+		"heal":
+			var before: float = player.current_hp
+			var after: float = minf(before + player.max_hp * 0.3, player.max_hp)
+			if is_equal_approx(before, player.max_hp):
+				return "生命已满 %.0f/%.0f · 选了没收益" % [before, player.max_hp]
+			return "生命 %.0f → %.0f（上限 %.0f）" % [before, after, player.max_hp]
+		"gold":
+			return "血晶 +100（结算时入账）"
 	return ""
 
 # ==================== 重抽 / 跳过 ====================
@@ -435,15 +462,17 @@ func _is_passive_maxed(passive_id: String) -> bool:
 
 func _get_basic_rewards() -> Array:
 	## 当所有武器和被动都满级/进化后，提供基础奖励
+	## 文案只讲"是什么"，具体幅度由 _basic_preview 补成"现在 → 选完"。
+	## 图标留空：本机字体不含 emoji，填 ⚔️💰❤️ 会在 Button 上渲染成蓝方块。
 	return [
-		{"id": "heal", "name": "生命恢复", "desc": "恢复30%最大生命", "icon": "❤️", "type": "basic"},
-		{"id": "gold", "name": "金币奖励", "desc": "获得100血晶", "icon": "💰", "type": "basic"},
-		{"id": "damage_boost", "name": "伤害提升", "desc": "攻击力+10%（本局）", "icon": "⚔️", "type": "basic"},
+		{"id": "heal", "name": "生命恢复", "desc": "回复 30% 最大生命", "icon": "", "type": "basic"},
+		{"id": "gold", "name": "血晶奖励", "desc": "结算时额外获得 100 血晶", "icon": "", "type": "basic"},
+		{"id": "damage_boost", "name": "伤害提升", "desc": "攻击倍率 +10%（本局永久）", "icon": "", "type": "basic"},
 	]
 
 func _create_option_button(option: Dictionary) -> Button:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(204, 190)
+	btn.custom_minimum_size = Vector2(222, 196)
 	if banish_mode:
 		btn.pressed.connect(func(): _on_banish_clicked(option))
 	else:
@@ -489,21 +518,24 @@ func _create_option_button(option: Dictionary) -> Button:
 		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		vbox.add_child(icon)
 	else:
-		# 使用emoji作为回退
-		var icon_label := Label.new()
-		icon_label.text = option.get("icon", "❓")
-		icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		var icon_label_settings := LabelSettings.new()
-		icon_label_settings.font_size = 32
-		icon_label.label_settings = icon_label_settings
-		vbox.add_child(icon_label)
+		# 没有纹理时不画 emoji 回退：本机主字体不含 emoji，Button 上会变成蓝色方块
+		# （GDD 附录 D.4 已约定界面不用 emoji）。没有图标就干脆留白。
+		var icon_text: String = String(option.get("icon", ""))
+		if icon_text != "":
+			var icon_label := Label.new()
+			icon_label.text = icon_text
+			icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			var icon_label_settings := LabelSettings.new()
+			icon_label_settings.font_size = 32
+			icon_label.label_settings = icon_label_settings
+			vbox.add_child(icon_label)
 
 	# 添加名称
 	var name_label := Label.new()
 	name_label.text = option["name"]
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	name_label.custom_minimum_size.x = 140  # 增加宽度
+	name_label.custom_minimum_size.x = 186
 	var name_label_settings := LabelSettings.new()
 	name_label_settings.font_size = 16
 	name_label_settings.font_color = Color(1, 0.9, 0.7, 1)
@@ -517,7 +549,7 @@ func _create_option_button(option: Dictionary) -> Button:
 		level_label.text = level_text
 		level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		level_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		level_label.custom_minimum_size.x = 150
+		level_label.custom_minimum_size.x = 186
 		var level_settings := LabelSettings.new()
 		level_settings.font_size = 13
 		level_settings.font_color = option.get("badge_color", Color(0.85, 0.9, 1.0, 1.0))
@@ -529,7 +561,7 @@ func _create_option_button(option: Dictionary) -> Button:
 	desc_label.text = option["desc"]
 	desc_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	desc_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	desc_label.custom_minimum_size.x = 140  # 增加宽度
+	desc_label.custom_minimum_size.x = 186  # 数值行加宽后，描述行对齐同一宽度
 	var desc_label_settings := LabelSettings.new()
 	desc_label_settings.font_size = 12
 	desc_label_settings.font_color = Color(0.8, 0.8, 0.8, 1)
@@ -643,19 +675,32 @@ func _on_option_selected(option: Dictionary) -> void:
 	_close_and_emit()
 
 func _apply_basic_reward(reward_id: String) -> void:
-	## 应用基础奖励
+	## 应用基础奖励。
+	## 每一项都要在屏幕上留下数字：卡片上写了"×1.30 → ×1.40"，
+	## 选完如果什么都不显示，玩家会怀疑到底生效没有。
+	var hud := get_tree().get_first_node_in_group("hud")
 	match reward_id:
 		"heal":
 			if player != null and player.has_method("heal"):
 				var heal_amount: float = player.max_hp * 0.3
 				player.heal(heal_amount)
-				print("❤️ 恢复 %.0f 生命" % heal_amount)
+				print("❤ 恢复 %.0f 生命" % heal_amount)
+				if hud and hud.has_method("show_toast"):
+					hud.show_toast("生命 +%.0f（%.0f / %.0f）" % [
+						heal_amount, player.current_hp, player.max_hp])
 		"gold":
 			var save_mgr := get_node_or_null("/root/SaveManager")
 			if save_mgr:
 				save_mgr.add_blood_crystals(100)
-				print("💰 获得 100 血晶")
+				print("+ 获得 100 血晶")
+				if hud and hud.has_method("show_toast"):
+					hud.show_toast("血晶 +100（结算时入账）")
 		"damage_boost":
 			if player != null:
-				player.damage_multiplier += 0.1
+				var before: float = player.damage_multiplier
+				player.damage_multiplier += GameConfig.BASIC_REWARD_DAMAGE
+				var after: float = player.damage_multiplier
+				print("⚔ 攻击倍率 %.2f → %.2f" % [before, after])
+				if hud and hud.has_method("show_toast"):
+					hud.show_toast("攻击 ×%.2f → ×%.2f" % [before, after])
 				print("⚔️ 攻击力 +10%")

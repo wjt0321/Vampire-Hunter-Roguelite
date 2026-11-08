@@ -396,23 +396,26 @@ func get_projectile_visual(weapon_id: String) -> Dictionary:
 	## 弹道外观配置：颜色 / 视觉长度 / 视觉厚度 / 是否圆形
 	## 视觉尺寸刻意比碰撞体大一圈——"看着够大、判定不亏"，
 	## 这是让玩家觉得弹道看得清、又不会因为贴图变大而变难的关键。
+	## 2026-11-08 试玩反馈"自己的投射物太细，很难命中"：
+	## 长条弹厚度 5~6 → 8~9，长度也各加 2px。配合 projectile_visuals 里
+	## 亮芯占比 0.16→0.30，屏幕上的实心部分从不到 2px 变成 5px 左右。
 	match weapon_id:
 		"shotgun":
-			return {"color": Color(1.0, 0.62, 0.22), "length": 12.0, "thickness": 6.0, "round": false}
+			return {"color": Color(1.0, 0.62, 0.22), "length": 13.0, "thickness": 9.0, "round": false}
 		"magic_book":
 			return {"color": Color(0.72, 0.42, 1.0), "length": 16.0, "thickness": 10.0, "round": true}
 		"throwing_knife":
-			return {"color": Color(0.75, 0.9, 1.0), "length": 22.0, "thickness": 5.0, "round": false}
+			return {"color": Color(0.75, 0.9, 1.0), "length": 24.0, "thickness": 8.0, "round": false}
 		"crossbow":
-			return {"color": Color(1.0, 0.93, 0.55), "length": 26.0, "thickness": 6.0, "round": false}
+			return {"color": Color(1.0, 0.93, 0.55), "length": 28.0, "thickness": 9.0, "round": false}
 		"holy_wand":
 			return {"color": Color(1.0, 0.97, 0.72), "length": 16.0, "thickness": 10.0, "round": true}
 		"kunai":
-			return {"color": Color(0.62, 0.74, 1.0), "length": 16.0, "thickness": 5.0, "round": false}
+			return {"color": Color(0.62, 0.74, 1.0), "length": 18.0, "thickness": 8.0, "round": false}
 		"flame_thrower":
 			return {"color": Color(1.0, 0.44, 0.12), "length": 14.0, "thickness": 9.0, "round": true}
 	# 手枪 / 默认
-	return {"color": Color(1.0, 0.86, 0.35), "length": 16.0, "thickness": 6.0, "round": false}
+	return {"color": Color(1.0, 0.86, 0.35), "length": 18.0, "thickness": 9.0, "round": false}
 
 func get_weapon_evolution(weapon_id: String) -> WeaponEvolution:
 	return weapon_evolutions.get(weapon_id, null)

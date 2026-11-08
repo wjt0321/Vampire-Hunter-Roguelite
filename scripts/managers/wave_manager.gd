@@ -22,7 +22,7 @@ var enemy_scenes: Dictionary = {
 @export var wave_duration: float = GameConfig.WAVE_DURATION
 @export var base_spawn_interval: float = GameConfig.WAVE_BASE_SPAWN_INTERVAL
 @export var min_spawn_interval: float = GameConfig.WAVE_MIN_SPAWN_INTERVAL
-@export var spawn_distance: float = 500.0       # 生成距离（屏幕外）
+@export var spawn_distance: float = 600.0       # 生成距离（屏幕外）
 
 # === 状态 ===
 var current_wave: int = 0
@@ -51,6 +51,29 @@ var dps_provider: Callable = Callable()
 
 ## 战斗内增益的刷新计时
 var _powerup_timer: float = 0.0
+## 清场后等多久开始回收地上的宝石（秒）。
+## 留一点余量是给玩家"自己走过去捡"的机会——立即吸走会让走位失去意义，
+## 1.5 秒刚好看得见宝石落地、还没来得及决定要不要过去，它就自己飞过来了。
+const CLEAR_MAGNET_DELAY: float = 1.5
+var _cleared_grace: float = 0.0
+
+## 同屏存活数的取样缓存。
+## enemies_alive 这个计数器在换房时会对不上——残留敌人是被 main 直接
+## queue_free 的，不走 _die，计数只增不减；一旦虚高到同屏上限就再也不刷怪。
+## 所以"能不能再刷"一律以场上真实节点数为准，每 0.5 秒取一次样（不逐帧扫组）。
+var _alive_probe_timer: float = 0.0
+var _alive_probe_cache: int = 0
+
+func _alive_enemies() -> int:
+	_alive_probe_timer -= get_process_delta_time()
+	if _alive_probe_timer <= 0.0:
+		_alive_probe_timer = 0.5
+		_alive_probe_cache = get_tree().get_nodes_in_group("enemies").size()
+	return _alive_probe_cache
+
+func _can_spawn_more() -> bool:
+	## 同屏上限判定的唯一入口（测试也走这里断言，别在两处写两份条件）
+	return _alive_enemies() < GameConfig.get_enemy_alive_cap(floor_index)
 ## 数量倍率的小数累积：按"应发总量 vs 实发总量"对齐。
 ## 早期写法是每次留小数余量再相加，浮点误差会累积（10 批本该 24 只，实测 23）。
 ## 对齐总量后误差不会跨批累积，且每批与理论值最多差 1 只。
@@ -73,6 +96,11 @@ func start(player_node: Node2D) -> void:
 	is_active = true
 	# 每间战斗房重新计时：开局先给 FIRST_DELAY 的缓冲，别让第一波就地上躺一个
 	_powerup_timer = GameConfig.POWERUP_INTERVAL - GameConfig.POWERUP_FIRST_DELAY
+	# 换房时残留敌人是被 main 直接释放的，不走 _die，计数只会多不会少。
+	# 这里清一次，避免上一间的余额带到下一间（同屏上限以真实节点数为准，这是第二道保险）。
+	enemies_alive = 0
+	_alive_probe_timer = 0.0
+	_alive_probe_cache = 0
 	_start_next_wave()
 
 func set_floor(index: int, pool: Array = [], rooms_cleared_in_floor: int = 0) -> void:
@@ -103,11 +131,13 @@ func _process(delta: float) -> void:
 	wave_timer += delta
 	spawn_timer += delta
 	
-	# 生成敌人
+	# 生成敌人。同屏上限优先于刷新节奏：
+	# 满了就不再补，掉一只才补一只（压力持续，但不会越堆越多）。
 	var current_interval := _get_spawn_interval()
 	if spawn_timer >= current_interval:
 		spawn_timer = 0.0
-		_spawn_enemy()
+		if _can_spawn_more():
+			_spawn_enemy()
 
 	# 战斗内增益：按房间计时，不跟着波次走（波次结束到下一波之间也要有机会）
 	if GameConfig.POWERUP_ENABLED:
@@ -115,6 +145,17 @@ func _process(delta: float) -> void:
 		if _powerup_timer >= GameConfig.POWERUP_INTERVAL:
 			_powerup_timer = 0.0
 			_spawn_powerup()
+
+	# 清场即回收：怪已经打光、但波次计时还没走完时，先把地上的宝石吸回来。
+	# 之前只在 30 秒到点那一刻才磁吸，导致"前 10 秒就清完场，剩下 20 秒
+	# 宝石躺在地上没人敢去捡"——这正是"来不及捡经验"的体感来源之一。
+	if _alive_enemies() <= 0 and get_tree().get_nodes_in_group("xp_gems").size() > 0:
+		_cleared_grace += delta
+		if _cleared_grace >= CLEAR_MAGNET_DELAY:
+			_cleared_grace = 0.0
+			magnetize_xp_gems()
+	else:
+		_cleared_grace = 0.0
 	
 	# 检查波次结束
 	if wave_timer >= wave_duration:
@@ -124,6 +165,7 @@ func _start_next_wave() -> void:
 	current_wave += 1
 	wave_timer = 0.0
 	spawn_timer = 0.0
+	_cleared_grace = 0.0
 	_update_soft_hp_scale()
 
 	# 清除所有经验宝石
@@ -191,7 +233,14 @@ func _end_current_wave() -> void:
 func _get_spawn_interval() -> float:
 	# 每波生成速度加快
 	var interval := base_spawn_interval - (current_wave - 1) * GameConfig.WAVE_SPAWN_INTERVAL_DECREASE
-	return maxf(interval, min_spawn_interval)
+	interval = maxf(interval, min_spawn_interval)
+	# 接近同屏上限时把补怪节奏放慢一倍。
+	# 不限速的话，场上将满时每一批都在"填缝"，玩家刚清出的一条退路
+	# 会被立刻补上，体感就是"没地方跑"。
+	var cap: int = GameConfig.get_enemy_alive_cap(floor_index)
+	if _alive_enemies() >= cap - GameConfig.ENEMY_ALIVE_CAP_SOFT_RANGE:
+		interval *= 2.0
+	return interval
 
 func _get_enemies_per_spawn() -> int:
 	# 每波同时生成更多敌人。

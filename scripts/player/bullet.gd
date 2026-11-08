@@ -17,8 +17,8 @@ var distance_traveled: float = 0.0
 ## 弹道颜色（由武器决定，决定发光色）
 @export var visual_color: Color = Color(1.0, 0.87, 0.35)
 ## 视觉长度/厚度（像素）。比碰撞体略大，看着就"打得中"
-@export var visual_length: float = 16.0
-@export var visual_thickness: float = 6.0
+@export var visual_length: float = 18.0
+@export var visual_thickness: float = 9.0
 ## 是否圆形弹（法术球用）
 @export var visual_round: bool = false
 
@@ -41,7 +41,7 @@ func _setup_visuals() -> void:
 	# 统一走"亮芯+柔光"外观：早期 8x8 白方块在混战里基本看不见
 	apply_visual_style(visual_color, visual_length, visual_thickness, visual_round)
 
-func apply_visual_style(color: Color, length: float = 16.0, thickness: float = 6.0, round_shape: bool = false) -> void:
+func apply_visual_style(color: Color, length: float = 18.0, thickness: float = 9.0, round_shape: bool = false) -> void:
 	## 由武器管理器在每次发射时调用（对象池复用的子弹不会重跑 _ready）
 	visual_color = color
 	visual_length = length

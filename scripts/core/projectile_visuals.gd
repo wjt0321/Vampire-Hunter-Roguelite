@@ -29,7 +29,9 @@ static func get_bolt_texture() -> Texture2D:
 	var img := Image.create(BOLT_W, BOLT_H, false, Image.FORMAT_RGBA8)
 	var center := Vector2(BOLT_W * 0.5, BOLT_H * 0.5)
 	var core_half_len := BOLT_W * 0.25      # 亮芯占中间一半宽度
-	var core_radius := BOLT_H * 0.16        # 亮芯厚度
+	# 亮芯厚度占比：0.16 时一根 6px 的子弹只有不到 2px 是实心的（试玩反馈"太细看不清"）。
+	# 提到 0.30 后同样的 6px 有 3.6px 实心，光晕仍在外圈，不会糊成一块。
+	var core_radius := BOLT_H * 0.30        # 亮芯厚度
 	var halo_radius := BOLT_H * 0.48        # 光晕外缘
 	for y in BOLT_H:
 		for x in BOLT_W:

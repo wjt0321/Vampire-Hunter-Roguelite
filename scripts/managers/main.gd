@@ -275,6 +275,9 @@ func _on_wave_completed(wave_number: int) -> void:
 	# 每完成一波后出现传送门
 	if current_room != null and not current_room.portal_spawned:
 		current_room.spawn_portal()
+	# 波次标签别继续挂着 "Wave N" 让人以为还有活怪——写明已清
+	if hud and hud.has_method("set_wave_status"):
+		hud.set_wave_status("Wave %d 已清 · 走传送门" % wave_number, true)
 
 func _on_portal_entered() -> void:
 	# 播放传送音效
@@ -335,6 +338,17 @@ func _enter_next_room(autostart: bool = true) -> String:
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
 	if ach_mgr:
 		ach_mgr.update_rooms(rooms_cleared)
+
+	# 非战斗房没有波次：把 HUD 的波次标签换成房间名。
+	# 否则进了宝箱房，标签还挂着上一波的 "Wave 4"，房间却空的（试玩反馈）
+	if room_type != "combat" and hud and hud.has_method("set_wave_status"):
+		var wave_text: Dictionary = {
+			"shop": "商 店",
+			"treasure": "宝 箱",
+			"rest": "休 息",
+			"boss": "BOSS",
+		}
+		hud.set_wave_status(String(wave_text.get(room_type, "—")))
 
 	# 处理特殊房间
 	match room_type:
@@ -416,10 +430,15 @@ func _enter_treasure_room() -> void:
 		var weapon_script = preload("res://scripts/weapons/weapon_manager.gd")
 		var weapons := [weapon_script.create_shotgun, weapon_script.create_magic_book]
 		if slots_full:
-			# 武器槽已满：改为给经验奖励，避免绕过槽位限制无限堆武器
-			print("🎁 武器槽已满，宝箱转化为经验")
+			# 武器槽已满：改为给经验 + 银币，避免绕过槽位限制无限堆武器。
+			# 只给经验时玩家进房看到的是"空房间 + 一句提示"，体感等于白跑一间；
+			# 补一份银币，这个房间至少有实打实的东西可拿。
+			print("🎁 武器槽已满，宝箱转化为 经验 + 银币")
 			if is_instance_valid(player):
 				player.gain_xp(80)
+				player.add_silver(40)
+			if hud and hud.has_method("set_wave_status"):
+				hud.set_wave_status("宝 箱 · 已转化为 经验+80 银币+40", true)
 		else:
 			var factory: Callable = weapons.pick_random()
 			weapon_manager.add_weapon(factory.call())

@@ -143,6 +143,30 @@ const WAVE_SPAWN_INTERVAL_DECREASE: float = 0.04
 const WAVE_MAX_SPAWN_COUNT: int = 5
 # 注：Boss 不再按固定波次触发，改由地下城结构决定（每层最后一间房）
 
+## 同屏存活上限（按层）。
+##
+## 为什么必须要有：试玩反馈「从 wave5 开始怪扎堆，甚至没有地方跑了」。
+## 之前完全没有任何上限——每 1.1~1.3 秒刷一批、每批 3~4 只，一波 30 秒就是
+## 70~90 只；玩家 DPS 又清不完，于是场上越堆越多，1280×720 的房间里
+## 最后连一条缝都没有。这是"数量曲线"和"击杀速度"脱钩导致的。
+##
+## 有上限之后，压力由"同时在场的敌人"决定而不是"累计刷了多少"：
+## 杀得快→补得快（压力持续），杀得慢→不再加码（不会雪崩到动不了）。
+## 数值参考：屏幕 1280×720、玩家速度 200，同屏 16 只时还能绕着走；
+## 22 只开始吃走位；28 只是"满屏但仍有缝"的上限。
+const ENEMY_ALIVE_CAP_BY_FLOOR: Array = [16, 22, 28]
+## 距离上限还剩几只时开始放慢补怪节奏（避免"刚杀一只立刻顶上"的窒息感）
+const ENEMY_ALIVE_CAP_SOFT_RANGE: int = 4
+
+## 满级后「伤害提升」补给卡的攻击倍率增幅。
+## ⚠ 预览文案和真正生效必须用同一个常量：之前预览读 UPGRADE_DAMAGE_MULT（0.20）、
+## 实际只加 0.10，卡片承诺的和玩家拿到的对不上，属于最伤信任的一类 bug。
+const BASIC_REWARD_DAMAGE: float = 0.10
+
+static func get_enemy_alive_cap(floor_index: int) -> int:
+	var idx: int = clampi(floor_index - 1, 0, ENEMY_ALIVE_CAP_BY_FLOOR.size() - 1)
+	return int(ENEMY_ALIVE_CAP_BY_FLOOR[idx])
+
 # ==================== 地下城结构 ====================
 
 const DUNGEON_FLOOR_COUNT: int = 3        # 总层数
@@ -345,7 +369,7 @@ const GROUND_MARKER_DURATION: float = 0.6
 
 const ELITE_AFFIX_ENABLED: bool = true
 ## 每层精英词缀的出现概率（逐层递增）
-const ELITE_AFFIX_CHANCE_BY_FLOOR: Array = [0.08, 0.14, 0.18]
+const ELITE_AFFIX_CHANCE_BY_FLOOR: Array = [0.05, 0.13, 0.18]
 ## 每层允许出现的词缀池。
 ##
 ## 试玩反馈第一句就是「怎么第一关小怪就有护盾啊」——第 1 层原本 10% 概率随机四选一，
@@ -386,7 +410,10 @@ const AFFIX_CHARGE_FIRST_DELAY: float = 1.6
 
 ## 急速光环：半径、加速倍率、刷新间隔、单次持续时间
 const AFFIX_HASTE_RADIUS: float = 150.0
-const AFFIX_HASTE_MULT: float = 1.30
+## 1.30 时蝙蝠 140 → 182，几乎贴上玩家 200 的跑速，被迫一直后撤、腾不出手捡宝石
+## （试玩反馈「怪初始移动速度有些过快，来不及捡经验」）。1.18 后是 165，
+## 追得上但追不死，玩家还有"回头捡一下"的余量。
+const AFFIX_HASTE_MULT: float = 1.18
 const AFFIX_HASTE_TICK: float = 0.4
 const AFFIX_HASTE_DURATION: float = 0.75
 

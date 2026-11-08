@@ -20,6 +20,18 @@ func _check(cond: bool, msg: String) -> void:
 		print("  ❌ %s" % msg)
 		_fail += 1
 
+func _wait_until(pred: Callable, timeout: float = 2.0) -> bool:
+	## 轮询等待条件成立，而不是写死 await create_timer(0.5)。
+	## headless 下"0.5 秒"里到底推进了几个物理帧并不稳定，
+	## 写死秒数会让同一份代码有时绿有时红（这条曾经误报过一次）。
+	## 用真实时钟计时——SceneTree 没有帧 delta 可读，别拿帧数当秒数。
+	var deadline: int = Time.get_ticks_msec() + int(timeout * 1000.0)
+	while Time.get_ticks_msec() < deadline:
+		if bool(pred.call()):
+			return true
+		await process_frame
+	return bool(pred.call())
+
 func _finish() -> void:
 	paused = false
 	print("")
@@ -172,8 +184,14 @@ func _run() -> void:
 	var g1 = gem_scene.instantiate()
 	g1.global_position = player.global_position + Vector2(110, 0)
 	current_scene.add_child(g1)
-	await create_timer(0.5).timeout
 	paused = false
+	var g1_pulled := func() -> bool:
+		if not is_instance_valid(g1) or not g1.is_inside_tree():
+			return true
+		if int(g1.get("xp_value")) <= 0:
+			return true
+		return g1.global_position.distance_to(player.global_position) < 60.0
+	await _wait_until(g1_pulled, 3.0)
 	_check(not is_instance_valid(g1) or not g1.is_inside_tree() or int(g1.get("xp_value")) <= 0
 		or g1.global_position.distance_to(player.global_position) < 60.0,
 		"110px 处的宝石被吸附并贴近玩家")
