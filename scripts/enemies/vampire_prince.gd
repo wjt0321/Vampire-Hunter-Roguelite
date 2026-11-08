@@ -148,6 +148,7 @@ func take_damage(amount: float) -> void:
 	
 	current_hp -= amount
 	_flash_hit()
+	_after_damage_taken(amount)
 	
 	if current_hp <= 0:
 		_die()

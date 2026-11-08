@@ -41,9 +41,23 @@ var affix_shield_hp: float = 0.0
 ## 裂变体用：禁止继承词缀，否则会无限裂变
 var suppress_affix: bool = false
 
-## 急速光环用：记录被加速前的移速，到期还回去
-var _move_speed_base: float = -1.0
-var _haste_token: int = 0
+## 移速修正的唯一出口（急速光环 / 霜缚减速都改这里，不要直接写 move_speed）。
+## 谁先写谁就赢——以前急速用 `move_speed = base * mult` 再 await 还原本，
+## 一旦中间被减速改过，两个效果会互相覆盖成"永久变慢"或"永久变快"。
+var _speed_base: float = -1.0
+var _haste_remaining: float = 0.0
+var _slow_mult: float = 1.0
+var _slow_remaining: float = 0.0
+
+# === 持续状态（流血） ===
+## 每秒流血伤害
+var bleed_dps: float = 0.0
+## 剩余时间
+var bleed_remaining: float = 0.0
+## tick 计时，每 BLEED_TICK 秒结算一次
+var _bleed_tick_timer: float = 0.0
+## 状态特效的内部冷却：高攻速武器每发都会命中，不加这个会 20 只怪同时滴血喷粒子
+var _status_vfx_cd: float = 0.0
 
 # 冻结状态
 var is_frozen: bool = false
@@ -101,22 +115,121 @@ func _attach_affix_controller() -> void:
 
 func apply_haste(duration: float) -> void:
 	## 急速光环：临时提速，到期自动还回原速。
-	## 用计时协程而不是每帧轮询——被加速的可能是二十只怪，没必要让它们各自跑逻辑。
+	## 走"记剩余时间 + 统一刷新"，不再用 await 协程：
+	## 一是被加速的可能是二十只怪，没必要各自挂一个协程；
+	## 二是和霜缚减速叠加时，协程的"还原成原速"会把减速一起抹掉。
 	if is_dead:
 		return
-	if _move_speed_base < 0.0:
-		_move_speed_base = move_speed
-	move_speed = _move_speed_base * GameConfig.AFFIX_HASTE_MULT
-	_haste_token += 1
-	var token := _haste_token
-	await get_tree().create_timer(duration).timeout
-	if not is_instance_valid(self) or is_dead:
+	_haste_remaining = maxf(_haste_remaining, duration)
+	_refresh_speed()
+
+func apply_slow(mult: float, duration: float) -> void:
+	## 霜缚减速：move_speed 乘以 mult（<1）。Boss 有抗性，否则控到死。
+	if is_dead or mult >= 1.0:
 		return
-	if token != _haste_token:
-		return  # 期间被重新加速过，让最新的那个负责复原
-	if _move_speed_base > 0.0:
-		move_speed = _move_speed_base
-		_move_speed_base = -1.0
+	if is_in_group("boss"):
+		mult = lerpf(1.0, mult, GameConfig.SLOW_BOSS_RESIST)
+	# 多个来源取最强的那个，不做相乘——相乘会让两次减速变成 0.49，直接冻死
+	_slow_mult = minf(_slow_mult, mult) if _slow_remaining > 0.0 else mult
+	_slow_remaining = maxf(_slow_remaining, duration)
+	_refresh_speed()
+
+func _refresh_speed() -> void:
+	## 移速 = 基础 × 急速 × 减速。所有修正都从这里出去。
+	if _speed_base <= 0.0:
+		_speed_base = move_speed
+	var s := _speed_base
+	if _haste_remaining > 0.0:
+		s *= GameConfig.AFFIX_HASTE_MULT
+	if _slow_remaining > 0.0:
+		s *= _slow_mult
+	move_speed = s
+
+func apply_bleed(dps: float, duration: float) -> void:
+	## 流血：不叠层，取"更强的那一次"并刷新时间。
+	## 叠层会让高攻速武器把流血堆成主要伤害来源，武器本身反而变成引信。
+	if is_dead or dps <= 0.0:
+		return
+	# 弱流血既不叠层、也不续时间。
+	# 只做 max() 但不拦时间的话，一把高频小弹能把"十字弩打出来的高伤流血"永久续着，
+	# 等于免费获得了不属于它的收益。
+	if dps < bleed_dps:
+		return
+	bleed_dps = dps
+	bleed_remaining = maxf(bleed_remaining, duration)
+	if _bleed_tick_timer <= 0.0:
+		_bleed_tick_timer = GameConfig.BLEED_TICK
+
+func is_bleeding() -> bool:
+	return bleed_remaining > 0.0 and bleed_dps > 0.0
+
+func _process(delta: float) -> void:
+	## 状态 tick 放 _process 而不放 _physics_process：
+	## 有一半敌人（bat 之外的 werewolf / zombie / 弓箭手…）自己覆写了 _physics_process，
+	## 基类的物理帧对它们根本不会执行，状态会静默失效。
+	## 目前没有任何子类覆写 _process，所以这里是安全的。
+	if is_dead:
+		return
+	if _status_vfx_cd > 0.0:
+		_status_vfx_cd -= delta
+	_tick_speed_decay(delta)
+	_tick_bleed(delta)
+
+func _tick_speed_decay(delta: float) -> void:
+	if _haste_remaining > 0.0:
+		_haste_remaining -= delta
+		if _haste_remaining <= 0.0:
+			_haste_remaining = 0.0
+			_refresh_speed()
+	if _slow_remaining > 0.0:
+		_slow_remaining -= delta
+		if _slow_remaining <= 0.0:
+			_slow_remaining = 0.0
+			_slow_mult = 1.0
+			_refresh_speed()
+
+func _tick_bleed(delta: float) -> void:
+	if bleed_remaining <= 0.0:
+		return
+	bleed_remaining -= delta
+	_bleed_tick_timer -= delta
+	if _bleed_tick_timer > 0.0:
+		return
+	_bleed_tick_timer = GameConfig.BLEED_TICK
+	dot_damage(bleed_dps * GameConfig.BLEED_TICK)
+	# 一滴血点，够看出"它在流血"，又不至于二十只怪时糊屏
+	var vfx := _get_vfx()
+	if vfx and is_instance_valid(sprite):
+		vfx.spawn_hit_particles(global_position + Vector2(0, 6), Color(0.85, 0.12, 0.16), 1)
+	if bleed_remaining <= 0.0:
+		bleed_dps = 0.0
+
+func dot_damage(amount: float) -> void:
+	## 持续伤害（流血）的统一入口。
+	## 刻意不走 take_damage：
+	##   1. take_damage 每次都闪白 + 触发"打中了"的冻帧，每 0.5 秒闪一次会把
+	##      "这怪在流血"和"我刚打中它"完全混淆；
+	##   2. 自爆鬼的 take_damage 里有"血量低于 30% 提前引爆"，流血把它推过线也算合理，
+	##      但那属于子类语义 —— 这里用鸭子类型补上真正必须保留的两条（护甲 / 无敌）。
+	if is_dead or amount <= 0.0:
+		return
+	# 子类独有的"不可伤害"状态：登场无敌的 Boss、石化中的石像鬼。
+	# 必须用 get() 读，直接写标识符会让基类解析失败（这些字段只在子类里声明）。
+	if "intro_invulnerable" in self and bool(get("intro_invulnerable")):
+		return
+	if "is_petrified" in self and bool(get("is_petrified")):
+		return
+	var actual := amount
+	if "armor" in self:
+		actual *= 1.0 - GameConfig.calculate_damage_reduction(float(get("armor")))
+	current_hp -= actual
+	# Boss 的血条不刷新会显示成"打完没掉血"（take_damage 的 4 个覆写里这个是漏得最多的）。
+	# 用 emit_signal 而不是直接写 boss_hp_changed.emit —— 基类没有声明这个信号，
+	# 直接引用会让整个 EnemyBase 解析失败（连带所有子类一起炸）。
+	if has_signal("boss_hp_changed"):
+		emit_signal("boss_hp_changed", current_hp, max_hp)
+	if current_hp <= 0.0:
+		_die()
 
 func _apply_wave_scaling() -> void:
 	## 根据生成波次与所在楼层缩放敌人属性
@@ -215,8 +328,43 @@ func take_damage(amount: float) -> void:
 	current_hp -= amount
 	_apply_hit_freeze()
 	_flash_hit()
+	_after_damage_taken(amount)
 	if current_hp <= 0:
 		_die()
+
+func _after_damage_taken(amount: float) -> void:
+	## 玩家侧的状态修饰器（流血 / 霜缚 / 汲取）统一在这里落地。
+	## 放在"受击方"而不是"每个命中点"：玩家的伤害来源有六处
+	## （子弹 / 飞刀 / 闪电链 / 毒云 / 环绕刃 / 武器 AOE），逐个打点必然漏掉后加的武器。
+	if is_dead or current_hp <= 0.0 or amount <= 0.0:
+		return
+	var p := player
+	if p == null or not is_instance_valid(p):
+		return
+	if not ("bleed_chance" in p):
+		return  # 玩家脚本没这套字段（例如测试用的假玩家），直接跳过
+
+	# 汲取：按"这一下打出多少"结算，和击杀吸血的语义不同
+	# Godot 4 的 Object.get() 只吃一个参数（没有默认值重载），所以先判存在再取
+	var drain: float = float(p.get("drain_ratio")) if "drain_ratio" in p else 0.0
+	if drain > 0.0 and p.has_method("on_dealt_damage"):
+		p.on_dealt_damage(amount * drain)
+
+	if _status_vfx_cd > 0.0:
+		return
+	var applied := false
+	var bleed_chance: float = float(p.get("bleed_chance"))
+	if bleed_chance > 0.0 and randf() < bleed_chance:
+		apply_bleed(amount * GameConfig.BLEED_DPS_RATIO, GameConfig.BLEED_DURATION)
+		applied = true
+	var slow_chance: float = float(p.get("slow_chance"))
+	if slow_chance > 0.0 and randf() < slow_chance:
+		apply_slow(GameConfig.SLOW_MULT, GameConfig.SLOW_DURATION)
+		applied = true
+	if applied:
+		# 高攻速下每发都判定的话，这两个状态会一直是满覆盖率，
+		# 既是数值失控也是屏幕负担 —— 同一敌人 0.3 秒内只判一次
+		_status_vfx_cd = GameConfig.STATUS_VFX_COOLDOWN
 
 func _apply_hit_freeze() -> void:
 	## 命中冻帧：让受击者停 0.05 秒，给"打中了"一个物理层面的确认。
@@ -233,6 +381,7 @@ func take_damage_with_knockback(amount: float, knockback_dir: Vector2, knockback
 	hit_stun_timer = maxf(hit_stun_timer, maxf(stun_duration, GameConfig.HIT_FREEZE_DURATION))
 	knockback_velocity += knockback_dir.normalized() * knockback_force
 	_flash_hit()
+	_after_damage_taken(amount)
 	if current_hp <= 0:
 		_die()
 
@@ -270,6 +419,8 @@ func _die() -> void:
 	# 禁用碰撞
 	collision_shape.set_deferred("disabled", true)
 	set_physics_process(false)
+	# 状态 tick 也一起停：死后还在扣流血会重复走 _die 的判定链
+	set_process(false)
 	# 死亡动画
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate:a", 0.0, 0.2)

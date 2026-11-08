@@ -571,6 +571,7 @@ func take_damage(amount: float) -> void:
 		_die()
 		return
 	_flash_hit()
+	_after_damage_taken(amount)
 
 func take_damage_with_knockback(amount: float, _knockback_dir: Vector2, _knockback_force: float = 120.0, _stun_duration: float = 0.08) -> void:
 	## Boss 免疫击退与硬直，但伤害必须走血条刷新。
@@ -586,6 +587,7 @@ func take_damage_with_knockback(amount: float, _knockback_dir: Vector2, _knockba
 		_die()
 		return
 	_flash_hit()
+	_after_damage_taken(amount)
 
 func _die() -> void:
 	if is_dead:

@@ -92,6 +92,13 @@ var lifesteal_amount: float = 0.03  # 吸血量（最大生命百分比）
 var move_speed_bonus_multiplier: float = 0.0  # 疾风靴移速加成
 var crit_chance: float = 0.0  # 幸运四叶草暴击几率
 var crit_damage: float = 2.0  # 暴击伤害倍率
+# 状态修饰器（17.13）：这三个字段由敌人基类的 _after_damage_taken 读取，
+# 所以任何武器、任何伤害来源都自动生效，不需要在武器里逐个接线。
+var bleed_chance: float = 0.0  # 血刃：命中时流血几率
+var slow_chance: float = 0.0  # 霜缚：命中时减速几率
+var drain_ratio: float = 0.0  # 汲取：伤害转治疗比例
+## 汲取的零头水池：攒够 DRAIN_HEAL_THRESHOLD 才回一次血
+var _drain_pool: float = 0.0
 
 # === 角色特性 ===
 var character_id: String = "hunter"
@@ -583,6 +590,29 @@ func _apply_passive_effect(item) -> void:
 			move_speed_bonus_multiplier = item.get_scaled_value()
 		10: # CLOVER
 			crit_chance = minf(item.get_scaled_value(), GameConfig.PASSIVE_MAX_CRIT)
+		11: # BLEED
+			bleed_chance = minf(item.get_scaled_value(), GameConfig.PASSIVE_MAX_BLEED_CHANCE)
+		12: # SLOW
+			slow_chance = minf(item.get_scaled_value(), GameConfig.PASSIVE_MAX_SLOW_CHANCE)
+		13: # DRAIN
+			drain_ratio = minf(item.get_scaled_value(), GameConfig.PASSIVE_MAX_DRAIN)
+
+func on_dealt_damage(amount: float) -> void:
+	## 汲取的入账口。由敌人基类在每次受伤时回调。
+	## 刻意不走 heal()：那会播治疗音效，高频武器等于持续"漏水声"。
+	## 零头先攒着，攒够阈值再结算一次，血量变化看得清也有节奏。
+	if drain_ratio <= 0.0 or amount <= 0.0:
+		return
+	_drain_pool += amount * drain_ratio
+	if _drain_pool < GameConfig.DRAIN_HEAL_THRESHOLD:
+		return
+	var gain: float = floorf(_drain_pool)
+	_drain_pool -= gain
+	if current_hp >= max_hp:
+		_drain_pool = 0.0
+		return
+	current_hp = clampf(current_hp + gain, 0.0, max_hp)
+	hp_changed.emit(current_hp, max_hp)
 
 func get_owned_passive_items() -> Array[String]:
 	## 获取已拥有的被动道具ID列表

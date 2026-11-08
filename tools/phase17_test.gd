@@ -59,6 +59,9 @@ func _run() -> void:
 	print("====== Phase 17.2~17.5 回归测试 ======")
 
 	var main_scene = load("res://scenes/main.tscn").instantiate()
+	# 固定成猎人再进场景树：存档里选的角色会改变初始武器（女祭司是法球），
+	# 本套断言是围绕手枪开局写的，不固定就会因为"上次玩的是谁"而随机变红。
+	main_scene.debug_force_character = "hunter"
 	root.add_child(main_scene)
 	current_scene = main_scene
 	await create_timer(3.2).timeout

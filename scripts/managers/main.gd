@@ -29,6 +29,9 @@ var room_shop: CanvasLayer = null
 var blood_pact: CanvasLayer = null
 var rooms_cleared: int = 0
 var transition_overlay: ColorRect = null
+## 测试注入点：非空时忽略存档里选中的角色（见 _apply_selected_character）。
+## 必须在 add_child 之前赋值，因为 _ready 里就会读。
+var debug_force_character: String = ""
 ## 深渊契约：本层是否生效，以及被扣掉的生命上限绝对值（层末归还）
 var pact_active: bool = false
 var pact_hp_penalty: float = 0.0
@@ -147,7 +150,13 @@ func _apply_selected_character() -> String:
 	var selected_id := "hunter"
 	if save_mgr:
 		selected_id = save_mgr.get_selected_character()
-	
+	# 测试注入点：在 add_child 之前赋值即可覆盖存档里的角色。
+	## 为什么需要：回归测试是围绕猎人（手枪开局）写的，而玩家的存档随时可能是
+	## 女祭司（法球开局，且 base_speed / base_damage 都不同）。
+	## 测试一旦依赖"当前存档选了谁"，同一个提交会时绿时红 —— 这类失败最难查。
+	if debug_force_character != "":
+		selected_id = debug_force_character
+
 	var char_data = null
 	for c in CharacterDataScript.get_all_characters():
 		if c.char_id == selected_id:

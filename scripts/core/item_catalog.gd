@@ -31,6 +31,10 @@ const PASSIVES: Array = [
 	{"id": "vampiric_fang", "name": "吸血獠牙", "desc": "击杀时概率回血", "icon": "🦷", "type": "passive", "price": 26},
 	{"id": "swift_boots", "name": "疾风靴", "desc": "移动速度 +10%", "icon": "👟", "type": "passive", "price": 20},
 	{"id": "lucky_clover", "name": "幸运四叶草", "desc": "暴击几率 +8%", "icon": "🍀", "type": "passive", "price": 24},
+	# 17.13 状态修饰器：三个词条对"任意武器"生效，不需要逐把接线
+	{"id": "blood_edge", "name": "血刃", "desc": "命中 25% 几率使敌人流血", "icon": "刃", "type": "passive", "price": 26},
+	{"id": "frost_bind", "name": "霜缚", "desc": "命中 30% 几率使敌人减速", "icon": "霜", "type": "passive", "price": 24},
+	{"id": "blood_drain", "name": "汲取", "desc": "造成伤害的 2% 转为生命", "icon": "汲", "type": "passive", "price": 28},
 ]
 
 const STATS: Array = [
@@ -128,4 +132,10 @@ static func create_passive(id: String):
 			return P.create_swift_boots()
 		"lucky_clover":
 			return P.create_lucky_clover()
+		"blood_edge":
+			return P.create_blood_edge()
+		"frost_bind":
+			return P.create_frost_bind()
+		"blood_drain":
+			return P.create_blood_drain()
 	return null

@@ -8,7 +8,7 @@ extends Resource
 @export var icon_emoji: String = "📦"
 
 # 效果类型
-enum EffectType { MAGNET, SHIELD, REGENERATION, GREED, BERSERKER, FROZEN, LIGHTNING_SHIELD, SHADOW, VAMPIRIC, SWIFT, CLOVER }
+enum EffectType { MAGNET, SHIELD, REGENERATION, GREED, BERSERKER, FROZEN, LIGHTNING_SHIELD, SHADOW, VAMPIRIC, SWIFT, CLOVER, BLEED, SLOW, DRAIN }
 @export var effect_type: EffectType = EffectType.MAGNET
 
 # 基础数值
@@ -174,4 +174,48 @@ static func create_lucky_clover() -> Resource:
 	item.effect_type = EffectType.CLOVER
 	item.base_value = 0.08  # 基础8%暴击
 	item.value_per_level = 0.04  # 每级增加4%
+	return item
+
+# === 17.13 状态修饰器：挂在任意武器上的三个词条 ===
+
+static func create_blood_edge() -> Resource:
+	## 血刃 —— 命中时概率让敌人流血。伤害按"触发的那一下"折算，
+	## 所以它天生偏爱单发高伤的武器（十字弩 / 散弹），而不是高频小弹。
+	var script = preload("res://scripts/player/passive_item_data.gd")
+	var item = script.new()
+	item.item_id = "blood_edge"
+	item.item_name = "血刃"
+	item.description = "命中时概率使敌人流血"
+	item.icon_emoji = "刃"
+	item.effect_type = EffectType.BLEED
+	item.base_value = 0.25  # 基础25%触发
+	item.value_per_level = 0.08
+	return item
+
+static func create_frost_bind() -> Resource:
+	## 霜缚 —— 命中时概率减速。唯一能"改变敌人到位时间"的修饰器，
+	## 对冲锋怪和围上来的近战最有用。
+	var script = preload("res://scripts/player/passive_item_data.gd")
+	var item = script.new()
+	item.item_id = "frost_bind"
+	item.item_name = "霜缚"
+	item.description = "命中时概率使敌人减速"
+	item.icon_emoji = "霜"
+	item.effect_type = EffectType.SLOW
+	item.base_value = 0.30
+	item.value_per_level = 0.07
+	return item
+
+static func create_blood_drain() -> Resource:
+	## 汲取 —— 造成的伤害按比例回血。和"吸血獠牙"（击杀概率回血）不重复：
+	## 那个奖励的是清场，这个奖励的是持续输出（打 Boss / 打高血量精英）。
+	var script = preload("res://scripts/player/passive_item_data.gd")
+	var item = script.new()
+	item.item_id = "blood_drain"
+	item.item_name = "汲取"
+	item.description = "造成的伤害按比例转为生命"
+	item.icon_emoji = "汲"
+	item.effect_type = EffectType.DRAIN
+	item.base_value = 0.02  # 基础 2% 伤害转治疗
+	item.value_per_level = 0.008
 	return item

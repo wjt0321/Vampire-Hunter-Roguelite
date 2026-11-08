@@ -56,7 +56,10 @@ static func get_orb_texture() -> Texture2D:
 		return _orb_texture
 	var img := Image.create(ORB_SIZE, ORB_SIZE, false, Image.FORMAT_RGBA8)
 	var center := Vector2(ORB_SIZE * 0.5, ORB_SIZE * 0.5)
-	var core_radius := ORB_SIZE * 0.16
+	# 和长条弹同理：0.16 时一枚 10px 的法球只有 1.6px 是实心的，
+	# 屏幕上就是一团雾，玩家判断不了"它到底在哪"。
+	# 0.32 让实心直径 ≈ 视觉尺寸的 64%，光晕仍在外圈负责"发光"。
+	var core_radius := ORB_SIZE * 0.32
 	var halo_radius := ORB_SIZE * 0.5
 	for y in ORB_SIZE:
 		for x in ORB_SIZE:

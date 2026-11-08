@@ -124,6 +124,7 @@ func take_damage(amount: float) -> void:
 	
 	current_hp -= amount
 	_flash_hit()
+	_after_damage_taken(amount)
 	
 	# 受伤时如果还没开始引爆，有概率提前引爆
 	if not is_detonating and current_hp <= max_hp * 0.3:

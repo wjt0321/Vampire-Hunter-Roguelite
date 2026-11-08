@@ -127,6 +127,11 @@ func _decorate_option(option: Dictionary) -> Dictionary:
 				opt["badge"] = "NEW"
 				opt["badge_color"] = Color(0.42, 0.95, 0.58)
 				opt["level_text"] = "新被动 · Lv.1"
+				# 新拿到的也写明幅度：只写"命中时概率流血"等于没告诉你多大概率
+				var fresh = ItemCatalog.create_passive(opt_id)
+				if fresh != null:
+					opt["desc"] = _passive_value_text(opt_id,
+						fresh.get_scaled_value_at(1), fresh.get_scaled_value_at(2))
 			else:
 				var cur: int = int(p.current_level)
 				opt["badge"] = "升级"
@@ -176,6 +181,12 @@ func _passive_value_text(passive_id: String, cur_value: float, next_value: float
 			return "反击 %.0f → %.0f 伤害" % [cur_value, next_value]
 		"magnet":
 			return "吸附范围 +%.0f%% → +%.0f%%" % [(cur_value - 1.0) * 100.0, (next_value - 1.0) * 100.0]
+		"blood_edge":
+			return "流血几率 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
+		"frost_bind":
+			return "减速几率 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
+		"blood_drain":
+			return "伤害转治疗 %.1f%% → %.1f%%" % [cur_value * 100.0, next_value * 100.0]
 		_:
 			return "效果 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
 

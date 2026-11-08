@@ -341,6 +341,38 @@ const BLOOD_PACT_MIN_HP_RATIO: float = 0.30
 const MUZZLE_FLASH_DURATION: float = 0.06
 ## 命中冻帧：只冻受击的敌人，绝不用 Engine.time_scale（会冻住整个游戏）
 const HIT_FREEZE_DURATION: float = 0.05
+
+# ==================== 状态修饰器（17.13） ====================
+# 三个修饰器都挂在"任意武器"上：玩家的六处伤害来源都会经过
+# EnemyBase._after_damage_taken，不需要每把武器单独接线。
+
+## 流血：每秒伤害 = 触发那次命中伤害 × 该比例（不叠层，取更强的那次）
+## 0.30 × 2.5 秒 = 一次命中的 0.75 倍总伤，够形成"要不要补流血"的取舍，
+## 又不至于让流血盖过武器本身（叠层会，所以刻意没做叠层）。
+const BLEED_DPS_RATIO: float = 0.30
+const BLEED_DURATION: float = 2.5
+## 流血结算间隔。0.5 秒既省性能，也让"每跳掉一截"看得清
+const BLEED_TICK: float = 0.5
+
+## 霜缚：移速乘数 / 持续时间
+## 0.70 而不是 0.5：减速的目的是"让它晚半个身位到位"，不是控到死
+const SLOW_MULT: float = 0.70
+const SLOW_DURATION: float = 2.0
+## Boss 对减速的抗性（0 = 和普通怪一样，1 = 完全免疫）
+const SLOW_BOSS_RESIST: float = 0.6
+
+## 同一敌人两次状态判定之间的最小间隔。
+## 高攻速武器每发都命中，不设冷却的话流血/减速会永久满覆盖。
+const STATUS_VFX_COOLDOWN: float = 0.30
+
+## 汲取：每攒够这么多血才真回一次。
+## 直接按每点伤害调 heal() 会每帧播一次治疗音效，听起来像漏水。
+const DRAIN_HEAL_THRESHOLD: float = 2.0
+
+## 三个新被动的硬上限（get_scaled_value 已按等级递减，这里再兜一层）
+const PASSIVE_MAX_BLEED_CHANCE: float = 0.60
+const PASSIVE_MAX_SLOW_CHANCE: float = 0.55
+const PASSIVE_MAX_DRAIN: float = 0.06
 ## 玩家开火反馈：**纯视觉**挤压，绝不产生位移。
 ## 早期版本给的是向后的速度（60px/s，0.1s 衰减），实际观感是"人物每枪往回缩一下"，
 ## 用户明确反馈这是缺点。现在改成精灵沿竖直方向挤压 6% 再弹回，位置一律不动。

@@ -403,17 +403,17 @@ func get_projectile_visual(weapon_id: String) -> Dictionary:
 		"shotgun":
 			return {"color": Color(1.0, 0.62, 0.22), "length": 13.0, "thickness": 9.0, "round": false}
 		"magic_book":
-			return {"color": Color(0.72, 0.42, 1.0), "length": 16.0, "thickness": 10.0, "round": true}
+			return {"color": Color(0.72, 0.42, 1.0), "length": 18.0, "thickness": 14.0, "round": true}
 		"throwing_knife":
 			return {"color": Color(0.75, 0.9, 1.0), "length": 24.0, "thickness": 8.0, "round": false}
 		"crossbow":
 			return {"color": Color(1.0, 0.93, 0.55), "length": 28.0, "thickness": 9.0, "round": false}
 		"holy_wand":
-			return {"color": Color(1.0, 0.97, 0.72), "length": 16.0, "thickness": 10.0, "round": true}
+			return {"color": Color(1.0, 0.97, 0.72), "length": 18.0, "thickness": 14.0, "round": true}
 		"kunai":
 			return {"color": Color(0.62, 0.74, 1.0), "length": 18.0, "thickness": 8.0, "round": false}
 		"flame_thrower":
-			return {"color": Color(1.0, 0.44, 0.12), "length": 14.0, "thickness": 9.0, "round": true}
+			return {"color": Color(1.0, 0.44, 0.12), "length": 16.0, "thickness": 12.0, "round": true}
 	# 手枪 / 默认
 	return {"color": Color(1.0, 0.86, 0.35), "length": 18.0, "thickness": 9.0, "round": false}
 
