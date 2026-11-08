@@ -187,6 +187,11 @@ func _refresh_build(force: bool = false) -> void:
 			_add_build_row(String(p.icon_emoji), String(p.item_name),
 				int(p.current_level), max_lv)
 
+	# 难度软因子：只在真的被修正过时显示，开局写个 ×1.00 纯属噪音
+	var diff: float = _difficulty_scale()
+	if absf(diff - 1.0) > 0.02:
+		_add_build_hint("敌方强度 ×%.2f" % diff)
+
 func _build_signature_of() -> String:
 	## 轮询用：只有等级/数量变化才重建控件，避免每帧 new 一堆 Label
 	var parts: PackedStringArray = []
@@ -196,7 +201,17 @@ func _build_signature_of() -> String:
 	parts.append("|")
 	for p in player_ref.passive_items:
 		parts.append("%s:%d" % [String(p.item_id), int(p.current_level)])
+	parts.append("diff:%.2f" % _difficulty_scale())
 	return ",".join(parts)
+
+func _difficulty_scale() -> float:
+	## 波次管理器的难度软因子（1.00 = 无修正）。
+	## 显示它的理由：玩家杀不动时需要知道"是我构筑差"还是"系统把怪加强了"，
+	## 藏起来只会让人怀疑数值崩了。
+	var wm = get_tree().get_first_node_in_group("wave_manager")
+	if wm == null or not ("_soft_hp_scale" in wm):
+		return 1.0
+	return float(wm._soft_hp_scale)
 
 func _add_build_pact_row(text: String) -> void:
 	var lbl := Label.new()

@@ -42,6 +42,13 @@ var enemy_pool: Array = []   # 当前层允许出现的敌人类型；空则回�
 var spawn_count_mult: float = 1.0
 ## 掉落（银币/经验）倍率，生成时传给敌人
 var loot_mult: float = 1.0
+## 难度软因子：由外部 dps_provider 提供的实际 DPS 与等级期望值比出来
+var _soft_hp_scale: float = 1.0
+## 提供玩家当前 DPS 的回调（main 注入）。为空则不做软修正
+var dps_provider: Callable = Callable()
+
+## 战斗内增益的刷新计时
+var _powerup_timer: float = 0.0
 ## 数量倍率的小数累积：按"应发总量 vs 实发总量"对齐。
 ## 早期写法是每次留小数余量再相加，浮点误差会累积（10 批本该 24 只，实测 23）。
 ## 对齐总量后误差不会跨批累积，且每批与理论值最多差 1 只。
@@ -62,6 +69,8 @@ func start(player_node: Node2D) -> void:
 	player = player_node
 	_ensure_current_scene()
 	is_active = true
+	# 每间战斗房重新计时：开局先给 FIRST_DELAY 的缓冲，别让第一波就地上躺一个
+	_powerup_timer = GameConfig.POWERUP_INTERVAL - GameConfig.POWERUP_FIRST_DELAY
 	_start_next_wave()
 
 func set_floor(index: int, pool: Array = []) -> void:
@@ -96,6 +105,13 @@ func _process(delta: float) -> void:
 	if spawn_timer >= current_interval:
 		spawn_timer = 0.0
 		_spawn_enemy()
+
+	# 战斗内增益：按房间计时，不跟着波次走（波次结束到下一波之间也要有机会）
+	if GameConfig.POWERUP_ENABLED:
+		_powerup_timer += delta
+		if _powerup_timer >= GameConfig.POWERUP_INTERVAL:
+			_powerup_timer = 0.0
+			_spawn_powerup()
 	
 	# 检查波次结束
 	if wave_timer >= wave_duration:
@@ -105,12 +121,31 @@ func _start_next_wave() -> void:
 	current_wave += 1
 	wave_timer = 0.0
 	spawn_timer = 0.0
-	
+	_update_soft_hp_scale()
+
 	# 清除所有经验宝石
 	_clear_xp_gems()
 	
 	wave_started.emit(current_wave)
 	print("=== Wave %d 开始! ===" % current_wave)
+
+func _update_soft_hp_scale() -> void:
+	## 每波开始时重算一次"难度软因子"。放在波次边界而不是每次生成：
+	## 同一波内所有敌人血量一致，玩家不会看到"同一种怪血量忽高忽低"。
+	if not GameConfig.DPS_SOFT_ENABLED or dps_provider.is_null():
+		_soft_hp_scale = 1.0
+		return
+	var actual: float = float(dps_provider.call())
+	var level: int = 1
+	if player != null and is_instance_valid(player) and "current_level" in player:
+		level = int(player.current_level)
+	var target: float = GameConfig.get_dps_soft_scale(actual, level)
+	# 逐波靠拢，避免突然一波血条翻倍（突变比不准更伤体验）
+	var prev: float = _soft_hp_scale
+	_soft_hp_scale = lerpf(_soft_hp_scale, target, GameConfig.DPS_SOFT_LERP) if prev > 0.0 else target
+	if not is_equal_approx(prev, _soft_hp_scale):
+		print("⚖️ 难度软因子 %.2f（实际 DPS %.0f / 该等级期望 %.0f，Lv.%d）" % [
+			_soft_hp_scale, actual, GameConfig.get_expected_dps(level), level])
 
 func _clear_xp_gems() -> void:
 	## 清除所有经验宝石
@@ -161,6 +196,10 @@ func _spawn_enemy() -> void:
 		enemy.floor_index = floor_index
 		if "loot_mult" in enemy:
 			enemy.loot_mult = loot_mult
+		# 软因子走 hp_scale：enemy_base 在 _ready → _apply_wave_scaling 里乘它，
+		# 必须在 add_child 之前设好（这里正好是 instantiate 之后）
+		if "hp_scale" in enemy and not is_equal_approx(_soft_hp_scale, 1.0):
+			enemy.hp_scale *= _soft_hp_scale
 		_maybe_assign_affix(enemy)
 
 		# 在屏幕外随机位置生成
@@ -175,6 +214,25 @@ func _spawn_enemy() -> void:
 		_ensure_current_scene()
 		if _current_scene:
 			_current_scene.add_child(enemy)
+
+func _spawn_powerup() -> void:
+	## 在玩家四周随机方位刷一个临时增益。
+	## 位置刻意放 200~360px（约半个屏幕）：太近等于白送，太远玩家懒得去。
+	if player == null or not is_instance_valid(player):
+		return
+	_ensure_current_scene()
+	if _current_scene == null:
+		return
+
+	var node := Node2D.new()
+	node.set_script(preload("res://scripts/player/powerup.gd"))
+	node.kind = String(GameConfig.POWERUP_KINDS.pick_random())
+	node.lifetime = GameConfig.POWERUP_LIFETIME
+	_current_scene.add_child(node)
+
+	var angle: float = randf() * TAU
+	var radius: float = randf_range(200.0, 360.0)
+	node.global_position = player.global_position + Vector2(cos(angle), sin(angle)) * radius
 
 func _maybe_assign_affix(enemy: Node) -> void:
 	## 精英词缀：逐层提升概率。Boss 不参与（Boss 自己有三形态），

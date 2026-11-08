@@ -421,6 +421,25 @@ func is_weapon_evolved(weapon_id: String) -> bool:
 		return weapon_evolutions[weapon_id].is_evolved
 	return false
 
+func estimate_run_dps() -> float:
+	## 粗略估算当前构筑的理论 DPS（不含暴击，由调用方再乘）。
+	## 用途只有一个：给难度软挂钩当自变量，所以**只要单调、便宜**就够，
+	## 不需要精确——毒雾/闪电链/刀阵这类特殊行为用统一公式近似。
+	## 刻意不去统计真实伤害：take_damage 有 4 个子类覆写，打点必然漏，
+	## 而漏掉的伤害会让"玩家明明很强却被判成弱"。
+	var total: float = 0.0
+	for i in range(weapons.size()):
+		var w = weapons[i]
+		if w == null:
+			continue
+		var interval: float = maxf(float(w.get_scaled_fire_rate()), 0.05)
+		var per_cycle: float = float(w.get_scaled_damage()) * float(w.get_scaled_projectile_count())
+		var dps: float = per_cycle / interval
+		# 多武器收益递减，和实际伤害计算保持一致
+		dps *= GameConfig.get_weapon_damage_multiplier(i)
+		total += dps
+	return total
+
 func _fire_weapon(weapon) -> void:
 	if player == null or not is_instance_valid(player):
 		return

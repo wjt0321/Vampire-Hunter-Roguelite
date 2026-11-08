@@ -73,6 +73,8 @@ func _ready() -> void:
 	# 初始化 HUD
 	if hud.has_method("bind_run"):
 		hud.bind_run(player, weapon_manager)
+	# 难度软挂钩：把"玩家当前理论 DPS"喂给波次管理器，由它在每波边界算软因子
+	wave_manager.dps_provider = _estimate_player_dps
 	hud.update_hp(player.current_hp, player.max_hp)
 	hud.update_xp(player.current_xp, player.xp_to_next_level, player.current_level)
 	hud.update_silver(player.silver)
@@ -97,8 +99,22 @@ func _ready() -> void:
 		ach_mgr.start_new_run()
 	
 
+func _estimate_player_dps() -> float:
+	## 当前构筑的理论 DPS，供波次管理器做难度软挂钩。
+	## 只算"武器基础输出 × 伤害倍率 × 暴击期望"，不含场景加成：
+	## 软因子是慢变量，多算少算 10% 只影响它偏一点，不影响玩家感知。
+	if weapon_manager == null or player == null or not is_instance_valid(player):
+		return 0.0
+	var base: float = weapon_manager.estimate_run_dps()
+	base *= player.get_total_damage_multiplier()
+	# 暴击期望：暴击率 p、暴击倍率 m → 期望倍率 1 + p(m-1)
+	base *= 1.0 + player.crit_chance * (GameConfig.PLAYER_CRIT_DAMAGE - 1.0)
+	return base
+
+
 func _apply_permanent_upgrades() -> void:
 	## 把存档里的永久升级（血晶购买）真正作用到玩家身上
+
 	var save_mgr := get_node_or_null("/root/SaveManager")
 	if save_mgr == null or player == null:
 		return
@@ -267,9 +283,11 @@ func _on_portal_entered() -> void:
 
 func _transition_to_next_room() -> void:
 	wave_manager.stop()
-	# 清除所有敌人
+	# 清除所有敌人与残留掉落物（掉落物带着旧房间的坐标，带过去会出现在墙里）
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		enemy.queue_free()
+	for powerup in get_tree().get_nodes_in_group("powerups"):
+		powerup.queue_free()
 
 	# 淡出
 	# 注意：这里用 timer 而不是 await tween.finished。

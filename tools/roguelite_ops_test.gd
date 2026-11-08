@@ -273,5 +273,156 @@ func _run() -> void:
 	main_scene._expire_blood_pact()
 	await process_frame
 	_check(hud._pact_text == "", "契约结束后 HUD 标记清除")
+	# 祭坛是打开状态且会暂停整棵树，必须关掉，否则后面所有 _process 都不跑
+	pact.close()
+	await process_frame
+	_check(not paused, "关闭祭坛后世界恢复运行")
+
+	# ==================================================
+	print("")
+	print("--- ⑨ 难度软挂钩（DPS 自适应） ---")
+	# ==================================================
+	# 先测纯函数（不受 lerp 干扰）
+	var G = load("res://scripts/core/game_config.gd")
+	_check(is_equal_approx(G.get_expected_dps(1), 16.0),
+		"1 级期望 DPS = 16（手枪 4/0.25）")
+	_check(absf(G.get_expected_dps(10) - 16.0 * pow(1.2, 9)) < 0.01,
+		"10 级期望 DPS = %.1f" % G.get_expected_dps(10))
+
+	_check(is_equal_approx(G.get_dps_soft_scale(16.0, 1), 1.0),
+		"实际=期望时倍率正好 1.00（不干扰前期）")
+	var s2: float = G.get_dps_soft_scale(32.0, 1)
+	_check(absf(s2 - pow(2.0, 0.35)) < 0.01,
+		"DPS 翻倍 → 倍率 %.3f（2^0.35，不是 2.0）" % s2)
+	_check(s2 < 1.4, "超模 2 倍也只加 %.0f%% 血量，保住成长快感" % ((s2 - 1.0) * 100.0))
+	_check(G.get_dps_soft_scale(1.0, 1) >= G.DPS_SOFT_MIN,
+		"DPS 极低时倍率被夹在 %.2f（玩家不会打不动）" % G.DPS_SOFT_MIN)
+	_check(is_equal_approx(G.get_dps_soft_scale(99999.0, 1), G.DPS_SOFT_MAX),
+		"DPS 爆表时倍率被夹在 %.2f（不会变血牛地狱）" % G.DPS_SOFT_MAX)
+	_check(is_equal_approx(G.get_dps_soft_scale(0.0, 5), 1.0),
+		"取不到 DPS 时不做修正（宁可不动也别乱动）")
+
+	# 集成：只留手枪时，估算 DPS 应当贴近期望值
+	# （前面测试已经给玩家发了散弹枪，不清掉的话两把武器的 DPS 会叠加）
+	var saved_weapons: Array = wm.weapons.duplicate()
+	var only_pistol: Array = []
+	for w in wm.weapons:
+		if String(w.weapon_id) == "pistol":
+			only_pistol.append(w)
+	wm.weapons = only_pistol
+	player.current_level = 1
+	player.damage_multiplier = 1.0
+	player.crit_chance = 0.0
+	var est: float = main_scene._estimate_player_dps()
+	_check(absf(est - 16.0) < 0.6, "只有手枪时估算 DPS = %.1f（期望 16）" % est)
+	wm.weapons = saved_weapons
+
+	# 把玩家做强：软因子应当上升，且不超过上限
+	player.damage_multiplier = 4.0
+	for i in range(20):
+		wm_mod._update_soft_hp_scale()
+	_check(wm_mod._soft_hp_scale > 1.05,
+		"DPS ×4 后软因子升到 %.2f" % wm_mod._soft_hp_scale)
+	_check(wm_mod._soft_hp_scale <= GameConfig.DPS_SOFT_MAX + 0.001,
+		"软因子未越过上限 %.2f" % GameConfig.DPS_SOFT_MAX)
+
+	# 生成的敌人要真的带上这个倍率
+	var probe2 = load("res://scenes/enemies/vampire.tscn").instantiate()
+	probe2.hp_scale = 1.0
+	var before_hp_scale: float = probe2.hp_scale
+	probe2.hp_scale *= wm_mod._soft_hp_scale
+	_check(probe2.hp_scale > before_hp_scale,
+		"敌人 hp_scale 乘上软因子（1.00 → %.2f）" % probe2.hp_scale)
+	probe2.free()
+
+	# 恢复，避免影响后续
+	player.damage_multiplier = 1.0
+	for i in range(20):
+		wm_mod._update_soft_hp_scale()
+
+	# ==================================================
+	print("")
+	print("--- ⑩ 战斗内临时增益 ---")
+	# ==================================================
+	# 1) 生成位置与分组
+	wm_mod._spawn_powerup()
+	await process_frame
+	var spawned := get_nodes_in_group("powerups")
+	_check(not spawned.is_empty(), "生成增益 %d 个" % spawned.size())
+	if not spawned.is_empty():
+		var p = spawned[0]
+		var dist: float = p.global_position.distance_to(player.global_position)
+		_check(dist >= 190.0 and dist <= 370.0,
+			"生成距离 %.0fpx（设计 200~360，太近等于白送、太远没人去）" % dist)
+		p.queue_free()
+	await process_frame
+
+	# 2) 血露：回 25% 最大生命
+	player.current_hp = player.max_hp * 0.4
+	var hp_before: float = player.current_hp
+	_make_powerup("heal", player.global_position + Vector2(4, 0))
+	await _wait(0.3)
+	_check(player.current_hp > hp_before,
+		"血露拾取后回血 %.0f → %.0f" % [hp_before, player.current_hp])
+
+	# 3) 狂暴：伤害倍率临时上浮，到期复位
+	var dmg_before: float = player.get_total_damage_multiplier()
+	_make_powerup("frenzy", player.global_position + Vector2(4, 0))
+	await _wait(0.3)
+	_check(is_equal_approx(player.powerup_damage_mult, GameConfig.POWERUP_FRENZY_MULT),
+		"狂暴生效：伤害倍率 ×%.2f" % player.powerup_damage_mult)
+	_check(player.get_total_damage_multiplier() > dmg_before,
+		"总伤害倍率 %.2f → %.2f" % [dmg_before, player.get_total_damage_multiplier()])
+	_check(player.is_powerup_active(), "狂暴计时进行中")
+
+	player.apply_powerup_buff(1.5, 0.1)
+	# apply_powerup_buff 取 max（连续吃狂暴不叠加但延长），所以测试要直接压计时
+	player._powerup_time_left = 0.12
+	await _wait(0.4)
+	_check(not player.is_powerup_active(), "狂暴到点自动结束")
+	_check(is_equal_approx(player.powerup_damage_mult, 1.0),
+		"到期后伤害倍率复位到 1.00（不会把玩家自己吃的属性卡一起减掉）")
+
+	# 4) 磁力：把场上的掉落物拉到玩家身边
+	# 玩家在真实时间里会走动，所以宝石要按"当前"玩家位置摆，不能一次算死
+	player.set_physics_process(false)   # 冻结玩家，避免测试期间跑出磁力范围
+	var gem_scene = load("res://scenes/player/xp_gem.tscn")
+	var far_gem = gem_scene.instantiate()
+	current_scene.add_child(far_gem)
+	# 等掉落弹跳 tween 结束（它每帧改 position，会覆盖我们设的坐标）
+	await _wait(0.4)
+	far_gem.global_position = player.global_position + Vector2(600, 0)
+	await process_frame
+	var gem_dist_before: float = far_gem.global_position.distance_to(player.global_position)
+	_make_powerup("magnet", player.global_position + Vector2(4, 0))
+	await _wait(0.35)
+	var gem_dist_after: float = far_gem.global_position.distance_to(player.global_position)
+	player.set_physics_process(true)
+	# 吸到 20px 内会被立刻拾取（走对象池回收，位置会被重置成垃圾值），
+	# 所以判定条件是"被收走了"而不是"距离变小"
+	var pulled_ok: bool = (not is_instance_valid(far_gem)) or int(far_gem.xp_value) == 0 \
+		or gem_dist_after < 120.0 or not far_gem.is_inside_tree()
+	_check(pulled_ok, "磁力脉冲把 600px 外的宝石拉近并收走（%.0f → %.0f）" % [gem_dist_before, gem_dist_after])
+	if is_instance_valid(far_gem) and far_gem.is_inside_tree():
+		far_gem.queue_free()
+
+	# 5) 超时消失（不自动拾取）
+	var expiring = _make_powerup("heal", player.global_position + Vector2(500, 0))
+	expiring.lifetime = 0.15
+	await _wait(0.5)
+	_check(not is_instance_valid(expiring), "超过存活时间自动消失（不白送）")
 
 	_finish()
+
+func _wait(seconds: float) -> void:
+	## 真实时间等待。之前用帧轮询，但 headless 下渲染帧率远高于 60，
+	## "20 帧"根本不是 0.3 秒，物理解算也没推进几拍，会导致拾取断言全错。
+	await create_timer(seconds).timeout
+
+func _make_powerup(kind: String, pos: Vector2) -> Node2D:
+	var node := Node2D.new()
+	node.set_script(load("res://scripts/player/powerup.gd"))
+	node.kind = kind
+	current_scene.add_child(node)
+	node.global_position = pos
+	return node

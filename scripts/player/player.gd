@@ -30,12 +30,45 @@ var pickup_range_bonus: float = 0.0
 var armor: float = 0.0  # 护甲值，通过百分比公式换算减伤
 
 func get_total_damage_multiplier() -> float:
-	## 获取总伤害倍率（包含狂战士之血效果）
+	## 获取总伤害倍率（包含狂战士之血效果 + 狂暴增益）
 	var total := damage_multiplier
 	# 狂战士之血：生命值低于30%时增加伤害
 	if berserker_bonus > 0 and current_hp / max_hp < 0.3:
 		total += berserker_bonus
-	return total
+	return total * powerup_damage_mult
+
+## 狂暴增益：临时伤害倍率（地面掉落物用）。独立于 damage_multiplier，
+## 这样到期复位时不会把玩家自己吃的"攻击强化"卡一起减掉。
+var powerup_damage_mult: float = 1.0
+var _powerup_time_left: float = 0.0
+var _powerup_glow: Node2D = null
+
+func apply_powerup_buff(multiplier: float, duration: float) -> void:
+	if multiplier <= 1.0 or duration <= 0.0:
+		return
+	powerup_damage_mult = maxf(powerup_damage_mult, multiplier)
+	_powerup_time_left = maxf(_powerup_time_left, duration)
+	if _powerup_glow == null or not is_instance_valid(_powerup_glow):
+		_powerup_glow = ProjectileVisuals.attach_glow(self, Color(1.0, 0.42, 0.18), 76.0)
+		if _powerup_glow != null:
+			_powerup_glow.z_index = 1
+	print("⚔️ 狂暴：伤害 ×%.1f，持续 %.0fs" % [multiplier, duration])
+
+func is_powerup_active() -> bool:
+	return _powerup_time_left > 0.0
+
+func _process_powerup(delta: float) -> void:
+	if _powerup_time_left <= 0.0:
+		return
+	_powerup_time_left -= delta
+	if _powerup_time_left > 0.0:
+		return
+	_powerup_time_left = 0.0
+	powerup_damage_mult = 1.0
+	if _powerup_glow != null and is_instance_valid(_powerup_glow):
+		_powerup_glow.queue_free()
+	_powerup_glow = null
+	print("⚔️ 狂暴结束")
 
 # === 被动道具 ===
 var passive_items: Array = []
@@ -155,6 +188,7 @@ func _physics_process(delta: float) -> void:
 	_handle_rotation()
 	_process_passive_items(delta)
 	_process_character_passive(delta)
+	_process_powerup(delta)
 
 func apply_recoil(backward_dir: Vector2, speed: float = -1.0) -> void:
 	## 名字保留（外部/测试都按这个接口调用），但语义已经改成"开火挤压"。

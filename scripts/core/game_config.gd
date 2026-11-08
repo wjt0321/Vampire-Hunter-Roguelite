@@ -319,3 +319,64 @@ const AFFIX_HASTE_DURATION: float = 0.75
 static func get_elite_affix_chance(floor_index: int) -> float:
 	var idx: int = clampi(floor_index - 1, 0, ELITE_AFFIX_CHANCE_BY_FLOOR.size() - 1)
 	return float(ELITE_AFFIX_CHANCE_BY_FLOOR[idx])
+
+# ==================== 武器强度软挂钩（DPS 自适应难度） ====================
+#
+# 解决什么：原来的橡皮筋只看玩家等级（每级 +3% 血，上限 2 倍）。
+# 但等级不等于强度——同样 15 级，"进化武器 + 满级被动"和"五张属性卡"的
+# 实际 DPS 能差 3 倍。于是运气好的一局后期变成无双，运气差的一局变成硬墙。
+#
+# 做法：把"玩家实际能打出的 DPS"和"该等级应有 DPS"相比，比值开方后当倍率。
+# 关键取舍：**只做软修正，不做硬对齐**。倍率夹在 0.85~1.55，指数 0.35。
+# 玩家 DPS 超模 2 倍，敌人只硬 27%，仍然是"变强了"，而不是"永远打一样久"。
+# 硬对齐会抹掉构筑成长的快感，那是 Roguelite 最不能碰的东西。
+
+const DPS_SOFT_ENABLED: bool = true
+## 1 级时的参考 DPS（手枪 4 伤害 / 0.25 秒间隔 = 16，与实际数值对齐）
+const DPS_SOFT_EXPECTED_BASE: float = 16.0
+## 每级参考 DPS 的成长率（与经验曲线、武器升级节奏实测对齐）
+const DPS_SOFT_LEVEL_GROWTH: float = 1.20
+## 比值指数：0.35 → 实际/期望 = 2.0 时倍率 1.27
+const DPS_SOFT_EXPONENT: float = 0.35
+## 倍率下限（构筑太差也别让玩家打不动）
+const DPS_SOFT_MIN: float = 0.85
+## 倍率上限（构筑超模也别变成血牛地狱）
+const DPS_SOFT_MAX: float = 1.55
+## 每波向目标值靠拢的比例，避免数值突变
+const DPS_SOFT_LERP: float = 0.5
+
+static func get_expected_dps(player_level: int) -> float:
+	return DPS_SOFT_EXPECTED_BASE * pow(DPS_SOFT_LEVEL_GROWTH, maxi(player_level - 1, 0))
+
+static func get_dps_soft_scale(actual_dps: float, player_level: int) -> float:
+	## 返回敌人血量的软修正倍率。actual_dps <= 0 视为数据缺失，不做修正。
+	if not DPS_SOFT_ENABLED or actual_dps <= 0.0:
+		return 1.0
+	var expected: float = get_expected_dps(player_level)
+	var ratio: float = clampf(actual_dps / maxf(expected, 1.0), 0.2, 6.0)
+	var soft: float = pow(ratio, DPS_SOFT_EXPONENT)
+	return clampf(soft, DPS_SOFT_MIN, DPS_SOFT_MAX)
+
+# ==================== 战斗内临时增益 ====================
+#
+# 设计取舍：不做"击杀掉落"，改成"房间内定时刷新"。
+# 击杀掉落会奖励已经很强的玩家（杀得快→掉得多→更强），是正反馈雪球；
+# 定时刷新是中立供给，谁都能拿到，弱构筑反而更需要它。
+# 16 秒存活上限 + 需要走位去捡 = 一个"值不值得过去"的小决策。
+
+const POWERUP_ENABLED: bool = true
+## 战斗房里每隔多久刷一个（秒）
+const POWERUP_INTERVAL: float = 24.0
+## 进房后第一个的延迟，避开开局那波
+const POWERUP_FIRST_DELAY: float = 14.0
+## 掉落物存活上限（超时消失，不自动拾取）
+const POWERUP_LIFETIME: float = 16.0
+## 血露回复比例
+const POWERUP_HEAL_RATIO: float = 0.25
+## 狂暴倍率与时长
+const POWERUP_FRENZY_MULT: float = 1.5
+const POWERUP_FRENZY_DURATION: float = 8.0
+## 类型权重表：回血最常见（最容易形成决策），狂暴次之
+const POWERUP_KINDS: Array = ["heal", "heal", "frenzy", "magnet"]
+
+
