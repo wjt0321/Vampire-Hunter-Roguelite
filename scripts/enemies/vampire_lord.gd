@@ -325,8 +325,7 @@ func _physics_process(delta: float) -> void:
 				dash_timer = 0.0
 				attack_state = AttackState.COOLDOWN
 				# 恢复 idle 贴图
-				if sprite:
-				if _sprite_loop_tex != null:
+				if sprite and _sprite_loop_tex != null:
 					use_sprite(_sprite_loop_tex, "loop")
 
 func _check_phase_transition() -> void:

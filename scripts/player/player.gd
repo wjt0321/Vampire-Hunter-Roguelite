@@ -123,6 +123,12 @@ var _sprite_rest_pos: Vector2 = Vector2.ZERO
 var _sprite_rest_ready: bool = false
 var _sprite_anim_time: float = 0.0
 var _sprite_frame_wait: float = 0.0
+# 一次性动作（attack / hurt / shield）：播完自动回 idle / run。
+# 这类动作只借 pose 的横条，不碰任何数值与位移——手感仍由 _fire_punch 的挤压负责。
+var _one_shot_pose: String = ""
+var _one_shot_left: float = 0.0
+# 死亡后不再让 _sync_player_pose 抢回 idle；death 横条由 _die() 自己推进
+var _player_dead: bool = false
 # 护盾光环节点（有护盾时才存在）
 var _shield_aura: Sprite2D = null
 var _shield_pulse: Tween = null
@@ -238,6 +244,8 @@ func _fire_punch(direction: Vector2) -> void:
 	_fire_punch_tween = create_tween()
 	_fire_punch_tween.tween_property(sprite, "scale", _sprite_base_scale,
 		GameConfig.PLAYER_FIRE_PUNCH_TIME).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	# 开火姿态：与挤压同时发生，一个演动作一个给后坐力，互不抢属性
+	_play_one_shot("attack")
 
 func _handle_movement() -> void:
 	var input_dir := Vector2.ZERO
@@ -251,9 +259,10 @@ func _handle_movement() -> void:
 	move_and_slide()
 
 func _sync_player_pose() -> void:
-	## run 横条还是单张时，切过去看起来和 idle 一样。
-	## 切换先写上，等 288×48 的跑步条换进来才会被看见。
+	## 常驻姿态只有 idle / run 两种；attack / hurt / shield 是一次性动作，由 _play_one_shot 接管。
 	if sprite == null or TextureManager.instance == null:
+		return
+	if _player_dead or _one_shot_pose != "":
 		return
 	var pose := "run" if _wants_move else "idle"
 	if pose == _player_pose:
@@ -272,9 +281,38 @@ func _tick_player_sprite(delta: float) -> void:
 	if sprite.hframes > 1:
 		sprite.position = _sprite_rest_pos
 		_sprite_frame_wait = SpriteSheetLib.advance(sprite, _sprite_frame_wait, delta)
+		if _one_shot_pose != "":
+			_one_shot_left -= delta
+			if _one_shot_left <= 0.0:
+				_end_one_shot()
 		return
 	_sprite_anim_time += delta
 	sprite.position = _sprite_rest_pos + Vector2(0.0, SpriteSheetLib.bob_offset(_sprite_anim_time))
+
+
+func _play_one_shot(pose: String, hold: float = 0.0) -> void:
+	## 播一次 attack / hurt / shield，播完自动回 idle/run。
+	## hold 传 0 表示按素材实际长度算（帧数 ÷ 8fps），这样换素材不用回来改时间。
+	## 素材缺失时静默跳过，不影响原有程序特效（挤压仍会照常触发）。
+	if _player_dead or sprite == null:
+		return
+	if TextureManager.instance == null:
+		return
+	var texture := TextureManager.instance.get_player_texture(pose)
+	if texture == null:
+		return
+	if hold <= 0.0:
+		hold = float(SpriteSheetLib.frame_count(texture)) / SpriteSheetLib.LOOP_FPS
+	_one_shot_pose = pose
+	_one_shot_left = maxf(hold, 0.1)
+	_apply_player_pose(pose, texture)
+
+
+func _end_one_shot() -> void:
+	_one_shot_pose = ""
+	_one_shot_left = 0.0
+	_player_pose = ""  # 清掉记录，逼 _sync_player_pose 真的切一次
+	_sync_player_pose()
 
 func _handle_rotation() -> void:
 	var mouse_pos := get_global_mouse_position()
@@ -380,6 +418,8 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO) -> void
 	hp_changed.emit(current_hp, max_hp)
 	_start_invincibility()
 	_flash_damage()
+	# 受击姿态：只有 2 帧，播完立刻回 idle/run；闪红仍由 _flash_damage 负责
+	_play_one_shot("hurt")
 
 	# 受击击退
 	if source_position != Vector2.ZERO:
@@ -483,10 +523,31 @@ func _die() -> void:
 	player_died.emit()
 	set_physics_process(false)
 	collision_shape.set_deferred("disabled", true)
+	_player_dead = true
 	# 死亡强烈震动
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
 		vfx.screen_shake(12.0, 0.5)
+
+	# 死亡横条本身就是渐隐的（末帧全透明），所以逐帧播完后直接销毁，
+	# 不再叠一层 modulate 淡出——叠了会双重变淡，角色在播到一半时就没了。
+	# 注意 physics 已停，不能靠 _tick_player_sprite 推进，得用 tween 手动走帧。
+	var death_texture: Texture2D = null
+	if TextureManager.instance != null:
+		death_texture = TextureManager.instance.get_player_texture("death")
+	if death_texture != null and sprite != null:
+		_apply_player_pose("death", death_texture)
+		var total: int = maxi(sprite.hframes, 1)
+		var step: float = 1.0 / maxf(SpriteSheetLib.LOOP_FPS, 1.0)
+		var tw := create_tween()
+		for i in range(1, total):
+			tw.tween_interval(step)
+			tw.tween_callback(sprite.set_frame.bind(i))
+		tw.tween_interval(step * 1.5)
+		tw.tween_callback(queue_free)
+		return
+
+	# 兜底：素材缺失时退回旧的整体淡出
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(queue_free)
@@ -524,6 +585,8 @@ func _grant_shield() -> void:
 	has_shield = true
 	shield_timer = 0.0
 	print("🛡️ 护盾生成!")
+	# 护盾展开姿态：播一次就回 idle；持续脉冲仍由 _shield_aura 那圈程序光环负责
+	_play_one_shot("shield")
 	_spawn_shield_aura()
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
