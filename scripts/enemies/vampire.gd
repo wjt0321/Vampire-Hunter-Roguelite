@@ -35,6 +35,7 @@ func _physics_process(delta: float) -> void:
 	if distance_to_player < backstep_distance and backstep_timer <= 0 and not is_backstepping:
 		_start_backstep()
 
+	var moving := true
 	if is_backstepping:
 		# 后撤期间继续远离玩家
 		var direction := (global_position - player.global_position).normalized()
@@ -43,6 +44,28 @@ func _physics_process(delta: float) -> void:
 		# 后撤结束由 _finish_backstep 处理
 	else:
 		_move_towards_player(delta)
+		moving = velocity.length() > 8.0
+	_sync_run_pose(moving)
+
+var _vamp_pose: String = ""
+
+func _sync_run_pose(moving: bool) -> void:
+	## vampire_run 还是 1024 单张时不切换。ComfyUI 换成横条后，这里不用再改代码。
+	if TextureManager.instance == null:
+		return
+	var pose := "run" if moving else "idle"
+	if pose == _vamp_pose:
+		return
+	var texture := TextureManager.instance.get_enemy_texture("vampire", pose)
+	if texture == null or SpriteSheetLib.frame_count(texture) <= 1:
+		if _vamp_pose == "idle":
+			return
+		texture = TextureManager.instance.get_enemy_texture("vampire", "idle")
+		pose = "idle"
+	if texture == null or pose == _vamp_pose:
+		return
+	_vamp_pose = pose
+	use_sprite(texture, "loop")
 
 func _start_backstep() -> void:
 	is_backstepping = true

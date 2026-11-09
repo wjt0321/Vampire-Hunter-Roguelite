@@ -72,7 +72,7 @@ assets/
 | 蝙蝠 | `bat_fly.png` | 在用，192×48 四帧 | 翅膀上下错帧，已接循环 |
 | 僵尸 | `zombie_walk.png` | 在用，288×48 六帧 | 落点交替，已接循环 |
 | 吸血鬼 | `vampire_idle.png` | 在用，192×48 四帧 | 下摆错帧，已接循环 |
-| 吸血鬼 | `vampire_run.png` | 未切换 | 6 帧跑。要和 idle 按是否在移动切换 |
+| 吸血鬼 | `vampire_run.png` | 仍是 1024 单张，代码不切换 | ComfyUI 换成横条后，移动时自动播 |
 | 狼人 | `werewolf_idle.png` | 在用，192×48 四帧 | 下摆错帧，已接循环 |
 | 狼人 | `werewolf_charge.png` | 冲锋时播一次，192×48 四帧 | 播完回到待机 |
 | 骷髅射手 | `skeleton_idle.png` | 在用，192×48 四帧 | 下摆错帧，已接循环 |
@@ -99,8 +99,8 @@ assets/
 | `boss_enraged.png` | 狂暴时换上，384×96 四帧 | 披风下摆错帧 |
 | `boss_attack3.png` | 冲刺时播一次，384×96 四帧 | 播完回到当前循环（待机或狂暴） |
 | `boss_death.png` | 死亡时播，384×96 四帧 | 播完停在淡出的最后一格 |
-| `boss_attack1.png` | 未用。弹幕没有换这张图 | 先不做 |
-| `boss_attack2.png` | 未用。召唤没有换这张图 | 先不做 |
+| `boss_attack1.png` | 仍是 1024 单张，代码不切换 | ComfyUI 换成横条后，弹幕播一次 |
+| `boss_attack2.png` | 仍是 1024 单张，代码不切换 | ComfyUI 换成横条后，召唤播一次 |
 
 ---
 

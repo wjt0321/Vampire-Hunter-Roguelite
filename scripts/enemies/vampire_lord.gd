@@ -417,6 +417,7 @@ func _choose_attack() -> void:
 func _attack_barrage() -> void:
 	## 弹幕攻击：向四周发射弹丸
 	attack_state = AttackState.COOLDOWN
+	_play_attack_strip("attack1")
 	_telegraph_attack()
 	var count: int = barrage_count
 	for i in range(count):
@@ -424,6 +425,15 @@ func _attack_barrage() -> void:
 		var direction := Vector2(cos(angle), sin(angle))
 		_spawn_boss_projectile(direction)
 	print("🔥 弹幕攻击!")
+
+func _play_attack_strip(state_name: String) -> void:
+	## attack1 / attack2 仍是 1024 单张时不换图，避免 Boss 缩成一小块。
+	## 文件换成横条之后，这里会播一次再回到待机或狂暴。
+	if TextureManager.instance == null:
+		return
+	var tex := TextureManager.instance.get_boss_texture(state_name)
+	if tex != null and SpriteSheetLib.frame_count(tex) > 1:
+		use_sprite(tex, "once")
 
 func _get_projectile_color() -> Color:
 	## 三形态弹幕用不同颜色，混战时也能分清是谁的弹
@@ -476,6 +486,7 @@ func _spawn_boss_projectile(direction: Vector2) -> void:
 func _attack_summon() -> void:
 	## 召唤小怪
 	attack_state = AttackState.COOLDOWN
+	_play_attack_strip("attack2")
 	_telegraph_attack()
 	var count: int = summon_count
 	if current_phase == BossPhase.ENRAGED:
