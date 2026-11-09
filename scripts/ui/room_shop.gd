@@ -253,7 +253,9 @@ func _make_card(index: int) -> Control:
 		vb.add_child(empty)
 		return card
 
-	# 图标：优先贴图（统一走 ItemCatalog 映射），拿不到再回退单字
+	# 图标：统一走 ItemCatalog 映射。拿不到贴图就留白——
+	# 旧版回退显示 catalog 里的单字（"枪"/"书"），单字长得像图标，
+	# 反而把"这里缺一张图"这件事藏起来了。
 	var icon_tex: Texture2D = ItemCatalog.get_icon_texture(
 		String(slot.get("id", "")), String(slot.get("type", "")))
 	if icon_tex != null:
@@ -264,12 +266,6 @@ func _make_card(index: int) -> Control:
 		icon_rect.custom_minimum_size = Vector2(48, 48)
 		icon_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		vb.add_child(icon_rect)
-	else:
-		var icon := Label.new()
-		icon.text = String(slot.get("icon", "?"))
-		icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		icon.add_theme_font_size_override("font_size", 34)
-		vb.add_child(icon)
 
 	var name_label := Label.new()
 	name_label.text = String(slot.get("name", "?"))

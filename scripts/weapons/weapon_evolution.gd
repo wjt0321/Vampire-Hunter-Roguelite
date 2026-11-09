@@ -8,7 +8,6 @@ class_name WeaponEvolution
 
 @export var evolution_name: String = "进化武器"
 @export var evolution_description: String = "终极形态"
-@export var evolution_icon: String = "圣"
 
 # 进化条件
 ## 需要的被动道具 ID（至少 Lv1 即可）

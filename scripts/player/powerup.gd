@@ -7,14 +7,17 @@ extends Node2D
 ## 一个有代价的增益（要走位去吃）能把站桩输出变成小决策。
 ##
 ## 三种增益各有用途：
-##   ❤️ 血露   —— 立即回血，把"残血但还能打"变成可选项
-##   ⚔️ 狂暴   —— 8 秒伤害 ×1.5，鼓励在有怪时开
-##   🧲 磁力   —— 立刻收走全屏经验与银币，解决"清完场要跑图捡钱"
+##   血露 —— 立即回血，把"残血但还能打"变成可选项
+##   狂暴 —— 8 秒伤害 ×1.5，鼓励在有怪时开
+##   磁力 —— 立刻收走全屏经验与银币，解决"清完场要跑图捡钱"
+##
+## "icon" 字段已删：原来用中文字（血/狂/磁）当图标，
+## 现在用各自的美术贴图（tex 字段），文字只留在 label 上做无障碍冗余。
 
 const KINDS: Dictionary = {
-	"heal": {"icon": "血", "color": Color(1.0, 0.36, 0.42), "label": "血露"},
-	"frenzy": {"icon": "狂", "color": Color(1.0, 0.62, 0.2), "label": "狂暴"},
-	"magnet": {"icon": "磁", "color": Color(0.52, 0.8, 1.0), "label": "磁力"},
+	"heal": {"color": Color(1.0, 0.36, 0.42), "label": "血露", "tex": "powerup_heal"},
+	"frenzy": {"color": Color(1.0, 0.62, 0.2), "label": "狂暴", "tex": "powerup_frenzy"},
+	"magnet": {"color": Color(0.52, 0.8, 1.0), "label": "磁力", "tex": "powerup_magnet"},
 }
 
 ## 增益类型（生成前设置）
@@ -35,27 +38,25 @@ func _ready() -> void:
 	var data: Dictionary = KINDS.get(kind, KINDS["heal"])
 	var color: Color = data["color"]
 
-	# 底：菱形宝石（和经验宝石同一套贴图，玩家已经认得"地上发光的东西"）
+	# 底：增益图标贴图。
+	# 旧版是一枚程序化菱形 + 一个中文字（血/狂/磁）当图标——
+	# 中文字是因为本机字体不含 emoji 才退而求其次（D.4 禁用 emoji），
+	# 结果就是地上三个菱形，形状一模一样，只有颜色和字不一样。
 	_sprite = Sprite2D.new()
 	_sprite.name = "PowerupSprite"
 	add_child(_sprite)
-	ProjectileVisuals.style_gem(_sprite, color, 34.0)
-
-	# 图标：用中文字而不是 emoji。
-	# 项目字体是 NotoSansCJKsc（不含 emoji 字形），emoji 在这台机器上渲染成空白方块，
-	# 玩家完全分不出三种增益——这个坑只有截图能看出来，无头测试永远发现不了。
-	var icon := Label.new()
-	icon.text = String(data["icon"])
-	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	icon.size = Vector2(34, 34)
-	icon.position = Vector2(-17, -18)
-	icon.add_theme_font_size_override("font_size", 16)
-	icon.add_theme_color_override("font_color", Color(1, 1, 1, 0.98))
-	icon.add_theme_color_override("font_outline_color", Color(0.05, 0.02, 0.04, 0.95))
-	icon.add_theme_constant_override("outline_size", 4)
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(icon)
+	var tex: Texture2D = TextureManager.instance.get_item_texture(String(data["tex"]))
+	if tex != null:
+		_sprite.texture = tex
+		_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_sprite.material = null
+		var ts := tex.get_size()
+		if ts.x > 0.0:
+			var s := 34.0 / ts.x
+			_sprite.scale = Vector2(s, s)
+		_sprite.z_index = 0
+	else:
+		ProjectileVisuals.style_gem(_sprite, color, 34.0)
 
 	# 名称：颜色跟类型走，和图标形成"双编码"，色盲玩家也能靠字认出来
 	var name_label := Label.new()

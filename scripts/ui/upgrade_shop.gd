@@ -10,13 +10,16 @@ signal shop_closed
 
 var save_mgr: Node
 
+## 元进度 6 项没有自己的贴图，复用语义相近的物品图标。
+## （原来的 "icon": "攻"/"命"… 单字字段已删：贴图永远能命中，
+##   留着单字就等于把"用字符当图标"的口子一直开着。）
 const UPGRADE_INFO: Dictionary = {
-	"base_damage": {"name": "基础伤害", "desc": "+5% 武器伤害", "icon": "攻"},
-	"base_hp": {"name": "基础血量", "desc": "+10 最大生命", "icon": "命"},
-	"base_speed": {"name": "基础速度", "desc": "+5% 移动速度", "icon": "疾"},
-	"base_armor": {"name": "基础护甲", "desc": "+3 伤害减免", "icon": "甲"},
-	"xp_bonus": {"name": "经验加成", "desc": "+10% 经验获取", "icon": "验"},
-	"blood_crystal_bonus": {"name": "血晶加成", "desc": "+10% 血晶获取", "icon": "晶"},
+	"base_damage": {"name": "基础伤害", "desc": "+5% 武器伤害"},
+	"base_hp": {"name": "基础血量", "desc": "+10 最大生命"},
+	"base_speed": {"name": "基础速度", "desc": "+5% 移动速度"},
+	"base_armor": {"name": "基础护甲", "desc": "+3 伤害减免"},
+	"xp_bonus": {"name": "经验加成", "desc": "+10% 经验获取"},
+	"blood_crystal_bonus": {"name": "血晶加成", "desc": "+10% 血晶获取"},
 }
 
 func _ready() -> void:
@@ -99,8 +102,11 @@ func _refresh_ui() -> void:
 		var row := HBoxContainer.new()
 		row.custom_minimum_size = Vector2(0, 40)
 		
-		# 图标：贴图优先（复用统一映射），拿不到贴图再回退单字
+		# 图标：贴图优先（复用统一映射）
 		var icon_tex: Texture2D = ItemCatalog.get_icon_texture(_upgrade_icon_item(upgrade_id))
+		var name_label := Label.new()
+		name_label.text = "%s Lv.%d/%d" % [info["name"], level, 5]
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		if icon_tex != null:
 			var icon_rect := TextureRect.new()
 			icon_rect.texture = icon_tex
@@ -109,15 +115,7 @@ func _refresh_ui() -> void:
 			icon_rect.custom_minimum_size = Vector2(22, 22)
 			icon_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			row.add_child(icon_rect)
-			var name_label := Label.new()
-			name_label.text = "%s Lv.%d/%d" % [info["name"], level, 5]
-			name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			row.add_child(name_label)
-		else:
-			var name_label := Label.new()
-			name_label.text = "%s %s Lv.%d/%d" % [info["icon"], info["name"], level, 5]
-			name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			row.add_child(name_label)
+		row.add_child(name_label)
 		
 		var desc_label := Label.new()
 		desc_label.text = info["desc"]

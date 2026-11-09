@@ -3,6 +3,9 @@ class_name WaveManager
 ## 波次管理器
 ## 控制敌人按波次生成，逐渐增加难度
 
+## 房间解析的唯一入口（preload 而非 class_name：无头跑不刷新全局类缓存）
+const RoomLookupScript = preload("res://scripts/core/room_lookup.gd")
+
 # === 敌人场景 ===
 var enemy_scenes: Dictionary = {
 	"vampire": preload("res://scenes/enemies/vampire.tscn"),
@@ -386,14 +389,8 @@ func _spawn_powerup() -> void:
 	var radius: float = randf_range(200.0, 360.0)
 	var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * radius
 	# 增益不能刷进墙里（与 _get_spawn_position 同一套钳制）
-	var room := player.get_parent()
-	if room and room.has_method("get_room_bounds"):
-		var bounds: Rect2 = room.get_room_bounds()
-		if room is Node2D:
-			bounds = Rect2((room as Node2D).to_global(bounds.position), bounds.size)
-		var m := 60.0
-		pos.x = clampf(pos.x, bounds.position.x + m, bounds.end.x - m)
-		pos.y = clampf(pos.y, bounds.position.y + m, bounds.end.y - m)
+	# 旧写法 player.get_parent() 拿到的是 Main 不是房间 → 钳制被跳过 → 增益掉在墙外
+	pos = _clamp_into_room(pos, 60.0)
 	node.global_position = pos
 
 func _maybe_assign_affix(enemy: Node) -> void:
@@ -508,29 +505,42 @@ func _pick_enemy_type() -> String:
 
 	return candidates[0]
 
+func _find_room_node() -> Node:
+	## 找当前房间节点（带 get_room_bounds 的那个）。
+	##
+	## 历史坑（"怪刷在地图边界外"的根因）：
+	## player 的父节点是 Main（主场景），不是房间。旧代码用
+	## `var room := player.get_parent()` 当房间，于是 `has_method("get_room_bounds")`
+	## 恒为 false → 整段边界钳制被静默跳过 → 刷怪点完全不受房间约束。
+	##
+	## 统一走 RoomLookup（scripts/core/room_lookup.gd），全工程只有这一个入口。
+	return RoomLookupScript.find_room(player)
+
+func _room_bounds_global() -> Rect2:
+	## 房间内部的全局矩形（已扣掉墙厚）。找不到房间时返回空矩形。
+	return RoomLookupScript.bounds_global(_find_room_node())
+
+func _clamp_into_room(pos: Vector2, margin: float) -> Vector2:
+	## 把全局坐标钳回房间内部。找不到房间时原样返回（不猜边界）。
+	return RoomLookupScript.clamp_into_bounds(pos, margin, _room_bounds_global())
+
 func _get_spawn_position() -> Vector2:
 	## 在玩家周围的圆圈外随机位置生成，但限制在房间范围内
 	var angle := randf() * TAU
 	var offset := Vector2(cos(angle), sin(angle)) * spawn_distance
 	var spawn_pos := player.global_position + offset
 
-	# 获取房间边界并限制生成位置
-	var room := player.get_parent()
-	if room and room.has_method("get_room_bounds"):
-		var bounds: Rect2 = room.get_room_bounds()
-		# bounds 是房间本地坐标，房间自身不在原点时要先转全局再 clamp
-		# （怪"刷在地图边界外"的一半原因就是拿本地 rect 去钳全局坐标）
-		if room is Node2D:
-			bounds = Rect2((room as Node2D).to_global(bounds.position), bounds.size)
-		# 90 = 墙厚 32 + 怪碰撞半径 + 视觉余量：贴着钳制线刷出的怪看起来在墙上
-		var margin := 90.0
-		spawn_pos.x = clampf(spawn_pos.x, bounds.position.x + margin, bounds.end.x - margin)
-		spawn_pos.y = clampf(spawn_pos.y, bounds.position.y + margin, bounds.end.y - margin)
-		if mirror_spawns and room is Node2D and room.has_method("get_center"):
+	# 90 = 墙厚 32 + 怪碰撞半径 + 视觉余量：贴着钳制线刷出的怪看起来在墙上
+	var margin := 90.0
+	spawn_pos = _clamp_into_room(spawn_pos, margin)
+
+	# 镜像房：反射后再钳一次（反射会把点甩到另一侧）
+	if mirror_spawns:
+		var room := _find_room_node()
+		if room != null and room is Node2D and room.has_method("get_center"):
 			var center_global: Vector2 = (room as Node2D).to_global(room.get_center())
 			spawn_pos = reflect_spawn(spawn_pos, center_global)
-			spawn_pos.x = clampf(spawn_pos.x, bounds.position.x + margin, bounds.end.x - margin)
-			spawn_pos.y = clampf(spawn_pos.y, bounds.position.y + margin, bounds.end.y - margin)
+			spawn_pos = _clamp_into_room(spawn_pos, margin)
 
 	return spawn_pos
 

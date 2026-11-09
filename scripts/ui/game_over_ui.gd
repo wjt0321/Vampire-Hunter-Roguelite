@@ -7,6 +7,7 @@ signal menu_requested
 ## 深渊阶梯（17.14）：胜利界面"继续深入"按钮
 signal abyss_continue_requested
 
+@onready var title_label: Label = $CenterContainer/PanelContainer/VBoxContainer/TitleLabel
 @onready var stats_label: Label = $CenterContainer/PanelContainer/VBoxContainer/StatsLabel
 @onready var achievement_label: Label = $CenterContainer/PanelContainer/VBoxContainer/AchievementLabel
 @onready var panel: PanelContainer = $CenterContainer/PanelContainer
@@ -16,6 +17,10 @@ var achievement_mgr: Node
 var bg_rect: TextureRect
 ## 深渊阶梯按钮（胜利界面动态创建）
 var abyss_button: Button = null
+## 成就徽章行容器（运行时创建，挂在 AchievementLabel 下面）
+var achievement_list: VBoxContainer = null
+## 成就列表的滚动外层（一局解锁很多成就时不让面板撑出屏幕）
+var achievement_scroll: ScrollContainer = null
 
 func _ready() -> void:
 	visible = false
@@ -40,6 +45,17 @@ func _setup_panel_style() -> void:
 	if panel_texture:
 		var style := StyleBoxTexture.new()
 		style.texture = panel_texture
+		# stats_panel 纹理自带约 24px 金框。不设 texture_margin 时 PanelContainer
+		# 会把内容从纹理边缘开始摆，标题和统计行直接压在金框花纹上。
+		# 主菜单/商店/升级弹窗都是九宫格拉出内容区，这里漏了。
+		style.texture_margin_left = 26.0
+		style.texture_margin_right = 26.0
+		# 面板顶部中间有个向上凸起的尖刺装饰（选角界面用的是 62/66）。
+		# 这里按尖刺高度让出内容区，标题才不会撞在花纹上。
+		style.texture_margin_top = 56.0
+		style.texture_margin_bottom = 28.0
+		style.content_margin_top = 60.0
+		style.content_margin_bottom = 32.0
 		panel.add_theme_stylebox_override("panel", style)
 	_setup_button_effects()
 
@@ -91,22 +107,23 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 			crystals += int(rec.get("crystals", 0))
 			daily_line = String(rec.get("summary", ""))
 	
-	var title := ""
 	if is_victory:
-		title = "胜利！吸血鬼领主已被终结\n\n"
+		title_label.text = "胜利！吸血鬼领主已被终结"
 		stats_label.label_settings = null
+		title_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4, 1.0))
 		stats_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4, 1.0))
 		if bg_rect:
 			bg_rect.texture = TextureManager.instance.get_ui_texture("victory_bg")
 		AudioManager.play_bgm(AudioLib.get_victory_bgm())
 	else:
-		title = "游戏结束\n\n"
-		stats_label.add_theme_color_override("font_color", Color(0.85, 0.2, 0.2, 1.0))
+		title_label.text = "游戏结束"
+		title_label.add_theme_color_override("font_color", Color(0.85, 0.2, 0.2, 1.0))
+		stats_label.add_theme_color_override("font_color", Color(0.9, 0.42, 0.42, 1.0))
 		if bg_rect:
 			bg_rect.texture = TextureManager.instance.get_ui_texture("defeat_bg")
 		AudioManager.play_bgm(AudioLib.get_defeat_bgm())
-	
-	var text := title
+
+	var text := ""
 	if is_victory:
 		var abyss: int = int(stats.get("abyss_level", 0))
 		if abyss > 0:
@@ -147,21 +164,81 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 	tween.tween_property(panel, "modulate:a", 1.0, 0.3)
 
 func _update_achievement_display() -> void:
+	## 成就列表：每行一个徽章贴图 + 名称。
+	## 旧版是一个 Label 里拼 "★ 第一滴血" 这种纯文字——25 个成就共用同一个
+	## "★" 字符，结算界面就是一整列没有辨识度的文字。
+	var list := _ensure_achievement_list()
+	for child in list.get_children():
+		child.queue_free()
+
 	if not achievement_mgr:
 		achievement_label.text = ""
 		return
-	
+
 	var unlocked: Array[String] = achievement_mgr.get_unlocked_this_run()
 	if unlocked.is_empty():
 		achievement_label.text = ""
 		return
-	
-	var text := "\n本局解锁成就:\n"
+
+	achievement_label.text = "本局解锁成就:"
 	for ach_id in unlocked:
 		var info: Dictionary = achievement_mgr.get_achievement_info(ach_id)
-		text += "  %s %s\n" % [info.get("icon", "杯"), info.get("name", ach_id)]
-	
-	achievement_label.text = text
+		list.add_child(_make_achievement_row(ach_id, String(info.get("name", ach_id))))
+
+func _ensure_achievement_list() -> VBoxContainer:
+	## 成就行容器：运行时建在 AchievementLabel 下面（不改 .tscn 结构）
+	##
+	## 外层套 ScrollContainer：一局解锁 20+ 个成就时，
+	## 48px 图标行会把面板撑到 1000px 高，整块跑出屏幕。
+	## 152px 高——正好 3 行徽章（48*3 + 行距 4*2），第三行不会被裁掉半截。
+	if achievement_list != null and is_instance_valid(achievement_list):
+		return achievement_list
+	var parent := achievement_label.get_parent()
+
+	var scroll := ScrollContainer.new()
+	scroll.name = "AchievementScroll"
+	scroll.custom_minimum_size = Vector2(0, 152)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	parent.add_child(scroll)
+	achievement_scroll = scroll
+
+	achievement_list = VBoxContainer.new()
+	achievement_list.name = "AchievementList"
+	achievement_list.alignment = BoxContainer.ALIGNMENT_CENTER
+	achievement_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	achievement_list.add_theme_constant_override("separation", 4)
+	scroll.add_child(achievement_list)
+
+	parent.move_child(scroll, achievement_label.get_index() + 1)
+	return achievement_list
+
+func _make_achievement_row(ach_id: String, ach_name: String) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 10)
+
+	var icon := TextureRect.new()
+	icon.custom_minimum_size = Vector2(48, 48)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var tex: Texture2D = TextureManager.instance.get_achievement_icon(ach_id)
+	if tex != null:
+		icon.texture = tex
+	else:
+		icon.visible = false
+	row.add_child(icon)
+
+	var name_label := Label.new()
+	name_label.text = ach_name
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name_label.add_theme_font_size_override("font_size", 16)
+	name_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(name_label)
+	return row
 
 func _on_restart_pressed() -> void:
 	get_tree().paused = false
@@ -189,9 +266,13 @@ func _setup_abyss_button(victory: bool) -> void:
 		abyss_button.name = "AbyssButton"
 		abyss_button.text = "深渊阶梯"
 		var vbox: Node = panel.get_node("VBoxContainer")
-		# 放在"重新开始"前面：胜利时它是主推选项
+		# 放在"重新开始"前面：胜利时它是主推选项。
+		# 位置要落在成就列表**之后**——成就行容器是运行时建的，
+		# 插在 AchievementLabel 后面，所以基准节点要跟着换。
 		vbox.add_child(abyss_button)
-		vbox.move_child(abyss_button, vbox.get_node("AchievementLabel").get_index() + 1)
+		var anchor: Node = achievement_scroll if (achievement_scroll != null and is_instance_valid(achievement_scroll)) \
+			else vbox.get_node("AchievementLabel")
+		vbox.move_child(abyss_button, anchor.get_index() + 1)
 		abyss_button.pressed.connect(_on_abyss_pressed)
 		# 只给新按钮上样式/音效，绝不再遍历整面板（旧按钮会双播）
 		_apply_button_style(abyss_button)

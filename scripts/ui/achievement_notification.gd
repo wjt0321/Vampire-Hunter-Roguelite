@@ -28,10 +28,9 @@ func _on_achievement_unlocked(achievement_id: String, achievement_name: String) 
 	notification_queue.append({
 		"id": achievement_id,
 		"name": achievement_name,
-		"icon": info.get("icon", "杯"),
 		"description": info.get("description", ""),
 	})
-	
+
 	if not is_showing:
 		_show_next_notification()
 
@@ -39,13 +38,20 @@ func _show_next_notification() -> void:
 	if notification_queue.is_empty():
 		is_showing = false
 		return
-	
+
 	is_showing = true
 	var notification: Dictionary = notification_queue.pop_front()
-	
+
 	# 设置内容
 	name_label.text = "成就解锁: %s" % notification["name"]
 	desc_label.text = notification["description"]
+
+	# 图标：换成这个成就自己的徽章。
+	# 旧版 IconRect 绑的是通用 achievement_icon.png，25 个成就解锁都长一个样。
+	var tex: Texture2D = TextureManager.instance.get_achievement_icon(
+		String(notification.get("id", "")))
+	if tex != null:
+		icon_rect.texture = tex
 	
 	panel.visible = true
 	

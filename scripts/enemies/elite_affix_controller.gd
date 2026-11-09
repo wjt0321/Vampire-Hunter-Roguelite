@@ -29,7 +29,6 @@ var color: Color = Color.WHITE
 var slot: int = 0
 
 var _ring: Sprite2D = null
-var _icon: Label = null
 var _ring_tween: Tween = null
 var _host_physics_disabled: bool = false
 
@@ -88,7 +87,10 @@ func _build_visuals() -> void:
 
 	# 图标：光靠颜色区分四种词缀太难，头顶给一个能一眼读懂的符号。
 	# 2026-11-09 反馈"只有单字特别简陋"：换成手绘词缀图标（affix_icons.py，
-	# 形状+颜色双通道识别），拿不到贴图再回退单字。
+	# 形状+颜色双通道识别）。
+	# 旧版拿不到贴图再回退单字——那正是"只有字没有图标"的来源。
+	# 现在拿不到贴图就不画图标：缺图一眼能看出来，
+	# tools/verify_round4.gd 会把这种情况当成回归报出来。
 	# 两个词缀时图标向左错开一格，叠在一起等于只显示了一个。
 	var affix_tex: Texture2D = TextureManager.instance.get_affix_icon(affix_id) \
 		if TextureManager.instance != null else null
@@ -100,18 +102,6 @@ func _build_visuals() -> void:
 		icon_spr.position = Vector2(-18.0 - 22.0 * slot, -66.0)
 		icon_spr.z_index = 1
 		add_child(icon_spr)
-		_icon = null
-	else:
-		_icon = Label.new()
-		_icon.name = "AffixIcon"
-		_icon.text = EliteAffix.icon(affix_id)
-		_icon.add_theme_font_size_override("font_size", 17)
-		_icon.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
-		_icon.add_theme_constant_override("outline_size", 4)
-		_icon.position = Vector2(-9.0 - 20.0 * slot, -52.0)
-		_icon.z_index = 1
-		_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(_icon)
 
 	# 出场：一圈扩散的光环，让"精英来了"在混战里也能被注意到
 	var spawn_ring := ProjectileVisuals.make_ring_sprite(40.0, color)

@@ -477,9 +477,9 @@ func _get_basic_rewards() -> Array:
 	## 文案只讲"是什么"，具体幅度由 _basic_preview 补成"现在 → 选完"。
 	## 图标留空：本机字体不含 emoji，填 ⚔️💰❤️ 会在 Button 上渲染成蓝方块。
 	return [
-		{"id": "heal", "name": "生命恢复", "desc": "回复 30% 最大生命", "icon": "", "type": "basic"},
-		{"id": "gold", "name": "血晶奖励", "desc": "结算时额外获得 100 血晶", "icon": "", "type": "basic"},
-		{"id": "damage_boost", "name": "伤害提升", "desc": "攻击倍率 +10%（本局永久）", "icon": "", "type": "basic"},
+		{"id": "heal", "name": "生命恢复", "desc": "回复 30% 最大生命", "type": "basic"},
+		{"id": "gold", "name": "血晶奖励", "desc": "结算时额外获得 100 血晶", "type": "basic"},
+		{"id": "damage_boost", "name": "伤害提升", "desc": "攻击倍率 +10%（本局永久）", "type": "basic"},
 	]
 
 func _create_option_button(option: Dictionary) -> Button:
@@ -531,18 +531,10 @@ func _create_option_button(option: Dictionary) -> Button:
 		icon.custom_minimum_size = Vector2(48, 48)
 		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		vbox.add_child(icon)
-	else:
-		# 没有纹理时不画 emoji 回退：本机主字体不含 emoji，Button 上会变成蓝色方块
-		# （GDD 附录 D.4 已约定界面不用 emoji）。没有图标就干脆留白。
-		var icon_text: String = String(option.get("icon", ""))
-		if icon_text != "":
-			var icon_label := Label.new()
-			icon_label.text = icon_text
-			icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			var icon_label_settings := LabelSettings.new()
-			icon_label_settings.font_size = 32
-			icon_label.label_settings = icon_label_settings
-			vbox.add_child(icon_label)
+	# 拿不到纹理就留白：不画任何字符回退。
+	# 本机主字体不含 emoji，Button 上会变成蓝色方块（GDD 附录 D.4）；
+	# 中文字回退同样会变成"只有字没有图标"。留白才能一眼看出缺图，
+	# tools/verify_round4.gd 会把这种情况当成回归报出来。
 
 	# 添加名称
 	var name_label := Label.new()
@@ -667,13 +659,13 @@ func _get_option_icon(option: Dictionary) -> Texture2D:
 				"shoot_speed":
 					return TextureManager.instance.get_weapon_icon("knife")
 				"max_hp", "heal":
-					return TextureManager.instance.get_weapon_icon("heal_potion")
+					return TextureManager.instance.get_weapon_icon("heal_potion_icon")
 				"armor":
 					return TextureManager.instance.get_weapon_icon("shield")
 				"pickup_range":
 					return TextureManager.instance.get_weapon_icon("magnet")
 				"gold":
-					return TextureManager.instance.get_weapon_icon("blood_crystal")
+					return TextureManager.instance.get_weapon_icon("blood_crystal_icon")
 	
 	return null
 

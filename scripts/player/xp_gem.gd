@@ -69,20 +69,39 @@ func reset_for_pool() -> void:
 # ==================== 视觉 ====================
 
 ## 按 XP 值分三档：绿（小怪）/ 蓝（中怪）/ 金（精英与 Boss）
-## 尺寸在真机截图里校对过：12px 在深色地板 + 怪堆里仍偏小，统一上调一档
+## 尺寸在真机截图里校对过：12px 在深色地板 + 怪堆里仍偏小，统一上调一档。
+## 2026-11-09 第五轮：改用真美术贴图（assets/items/xp_gem_*.png）。
+## 三档贴图各自已经上好色（金/蓝/绿），代码这边不再 modulate——
+## 再乘一次 tier 色会把宝石压暗压脏。tier color 只留给程序化回退路径用。
 func _tier_for(value: int) -> Dictionary:
 	if value >= 20:
-		return {"size": 26.0, "color": Color(1.0, 0.78, 0.30), "pulse": 0.16}
+		return {"size": 32.0, "color": Color(1.0, 0.78, 0.30), "pulse": 0.16, "tex": "xp_gem_gold"}
 	elif value >= 8:
-		return {"size": 19.0, "color": Color(0.45, 0.82, 1.0), "pulse": 0.12}
-	return {"size": 14.0, "color": Color(0.52, 1.0, 0.62), "pulse": 0.09}
+		return {"size": 24.0, "color": Color(0.45, 0.82, 1.0), "pulse": 0.12, "tex": "xp_gem_blue"}
+	return {"size": 16.0, "color": Color(0.52, 1.0, 0.62), "pulse": 0.09, "tex": "xp_gem_green"}
 
 func _refresh_visual() -> void:
 	var spr := get_node_or_null("Sprite2D") as Sprite2D
 	if spr == null:
 		return
 	var tier := _tier_for(xp_value)
-	ProjectileVisuals.style_gem(spr, tier["color"], float(tier["size"]))
+	var tex: Texture2D = TextureManager.instance.get_item_texture(String(tier["tex"]))
+	if tex != null:
+		# 真贴图：自带像素画造型、高光和描边，不再是程序化发光菱形
+		spr.texture = tex
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		# 加色混合会把浅色水晶烧成纯白，改用普通混合
+		spr.material = null
+		spr.modulate = Color.WHITE
+		var ts := tex.get_size()
+		if ts.x > 0.0 and ts.y > 0.0:
+			spr.scale = Vector2(
+				float(tier["size"]) / ts.x,
+				float(tier["size"]) / ts.y)
+		spr.z_index = 0
+	else:
+		# 没有贴图时退回程序化宝石（不至于什么都不显示）
+		ProjectileVisuals.style_gem(spr, tier["color"], float(tier["size"]))
 	_base_scale = spr.scale
 	_start_pulse(spr, float(tier["pulse"]))
 

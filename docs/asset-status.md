@@ -118,6 +118,98 @@ Sprite2D + 「放大 + 淡出」tween + 加色混合，播完自毁。
 `texture_manager` 的 `floor` 键与 `verify_placeholders` 的 4 行同步删除，
 校验数从 87 → 83。需要恢复时从 git 历史（`57e7a12` 之前）取回即可。
 
+### 2.6 试玩反馈回补：仍然"只有字没有图"的位置（2026-11-09 第五轮）
+
+玩家试玩后的直接反馈：**「依旧有很多只有字没有图标的技能出现」** + **「阶段地图掉落道具没有图标」**。
+
+上一轮（2.3）把武器/被动/商店/HUD/元进度四处的图标补齐了，但**还有三处从来没接过图标**。
+这次不是靠猜，是三路交叉取证定位的：
+
+| 取证方式 | 看到什么 |
+|---|---|
+| `grep` 全工程 `"icon"` / `icon_emoji` / 单字赋值 | 25 个成就共用一个 `"★"`；`powerup.gd` 用中文字「血/狂/磁」当图标；`cursed_chest.gd` 用 ColorRect + 「锁」字 |
+| 无头枚举 `ItemCatalog.get_icon_texture()` | 武器 10 / 被动 14 / 属性 6 / 消耗品 4 **全部命中** → 映射层是好的，缺图在别处 |
+| 截图核对（`tools/icon_evidence_shots.gd`） | 升级三选一、房间商店、元进度商店、HUD build 面板**都已有图标**（上一轮的成果） |
+
+**结论：不是"图标映射漏了"，是这些位置压根没接图标。**
+
+#### 2.6.1 新增资产（38 张）
+
+| 类别 | 数量 | 文件 | 做法 |
+|---|---|---|---|
+| 成就徽章 | 25 | `assets/ui/ach_<成就id>.png` 48×48 | AI 双参考图 → 品红抠底 → BOX 下采样 → 32 色 |
+| 角色被动图标 | 2 | `assets/ui/passive_hunter_instinct.png`、`passive_holy_ward.png` 48×48 | 同上 |
+| 战场掉落物 | 4 | `assets/items/silver_coin.png`、`powerup_heal/frenzy/magnet.png` 48×48 | 同上 |
+| 经验宝石三档 | 3 | `assets/items/xp_gem_{green,blue,gold}.png` 16/24/32 | **派生**：从已有 AI 原图 `weapons/xp_gem_large.png` 下采样 + 换色阶 |
+| 受诅宝箱 | 1 | `assets/items/cursed_chest.png` 48×40 | **派生**：从 `tiles/props/chest.png` 改冷紫配色 + 背后紫雾 |
+| UI 尺寸修正 | 2 | `assets/items/heal_potion_icon.png`、`blood_crystal_icon.png` 48×48 | **派生**：原图是 1024 / 24，当 48px 图标用会糊 |
+| 宝石 UI 图标 | 1 | `assets/items/xp_gem_icon.png` 48×48 | **派生** |
+
+**新出的 31 张全部走"构图草图"路线**（`.workbuddy/comfy/sketches.py`，31 个手写轮廓 → 品红底白形状）。
+理由：管线是**图像编辑**（image_1 = 风格锚，image_2 = 形状参考），新资产没有占位图可参考时
+`prep_shape_ref` 会退化成"拿风格锚当形状参考"——那瓶血瓶会让 31 个图标全部变成药瓶。
+草图库先渲染成一张联络表人工核对形状，确认无误才喂给 ComfyUI。
+
+**派生 7 张遵循既有原则「能派生就不重新生成」**（见 2.3）：派生版和原图像素级对齐、画风一致，
+重新生成反而对不上。
+
+#### 2.6.2 接线：哪些位置从"字"换成了"图"
+
+| 位置 | 旧表现 | 现在 |
+|---|---|---|
+| 结算界面成就列表 | `game_over_ui.gd` 把 `info["icon"]` 拼成 `"★ 第一滴血"` 纯文字行 | 每行一张 48×48 专属徽章 + 名称；列表套 `ScrollContainer`（一局解锁 20+ 个时不会把面板撑出屏幕） |
+| 成就解锁通知 | `IconRect` 绑通用 `achievement_icon.png`，25 个成就长一个样 | 换成该成就自己的徽章 |
+| 角色选择界面被动技能 | 一个纯文字 Label（`"猎人直觉\n拾取范围 +20%"`） | 48×48 图标 + 名称/说明 |
+| 战场经验宝石 | `ProjectileVisuals.style_gem()` 程序化发光菱形 | `assets/items/xp_gem_*.png`，尺寸同时上调（14/19/26 → 16/24/32） |
+| 战场银币 | `style_sprite()` 画的 13px 发光圆点 | `assets/items/silver_coin.png` |
+| 战场增益（血露/狂暴/磁力） | 程序化菱形 + 中文字「血/狂/磁」 | `assets/items/powerup_*.png`；中文字从数据里删掉，只留名字标签做冗余 |
+| 受诅宝箱 | ColorRect 纯色块 + 中文字「锁」 | `assets/items/cursed_chest.png` |
+
+**顺手清掉的"字符当图标"残留**（贴图永远能命中，留着就是口子）：
+`achievement_manager.gd` 25 处 `"icon": "★"` → `"icon": "ach_<成就id>"`；
+`upgrade_shop.gd` 6 处 `"icon": "攻"/"命"/"疾"/"甲"/"验"/"晶"` → 删除；
+`powerup.gd` 3 处 `"icon": "血"/"狂"/"磁"` → 删除。
+
+**尺寸修正**：`heal_potion` 原图 1024×1024、`blood_crystal` 原图 24×24，
+当 48px 图标用分别是"糊成马赛克"和"非整数拉伸"。现在各有一个真正的 48×48 版本。
+
+#### 2.6.3 收尾：把"字符当图标"这套机制整个拆掉
+
+表层修完后再全工程 grep，还能搜出一整套**单字图标机制**。它不是这次的直接病因，
+但正是"以后还会再犯"的根源——**新增一个物品忘了在 `ItemCatalog` 登记，
+界面就会静默退化成"枪""书""刃"这种单字**，而单字长得像图标，玩家分不清是图标还是文字。
+
+| 残留 | 位置 | 它为什么是口子 |
+|---|---|---|
+| `icon_emoji` 字段 | `weapon_data` / `passive_item_data` / `character_data` + 30 处赋值 | 武器/被动/角色都带一个单字（枪/书/刃/猎…） |
+| `evolution_icon` | `weapon_evolution` + `EVOLUTION_CONFIG` 11 项 | 进化武器的单字 |
+| catalog 的 `"icon": "枪"` | `item_catalog` 34 处 | 数据行里的单字 |
+| **四处"拿不到贴图就显示单字"回退** | `hud` / `room_shop` / `upgrade_ui` / `elite_affix_controller` | 贴图缺失时静默退化成单字，**回归测试也测不出来** |
+
+处理（一次性脚本 `tools/strip_char_icons.py`，共删 81 处字段/赋值）：
+
+- 删掉 `icon_emoji` / `evolution_icon` 字段与全部赋值
+- 删掉 `ItemCatalog` 34 处 `"icon": "枪"`、升级三选一 3 处 `"icon": ""`、
+  `EliteAffix.icon()` 函数与词缀表 4 处 `"icon": "盾"`
+- 四处回退分支改成**拿不到贴图就留白**：图标位空着一眼能看出缺图，
+  `tools/verify_round4.gd` 会把缺图当成回归直接报出来（原来显示单字，回归测不出来）
+
+另外把角色名前的"★"换成已有的 `assets/ui/star_gold.png`——这张资产早就注册进
+`TextureManager`，但一直被字符 `"★ "` 顶替。
+
+#### 2.6.4 顺带修的结算面板排版
+
+截图核对时发现结算界面的标题和统计行**压在金框花纹上**。根因：
+`game_over_ui.gd` 是全工程唯一没给 `stats_panel` 设 `texture_margin` 的面板
+（主菜单 26/26/24/24、选角 48/48/62/60、商店、升级弹窗都设了）。
+
+- `texture_margin` 上下改 56/28、`content_margin` 60/32
+  （面板顶部中间有个向上凸的尖刺装饰，选角界面就是按 62/66 让的）
+- 标题从 `StatsLabel` 里拆出来，单独一个 `TitleLabel`（字号 24），不再靠 `\n\n` 空行分隔
+- 成就列表行高 140 → **152**（= 48×3 + 行距 4×2），第三行不再被裁掉半截
+
+---
+
 ### 2.3 非正式资产替换（87 张，2026-11-09 第二轮）
 
 **怎么区分正式与非正式**（这是这一轮的判据，写下来避免下次又混）：
@@ -244,6 +336,31 @@ Sprite2D + 「放大 + 淡出」tween + 加色混合，播完自毁。
 | 运行 `res://scenes/main.tscn` | 0 个 SCRIPT ERROR / Parse Error |
 | 顺手修的既有 bug | `main_menu.gd` 只写了 `anchors_preset`，`Control` 不在容器里时 rect 仍是 0×0 → **主菜单背景一直没显示，透出引擎清屏灰**；改成 `set_anchors_and_offsets_preset` 后正常（已用删改前后两张截图对照确认，不是本轮引入的） |
 | 顺手修掉的既有 bug | `vampire_lord.gd:328` 的 `if sprite:` 缺缩进块，导致整个 Boss 脚本编译失败、Boss 战会崩（上一会话遗留） |
+
+第四批（试玩反馈回补，2026-11-09 22:02 → 22:36）：
+
+| 项目 | 结果 |
+|---|---|
+| 刷怪越界复测 | **0/200**（修前 15/200），增益落点 **0/40** |
+| `tools/verify_round4.gd`（新增） | 成就徽章 25/25、角色被动 2/2、战场掉落物 10/10、元进度 6/6、词缀 4/4 全部有贴图；物品图标尺寸全部 ≤64px |
+| `tools/audit_icons.py`（扩展） | 覆盖 4 组共 100+ 张图标，判据按"全透明 / 近乎单色 / 缩小后糊 / 体积异常"逐项查 |
+| 出图 | ComfyUI 串行 31 张（25 成就 + 2 被动 + 4 掉落物），平均 **66 秒/张** |
+| 程序化/派生 | 7 张（宝石三档 / 受诅宝箱 / 药瓶 48px / 血晶 48px / 宝石 UI 图标） |
+| 顺手修的既有 bug | `wave_manager.gd` 用 `player.get_parent()` 当房间（那是 Main 不是房间）→ 边界钳制整段被静默跳过，**怪刷在地图外**；同源问题还有 `vampire_mage.gd` 瞬移、`weapon_manager.gd` 子弹射程。抽出 `scripts/core/room_lookup.gd` 作唯一房间解析入口 |
+
+第五批（字符图标机制拆除 + 结算面板排版，2026-11-09 23:10 → 23:40）：
+
+| 项目 | 结果 |
+|---|---|
+| 字符图标字段/赋值 | **81 处删除**（`icon_emoji` / `evolution_icon` / catalog 34 处 `"icon": "枪"` / `EliteAffix.icon()`），脚本 `tools/strip_char_icons.py` |
+| 字符回退分支 | **4 处全部移除**（`hud` / `room_shop` / `upgrade_ui` / `elite_affix_controller`）→ 拿不到贴图就留白，缺图由 `verify_round4.gd` 当回归报出 |
+| 全工程残留扫描 | `icon_emoji` / `evolution_icon` / `get("icon"` **0 命中**（仅剩一行说明性注释） |
+| 角色名星号 | 字符 `"★ "` → `assets/ui/star_gold.png` 贴图（这张资产早已注册，一直被字符顶替） |
+| 结算面板排版 | `texture_margin` 缺失导致标题/统计压金框 → 补 56/28 + content 60/32；标题拆成独立 `TitleLabel`；成就行高 140 → 152 |
+| `tools/verify_round4.gd` 复跑 | **✅ 全部通过（0 项警告）**；刷怪 200 次 0 越界、增益 40 次 0 越界 |
+| `tools/audit_icons.py` 复跑 | 4 组全部 OK（weapon 26 / ui 36 / item 11 / source 3） |
+| 取证截图 | 9 张全部产出；逐张核对：掉落物 6 类图标、成就徽章 3 行、HUD 构筑 21 条目、选角被动 2 个，均为真实贴图 |
+| README 截图 | 6 张重录（`menu` / `characters` / `shop` / `gameplay` / `upgrade` / `boss`），fail=0 |
 
 ---
 

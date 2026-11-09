@@ -21,28 +21,24 @@ const HASTER := "haster"
 const DATA: Dictionary = {
 	SHIELDED: {
 		"name": "血盾",
-		"icon": "盾",
 		"color": Color(0.42, 0.74, 1.0),
 		"weight": 3.0,
 		"tip": "开场带一层护盾，护盾打空前不掉血",
 	},
 	CHARGER: {
 		"name": "冲锋",
-		"icon": "冲",
 		"color": Color(1.0, 0.44, 0.34),
 		"weight": 3.0,
 		"tip": "地面亮圈后向玩家突进，前摇 0.6 秒",
 	},
 	SPLITTER: {
 		"name": "裂变",
-		"icon": "裂",
 		"color": Color(0.92, 0.52, 1.0),
 		"weight": 2.4,
 		"tip": "死亡时裂成两只小的",
 	},
 	HASTER: {
 		"name": "急速",
-		"icon": "疾",
 		"color": Color(1.0, 0.86, 0.36),
 		"weight": 2.0,
 		"tip": "给周围小怪加速，优先集火",
@@ -58,10 +54,6 @@ static func get_data(id: String) -> Dictionary:
 static func display_name(id: String) -> String:
 	var d: Dictionary = get_data(id)
 	return String(d.get("name", "精英"))
-
-static func icon(id: String) -> String:
-	var d: Dictionary = get_data(id)
-	return String(d.get("icon", "✦"))
 
 static func color(id: String) -> Color:
 	var d: Dictionary = get_data(id)

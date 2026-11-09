@@ -5,7 +5,6 @@ extends Resource
 @export var item_id: String = ""
 @export var item_name: String = ""
 @export var description: String = ""
-@export var icon_emoji: String = "物"
 
 # 效果类型
 enum EffectType { MAGNET, SHIELD, REGENERATION, GREED, BERSERKER, FROZEN, LIGHTNING_SHIELD, SHADOW, VAMPIRIC, SWIFT, CLOVER, BLEED, SLOW, DRAIN }
@@ -50,7 +49,6 @@ static func create_magnet() -> Resource:
 	item.item_id = "magnet"
 	item.item_name = "经验磁铁"
 	item.description = "增加经验宝石吸附范围"
-	item.icon_emoji = "磁"
 	item.effect_type = EffectType.MAGNET
 	item.base_value = 1.0  # 基础吸附范围倍数
 	item.value_per_level = 0.3  # 每级增加30%
@@ -62,7 +60,6 @@ static func create_shield() -> Resource:
 	item.item_id = "shield"
 	item.item_name = "能量护盾"
 	item.description = "定期生成抵挡伤害的护盾"
-	item.icon_emoji = "盾"
 	item.effect_type = EffectType.SHIELD
 	item.base_value = 30.0  # 基础冷却30秒
 	item.value_per_level = -5.0  # 每级减少5秒
@@ -74,7 +71,6 @@ static func create_regeneration() -> Resource:
 	item.item_id = "regeneration"
 	item.item_name = "生命恢复"
 	item.description = "定期恢复生命值"
-	item.icon_emoji = "愈"
 	item.effect_type = EffectType.REGENERATION
 	item.base_value = 0.01  # 基础1%生命恢复
 	item.value_per_level = 0.01  # 每级增加1%
@@ -86,7 +82,6 @@ static func create_greed_ring() -> Resource:
 	item.item_id = "greed_ring"
 	item.item_name = "贪婪戒指"
 	item.description = "增加经验获取量"
-	item.icon_emoji = "贪"
 	item.effect_type = EffectType.GREED
 	item.base_value = 0.2  # 基础20%经验加成
 	item.value_per_level = 0.1  # 每级增加10%
@@ -98,7 +93,6 @@ static func create_berserker_blood() -> Resource:
 	item.item_id = "berserker_blood"
 	item.item_name = "狂战士之血"
 	item.description = "生命值低于30%时攻击力大幅提升"
-	item.icon_emoji = "血"
 	item.effect_type = EffectType.BERSERKER
 	item.base_value = 0.5  # 基础50%伤害加成
 	item.value_per_level = 0.1  # 每级增加10%
@@ -110,7 +104,6 @@ static func create_frozen_heart() -> Resource:
 	item.item_id = "frozen_heart"
 	item.item_name = "冰冻之心"
 	item.description = "攻击有几率冻结敌人"
-	item.icon_emoji = "冰"
 	item.effect_type = EffectType.FROZEN
 	item.base_value = 0.1  # 基础10%冻结几率
 	item.value_per_level = 0.05  # 每级增加5%
@@ -122,7 +115,6 @@ static func create_lightning_shield() -> Resource:
 	item.item_id = "lightning_shield"
 	item.item_name = "闪电护符"
 	item.description = "受到伤害时释放闪电反击"
-	item.icon_emoji = "雷"
 	item.effect_type = EffectType.LIGHTNING_SHIELD
 	item.base_value = 20.0  # 基础20点伤害
 	item.value_per_level = 10.0  # 每级增加10点
@@ -134,7 +126,6 @@ static func create_shadow_cloak() -> Resource:
 	item.item_id = "shadow_cloak"
 	item.item_name = "影子披风"
 	item.description = "增加闪避几率"
-	item.icon_emoji = "影"
 	item.effect_type = EffectType.SHADOW
 	item.base_value = 0.05  # 基础5%闪避
 	item.value_per_level = 0.03  # 每级增加3%
@@ -146,7 +137,6 @@ static func create_vampiric_fang() -> Resource:
 	item.item_id = "vampiric_fang"
 	item.item_name = "吸血獠牙"
 	item.description = "击杀敌人时概率吸血"
-	item.icon_emoji = "牙"
 	item.effect_type = EffectType.VAMPIRIC
 	item.base_value = 0.1  # 基础10%触发几率
 	item.value_per_level = 0.06  # 每级增加6%
@@ -158,7 +148,6 @@ static func create_swift_boots() -> Resource:
 	item.item_id = "swift_boots"
 	item.item_name = "疾风靴"
 	item.description = "增加移动速度"
-	item.icon_emoji = "靴"
 	item.effect_type = EffectType.SWIFT
 	item.base_value = 0.1  # 基础10%移速
 	item.value_per_level = 0.05  # 每级增加5%
@@ -170,7 +159,6 @@ static func create_lucky_clover() -> Resource:
 	item.item_id = "lucky_clover"
 	item.item_name = "幸运四叶草"
 	item.description = "增加暴击几率"
-	item.icon_emoji = "幸"
 	item.effect_type = EffectType.CLOVER
 	item.base_value = 0.08  # 基础8%暴击
 	item.value_per_level = 0.04  # 每级增加4%
@@ -186,7 +174,6 @@ static func create_blood_edge() -> Resource:
 	item.item_id = "blood_edge"
 	item.item_name = "血刃"
 	item.description = "命中时概率使敌人流血"
-	item.icon_emoji = "刃"
 	item.effect_type = EffectType.BLEED
 	item.base_value = 0.25  # 基础25%触发
 	item.value_per_level = 0.08
@@ -200,7 +187,6 @@ static func create_frost_bind() -> Resource:
 	item.item_id = "frost_bind"
 	item.item_name = "霜缚"
 	item.description = "命中时概率使敌人减速"
-	item.icon_emoji = "霜"
 	item.effect_type = EffectType.SLOW
 	item.base_value = 0.30
 	item.value_per_level = 0.07
@@ -214,7 +200,6 @@ static func create_blood_drain() -> Resource:
 	item.item_id = "blood_drain"
 	item.item_name = "汲取"
 	item.description = "造成的伤害按比例转为生命"
-	item.icon_emoji = "汲"
 	item.effect_type = EffectType.DRAIN
 	item.base_value = 0.02  # 基础 2% 伤害转治疗
 	item.value_per_level = 0.008

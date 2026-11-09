@@ -18,7 +18,19 @@ func _ready() -> void:
 	var spr := Sprite2D.new()
 	spr.name = "CoinSprite"
 	add_child(spr)
-	ProjectileVisuals.style_sprite(spr, Color(1.0, 0.84, 0.38), 13.0, 13.0, true)
+	# 真贴图：以前是一枚程序化发光圆点（style_sprite），地上根本不像"钱"
+	var tex: Texture2D = TextureManager.instance.get_item_texture("silver_coin")
+	if tex != null:
+		spr.texture = tex
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		spr.material = null
+		var ts := tex.get_size()
+		if ts.x > 0.0:
+			var s := 16.0 / ts.x
+			spr.scale = Vector2(s, s)
+		spr.z_index = 0
+	else:
+		ProjectileVisuals.style_sprite(spr, Color(1.0, 0.84, 0.38), 13.0, 13.0, true)
 	# 出场：弹一下，让玩家注意到"掉东西了"
 	var dir := Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)).normalized()
 	if dir == Vector2.ZERO:

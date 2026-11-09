@@ -2,6 +2,8 @@ extends "res://scripts/enemies/enemy_base.gd"
 class_name VampireMageEnemy
 ## 吸血鬼法师 — 远程法术攻击，会瞬移
 
+const RoomLookupScript = preload("res://scripts/core/room_lookup.gd")
+
 @export var teleport_interval: float = 4.0  # 瞬移间隔
 @export var teleport_range: float = 200.0  # 瞬移距离
 @export var cast_range: float = 250.0  # 施法距离
@@ -95,14 +97,18 @@ func _teleport() -> void:
 	var target_pos := player.global_position + Vector2(cos(angle), sin(angle)) * teleport_range
 	
 	# 确保在房间范围内
-	var room := get_parent()
-	if room and room.has_method("get_center"):
-		var room_center: Vector2 = room.get_center()
+	# 旧写法 get_parent() 拿到的是 Main 不是房间 → has_method("get_center") 为 false
+	# → 钳制整段被跳过 → 瞬移直接飞出地图边界
+	var room := RoomLookupScript.find_room(self)
+	if room != null and room.has_method("get_center"):
+		var room_center: Vector2 = (room as Node2D).to_global(room.get_center())
 		var room_width: float = room.get("room_width")
 		var room_height: float = room.get("room_height")
 		var room_size := Vector2(room_width, room_height)
 		target_pos.x = clampf(target_pos.x, room_center.x - room_size.x / 2 + 50, room_center.x + room_size.x / 2 - 50)
 		target_pos.y = clampf(target_pos.y, room_center.y - room_size.y / 2 + 50, room_center.y + room_size.y / 2 - 50)
+	else:
+		target_pos = RoomLookupScript.clamp_into_room(target_pos, 50.0, self)
 	
 	# 延迟瞬移
 	await get_tree().create_timer(0.3).timeout

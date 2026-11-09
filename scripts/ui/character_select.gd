@@ -140,15 +140,30 @@ func _create_card(char_data: Resource) -> PanelContainer:
 	portrait.offset_right = -10
 	portrait.offset_bottom = -10
 
+	# 「已选择」用星号贴图（star_gold.png），不再用 "★ " 字符：
+	# 角色名旁边挂一个字符星号，本质还是"用字符代替图标"。
+	# 走 HBox 而不是多挂一个独立子节点，两种状态的卡片高度仍然一致
+	# （星号 24px 小于名字行高，HBox 取两者最大值，未选中时星标不占空间）。
+	var name_row := HBoxContainer.new()
+	name_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	name_row.add_theme_constant_override("separation", 6)
+
+	var star := TextureRect.new()
+	star.texture = TextureManager.instance.get_ui_texture("star_gold")
+	star.custom_minimum_size = Vector2(24, 24)
+	star.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	star.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	star.visible = is_selected
+	name_row.add_child(star)
+
 	var name_label := Label.new()
-	# 「已选择」用星号挂在名字前面，不再单独加一行图标 ——
-	# 多一个子节点会让两种状态的卡片高度不一致。
-	name_label.text = ("★ " if is_selected else "") + char_data.char_name
+	name_label.text = char_data.char_name
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.add_theme_font_size_override("font_size", 22)
 	if is_selected:
 		name_label.modulate = Color(1.0, 0.85, 0.2)
-	vbox.add_child(name_label)
+	name_row.add_child(name_label)
+	vbox.add_child(name_row)
 
 	var desc_label := Label.new()
 	desc_label.text = char_data.description
@@ -175,14 +190,48 @@ func _create_card(char_data: Resource) -> PanelContainer:
 	weapon_label.add_theme_font_size_override("font_size", 14)
 	vbox.add_child(weapon_label)
 
+	# 被动技能：图标 + 名称/说明。
+	# 旧版是一个纯文字 Label（"猎人直觉\n拾取范围 +20%"），角色卡片上两行字
+	# 完全没有辨识度，玩家看不出这个被动到底给了什么。
+	var passive_row := HBoxContainer.new()
+	passive_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	passive_row.add_theme_constant_override("separation", 10)
+
+	var passive_icon := TextureRect.new()
+	passive_icon.custom_minimum_size = Vector2(48, 48)
+	passive_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	passive_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	passive_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	passive_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var passive_tex: Texture2D = TextureManager.instance.get_passive_icon(
+		String(char_data.passive_icon))
+	if passive_tex != null:
+		passive_icon.texture = passive_tex
+	else:
+		passive_icon.visible = false
+	passive_row.add_child(passive_icon)
+
+	var passive_text := VBoxContainer.new()
+	passive_text.custom_minimum_size.x = 190
+	passive_text.add_theme_constant_override("separation", 1)
+
+	var passive_name_label := Label.new()
+	passive_name_label.text = String(char_data.passive_name)
+	passive_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	passive_name_label.add_theme_font_size_override("font_size", 15)
+	passive_name_label.modulate = Color(0.5, 0.9, 1.0)
+	passive_text.add_child(passive_name_label)
+
 	var passive_label := Label.new()
-	passive_label.text = "%s\n%s" % [char_data.passive_name, char_data.passive_description]
+	passive_label.text = String(char_data.passive_description)
 	passive_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	passive_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	passive_label.add_theme_font_size_override("font_size", 13)
-	passive_label.custom_minimum_size.x = 250
+	passive_label.add_theme_font_size_override("font_size", 12)
 	passive_label.modulate = Color(0.5, 0.9, 1.0)
-	vbox.add_child(passive_label)
+	passive_text.add_child(passive_label)
+
+	passive_row.add_child(passive_text)
+	vbox.add_child(passive_row)
 
 	# 未解锁时灰化卡片
 	if not is_unlocked:

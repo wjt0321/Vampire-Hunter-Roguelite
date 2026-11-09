@@ -203,11 +203,12 @@ func _load_weapon_icons():
 		"lightning": _load_texture("res://assets/weapons/icon_lightning.png"),
 		"magnet": _load_texture("res://assets/weapons/icon_magnet.png"),
 		"shield": _load_texture("res://assets/weapons/icon_shield.png"),
-		"heal_potion": _load_texture("res://assets/weapons/heal_potion.png"),
-		"xp_gem_large": _load_texture("res://assets/weapons/xp_gem_large.png"),
+		# heal_potion 原图是 1024（同时是 ComfyUI 管线的风格锚，必须留在磁盘上），
+		# 但当 48px 图标用会糊成马赛克 —— UI 一律走下面的 heal_potion_icon。
+		# 宝石同理：xp_gem_large 原图 1024，UI 用 48×48 的派生版。
+		"xp_gem_large": _load_texture("res://assets/items/xp_gem_icon.png"),
 		"bullet": _load_texture("res://assets/weapons/bullet.png"),
 		"magic_orb": _load_texture("res://assets/weapons/magic_orb.png"),
-		"blood_crystal": _load_texture("res://assets/weapons/blood_crystal.png"),
 		"regen": _load_texture("res://assets/weapons/icon_regen.png"),
 		"greed": _load_texture("res://assets/weapons/icon_greed.png"),
 		"berserker": _load_texture("res://assets/weapons/icon_berserker.png"),
@@ -231,10 +232,76 @@ func _load_weapon_icons():
 		"frost_bind": _load_texture("res://assets/weapons/icon_frost_bind.png"),
 		"blood_drain": _load_texture("res://assets/weapons/icon_blood_drain.png"),
 		"mightstone": _load_texture("res://assets/weapons/icon_mightstone.png"),
+		# 48×48 的 UI 图标版本：heal_potion 原图 1024、blood_crystal 原图 24，
+		# 直接当 48px 图标用会糊成马赛克 / 非整数拉伸。
+		"heal_potion_icon": _load_texture("res://assets/items/heal_potion_icon.png"),
+		"blood_crystal_icon": _load_texture("res://assets/items/blood_crystal_icon.png"),
 	}
 
 # 精英词缀头顶图标（affix_icons.py 手绘 24x24，带描边）
 var affix_icons: Dictionary = {}
+
+# ==== 2026-11-09 第五轮补缺：仍然"只有字没有图"的位置 ====
+#
+# 成就徽章：25 个成就原本在 achievement_manager.gd 里共用同一个 "★" 字符，
+# 结算界面的成就列表就是一整列"★ 第一滴血"这种纯文字。
+# 现在每个成就一张专属徽章（assets/ui/ach_<id>.png，48×48）。
+var achievement_icons: Dictionary = {}
+
+const ACHIEVEMENT_IDS: Array[String] = [
+	"first_blood", "novice_hunter", "expert_hunter", "vampire_slayer",
+	"werewolf_hunter", "zombie_hunter", "exterminator", "elite_hunter",
+	"prince_slayer", "boss_killer", "crypt_breaker", "throne_breaker",
+	"flawless_victory", "speed_runner", "survivor", "wave_master",
+	"room_explorer", "weapon_master", "jack_of_all_trades", "evolutionist",
+	"rich_hunter", "maxed_out", "shopaholic", "treasure_hunter", "rest_stop",
+]
+
+# 角色被动技能图标（角色选择界面原本只有两行纯文字）
+var passive_icons: Dictionary = {}
+
+# 战场地面掉落物（原本全是 ProjectileVisuals 程序化画的菱形/圆点）
+var item_textures: Dictionary = {}
+
+func _load_achievement_icons() -> void:
+	for ach_id in ACHIEVEMENT_IDS:
+		achievement_icons[ach_id] = _load_texture("res://assets/ui/ach_%s.png" % ach_id)
+
+func get_achievement_icon(achievement_id: String) -> Texture2D:
+	if achievement_icons.is_empty():
+		_load_achievement_icons()
+	return achievement_icons.get(achievement_id, null)
+
+func _load_passive_icons() -> void:
+	passive_icons = {
+		"hunter_instinct": _load_texture("res://assets/ui/passive_hunter_instinct.png"),
+		"holy_ward": _load_texture("res://assets/ui/passive_holy_ward.png"),
+	}
+
+func get_passive_icon(passive_id: String) -> Texture2D:
+	if passive_icons.is_empty():
+		_load_passive_icons()
+	return passive_icons.get(passive_id, null)
+
+func _load_item_textures() -> void:
+	item_textures = {
+		"silver_coin": _load_texture("res://assets/items/silver_coin.png"),
+		"xp_gem_green": _load_texture("res://assets/items/xp_gem_green.png"),
+		"xp_gem_blue": _load_texture("res://assets/items/xp_gem_blue.png"),
+		"xp_gem_gold": _load_texture("res://assets/items/xp_gem_gold.png"),
+		"powerup_heal": _load_texture("res://assets/items/powerup_heal.png"),
+		"powerup_frenzy": _load_texture("res://assets/items/powerup_frenzy.png"),
+		"powerup_magnet": _load_texture("res://assets/items/powerup_magnet.png"),
+		"cursed_chest": _load_texture("res://assets/items/cursed_chest.png"),
+		# UI 用的 48×48 版本（原图是 1024/24，当 48px 图标用会糊成马赛克）
+		"heal_potion_icon": _load_texture("res://assets/items/heal_potion_icon.png"),
+		"blood_crystal_icon": _load_texture("res://assets/items/blood_crystal_icon.png"),
+	}
+
+func get_item_texture(item_name: String) -> Texture2D:
+	if item_textures.is_empty():
+		_load_item_textures()
+	return item_textures.get(item_name, null)
 
 func _load_affix_icons() -> void:
 	affix_icons = {

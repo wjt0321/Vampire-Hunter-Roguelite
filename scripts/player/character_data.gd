@@ -4,7 +4,6 @@ extends Resource
 @export var char_id: String = "hunter"
 @export var char_name: String = "猎人阿尔忒弥斯"
 @export var description: String = "平衡型角色"
-@export var icon_emoji: String = "猎"
 @export var initial_weapon: String = "pistol"   # 初始武器 ID
 @export var unlock_cost: int = 0                # 0 = 默认角色
 
@@ -16,6 +15,9 @@ extends Resource
 # 被动技能
 @export var passive_name: String = "无"
 @export var passive_description: String = ""
+## 被动技能图标 key（对应 assets/ui/passive_<key>.png）。
+## 角色选择界面原本只有两行纯文字，玩家看不出被动到底给了什么。
+@export var passive_icon: String = ""
 
 static func create_hunter() -> Resource:
 	var data := Resource.new()
@@ -23,7 +25,6 @@ static func create_hunter() -> Resource:
 	data.char_id = "hunter"
 	data.char_name = "猎人阿尔忒弥斯"
 	data.description = "平衡型角色，适合新手"
-	data.icon_emoji = "弓"
 	data.initial_weapon = "pistol"
 	data.unlock_cost = 0
 	data.base_hp = 100.0
@@ -31,6 +32,7 @@ static func create_hunter() -> Resource:
 	data.base_damage_mult = 1.0
 	data.passive_name = "猎人直觉"
 	data.passive_description = "拾取范围 +20%"
+	data.passive_icon = "hunter_instinct"
 	return data
 
 static func create_priestess() -> Resource:
@@ -39,7 +41,6 @@ static func create_priestess() -> Resource:
 	data.char_id = "priestess"
 	data.char_name = "牧师塞西莉亚"
 	data.description = "高血量低速，防御型角色"
-	data.icon_emoji = "术"
 	data.initial_weapon = "magic_book"
 	data.unlock_cost = 500
 	data.base_hp = 150.0
@@ -47,6 +48,7 @@ static func create_priestess() -> Resource:
 	data.base_damage_mult = 0.85
 	data.passive_name = "神圣庇护"
 	data.passive_description = "每 10 秒恢复 5% 最大生命"
+	data.passive_icon = "holy_ward"
 	return data
 
 static func get_all_characters() -> Array:

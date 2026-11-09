@@ -4,43 +4,42 @@ extends Node2D
 ## 房间中央的上锁宝箱：守卫全清后 open() 播放开箱动画并自我了结。
 ## 奖励本身由 room_event_manager 结算（保持"数值"与"演出"分离，
 ## 这样测试可以只断言数值，不用等动画）。
+##
+## 2026-11-09 第五轮：原来箱体是一个 ColorRect 纯色块 + 一个中文字"锁"，
+## 场上根本不像宝箱。现在用美术贴图 assets/items/cursed_chest.png。
 
 var _opened: bool = false
-var _box: ColorRect = null
-var _lock_label: Label = null
+var _chest: Node2D = null
 
 func _ready() -> void:
 	add_to_group("event_chests")
 
-	# 箱体：暗色矩形 + 描边。不用 Sprite——项目还没有美术资源，
-	# ColorRect 的"平涂 + 边框"和墙/地砖是同一套视觉语言
-	_box = ColorRect.new()
-	_box.color = Color(0.32, 0.2, 0.12)
-	_box.size = Vector2(40, 30)
-	_box.position = Vector2(-20, -15)
-	_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_box)
+	_chest = Node2D.new()
+	_chest.name = "ChestVisual"
+	add_child(_chest)
 
-	var edge := ColorRect.new()
-	edge.color = Color(0.78, 0.6, 0.24)
-	edge.size = Vector2(44, 4)
-	edge.position = Vector2(-22, -17)
-	edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(edge)
+	# 箱体：美术贴图（带锁、铁箍、木纹）。
+	var tex: Texture2D = TextureManager.instance.get_item_texture("cursed_chest")
+	if tex != null:
+		var spr := Sprite2D.new()
+		spr.texture = tex
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_chest.add_child(spr)
+	else:
+		# 回退：纯色块 + 金边（没有美术资源时的老样子）
+		var box := ColorRect.new()
+		box.color = Color(0.32, 0.2, 0.12)
+		box.size = Vector2(40, 30)
+		box.position = Vector2(-20, -15)
+		box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_chest.add_child(box)
 
-	# 锁：中文字"锁"（D.4：界面不用 emoji）
-	_lock_label = Label.new()
-	_lock_label.text = "锁"
-	_lock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lock_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_lock_label.size = Vector2(40, 30)
-	_lock_label.position = Vector2(-20, -15)
-	_lock_label.add_theme_font_size_override("font_size", 15)
-	_lock_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.5))
-	_lock_label.add_theme_color_override("font_outline_color", Color(0.05, 0.02, 0.04, 0.95))
-	_lock_label.add_theme_constant_override("outline_size", 4)
-	_lock_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_lock_label)
+		var edge := ColorRect.new()
+		edge.color = Color(0.78, 0.6, 0.24)
+		edge.size = Vector2(44, 4)
+		edge.position = Vector2(-22, -17)
+		edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_chest.add_child(edge)
 
 	var name_label := Label.new()
 	name_label.text = "受 诅 宝 箱"
@@ -57,17 +56,14 @@ func _ready() -> void:
 	# 呼吸：静止物必须有轻微脉动才不会被当成背景贴图（同 powerup）
 	var pulse := create_tween()
 	pulse.set_loops()
-	pulse.tween_property(_box, "scale", Vector2(1.08, 1.08), 0.9).set_trans(Tween.TRANS_SINE)
-	pulse.tween_property(_box, "scale", Vector2.ONE, 0.9).set_trans(Tween.TRANS_SINE)
+	pulse.tween_property(_chest, "scale", Vector2(1.08, 1.08), 0.9).set_trans(Tween.TRANS_SINE)
+	pulse.tween_property(_chest, "scale", Vector2.ONE, 0.9).set_trans(Tween.TRANS_SINE)
 
 func open() -> void:
-	## 开箱演出：锁字换成"开"、金色闪光、放大淡出。奖励在调用方结算。
+	## 开箱演出：金色闪光、放大淡出。奖励在调用方结算。
 	if _opened:
 		return
 	_opened = true
-	if _lock_label:
-		_lock_label.text = "开"
-		_lock_label.add_theme_color_override("font_color", Color(0.5, 1.0, 0.6))
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
 		vfx.spawn_hit_particles(global_position, Color(1.0, 0.85, 0.3), 5)

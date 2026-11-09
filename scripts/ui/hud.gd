@@ -209,7 +209,7 @@ func _refresh_build(force: bool = false) -> void:
 	if weapons.is_empty():
 		_add_build_hint("（空手）")
 	for w in weapons:
-		_add_build_row(w.weapon_id, "weapon", String(w.icon_emoji), String(w.weapon_name),
+		_add_build_row(w.weapon_id, "weapon", String(w.weapon_name),
 			int(w.current_level), int(w.max_level))
 
 	var passives: Array = player_ref.passive_items
@@ -220,7 +220,7 @@ func _refresh_build(force: bool = false) -> void:
 			var max_lv: int = 0
 			if p.has_method("is_max_level") and p.is_max_level():
 				max_lv = int(p.current_level)
-			_add_build_row(String(p.item_id), "passive", String(p.icon_emoji), String(p.item_name),
+			_add_build_row(String(p.item_id), "passive", String(p.item_name),
 				int(p.current_level), max_lv)
 
 	# 难度软因子：只在真的被修正过时显示，开局写个 ×1.00 纯属噪音
@@ -270,12 +270,16 @@ func _add_build_hint(text: String) -> void:
 	lbl.add_theme_color_override("font_color", Color(0.45, 0.45, 0.5))
 	_build_box.add_child(lbl)
 
-func _add_build_row(item_id: String, item_type: String, icon: String, item_name: String, level: int, max_level: int) -> void:
+func _add_build_row(item_id: String, item_type: String, item_name: String, level: int, max_level: int) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 4)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	# 图标：贴图优先（与升级/商店同一张映射表），没有贴图才显示单字
+	# 图标：走 ItemCatalog 统一映射表。
+	# 旧版拿不到贴图就回退显示单字（"枪"/"书"），那正是"只有字没有图标的技能"
+	# 的来源——单字还长得像图标，玩家分不清是图标还是文字。
+	# 现在拿不到贴图就留白：图标位空着一眼能看出缺图，
+	# tools/verify_round4.gd 会把这种情况当成回归直接报出来。
 	var icon_tex: Texture2D = ItemCatalog.get_icon_texture(item_id, item_type)
 	if icon_tex != null:
 		var icon_rect := TextureRect.new()
@@ -284,11 +288,6 @@ func _add_build_row(item_id: String, item_type: String, icon: String, item_name:
 		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon_rect.custom_minimum_size = Vector2(16, 16)
 		row.add_child(icon_rect)
-	else:
-		var icon_lbl := Label.new()
-		icon_lbl.text = icon
-		icon_lbl.add_theme_font_size_override("font_size", 12)
-		row.add_child(icon_lbl)
 
 	var name_lbl := Label.new()
 	name_lbl.text = item_name
