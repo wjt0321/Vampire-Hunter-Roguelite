@@ -836,3 +836,12 @@
 - 后处理：品红键控 → 清紫边 → 56 格下采样 → gamma 提亮 → `tools/build_pose_strips.py` 拆帧
 - 生成脚本：`.workbuddy/comfy/priestess.py`；校验：`.workbuddy/comfy/verify_priestess.py`（6/6）
 - 授权：登记为「AI 生成素材，风险 中」，同 2026-11-09 条目（Qwen-Image 系列 Apache-2.0，可商用）
+
+### 2026-11-09 地板贴图删除（4 张）
+
+- 删除：`assets/tiles/floor_{dungeon,castle,cave,boss}.png`
+- 原因：房间地板用 `backgrounds/room_*.png` 整图（实测四张背景 alpha 全为 255，
+  地板与墙面都画在里面），`game_room.gd:_create_floor` 没有任何平铺地板的分支，
+  全工程只取 `wall` / `wall_v` / `pillar`。留着只是死文件
+- 恢复：git 历史 `57e7a12` 之前的提交里仍可找回，对应生成脚本 `.workbuddy/comfy/newarts.py`
+- 影响：`verify_placeholders` 校验数 87 → 83

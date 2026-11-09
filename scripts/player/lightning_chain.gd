@@ -39,6 +39,11 @@ func _cast_lightning(from_pos: Vector2, target: Node2D) -> void:
 	if target.has_method("take_damage"):
 		target.take_damage(_current_damage * damage_multiplier)
 	
+	# 落点电光
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx:
+		vfx.spawn_chain_arc(target.global_position)
+
 	# 播放音效
 	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("shoot_magic"))

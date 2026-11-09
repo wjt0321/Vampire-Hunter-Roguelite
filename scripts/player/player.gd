@@ -480,6 +480,13 @@ func _lightning_retaliate() -> void:
 		lightning._current_damage = lightning_retaliate_damage
 		get_tree().current_scene.add_child(lightning)
 
+		# 身上爆一圈电光，让"反击"这个被动有可见的触发点
+		var vfx := get_node_or_null("/root/VFXManager")
+		if vfx:
+			vfx.spawn_texture_fx("lightning_retaliate", global_position,
+				{"scale_from": 0.5, "scale_to": 1.3, "duration": 0.35,
+				 "color": Color(1.15, 1.1, 0.8, 1.0)})
+
 		# 播放音效
 		AudioManager.play_sfx(_audio_lib.get_sound("lightning_chain"))
 
@@ -628,6 +635,8 @@ func _break_shield() -> void:
 	_break_shield_aura()
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
+		# 碎环贴图 + 碎屑，比单纯粒子更像"盾碎了"
+		vfx.spawn_shield_break(global_position)
 		vfx.spawn_hit_particles(global_position, GameConfig.SHIELD_AURA_COLOR, 10)
 		vfx.screen_shake(3.0, 0.12)
 

@@ -72,6 +72,8 @@ func _petrify() -> void:
 		# 石化粒子
 		var vfx := get_node_or_null("/root/VFXManager")
 		if vfx:
+			vfx.spawn_texture_fx("petrify_effect", global_position,
+				{"scale_from": 0.5, "scale_to": 1.2, "duration": 0.5, "additive": false})
 			vfx.spawn_death_particles(global_position, Color(0.5, 0.5, 0.5, 0.8), 15)
 	
 	# 石化时恢复生命

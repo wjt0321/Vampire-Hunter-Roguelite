@@ -46,6 +46,7 @@ func _ready() -> void:
 	_create_shield_indicator()
 	_create_build_panel()
 	_create_event_label()
+	_connect_achievement_fx()
 
 func _create_event_label() -> void:
 	## 局内目标事件的状态行（"猎杀 12 秒" / "守卫 ×3"）。
@@ -460,10 +461,52 @@ func update_dungeon(floor_index: int, room_in_floor: int, rooms_per_floor: int, 
 		prefix = " ".join(tags) + " "
 	room_label.text = "%s第%d层 %s  %d/%d" % [prefix, floor_index, floor_name, shown, rooms_per_floor]
 
+## 成就解锁时在角色身上炸一圈金环。
+## 为什么不放在通知面板上：通知在右上角滑入，跟"我做成了什么"的因果联系太弱；
+## 炸在角色身上，玩家低头就看见"是我干的"。
+func _connect_achievement_fx() -> void:
+	var ach := get_node_or_null("/root/AchievementManager")
+	if ach and ach.has_signal("achievement_unlocked"):
+		ach.achievement_unlocked.connect(_on_achievement_unlocked_fx)
+
+func _on_achievement_unlocked_fx(_id: String, _name: String) -> void:
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx == null or player_ref == null or not is_instance_valid(player_ref):
+		return
+	vfx.spawn_achievement_burst(player_ref.global_position)
+
+## 波次横幅后面铺一层底光（assets/effects/wave_start）
+func _spawn_banner_glow() -> void:
+	if TextureManager.instance == null:
+		return
+	var tex := TextureManager.instance.get_effect_texture("wave_start")
+	if tex == null:
+		return
+	var glow := TextureRect.new()
+	glow.texture = tex
+	glow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	glow.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# 贴图本身 256，再放大就更大了；横幅底光只是一层衬底，不能盖过文字
+	glow.size = Vector2(230, 230)
+	var center: Vector2 = wave_banner.global_position + wave_banner.size * 0.5
+	glow.position = center - glow.size * 0.5
+	glow.pivot_offset = glow.size * 0.5
+	glow.scale = Vector2(0.75, 0.75)
+	glow.modulate = Color(1, 1, 1, 0.0)
+	add_child(glow)
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(glow, "modulate:a", 0.5, 0.18)
+	tw.tween_property(glow, "scale", Vector2(1.05, 1.05), 0.45).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_property(glow, "modulate:a", 0.0, 0.5)
+	tw.chain().tween_callback(glow.queue_free)
+
 func _show_wave_banner(wave_number: int) -> void:
 	wave_banner.text = "=== WAVE %d ===" % wave_number
 	wave_banner.visible = true
 	wave_banner.modulate = Color(1, 1, 1, 1)
+	_spawn_banner_glow()
 	var tween := create_tween()
 	tween.tween_interval(1.5)
 	tween.tween_property(wave_banner, "modulate:a", 0.0, 0.5)

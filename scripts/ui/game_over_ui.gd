@@ -66,6 +66,7 @@ func _apply_button_style(btn: Button) -> void:
 		btn.add_theme_color_override("font_color", Color.WHITE)
 		btn.add_theme_color_override("font_hover_color", Color(1, 0.9, 0.7, 1))
 		btn.add_theme_color_override("font_pressed_color", Color(0.9, 0.9, 0.9, 1))
+	UiFx.hover(btn)
 	if not btn.mouse_entered.is_connected(_on_button_hover_sfx):
 		btn.mouse_entered.connect(_on_button_hover_sfx)
 	if not btn.pressed.is_connected(_on_button_click_sfx):

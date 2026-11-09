@@ -41,11 +41,16 @@ func spawn_death_particles(pos: Vector2, color: Color = Color.RED, count: int = 
 
 func spawn_xp_particles(pos: Vector2, count: int = 5) -> void:
 	## 经验拾取粒子
+	spawn_texture_fx("xp_collect", pos,
+		{"scale_from": 0.25, "scale_to": 0.75, "duration": 0.3, "z": 90})
 	for i in count:
 		_create_particle(pos, Color(0.4, 1.0, 0.5, 0.8), randf_range(2, 4), randf_range(40, 100), randf_range(0.2, 0.3))
 
 func spawn_levelup_particles(pos: Vector2, count: int = 20) -> void:
-	## 升级光效
+	## 升级光效：先是脚下的金色法阵环，再是向外飞的粒子
+	spawn_texture_fx("levelup_aura", pos,
+		{"scale_from": 0.55, "scale_to": 2.5, "duration": 0.8,
+		 "fade_delay": 0.25, "z": 90})
 	for i in count:
 		var angle := TAU * float(i) / float(count)
 		var dir := Vector2(cos(angle), sin(angle))
@@ -106,6 +111,8 @@ func spawn_bullet_trail(pos: Vector2, color: Color = Color(1.0, 0.9, 0.3, 0.5)) 
 
 func spawn_boss_warning(pos: Vector2) -> void:
 	## Boss 出现警告特效
+	spawn_texture_fx("boss_warning", pos,
+		{"scale_from": 0.5, "scale_to": 1.3, "duration": 0.9, "fade_delay": 0.3})
 	for i in range(3):
 		var ring := _create_ring(pos, Color(1.0, 0.1, 0.1, 0.8), 10.0 + i * 20.0)
 		var tween := ring.create_tween()
@@ -252,7 +259,10 @@ func _create_ring(pos: Vector2, color: Color, radius: float) -> Node2D:
 # ========== 新被动道具效果 ==========
 
 func spawn_dodge_effect(pos: Vector2) -> void:
-	## 闪避效果
+	## 闪避效果：残影 + 一点拖尾碎屑
+	spawn_texture_fx("dodge_afterimage", pos,
+		{"scale_from": 2.2, "scale_to": 2.6, "duration": 0.28, "additive": false,
+		 "color": Color(0.8, 0.8, 0.95, 0.55)})
 	var p := _create_particle_node(pos, Color(0.3, 0.3, 0.3, 0.8), 8.0)
 	var tween := p.create_tween()
 	tween.tween_property(p, "modulate:a", 0.0, 0.3)
@@ -260,7 +270,10 @@ func spawn_dodge_effect(pos: Vector2) -> void:
 	tween.tween_callback(p.queue_free)
 
 func spawn_freeze_effect(pos: Vector2) -> void:
-	## 冰冻效果
+	## 冰冻效果：先盖一层冰壳，再炸出碎冰粒子
+	spawn_texture_fx("freeze_effect", pos,
+		{"scale_from": 0.7, "scale_to": 1.1, "duration": 0.45,
+		 "color": Color(0.9, 1.0, 1.15, 0.95)})
 	for i in 8:
 		var angle := TAU * float(i) / 8.0
 		var p := _create_particle_node(pos, Color(0.5, 0.8, 1.0, 0.8), 6.0)
@@ -280,3 +293,97 @@ func spawn_freeze_particles(pos: Vector2) -> void:
 		tween.tween_property(p, "modulate:a", 0.0, 1.0)
 		tween.parallel().tween_property(p, "position:y", p.position.y - 20, 1.0)
 		tween.tween_callback(p.queue_free)
+
+# ========== 贴图特效（2026-11-09 美术接线） ==========
+#
+# 这一批是 assets/effects 下的正式美术（第二轮重做）。贴图是单帧，
+# 所以动效统一用「放大 + 消隐」的 tween 表达——不另做序列帧的理由：
+#   · 这些效果在游戏里都只有 0.3~0.9 秒，单帧扩散已经能读出来；
+#   · 序列帧要多出 8~10 倍文件，还得逐个对像素，收益不成比例；
+#   · tween 的时长/缩放可以按等级、武器档次随时调，比固定帧数灵活。
+#
+# 加色混合（BLEND_MODE_ADD）是刻意的：画面上这些光斑要"发光"而不是
+# "贴一张图"，普通混合会被背景压暗、看着像贴纸。
+
+## 通用贴图特效。opts 支持：
+##   scale_from / scale_to（倍数，默认 0.35 → 1.0）
+##   duration（默认 0.35）、fade_delay（先放大后消隐）
+##   rotation、color（modulate）、additive（默认 true）、z（默认 100）
+func spawn_texture_fx(tex_name: String, pos: Vector2, opts: Dictionary = {}) -> Sprite2D:
+	if TextureManager.instance == null:
+		return null
+	var tex: Texture2D = TextureManager.instance.get_effect_texture(tex_name)
+	if tex == null:
+		return null
+	var scene := _ensure_current_scene()
+	if scene == null:
+		return null
+
+	var sprite := Sprite2D.new()
+	sprite.name = "Fx_" + tex_name
+	sprite.texture = tex
+	sprite.global_position = pos
+	sprite.z_index = int(opts.get("z", 100))
+	sprite.rotation = float(opts.get("rotation", 0.0))
+	sprite.modulate = opts.get("color", Color.WHITE)
+	var from_s := float(opts.get("scale_from", 0.35))
+	var to_s := float(opts.get("scale_to", 1.0))
+	sprite.scale = Vector2.ONE * from_s
+	if bool(opts.get("additive", true)):
+		var mat := CanvasItemMaterial.new()
+		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		sprite.material = mat
+
+	var dur := float(opts.get("duration", 0.35))
+	var fade_delay := float(opts.get("fade_delay", 0.0))
+	scene.add_child(sprite)
+	var tw := sprite.create_tween()
+	tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tw.set_parallel(true)
+	tw.tween_property(sprite, "scale", Vector2.ONE * to_s, dur) \
+		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tw.tween_property(sprite, "modulate:a", 0.0, dur).set_delay(fade_delay)
+	tw.chain().tween_callback(sprite.queue_free)
+	return sprite
+
+func spawn_shield_break(pos: Vector2) -> void:
+	## 护盾碎：一圈青蓝的碎环，比普通受击粒子更"重"，配合屏幕轻震
+	spawn_texture_fx("shield_break", pos,
+		{"scale_from": 0.5, "scale_to": 1.5, "duration": 0.4,
+		 "color": Color(1.2, 1.45, 1.6, 1.0)})
+
+func spawn_holy_pillar(pos: Vector2) -> void:
+	## 圣光柱：竖直光柱，从下往上长一点，落在命中点
+	spawn_texture_fx("holy_light", pos,
+		{"scale_from": 0.55, "scale_to": 1.15, "duration": 0.45, "color": Color(1.0, 1.0, 0.95, 0.95)})
+
+func spawn_poison_burst(pos: Vector2) -> void:
+	## 毒云落点的扩散：绿色雾团铺开，比粒子更"有面积"
+	spawn_texture_fx("poison_spread", pos,
+		{"scale_from": 0.4, "scale_to": 1.35, "duration": 0.55,
+		 "color": Color(0.85, 1.0, 0.75, 0.9)})
+
+func spawn_chain_arc(pos: Vector2) -> void:
+	## 连锁闪电每跳一下的落点电光
+	spawn_texture_fx("chain_lightning", pos,
+		{"scale_from": 0.2, "scale_to": 0.45, "duration": 0.22,
+		 "color": Color(1.1, 1.1, 0.85, 1.0)})
+
+func spawn_thunder_strike(pos: Vector2) -> void:
+	## 雷神之怒：一道竖雷劈在落点，比 chain_arc 大一号
+	spawn_texture_fx("thunder_wrath", pos,
+		{"scale_from": 0.5, "scale_to": 1.25, "duration": 0.5,
+		 "color": Color(1.15, 1.2, 1.35, 1.0)})
+
+func spawn_knife_tornado(pos: Vector2) -> void:
+	## 刀阵成型的旋风（进化瞬间播一次，之后靠旋转的刀刃持续表现）
+	var sprite := spawn_texture_fx("knife_tornado", pos,
+		{"scale_from": 0.4, "scale_to": 1.5, "duration": 0.6,
+		 "color": Color(0.85, 1.05, 1.1, 0.95)})
+	if sprite:
+		var spin := sprite.create_tween()
+		spin.tween_property(sprite, "rotation", TAU, 0.6)
+
+func spawn_achievement_burst(pos: Vector2) -> void:
+	spawn_texture_fx("achievement_unlock", pos,
+		{"scale_from": 0.5, "scale_to": 1.3, "duration": 0.7})

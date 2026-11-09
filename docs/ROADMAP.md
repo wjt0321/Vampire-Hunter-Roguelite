@@ -114,13 +114,36 @@
 
 明细见 [asset-status.md](asset-status.md) 第 2.4 节。
 
+**12.8 特效接线 / 界面动效 / 地板贴图处置 —— 已完成（2026-11-09）。**
+
+- **16 张特效图全部接线**：`vfx_manager` 新增 `spawn_texture_fx()`（Sprite2D + 放大淡出 tween + 加色混合），
+  分别落在经验/升级/Boss 警告/冰冻/护盾碎/闪避/毒云落点/链电落点/雷神之怒/圣光柱/刀阵旋风/
+  石化/闪电反击/成就/波次横幅/按钮涟漪。映射表见 [asset-status.md](asset-status.md) 第 2.5 节
+- **不另做序列帧**：这些效果只有 0.2~0.9 秒，单帧扩散足够；tween 还能按等级调。
+  踩过的坑：`boss_warning` / `wave_start` / `chain_lightning` 源图都是 256，按默认倍率会铺满半个屏幕，已逐个收敛
+- **界面动效**：新增 `scripts/ui/ui_fx.gd`（`UiFx` 静态工具），悬停放大 1.05 / 按下 0.96 / 点击涟漪 / 面板淡入，
+  已接主菜单、升级商店、选角、暂停、升级三选一、房间商店、结算页
+- **3 个历史缺项决定不补**：`lightning_bolt` 与 `chain_lightning` 重复、`lightning_chain` 只是 id、
+  `shop_bg` 对应的商店是模态面板没有独立场景。已从缺项清单划掉
+- **4 张地板贴图删除**：房间地板是 `backgrounds/room_*.png` 整图（实测全不透明），
+  平铺地板没有绘制路径也不该硬盖。校验数 87 → 83
+- 验收：`verify_all` 32/32、`verify_ui` 9/9、`verify_placeholders` 83/83、`verify_priestess` 6/6；
+  Godot 导入 0 error、`main.tscn` 跑 300 帧 0 script error；用 `tools/_shot_fx.tscn` 与
+  `tools/_shot_ui_fx.tscn` 逐帧核对特效与按钮动效
+
 ### 下一步
 
-Phase 12 到此收尾：出图、接线、文档三件都已完成，占位资产也已全量替换。剩下的是三个**需要先定方向**的决定：
+Phase 12 到此收尾：出图、接线、动效、文档都已完成，占位资产全量替换，特效全部接线。
 
-1. **16 张特效图是否接线** —— `achievement_unlock` / `btn_click` / `dodge_afterimage` / `freeze_effect` / `knife_spin` / `levelup_aura` / `lightning_retaliate` / `magic_trail` / `petrify_effect` / `xp_collect` 等现在都是**正式美术**（第二轮重做），但零引用，VFX 仍走 `vfx_manager.gd` 程序生成。换成贴图要逐个替换绘制逻辑；贴图是单帧，动效只能靠 tween 或另做序列帧
-2. **3 个历史缺项**：`shop_bg` / `lightning_bolt` / `lightning_chain` 在所有 `.gd` / `.tscn` 里都没有引用（`lightning_chain` 只是武器 id 与场景名），补之前先决定是否接线
-3. **交互动效**：按钮悬停缩放、面板淡入、界面过渡——纯代码工作，`StyleBoxTexture` 只负责三态贴图
+剩下的是**需要先定方向**的决定（不再是我可以直接动手的）：
+
+1. **`crit_text` / `magic_trail` / `knife_spin` / `lifesteal` 四张特效图仍零引用** ——
+   它们不属于这一轮点名的 16 张。`crit_text`（暴击字）是图片里带英文，用中文界面时要重做文字；
+   `magic_trail` / `knife_spin` / `lifesteal` 是弹道拖尾与吸血反馈，弹道现在走 `ProjectileVisuals`
+   的程序化外观（按武器上色，不换贴图）。要用就先定"弹道改不改贴图"
+2. **交互动效只做了 UI 层**：局内还缺受击顿帧、击杀提示的弹出节奏这类手感层动效
+3. **地板如果以后要做程序化房间**（不再用整图背景），4 张地板贴图得重新出——
+   现在这一批已删除，恢复点在 git 历史 `57e7a12` 之前
 
 清单文档的旧尺寸表已按「以代码为准」修正，详见 [asset-status.md](asset-status.md)。
 

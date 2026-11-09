@@ -67,6 +67,57 @@
   其余五张以 `priestess_idle` 作参考保证是同一人；象牙白长袍 + 淡金刺绣 + 暗色内裙
 - 校验：`verify_priestess.py` **6/6 通过**（尺寸/帧数/RGBA/每帧非空/四角透明/帧间有差异）
 
+### 2.5 特效接线 / 界面动效 / 地板贴图处置（2026-11-09 第四轮）
+
+这一轮解决的是「图做完了但没人用」：16 张特效图此前全部零引用，VFX 全靠
+`vfx_manager.gd` 画圆环和粒子。
+
+**16 张特效的落点**（全部接线，`grep` 可查）：
+
+| 贴图 | 触发点 |
+|---|---|
+| `xp_collect` | 经验拾取（`spawn_xp_particles`） |
+| `levelup_aura` | 升级（`spawn_levelup_particles`） |
+| `boss_warning` | Boss 登场（`spawn_boss_warning`） |
+| `freeze_effect` | 冰冻之心触发（`spawn_freeze_effect`） |
+| `shield_break` | 护盾破碎（`player._break_shield`） |
+| `dodge_afterimage` | 闪避（`spawn_dodge_effect`） |
+| `poison_spread` | 毒云落点（`weapon_manager._spawn_poison_cloud`） |
+| `chain_lightning` | 闪电链每跳一次的落点（`lightning_chain.gd`） |
+| `thunder_wrath` | 闪电链进化「雷神之怒」开火 35% 概率 + 进化瞬间 |
+| `holy_light` | 圣光弩 / 大天使之杖进化瞬间的圣光柱 |
+| `knife_tornado` | 刀阵旋风成型（`_spawn_orbit_blades`） |
+| `petrify_effect` | 石像鬼石化（`gargoyle._petrify`） |
+| `lightning_retaliate` | 闪电护符反击（`player._lightning_retaliate`） |
+| `achievement_unlock` | 成就解锁（HUD 在角色身上炸一圈金环） |
+| `wave_start` | 波次横幅底光（`hud._show_wave_banner`） |
+| `btn_click` | 所有按钮点击涟漪（`UiFx.click_ripple`） |
+
+**动效怎么做**：贴图是单帧，统一走 `vfx_manager.spawn_texture_fx()` ——
+Sprite2D + 「放大 + 淡出」tween + 加色混合，播完自毁。
+不另做序列帧的理由：这些效果只有 0.2~0.9 秒，单帧扩散已经够读；
+序列帧要多 8~10 倍文件，收益不成比例；tween 的时长和缩放还能按等级调。
+
+**按贴图实际尺寸校准过的缩放**（踩过的坑）：`boss_warning` / `wave_start` /
+`chain_lightning` 的源图都是 256，按默认 1.x 倍会铺满半个屏幕。
+现在 boss 警告收到 1.3、波次底光固定 230px、连锁闪电收到 0.45。
+
+**界面动效**（`scripts/ui/ui_fx.gd`，静态工具类 `UiFx`）：
+- 悬停放大 1.05 + 按下回弹 0.96（大卡片 1.03，避免三张卡互相压边）
+- 点击涟漪（`btn_click` 贴图，收在 90~230px，否则 64px 图放大会糊成一片金光）
+- 面板淡入 0.18s（暂停/商店/选角的 Panel）
+- 已接：主菜单、升级商店、选角、暂停、升级三选一、房间商店、结算页
+- **注意**：`Control.scale` 只是绘制变换，不参与容器排版，所以能直接套在
+  HBox/VBox 里；但 pivot 必须手动设到中心，否则按左上角放大整块往右下跑。
+  暂停菜单是在 `get_tree().paused` 下弹的，补间要设 `TWEEN_PAUSE_PROCESS`。
+
+**4 张地板贴图已删除**：`tiles/floor_{dungeon,castle,cave,boss}.png`。
+房间地板用的是 `backgrounds/room_*.png` 整图（已实测四张背景全不透明，
+地板、墙面、火把都画在里面），把 128×128 的平铺地板盖上去只会打架，
+换掉整图又是美术方向的事。既然没有任何绘制路径会取它，就不留着占位。
+`texture_manager` 的 `floor` 键与 `verify_placeholders` 的 4 行同步删除，
+校验数从 87 → 83。需要恢复时从 git 历史（`57e7a12` 之前）取回即可。
+
 ### 2.3 非正式资产替换（87 张，2026-11-09 第二轮）
 
 **怎么区分正式与非正式**（这是这一轮的判据，写下来避免下次又混）：
@@ -162,7 +213,7 @@
 |---|---|
 | `verify_all.py` | **32/32 通过** |
 | `verify_ui.py` | **9/9 通过** |
-| `verify_placeholders.py` | **87/87 通过** |
+| `verify_placeholders.py` | **83/83 通过**（87 张里 4 张地板贴图已删，见 2.5） |
 | `verify_priestess.py` | **6/6 通过**（牧师六个动作） |
 | 底部紫带残留 | **0 张**（行跨度判据复查） |
 | 亮度过暗（p90 < 70） | **0 张** |
@@ -213,10 +264,14 @@
 
 ## 八、明确没做的（边界，防止误以为漏了）
 
-1. **`lightning_bolt` / `lightning_chain` / `shop_bg` 三个历史缺项没有补**。在所有 `.gd` / `.tscn` 里都搜不到引用（`lightning_chain` 只是武器 id 和场景名），补了也不会显示。
-2. **12 张特效图有内容但零引用，没有接线**。VFX 目前走 `vfx_manager.gd` 程序生成，要不要换成贴图是另一个决定，不在资产范围内。
+1. **`lightning_bolt` / `lightning_chain` / `shop_bg` 三个历史缺项决定不补**（2026-11-09 定）。
+   闪电的落点电光已经有 `chain_lightning.png` 承担，再补一张 `lightning_bolt` 是重复；
+   `lightning_chain` 只是武器 id 与场景名，没有独立的画面需求；
+   `shop_bg` 对应的商店是挂在主菜单上的模态面板（`upgrade_shop.tscn` + `stats_panel` 金框），
+   没有独立场景，铺一张全屏背景反而会把后面的主菜单盖掉。结论：从缺项清单里划掉。
+2. ~~12 张特效图零引用~~ —— **已全部接线**，见 2.5。
 3. **12.4 背景没改图**。背景全是 `TextureRect` 全屏拉伸，现有 `room_standard` / `menu_bg` 是成品美术，改尺寸看不出差别。
-4. **交互动效没有做**。按钮三态贴图已就位（`StyleBoxTexture` 自动切换），但缩放、光晕、淡入需要改 `.gd`。
+4. ~~交互动效没有做~~ —— **已完成**：悬停放大、按下回弹、点击涟漪、面板淡入，见 2.5。
 5. **没有为「弱项」硬改图**。见第十节——评估后判定它们不是缺陷。
 
 ---

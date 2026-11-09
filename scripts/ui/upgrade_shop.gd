@@ -66,10 +66,12 @@ func _apply_button_texture(btn: Button) -> void:
 		btn.add_theme_color_override("font_color", Color.WHITE)
 		btn.add_theme_color_override("font_hover_color", Color(1, 0.9, 0.7, 1))
 		btn.add_theme_color_override("font_pressed_color", Color(0.9, 0.9, 0.9, 1))
+	UiFx.hover(btn)
 
 func show_shop() -> void:
 	visible = true
 	_refresh_ui()
+	UiFx.pop_in($Panel, 0.16, 0.97)
 
 func _refresh_ui() -> void:
 	if not save_mgr:

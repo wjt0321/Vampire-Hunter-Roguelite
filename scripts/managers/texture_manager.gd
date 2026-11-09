@@ -238,6 +238,19 @@ func _load_effect_textures():
 		"crit_text": _load_texture("res://assets/effects/crit_text.png"),
 		"boss_warning": _load_texture("res://assets/effects/boss_warning.png"),
 		"portal": _load_texture("res://assets/effects/portal.png"),
+		# 下面这批是 2026-11-09 第二轮重做的正式美术，本次（12.8）全部接线
+		"freeze_effect": _load_texture("res://assets/effects/freeze_effect.png"),
+		"petrify_effect": _load_texture("res://assets/effects/petrify_effect.png"),
+		"shield_break": _load_texture("res://assets/effects/shield_break.png"),
+		"levelup_aura": _load_texture("res://assets/effects/levelup_aura.png"),
+		"lightning_retaliate": _load_texture("res://assets/effects/lightning_retaliate.png"),
+		"achievement_unlock": _load_texture("res://assets/effects/achievement_unlock.png"),
+		"xp_collect": _load_texture("res://assets/effects/xp_collect.png"),
+		"btn_click": _load_texture("res://assets/effects/btn_click.png"),
+		"dodge_afterimage": _load_texture("res://assets/effects/dodge_afterimage.png"),
+		"magic_trail": _load_texture("res://assets/effects/magic_trail.png"),
+		"knife_spin": _load_texture("res://assets/effects/knife_spin.png"),
+		"lifesteal": _load_texture("res://assets/effects/lifesteal.png"),
 	}
 
 func _load_tile_textures():
@@ -246,25 +259,21 @@ func _load_tile_textures():
 			"wall": _load_texture("res://assets/tiles/wall_dungeon.png"),
 			"wall_v": _load_texture("res://assets/tiles/wall_dungeon_v.png"),
 			"pillar": _load_texture("res://assets/tiles/pillar_dungeon.png"),
-			"floor": _load_texture("res://assets/tiles/floor_dungeon.png"),
 		},
 		"castle": {
 			"wall": _load_texture("res://assets/tiles/wall_castle.png"),
 			"wall_v": _load_texture("res://assets/tiles/wall_castle_v.png"),
 			"pillar": _load_texture("res://assets/tiles/pillar_castle.png"),
-			"floor": _load_texture("res://assets/tiles/floor_castle.png"),
 		},
 		"cave": {
 			"wall": _load_texture("res://assets/tiles/wall_cave.png"),
 			"wall_v": _load_texture("res://assets/tiles/wall_cave_v.png"),
 			"pillar": _load_texture("res://assets/tiles/pillar_cave.png"),
-			"floor": _load_texture("res://assets/tiles/floor_cave.png"),
 		},
 		"boss": {
 			"wall": _load_texture("res://assets/tiles/wall_boss.png"),
 			"wall_v": _load_texture("res://assets/tiles/wall_boss_v.png"),
 			"pillar": _load_texture("res://assets/tiles/pillar_boss.png"),
-			"floor": _load_texture("res://assets/tiles/floor_boss.png"),
 		},
 	}
 

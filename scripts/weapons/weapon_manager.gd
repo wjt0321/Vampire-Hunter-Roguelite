@@ -361,6 +361,14 @@ func _evolve_weapon(weapon_id: String, evolution: WeaponEvolution) -> void:
 				var theme_color := _get_evolution_color(weapon_id)
 				vfx.spawn_evolution_effect(player.global_position, theme_color)
 				vfx.screen_shake(6.0, 0.35)
+				# 按武器系别补一张主题大图，让"进化"这件事有各自的辨识度
+				match weapon_id:
+					"crossbow", "holy_wand":
+						vfx.spawn_holy_pillar(player.global_position)
+					"lightning_chain":
+						vfx.spawn_thunder_strike(player.global_position)
+					_:
+						pass
 
 			# 播放进化音效
 			AudioManager.play_sfx(_audio_lib.get_sound("level_up"))
@@ -571,6 +579,11 @@ func _spawn_orbit_blades(weapon_id: String) -> void:
 		_current_scene.add_child(blade)
 		_orbit_blades.append(blade)
 	print("🌪️ 刀阵环绕：%d 把飞刀（单把 %.1f 伤害）" % [blade_count, per_blade_damage])
+
+	# 成型瞬间卷起一道旋风，之后才是刀刃自己转
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx and player and is_instance_valid(player):
+		vfx.spawn_knife_tornado(player.global_position)
 
 func get_weapon_decay(weapon) -> float:
 	## 多武器收益递减：第 N 把武器伤害 × 0.9^(N-1)
@@ -925,6 +938,10 @@ func _spawn_poison_cloud(weapon) -> void:
 	_ensure_current_scene()
 	if _current_scene:
 		_current_scene.add_child(cloud)
+	# 落点先炸开一团毒雾贴图，玩家才看得出"扔到哪了"
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx:
+		vfx.spawn_poison_burst(target_pos)
 	_play_shoot_sound(weapon.weapon_id)
 
 func _spawn_blood_burst(weapon) -> void:
@@ -955,6 +972,11 @@ func _spawn_lightning_chain(weapon) -> void:
 	_ensure_current_scene()
 	if _current_scene:
 		_current_scene.add_child(lightning)
+	# 进化「雷神之怒」：开火时偶尔天降一道竖雷（不每次都劈，避免刷屏）
+	if is_weapon_evolved("lightning_chain") and randf() < 0.35:
+		var vfx := get_node_or_null("/root/VFXManager")
+		if vfx and player and is_instance_valid(player):
+			vfx.spawn_thunder_strike(player.global_position)
 	_play_shoot_sound(weapon.weapon_id)
 
 func _get_nearest_enemy_position(from: Vector2) -> Vector2:

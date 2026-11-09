@@ -270,6 +270,7 @@ func _make_footer_button(text: String, accent: Color) -> Button:
 	btn.text = text
 	btn.custom_minimum_size = Vector2(150, 34)
 	btn.focus_mode = Control.FOCUS_NONE
+	UiFx.hover(btn)
 
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = Color(0.11, 0.10, 0.14, 1.0)
@@ -484,6 +485,8 @@ func _get_basic_rewards() -> Array:
 func _create_option_button(option: Dictionary) -> Button:
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(222, 196)
+	# 大卡放大 3% 就够，5% 会让三张卡在屏幕上互相压边
+	UiFx.hover(btn, 1.03)
 	if banish_mode:
 		btn.pressed.connect(func(): _on_banish_clicked(option))
 	else:

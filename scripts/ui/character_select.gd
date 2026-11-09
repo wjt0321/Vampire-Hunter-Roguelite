@@ -41,6 +41,7 @@ func _setup_panel_style() -> void:
 func show_selection() -> void:
 	visible = true
 	_refresh_ui()
+	UiFx.pop_in($Panel, 0.16, 0.97)
 
 func _refresh_ui() -> void:
 	if not save_mgr:
@@ -230,6 +231,7 @@ func _apply_button_style(btn: Button) -> void:
 		btn.add_theme_color_override("font_pressed_color", Color(0.9, 0.9, 0.9, 1))
 	btn.mouse_entered.connect(func(): AudioManager.play_sfx(AudioLib.get_sound("hover")))
 	btn.pressed.connect(func(): AudioManager.play_sfx(AudioLib.get_sound("button_click")))
+	UiFx.hover(btn)
 
 func _on_card_hover(card: PanelContainer, unlocked: bool) -> void:
 	if not unlocked:

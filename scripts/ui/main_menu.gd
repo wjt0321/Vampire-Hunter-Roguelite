@@ -165,6 +165,7 @@ func _setup_button_effects() -> void:
 		btn.mouse_entered.connect(func(): _on_button_hover(btn))
 		btn.mouse_exited.connect(func(): _on_button_unhover(btn))
 		btn.pressed.connect(_on_button_click)
+		UiFx.hover(btn)
 
 func _setup_button_textures() -> void:
 	## 设置按钮纹理

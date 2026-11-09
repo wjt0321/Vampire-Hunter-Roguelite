@@ -54,14 +54,13 @@ func _setup_button_effects() -> void:
 			btn.add_theme_color_override("font_pressed_color", Color(0.9, 0.9, 0.9, 1))
 		btn.mouse_entered.connect(func(): AudioManager.play_sfx(AudioLib.get_sound("hover")))
 		btn.pressed.connect(func(): AudioManager.play_sfx(AudioLib.get_sound("button_click")))
+		UiFx.hover(btn)
 
 func _pause() -> void:
 	visible = true
 	get_tree().paused = true
-	panel.modulate = Color(1, 1, 1, 0)
-	var tween := create_tween()
-	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	tween.tween_property(panel, "modulate:a", 1.0, 0.2)
+	# 淡入 + 微放大统一交给 UiFx；原来的 modulate 补间会和它抢同一个属性
+	UiFx.pop_in(panel, 0.2, 0.96)
 
 func _resume() -> void:
 	get_tree().paused = false

@@ -211,6 +211,7 @@ func _make_button(text: String) -> Button:
 	btn.add_theme_stylebox_override("hover", _make_style(Color(0.22, 0.17, 0.14, 1.0), Color(0.95, 0.8, 0.42, 1.0)))
 	btn.add_theme_stylebox_override("pressed", _make_style(Color(0.28, 0.2, 0.12, 1.0), Color(1.0, 0.86, 0.45, 1.0)))
 	btn.add_theme_stylebox_override("disabled", _make_style(Color(0.10, 0.09, 0.10, 1.0), Color(0.3, 0.28, 0.26, 0.8)))
+	UiFx.hover(btn)
 	return btn
 
 func _refresh() -> void:
