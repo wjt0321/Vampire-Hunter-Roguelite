@@ -57,11 +57,17 @@ func _ready() -> void:
 	AudioManager.play_bgm(audio_lib.get_menu_bgm())
 
 func _setup_settings_panel() -> void:
-	## 设置面板使用统一面板纹理
+	## 设置面板使用统一面板纹理。
+	## stats_panel 纹理自带约 24px 金框；不设 texture_margin 时 PanelContainer
+	## 会把内容从纹理边缘开始摆（滑块/按钮压在金框外面），必须九宫格拉出内容区。
 	var panel_texture := TextureManager.instance.get_ui_texture("stats_panel")
 	if panel_texture:
 		var style := StyleBoxTexture.new()
 		style.texture = panel_texture
+		style.texture_margin_left = 26.0
+		style.texture_margin_right = 26.0
+		style.texture_margin_top = 24.0
+		style.texture_margin_bottom = 24.0
 		settings_panel.add_theme_stylebox_override("panel", style)
 
 func _setup_background() -> void:

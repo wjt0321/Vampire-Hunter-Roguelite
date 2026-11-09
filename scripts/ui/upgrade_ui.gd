@@ -605,10 +605,18 @@ func _create_option_button(option: Dictionary) -> Button:
 	return btn
 
 func _get_option_icon(option: Dictionary) -> Texture2D:
-	## 获取选项对应的图标纹理
+	## 获取选项对应的图标纹理。
+	## 2026-11-09 反馈"很多卡只有字没有图"：图标映射原本只覆盖了一半物品，
+	## 现在统一走 ItemCatalog.get_icon_texture（武器/被动/属性/消耗品一张表），
+	## 拿不到贴图再回退旧的逐项 match（未来 catalog 改动也只改一处）。
+	var tex: Texture2D = ItemCatalog.get_icon_texture(
+		String(option.get("id", "")), String(option.get("type", "")))
+	if tex != null:
+		return tex
+
 	var option_type: String = option.get("type", "stat")
 	var option_id: String = option.get("id", "")
-	
+
 	match option_type:
 		"weapon":
 			match option_id:

@@ -253,11 +253,23 @@ func _make_card(index: int) -> Control:
 		vb.add_child(empty)
 		return card
 
-	var icon := Label.new()
-	icon.text = String(slot.get("icon", "?"))
-	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	icon.add_theme_font_size_override("font_size", 34)
-	vb.add_child(icon)
+	# 图标：优先贴图（统一走 ItemCatalog 映射），拿不到再回退单字
+	var icon_tex: Texture2D = ItemCatalog.get_icon_texture(
+		String(slot.get("id", "")), String(slot.get("type", "")))
+	if icon_tex != null:
+		var icon_rect := TextureRect.new()
+		icon_rect.texture = icon_tex
+		icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon_rect.custom_minimum_size = Vector2(48, 48)
+		icon_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		vb.add_child(icon_rect)
+	else:
+		var icon := Label.new()
+		icon.text = String(slot.get("icon", "?"))
+		icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		icon.add_theme_font_size_override("font_size", 34)
+		vb.add_child(icon)
 
 	var name_label := Label.new()
 	name_label.text = String(slot.get("name", "?"))

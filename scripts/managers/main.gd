@@ -871,6 +871,10 @@ func _on_boss_defeated() -> void:
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		enemy.queue_free()
 
+	# 2026-11-09 反馈：Boss 一死掉落立刻被清场，经验宝石/银币根本来不及捡。
+	# 先给 10 秒拾取窗口（HUD 倒计时 + 拾取范围临时放大），喘口气再下潜。
+	await _loot_grace_countdown(10)
+
 	# 推进到下一层；false 表示已经是最后一层
 	var has_next: bool = dungeon.advance_floor()
 
@@ -901,6 +905,21 @@ func _on_boss_defeated() -> void:
 		"daily_date": GameConfig.daily_date,
 	}
 	game_over_ui.show_game_over(stats, true)
+
+func _loot_grace_countdown(seconds: int) -> void:
+	## Boss 死后的拾取窗口：倒计时显示在 HUD 状态行，同时临时放大拾取半径，
+	## 把散落在半个屏幕外的宝石也吸过来。窗口固定给满，不做"捡完提前跳"——
+	## 这段时间也是玩家读完战利品、喘口气的节奏点。
+	if not is_instance_valid(player):
+		return
+	var base_pickup: float = float(player.pickup_range_bonus)
+	player.pickup_range_bonus = base_pickup + 260.0
+	for i in range(seconds, 0, -1):
+		if hud != null and is_instance_valid(hud) and hud.has_method("set_wave_status"):
+			hud.set_wave_status("拾取战利品 · %d 秒后下潜" % i, true)
+		await get_tree().create_timer(1.0).timeout
+	if is_instance_valid(player):
+		player.pickup_range_bonus = base_pickup
 
 # === 楼层流程 ===
 func _on_floor_started(_floor_index: int, _floor_data: Dictionary) -> void:

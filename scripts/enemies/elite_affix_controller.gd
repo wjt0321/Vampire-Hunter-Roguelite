@@ -87,17 +87,31 @@ func _build_visuals() -> void:
 	_ring_tween.tween_property(_ring, "modulate:a", 0.9, 0.65).set_trans(Tween.TRANS_SINE)
 
 	# 图标：光靠颜色区分四种词缀太难，头顶给一个能一眼读懂的符号。
+	# 2026-11-09 反馈"只有单字特别简陋"：换成手绘词缀图标（affix_icons.py，
+	# 形状+颜色双通道识别），拿不到贴图再回退单字。
 	# 两个词缀时图标向左错开一格，叠在一起等于只显示了一个。
-	_icon = Label.new()
-	_icon.name = "AffixIcon"
-	_icon.text = EliteAffix.icon(affix_id)
-	_icon.add_theme_font_size_override("font_size", 17)
-	_icon.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
-	_icon.add_theme_constant_override("outline_size", 4)
-	_icon.position = Vector2(-9.0 - 20.0 * slot, -52.0)
-	_icon.z_index = 1
-	_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_icon)
+	var affix_tex: Texture2D = TextureManager.instance.get_affix_icon(affix_id) \
+		if TextureManager.instance != null else null
+	if affix_tex != null:
+		var icon_spr := Sprite2D.new()
+		icon_spr.name = "AffixIcon"
+		icon_spr.texture = affix_tex
+		icon_spr.scale = Vector2.ONE  # 24px 源图，实机显示约 20px 再由镜头缩放决定
+		icon_spr.position = Vector2(-18.0 - 22.0 * slot, -66.0)
+		icon_spr.z_index = 1
+		add_child(icon_spr)
+		_icon = null
+	else:
+		_icon = Label.new()
+		_icon.name = "AffixIcon"
+		_icon.text = EliteAffix.icon(affix_id)
+		_icon.add_theme_font_size_override("font_size", 17)
+		_icon.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+		_icon.add_theme_constant_override("outline_size", 4)
+		_icon.position = Vector2(-9.0 - 20.0 * slot, -52.0)
+		_icon.z_index = 1
+		_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(_icon)
 
 	# 出场：一圈扩散的光环，让"精英来了"在混战里也能被注意到
 	var spawn_ring := ProjectileVisuals.make_ring_sprite(40.0, color)

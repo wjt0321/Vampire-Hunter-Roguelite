@@ -384,7 +384,17 @@ func _spawn_powerup() -> void:
 
 	var angle: float = randf() * TAU
 	var radius: float = randf_range(200.0, 360.0)
-	node.global_position = player.global_position + Vector2(cos(angle), sin(angle)) * radius
+	var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * radius
+	# 增益不能刷进墙里（与 _get_spawn_position 同一套钳制）
+	var room := player.get_parent()
+	if room and room.has_method("get_room_bounds"):
+		var bounds: Rect2 = room.get_room_bounds()
+		if room is Node2D:
+			bounds = Rect2((room as Node2D).to_global(bounds.position), bounds.size)
+		var m := 60.0
+		pos.x = clampf(pos.x, bounds.position.x + m, bounds.end.x - m)
+		pos.y = clampf(pos.y, bounds.position.y + m, bounds.end.y - m)
+	node.global_position = pos
 
 func _maybe_assign_affix(enemy: Node) -> void:
 	## 精英词缀：逐层提升概率。Boss 不参与（Boss 自己有三形态），
@@ -503,12 +513,17 @@ func _get_spawn_position() -> Vector2:
 	var angle := randf() * TAU
 	var offset := Vector2(cos(angle), sin(angle)) * spawn_distance
 	var spawn_pos := player.global_position + offset
-	
+
 	# 获取房间边界并限制生成位置
 	var room := player.get_parent()
 	if room and room.has_method("get_room_bounds"):
 		var bounds: Rect2 = room.get_room_bounds()
-		var margin := 50.0
+		# bounds 是房间本地坐标，房间自身不在原点时要先转全局再 clamp
+		# （怪"刷在地图边界外"的一半原因就是拿本地 rect 去钳全局坐标）
+		if room is Node2D:
+			bounds = Rect2((room as Node2D).to_global(bounds.position), bounds.size)
+		# 90 = 墙厚 32 + 怪碰撞半径 + 视觉余量：贴着钳制线刷出的怪看起来在墙上
+		var margin := 90.0
 		spawn_pos.x = clampf(spawn_pos.x, bounds.position.x + margin, bounds.end.x - margin)
 		spawn_pos.y = clampf(spawn_pos.y, bounds.position.y + margin, bounds.end.y - margin)
 		if mirror_spawns and room is Node2D and room.has_method("get_center"):
@@ -516,7 +531,7 @@ func _get_spawn_position() -> Vector2:
 			spawn_pos = reflect_spawn(spawn_pos, center_global)
 			spawn_pos.x = clampf(spawn_pos.x, bounds.position.x + margin, bounds.end.x - margin)
 			spawn_pos.y = clampf(spawn_pos.y, bounds.position.y + margin, bounds.end.y - margin)
-	
+
 	return spawn_pos
 
 func _on_enemy_died(enemy: Node2D) -> void:

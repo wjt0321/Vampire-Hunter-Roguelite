@@ -73,6 +73,17 @@ func show_shop() -> void:
 	_refresh_ui()
 	UiFx.pop_in($Panel, 0.16, 0.97)
 
+func _upgrade_icon_item(upgrade_id: String) -> String:
+	## 元进度 6 项没有自己的贴图，复用语义相近的物品图标
+	match upgrade_id:
+		"base_damage": return "damage"
+		"base_hp": return "max_hp"
+		"base_speed": return "speed"
+		"base_armor": return "armor"
+		"xp_bonus": return "magnet"
+		"blood_crystal_bonus": return "gold"
+	return ""
+
 func _refresh_ui() -> void:
 	if not save_mgr:
 		return
@@ -88,10 +99,25 @@ func _refresh_ui() -> void:
 		var row := HBoxContainer.new()
 		row.custom_minimum_size = Vector2(0, 40)
 		
-		var name_label := Label.new()
-		name_label.text = "%s %s Lv.%d/%d" % [info["icon"], info["name"], level, 5]
-		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(name_label)
+		# 图标：贴图优先（复用统一映射），拿不到贴图再回退单字
+		var icon_tex: Texture2D = ItemCatalog.get_icon_texture(_upgrade_icon_item(upgrade_id))
+		if icon_tex != null:
+			var icon_rect := TextureRect.new()
+			icon_rect.texture = icon_tex
+			icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+			icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon_rect.custom_minimum_size = Vector2(22, 22)
+			icon_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			row.add_child(icon_rect)
+			var name_label := Label.new()
+			name_label.text = "%s Lv.%d/%d" % [info["name"], level, 5]
+			name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(name_label)
+		else:
+			var name_label := Label.new()
+			name_label.text = "%s %s Lv.%d/%d" % [info["icon"], info["name"], level, 5]
+			name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(name_label)
 		
 		var desc_label := Label.new()
 		desc_label.text = info["desc"]

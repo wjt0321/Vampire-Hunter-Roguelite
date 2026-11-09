@@ -62,6 +62,10 @@ func reset_for_pool() -> void:
 	rotation = 0.0
 	modulate = Color.WHITE
 	scale = Vector2.ONE
+	# 摘掉火焰喷射器的粒子流，防止复用给别的武器时还拖着火
+	var fire := get_node_or_null("FlameTrail")
+	if fire != null:
+		fire.queue_free()
 
 func _physics_process(delta: float) -> void:
 	if homing:

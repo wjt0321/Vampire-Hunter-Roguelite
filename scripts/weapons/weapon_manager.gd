@@ -421,7 +421,8 @@ func get_projectile_visual(weapon_id: String) -> Dictionary:
 		"kunai":
 			return {"color": Color(0.62, 0.74, 1.0), "length": 18.0, "thickness": 8.0, "round": false}
 		"flame_thrower":
-			return {"color": Color(1.0, 0.44, 0.12), "length": 16.0, "thickness": 12.0, "round": true}
+			# 大火球 + 高频拖尾，配上粒子流就是"火舌"不是"点射"
+			return {"color": Color(1.0, 0.5, 0.12), "length": 22.0, "thickness": 18.0, "round": true}
 	# 手枪 / 默认
 	return {"color": Color(1.0, 0.86, 0.35), "length": 18.0, "thickness": 9.0, "round": false}
 
@@ -648,6 +649,28 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 	_ensure_current_scene()
 	if _current_scene:
 		_current_scene.add_child(bullet)
+
+	# 火焰喷射器：给子弹挂一条火焰粒子流。
+	# 弹幕感的根源是"一颗颗点"，粒子流糊住间隙后读起来才是"持续喷火"。
+	# 注意对象池复用：reset_for_pool 里会摘掉这个节点。
+	if weapon.weapon_id == "flame_thrower" and bullet.get_node_or_null("FlameTrail") == null:
+		var fire := CPUParticles2D.new()
+		fire.name = "FlameTrail"
+		fire.amount = 26
+		fire.lifetime = 0.32
+		fire.local_coords = false  # 世界坐标：粒子留在原地，拖出火舌
+		fire.spread = 180.0
+		fire.gravity = Vector2.ZERO
+		fire.initial_velocity_min = 4.0
+		fire.initial_velocity_max = 26.0
+		fire.scale_amount_min = 3.0
+		fire.scale_amount_max = 6.5
+		var ramp := Gradient.new()
+		ramp.set_color(0, Color(1.0, 0.72, 0.25, 0.95))
+		ramp.set_color(1, Color(0.85, 0.16, 0.04, 0.0))
+		ramp.add_point(0.45, Color(1.0, 0.38, 0.08, 0.75))
+		fire.color_ramp = ramp
+		bullet.add_child(fire)
 
 	# 播放射击音效
 	_play_shoot_sound(weapon.weapon_id)
@@ -899,10 +922,12 @@ static func create_flame_thrower() -> Resource:
 	w.icon_emoji = "焰"
 	w.base_damage = 1.1
 	w.fire_rate = 0.08
-	w.bullet_speed = 330.0
-	w.bullet_range = 230.0
+	# 2026-11-09 反馈"不该是弹幕效果"：弹速压低 + 射程收短，
+	# 配合子弹上的火焰粒子流（_spawn_bullet），读起来是"喷出一条火舌"
+	w.bullet_speed = 235.0
+	w.bullet_range = 205.0
 	w.projectile_count = 1
-	w.spread_angle = 0.3
+	w.spread_angle = 0.26
 	w.auto_aim = false
 	return w
 
@@ -911,7 +936,7 @@ static func create_blood_burst() -> Resource:
 	var w = script.new()
 	w.weapon_name = "血爆"
 	w.weapon_id = "blood_burst"
-	w.description = "在敌群中引爆一片血海"
+	w.description = "自动在最近的敌群中引爆血海"
 	w.icon_emoji = "血"
 	w.base_damage = 9.0
 	w.fire_rate = 1.3
@@ -946,20 +971,30 @@ func _spawn_poison_cloud(weapon) -> void:
 
 func _spawn_blood_burst(weapon) -> void:
 	## 血爆：在敌群中瞬间炸开一片血海（短时高频范围伤害）
-	var cloud := PoisonCloudScene.instantiate()
+	## 2026-11-09 反馈两连：① 没敌人时也原地炸（desc 却写"敌群中引爆"）
+	## ② 效果只是一片暗色，看不出"爆"。
+	## 修：无敌人不开火（本次不消耗冷却逻辑上的开火），落点补血爆演出。
 	var target_pos := _get_nearest_enemy_position(player.global_position)
 	if target_pos == Vector2.ZERO:
-		target_pos = player.global_position + Vector2(randf_range(-80, 80), randf_range(-80, 80))
+		return  # 场上没敌人：不炸，等下一个目标
+	var cloud := PoisonCloudScene.instantiate()
 	cloud.global_position = target_pos
 	cloud.base_damage = weapon.get_scaled_damage()
 	cloud.damage_multiplier = (player.get_total_damage_multiplier() if player else 1.0) * get_weapon_decay(weapon)
 	cloud.duration = weapon.get_scaled_cloud_duration()
 	cloud.tick_interval = 0.12
-	cloud.tint = Color(0.72, 0.06, 0.12, 0.6)
+	# 血色比旧版亮一档：旧 tint (0.72,0.06,0.12,0.6) 在暗地板上就是一团黑影
+	cloud.tint = Color(0.86, 0.12, 0.2, 0.5)
 	cloud.set_size(weapon.get_scaled_cloud_size())
 	_ensure_current_scene()
 	if _current_scene:
 		_current_scene.add_child(cloud)
+	# 爆点演出：死亡爆炸贴图染血红 + 冲击环，"爆"字才立得住
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx:
+		vfx.spawn_texture_fx("explosion", target_pos,
+			{"scale_from": 0.5, "scale_to": 1.2, "color": Color(1.0, 0.35, 0.4), "duration": 0.45})
+		vfx.spawn_ground_marker(target_pos, 70.0, Color(0.8, 0.1, 0.18, 0.7), 0.5)
 	_play_shoot_sound(weapon.weapon_id)
 
 func _spawn_lightning_chain(weapon) -> void:

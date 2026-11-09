@@ -223,7 +223,31 @@ func _load_weapon_icons():
 		"clover": _load_texture("res://assets/weapons/icon_clover.png"),
 		"crossbow_bolt": _load_texture("res://assets/weapons/crossbow_bolt.png"),
 		"holy_bolt": _load_texture("res://assets/weapons/holy_bolt.png"),
+		# 2026-11-09 第三轮补缺：升级/商店里原本"只有字没有图"的那批
+		"kunai": _load_texture("res://assets/weapons/icon_kunai.png"),
+		"flame_thrower": _load_texture("res://assets/weapons/icon_flame_thrower.png"),
+		"blood_burst": _load_texture("res://assets/weapons/icon_blood_burst.png"),
+		"blood_edge": _load_texture("res://assets/weapons/icon_blood_edge.png"),
+		"frost_bind": _load_texture("res://assets/weapons/icon_frost_bind.png"),
+		"blood_drain": _load_texture("res://assets/weapons/icon_blood_drain.png"),
+		"mightstone": _load_texture("res://assets/weapons/icon_mightstone.png"),
 	}
+
+# 精英词缀头顶图标（affix_icons.py 手绘 24x24，带描边）
+var affix_icons: Dictionary = {}
+
+func _load_affix_icons() -> void:
+	affix_icons = {
+		"shielded": _load_texture("res://assets/ui/affix_shielded.png"),
+		"charger": _load_texture("res://assets/ui/affix_charger.png"),
+		"splitter": _load_texture("res://assets/ui/affix_splitter.png"),
+		"haster": _load_texture("res://assets/ui/affix_haster.png"),
+	}
+
+func get_affix_icon(affix_id: String) -> Texture2D:
+	if affix_icons.is_empty():
+		_load_affix_icons()
+	return affix_icons.get(affix_id, null)
 
 func _load_effect_textures():
 	effect_textures = {

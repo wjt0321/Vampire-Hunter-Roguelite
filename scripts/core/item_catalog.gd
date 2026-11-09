@@ -16,7 +16,7 @@ const WEAPONS: Array = [
 	{"id": "holy_wand", "name": "圣光魔杖", "desc": "自动追踪的圣光弹", "icon": "圣", "type": "weapon", "price": 30},
 	{"id": "kunai", "name": "苦无", "desc": "极高速连投暗器", "icon": "镖", "type": "weapon", "price": 28},
 	{"id": "flame_thrower", "name": "火焰喷射器", "desc": "近距离持续灼烧", "icon": "焰", "type": "weapon", "price": 26},
-	{"id": "blood_burst", "name": "血爆", "desc": "在敌群中炸开血海", "icon": "血", "type": "weapon", "price": 34},
+	{"id": "blood_burst", "name": "血爆", "desc": "自动在最近的敌群中引爆血海（无敌人不发射）", "icon": "血", "type": "weapon", "price": 34},
 ]
 
 const PASSIVES: Array = [
@@ -71,6 +71,65 @@ static func find_consumable(id: String) -> Dictionary:
 		if c["id"] == id:
 			return c
 	return {}
+
+## 物品 → 图标贴图统一映射（单一数据源）。
+## 2026-11-09 试玩反馈"升级/商店里只有字没有图"：图标 key 散落在
+## upgrade_ui._get_option_icon 里且只覆盖了一半物品，商店/HUD 根本没接。
+## 现在所有 UI（升级三选一 / 房间商店 / 元进度商店 / HUD 列表）都走这里，
+## 拿不到贴图时调用方回退显示 catalog 里的单字。
+static func get_icon_texture(item_id: String, item_type: String = "") -> Texture2D:
+	var key := ""
+	match item_type:
+		"weapon":
+			match item_id:
+				"pistol": key = "pistol"
+				"shotgun": key = "shotgun"
+				"magic_book": key = "magic_book"
+				"throwing_knife": key = "knife"
+				"poison_cloud": key = "poison"
+				"lightning_chain": key = "lightning"
+				"crossbow": key = "crossbow"
+				"holy_wand": key = "holy_wand"
+				"kunai": key = "kunai"
+				"flame_thrower": key = "flame_thrower"
+				"blood_burst": key = "blood_burst"
+		"passive":
+			match item_id:
+				"magnet": key = "magnet"
+				"shield": key = "shield"
+				"regeneration": key = "regen"
+				"greed_ring": key = "greed"
+				"berserker_blood": key = "berserker"
+				"frozen_heart": key = "frozen"
+				"lightning_shield": key = "lightning_shield"
+				"shadow_cloak": key = "shadow"
+				"vampiric_fang": key = "vampiric"
+				"swift_boots": key = "swift_boots"
+				"lucky_clover": key = "clover"
+				"blood_edge": key = "blood_edge"
+				"frost_bind": key = "frost_bind"
+				"blood_drain": key = "blood_drain"
+		_:
+			# stat / consumable / basic 共用一套语义图标
+			match item_id:
+				"damage", "damage_boost": key = "mightstone"
+				"speed": key = "swift_boots"
+				"shoot_speed": key = "kunai"
+				"max_hp": key = "blood_crystal"
+				"heal": key = "heal_potion"
+				"armor": key = "shield"
+				"pickup_range": key = "magnet"
+				"gold": key = "blood_crystal"
+	if key.is_empty():
+		return null
+	# TextureManager 是普通 autoload（无 class_name），static 函数里按节点路径取
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	var inst: Node = tree.root.get_node_or_null("TextureManager")
+	if inst == null or not inst.has_method("get_weapon_icon"):
+		return null
+	return inst.get_weapon_icon(key)
 
 static func get_display_name(id: String) -> String:
 	## 按 id 取中文名，供 HUD"还差什么被动"这类提示使用
