@@ -129,13 +129,13 @@ func _update_shield_indicator() -> void:
 		return
 	_shield_row.visible = true
 	if bool(st.get("active", false)):
-		_shield_text.text = "🛡 护盾 已激活"
+		_shield_text.text = "护盾 已激活"
 		_shield_text.add_theme_color_override("font_color", Color(0.55, 0.9, 1.0))
 		_shield_bar.value = 1.0
 		_shield_bar.modulate = Color(0.55, 0.9, 1.0)
 		_start_shield_pulse()
 	else:
-		_shield_text.text = "🛡 护盾充能 %.0fs" % float(st.get("remain", 0.0))
+		_shield_text.text = "护盾充能 %.0fs" % float(st.get("remain", 0.0))
 		_shield_text.add_theme_color_override("font_color", Color(0.55, 0.62, 0.7))
 		_shield_bar.value = float(st.get("progress", 0.0))
 		_shield_bar.modulate = Color(0.45, 0.6, 0.75)
@@ -250,7 +250,7 @@ func _difficulty_scale() -> float:
 
 func _add_build_pact_row(text: String) -> void:
 	var lbl := Label.new()
-	lbl.text = "🩸 %s" % text
+	lbl.text = "%s" % text
 	lbl.add_theme_font_size_override("font_size", 11)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.45, 0.45))
 	_build_box.add_child(lbl)

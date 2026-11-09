@@ -9,55 +9,55 @@ const ACHIEVEMENTS: Dictionary = {
 	"first_blood": {
 		"name": "第一滴血",
 		"description": "首次击杀敌人",
-		"icon": "🩸",
+		"icon": "★",
 		"condition": "kills >= 1",
 	},
 	"novice_hunter": {
 		"name": "初出茅庐",
 		"description": "累计击杀100个敌人",
-		"icon": "⚔️",
+		"icon": "★",
 		"condition": "total_kills >= 100",
 	},
 	"expert_hunter": {
 		"name": "猎杀专家",
 		"description": "累计击杀1000个敌人",
-		"icon": "🏹",
+		"icon": "★",
 		"condition": "total_kills >= 1000",
 	},
 	"vampire_slayer": {
 		"name": "吸血鬼猎人",
 		"description": "累计击杀100只吸血鬼",
-		"icon": "🧛",
+		"icon": "★",
 		"condition": "vampire_kills >= 100",
 	},
 	"werewolf_hunter": {
 		"name": "狼人猎手",
 		"description": "累计击杀50只狼人",
-		"icon": "🐺",
+		"icon": "★",
 		"condition": "werewolf_kills >= 50",
 	},
 	"zombie_hunter": {
 		"name": "不死终结者",
 		"description": "累计击杀50只僵尸",
-		"icon": "🧟",
+		"icon": "★",
 		"condition": "zombie_kills >= 50",
 	},
 	"exterminator": {
 		"name": "灭绝者",
 		"description": "累计击杀20只自爆者",
-		"icon": "💣",
+		"icon": "★",
 		"condition": "exploder_kills >= 20",
 	},
 	"elite_hunter": {
 		"name": "精英猎杀者",
 		"description": "累计击杀30只精英吸血鬼",
-		"icon": "👑",
+		"icon": "★",
 		"condition": "elite_kills >= 30",
 	},
 	"prince_slayer": {
 		"name": "亲王克星",
 		"description": "累计击杀10只血族亲王",
-		"icon": "🗡️",
+		"icon": "★",
 		"condition": "prince_kills >= 10",
 	},
 
@@ -65,31 +65,31 @@ const ACHIEVEMENTS: Dictionary = {
 	"boss_killer": {
 		"name": "Boss杀手",
 		"description": "首次击败楼层 Boss",
-		"icon": "👑",
+		"icon": "★",
 		"condition": "boss_killed >= 1",
 	},
 	"crypt_breaker": {
 		"name": "墓穴闯入者",
 		"description": "击败第二层的血族亲王",
-		"icon": "🦴",
+		"icon": "★",
 		"condition": "floors_cleared >= 2",
 	},
 	"throne_breaker": {
 		"name": "王座终结者",
 		"description": "通关地下城，击败血族女王",
-		"icon": "🏆",
+		"icon": "★",
 		"condition": "dungeon_cleared >= 1",
 	},
 	"flawless_victory": {
 		"name": "无伤通关",
 		"description": "击败Boss且未受伤",
-		"icon": "✨",
+		"icon": "★",
 		"condition": "flawless_boss_kill == true",
 	},
 	"speed_runner": {
 		"name": "速通大师",
 		"description": "10分钟内击败Boss",
-		"icon": "⚡",
+		"icon": "★",
 		"condition": "boss_kill_time <= 600",
 	},
 
@@ -97,19 +97,19 @@ const ACHIEVEMENTS: Dictionary = {
 	"survivor": {
 		"name": "生存专家",
 		"description": "单局存活超过15分钟",
-		"icon": "⏱️",
+		"icon": "★",
 		"condition": "survival_time >= 900",
 	},
 	"wave_master": {
 		"name": "波次大师",
 		"description": "达到第20波",
-		"icon": "🌊",
+		"icon": "★",
 		"condition": "wave >= 20",
 	},
 	"room_explorer": {
 		"name": "探索者",
 		"description": "单局探索10个房间",
-		"icon": "🗺️",
+		"icon": "★",
 		"condition": "rooms >= 10",
 	},
 
@@ -117,19 +117,19 @@ const ACHIEVEMENTS: Dictionary = {
 	"weapon_master": {
 		"name": "武器大师",
 		"description": "单局将所有武器升到满级",
-		"icon": "🔨",
+		"icon": "★",
 		"condition": "all_weapons_maxed == true",
 	},
 	"jack_of_all_trades": {
 		"name": "全能选手",
 		"description": "单局使用所有类型的武器",
-		"icon": "🎯",
+		"icon": "★",
 		"condition": "all_weapon_types_used == true",
 	},
 	"evolutionist": {
 		"name": "进化论者",
 		"description": "单局进化3把武器",
-		"icon": "✨",
+		"icon": "★",
 		"condition": "evolved_weapons >= 3",
 	},
 
@@ -137,13 +137,13 @@ const ACHIEVEMENTS: Dictionary = {
 	"rich_hunter": {
 		"name": "富有的猎人",
 		"description": "单局获得500血晶",
-		"icon": "💎",
+		"icon": "★",
 		"condition": "crystals_earned >= 500",
 	},
 	"maxed_out": {
 		"name": "满级大佬",
 		"description": "达到等级20",
-		"icon": "⭐",
+		"icon": "★",
 		"condition": "level >= 20",
 	},
 
@@ -151,19 +151,19 @@ const ACHIEVEMENTS: Dictionary = {
 	"shopaholic": {
 		"name": "购物狂",
 		"description": "单局进入3次商店房间",
-		"icon": "🛒",
+		"icon": "★",
 		"condition": "shops_visited >= 3",
 	},
 	"treasure_hunter": {
 		"name": "宝藏猎人",
 		"description": "单局进入3次宝箱房间",
-		"icon": "🎁",
+		"icon": "★",
 		"condition": "treasures_visited >= 3",
 	},
 	"rest_stop": {
 		"name": "短暂休息",
 		"description": "单局进入2次休息站",
-		"icon": "⛺",
+		"icon": "★",
 		"condition": "rests_visited >= 2",
 	},
 }

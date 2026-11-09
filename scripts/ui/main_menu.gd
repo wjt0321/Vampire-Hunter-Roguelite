@@ -5,7 +5,7 @@ extends CanvasLayer
 const DailyChallengeScript = preload("res://scripts/core/daily_challenge.gd")
 
 
-@onready var title_label: Label = $CenterContainer/VBoxContainer/TitleLabel
+@onready var title_label: Label = $CenterContainer/VBoxContainer/TitleRow/TitleLabel
 @onready var subtitle_label: Label = $CenterContainer/VBoxContainer/SubtitleLabel
 @onready var start_btn: Button = $CenterContainer/VBoxContainer/ButtonContainer/StartButton
 @onready var char_btn: Button = $CenterContainer/VBoxContainer/ButtonContainer/CharButton
@@ -14,7 +14,10 @@ const DailyChallengeScript = preload("res://scripts/core/daily_challenge.gd")
 @onready var quit_btn: Button = $CenterContainer/VBoxContainer/ButtonContainer/QuitButton
 @onready var settings_panel: PanelContainer = $SettingsPanel
 @onready var bg: ColorRect = $Background
-@onready var crystals_label: Label = $CenterContainer/VBoxContainer/CrystalsLabel
+@onready var crystals_label: Label = $CenterContainer/VBoxContainer/CrystalsRow/CrystalsLabel
+@onready var crystal_icon: TextureRect = $CenterContainer/VBoxContainer/CrystalsRow/CrystalIcon
+@onready var bat_left: TextureRect = $CenterContainer/VBoxContainer/TitleRow/BatLeft
+@onready var bat_right: TextureRect = $CenterContainer/VBoxContainer/TitleRow/BatRight
 @onready var upgrade_shop = $UpgradeShop
 @onready var character_select = $CharacterSelect
 
@@ -41,6 +44,7 @@ func _ready() -> void:
 	_setup_background()
 	_setup_button_effects()
 	_setup_button_textures()
+	_setup_menu_icons()
 	_setup_settings_panel()
 	_setup_volume_sliders()
 	_animate_title()
@@ -79,15 +83,71 @@ func _setup_background() -> void:
 		move_child(texture_rect, 0)  # 移到最底层
 		bg.visible = false  # 隐藏原来的ColorRect
 
+## 之前标题和按钮里的 🧛 ⚔ 🏪 之类是 emoji 字形：字体缺字时会掉成方块，
+## 而且形状完全不受控。这里统一换成像素图标（assets/ui/menu_*.png）。
+func _setup_menu_icons() -> void:
+	var ui := TextureManager.instance
+	var bat := ui.get_ui_texture("menu_bat")
+	if bat:
+		bat_left.texture = bat
+		bat_right.texture = bat
+	var crystal := ui.get_ui_texture("menu_crystal")
+	if crystal:
+		crystal_icon.texture = crystal
+
+	var pairs := [
+		[start_btn, "menu_play"],
+		[char_btn, "menu_character"],
+		[shop_btn, "menu_shop"],
+		[settings_btn, "menu_settings"],
+		[quit_btn, "menu_quit"],
+	]
+	if daily_btn:
+		pairs.append([daily_btn, "menu_daily"])
+	for pair in pairs:
+		_decorate_button(pair[0], ui.get_ui_texture(pair[1]))
+
+## Button.icon 是把图标按 icon_alignment 单独摆位、文字另外居中，
+## 两者不在同一组里，图标会压在金色边框上。改成在按钮内塞一个
+## HBox([图标][文字])，整组居中，位置才对。
+func _decorate_button(btn: Button, tex: Texture2D) -> void:
+	if btn == null or tex == null:
+		return
+	var text := btn.text
+	btn.text = ""
+	var row := HBoxContainer.new()
+	row.name = "IconRow"
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation", 8)
+	btn.add_child(row)
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	var icon := TextureRect.new()
+	icon.texture = tex
+	icon.custom_minimum_size = Vector2(tex.get_width(), tex.get_height())
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(icon)
+
+	var label := Label.new()
+	label.text = text
+	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("font_size", btn.get_theme_font_size("font_size"))
+	label.add_theme_color_override("font_color", Color(0.93, 0.9, 0.86))
+	row.add_child(label)
+
 func _update_crystals() -> void:
 	if save_mgr:
-		crystals_label.text = "💎 血晶: %d" % save_mgr.get_blood_crystals()
+		crystals_label.text = "血晶: %d" % save_mgr.get_blood_crystals()
 
 func _create_daily_button() -> void:
 	var box := $CenterContainer/VBoxContainer/ButtonContainer
 	daily_btn = Button.new()
 	daily_btn.name = "DailyButton"
-	daily_btn.text = "☀ 每日挑战"
+	daily_btn.text = "每日挑战"
 	daily_btn.custom_minimum_size = Vector2(280, 45)
 	daily_btn.add_theme_font_size_override("font_size", 18)
 	daily_btn.pivot_offset = Vector2(140, 22)

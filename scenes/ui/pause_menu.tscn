@@ -41,7 +41,7 @@ theme_override_font_sizes/font_size = 18
 [node name="MenuButton" type="Button" parent="CenterContainer/PanelContainer/VBoxContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 45)
-text = "🏠 返回主菜单"
+text = "返回主菜单"
 theme_override_font_sizes/font_size = 18
 
 [connection signal="pressed" from="CenterContainer/PanelContainer/VBoxContainer/ResumeButton" to="." method="_on_resume_pressed"]

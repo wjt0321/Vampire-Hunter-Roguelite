@@ -48,7 +48,7 @@ const EVOLUTION_CONFIG: Dictionary = {
 	"pistol": {
 		"evolution_name": "神圣双管",
 		"evolution_description": "并排双发，横向覆盖翻倍",
-		"evolution_icon": "✨",
+		"evolution_icon": "圣",
 		"required_passive_items": ["lucky_clover"],
 		"damage_multiplier": 2.4,
 		"fire_rate_multiplier": 0.45,
@@ -59,7 +59,7 @@ const EVOLUTION_CONFIG: Dictionary = {
 	"shotgun": {
 		"evolution_name": "毁灭者",
 		"evolution_description": "散射更多子弹，覆盖更广范围",
-		"evolution_icon": "💥",
+		"evolution_icon": "爆",
 		"required_passive_items": ["berserker_blood"],
 		"damage_multiplier": 2.5,
 		"fire_rate_multiplier": 0.4,
@@ -70,7 +70,7 @@ const EVOLUTION_CONFIG: Dictionary = {
 	"magic_book": {
 		"evolution_name": "大魔导书",
 		"evolution_description": "放弃瞄准，向四周倾泻环形弹幕",
-		"evolution_icon": "📚",
+		"evolution_icon": "典",
 		"required_passive_items": ["magnet"],
 		"damage_multiplier": 2.2,
 		"fire_rate_multiplier": 0.5,
@@ -81,7 +81,7 @@ const EVOLUTION_CONFIG: Dictionary = {
 	"throwing_knife": {
 		"evolution_name": "刀阵旋风",
 		"evolution_description": "飞刀不再掷出，而是环绕你旋转绞杀",
-		"evolution_icon": "🌪️",
+		"evolution_icon": "旋",
 		"required_passive_items": ["swift_boots"],
 		"damage_multiplier": 2.0,
 		"fire_rate_multiplier": 0.5,
@@ -92,7 +92,7 @@ const EVOLUTION_CONFIG: Dictionary = {
 	"poison_cloud": {
 		"evolution_name": "瘟疫之源",
 		"evolution_description": "更大范围的致命毒雾",
-		"evolution_icon": "☣️",
+		"evolution_icon": "疫",
 		"required_passive_items": ["regeneration"],
 		"damage_multiplier": 2.5,
 		"fire_rate_multiplier": 0.5,
@@ -103,7 +103,7 @@ const EVOLUTION_CONFIG: Dictionary = {
 	"lightning_chain": {
 		"evolution_name": "雷神之怒",
 		"evolution_description": "全屏闪电链",
-		"evolution_icon": "🌩️",
+		"evolution_icon": "霆",
 		"required_passive_items": ["lightning_shield"],
 		"damage_multiplier": 3.0,
 		"fire_rate_multiplier": 0.4,
@@ -114,7 +114,7 @@ const EVOLUTION_CONFIG: Dictionary = {
 	"crossbow": {
 		"evolution_name": "圣光弩",
 		"evolution_description": "穿透力更强的神圣弩箭",
-		"evolution_icon": "🏹",
+		"evolution_icon": "弩",
 		"required_passive_items": ["lucky_clover"],
 		"damage_multiplier": 2.5,
 		"fire_rate_multiplier": 0.4,
@@ -125,7 +125,7 @@ const EVOLUTION_CONFIG: Dictionary = {
 	"holy_wand": {
 		"evolution_name": "大天使之杖",
 		"evolution_description": "自动追踪多个敌人的圣光弹",
-		"evolution_icon": "✨",
+		"evolution_icon": "圣",
 		"required_passive_items": ["regeneration"],
 		"damage_multiplier": 2.5,
 		"fire_rate_multiplier": 0.4,
@@ -136,7 +136,7 @@ const EVOLUTION_CONFIG: Dictionary = {
 	"kunai": {
 		"evolution_name": "影刃风暴",
 		"evolution_description": "高速投掷的暗影苦无",
-		"evolution_icon": "🗡️",
+		"evolution_icon": "镖",
 		"required_passive_items": ["shadow_cloak"],
 		"damage_multiplier": 1.8,
 		"fire_rate_multiplier": 0.6,
@@ -147,7 +147,7 @@ const EVOLUTION_CONFIG: Dictionary = {
 	"flame_thrower": {
 		"evolution_name": "地狱火",
 		"evolution_description": "永不熄灭的烈焰喷流",
-		"evolution_icon": "🔥",
+		"evolution_icon": "焰",
 		"required_passive_items": ["berserker_blood"],
 		"damage_multiplier": 2.0,
 		"fire_rate_multiplier": 0.7,
@@ -158,7 +158,7 @@ const EVOLUTION_CONFIG: Dictionary = {
 	"blood_burst": {
 		"evolution_name": "血海",
 		"evolution_description": "以血为引的范围爆发",
-		"evolution_icon": "🩸",
+		"evolution_icon": "血",
 		"required_passive_items": ["vampiric_fang"],
 		"damage_multiplier": 2.2,
 		"fire_rate_multiplier": 0.7,
@@ -243,7 +243,7 @@ func _create_weapon_evolution(weapon) -> void:
 	var evolution := WeaponEvolutionScript.new()
 	evolution.evolution_name = config.get("evolution_name", "进化武器")
 	evolution.evolution_description = config.get("evolution_description", "")
-	evolution.evolution_icon = config.get("evolution_icon", "✨")
+	evolution.evolution_icon = config.get("evolution_icon", "圣")
 	evolution.required_passive_items = config.get("required_passive_items", [])
 	evolution.required_kill_count = config.get("required_kill_count", 50)
 	# 进化倍率统一钳制到设计区间，避免单次进化让 DPS 指数爆炸
@@ -687,7 +687,7 @@ func _create_pistol() -> Resource:
 	w.weapon_name = "手枪"
 	w.weapon_id = "pistol"
 	w.description = "可靠的基础武器"
-	w.icon_emoji = "🔫"
+	w.icon_emoji = "枪"
 	w.base_damage = 4.0
 	w.fire_rate = 0.25
 	w.bullet_speed = 500.0
@@ -703,7 +703,7 @@ static func create_shotgun() -> Resource:
 	w.weapon_name = "散弹枪"
 	w.weapon_id = "shotgun"
 	w.description = "近距离扇形射击"
-	w.icon_emoji = "💥"
+	w.icon_emoji = "散"
 	w.base_damage = 4.0
 	w.fire_rate = 0.75
 	w.bullet_speed = 400.0
@@ -719,7 +719,7 @@ static func create_magic_book() -> Resource:
 	w.weapon_name = "魔法书"
 	w.weapon_id = "magic_book"
 	w.description = "自动追踪最近的敌人"
-	w.icon_emoji = "📖"
+	w.icon_emoji = "书"
 	w.base_damage = 4.0
 	w.fire_rate = 0.6
 	w.bullet_speed = 350.0
@@ -755,7 +755,7 @@ static func create_throwing_knife() -> Resource:
 	w.weapon_name = "飞刀"
 	w.weapon_id = "throwing_knife"
 	w.description = "穿透敌人的飞刀"
-	w.icon_emoji = "🔪"
+	w.icon_emoji = "刃"
 	w.base_damage = 6.0
 	w.fire_rate = 0.5
 	w.bullet_speed = 450.0
@@ -772,7 +772,7 @@ static func create_poison_cloud() -> Resource:
 	w.weapon_name = "毒雾瓶"
 	w.weapon_id = "poison_cloud"
 	w.description = "投掷毒雾造成持续伤害"
-	w.icon_emoji = "☠️"
+	w.icon_emoji = "毒"
 	w.base_damage = 2.5
 	w.fire_rate = 1.5
 	w.bullet_speed = 0.0
@@ -790,7 +790,7 @@ static func create_lightning_chain() -> Resource:
 	w.weapon_name = "闪电法杖"
 	w.weapon_id = "lightning_chain"
 	w.description = "闪电在敌人之间跳跃"
-	w.icon_emoji = "⚡"
+	w.icon_emoji = "雷"
 	w.base_damage = 7.5
 	w.fire_rate = 0.8
 	w.bullet_speed = 0.0
@@ -807,7 +807,7 @@ static func create_crossbow() -> Resource:
 	w.weapon_name = "十字弩"
 	w.weapon_id = "crossbow"
 	w.description = "高伤害穿透弩箭"
-	w.icon_emoji = "🏹"
+	w.icon_emoji = "弩"
 	w.base_damage = 14.0
 	w.fire_rate = 0.9
 	w.bullet_speed = 650.0
@@ -824,7 +824,7 @@ static func create_holy_wand() -> Resource:
 	w.weapon_name = "圣光魔杖"
 	w.weapon_id = "holy_wand"
 	w.description = "自动追踪敌人的圣光弹"
-	w.icon_emoji = "✨"
+	w.icon_emoji = "圣"
 	w.base_damage = 5.0
 	w.fire_rate = 0.5
 	w.bullet_speed = 380.0
@@ -866,7 +866,7 @@ static func create_kunai() -> Resource:
 	w.weapon_name = "苦无"
 	w.weapon_id = "kunai"
 	w.description = "极高速投掷的暗器"
-	w.icon_emoji = "🗡️"
+	w.icon_emoji = "镖"
 	w.base_damage = 3.2
 	w.fire_rate = 0.16
 	w.bullet_speed = 560.0
@@ -883,7 +883,7 @@ static func create_flame_thrower() -> Resource:
 	w.weapon_name = "火焰喷射器"
 	w.weapon_id = "flame_thrower"
 	w.description = "近距离持续火焰，几乎没有间隙"
-	w.icon_emoji = "🔥"
+	w.icon_emoji = "焰"
 	w.base_damage = 1.1
 	w.fire_rate = 0.08
 	w.bullet_speed = 330.0
@@ -899,7 +899,7 @@ static func create_blood_burst() -> Resource:
 	w.weapon_name = "血爆"
 	w.weapon_id = "blood_burst"
 	w.description = "在敌群中引爆一片血海"
-	w.icon_emoji = "🩸"
+	w.icon_emoji = "血"
 	w.base_damage = 9.0
 	w.fire_rate = 1.3
 	w.bullet_speed = 0.0

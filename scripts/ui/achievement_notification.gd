@@ -3,7 +3,7 @@ extends CanvasLayer
 ## 在屏幕角落显示成就解锁提示
 
 @onready var panel: PanelContainer = $PanelContainer
-@onready var icon_label: Label = $PanelContainer/MarginContainer/HBoxContainer/IconLabel
+@onready var icon_rect: TextureRect = $PanelContainer/MarginContainer/HBoxContainer/IconRect
 @onready var name_label: Label = $PanelContainer/MarginContainer/HBoxContainer/VBoxContainer/NameLabel
 @onready var desc_label: Label = $PanelContainer/MarginContainer/HBoxContainer/VBoxContainer/DescLabel
 
@@ -28,7 +28,7 @@ func _on_achievement_unlocked(achievement_id: String, achievement_name: String) 
 	notification_queue.append({
 		"id": achievement_id,
 		"name": achievement_name,
-		"icon": info.get("icon", "🏆"),
+		"icon": info.get("icon", "杯"),
 		"description": info.get("description", ""),
 	})
 	
@@ -44,7 +44,6 @@ func _show_next_notification() -> void:
 	var notification: Dictionary = notification_queue.pop_front()
 	
 	# 设置内容
-	icon_label.text = notification["icon"]
 	name_label.text = "成就解锁: %s" % notification["name"]
 	desc_label.text = notification["description"]
 	

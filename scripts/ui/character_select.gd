@@ -24,7 +24,7 @@ func show_selection() -> void:
 func _refresh_ui() -> void:
 	if not save_mgr:
 		return
-	crystals_label.text = "💎 血晶: %d" % save_mgr.get_blood_crystals()
+	crystals_label.text = "血晶: %d" % save_mgr.get_blood_crystals()
 	for child in chars_container.get_children():
 		child.queue_free()
 	
@@ -33,15 +33,35 @@ func _refresh_ui() -> void:
 		var card := _create_card(char_data)
 		chars_container.add_child(card)
 
+## 卡面上原来直接打的是内部 id（pistol / magic_book），玩家看到的是英文键名。
+func _weapon_display_name(id: String) -> String:
+	var n := ItemCatalog.get_display_name(id)
+	if n != id:
+		return n
+	match id:
+		"pistol":
+			return "手枪"
+		"throwing_knife":
+			return "飞刀"
+		_:
+			return id
+
 func _create_card(char_data: Resource) -> PanelContainer:
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(300, 400)
+	# 400 高装不下"图标+描述+4 项属性+初始武器+被动（可能换行）"，
+	# 第二个角色的被动描述换行后整行会溢出到卡框外面，抬到 470。
+	card.custom_minimum_size = Vector2(300, 470)
 
 	# 卡片背景纹理
 	var card_texture := TextureManager.instance.get_ui_texture("upgrade_card")
 	if card_texture:
 		var style := StyleBoxTexture.new()
 		style.texture = card_texture
+		# 让文字离开卡框花纹
+		style.content_margin_left = 16
+		style.content_margin_right = 16
+		style.content_margin_top = 18
+		style.content_margin_bottom = 12
 		card.add_theme_stylebox_override("panel", style)
 
 	var vbox := VBoxContainer.new()
@@ -75,7 +95,7 @@ func _create_card(char_data: Resource) -> PanelContainer:
 	# 角色 emoji 大图标
 	var icon_label := Label.new()
 	var icon_emoji: Variant = char_data.get("icon_emoji")
-	icon_label.text = icon_emoji if icon_emoji != null else "🧛"
+	icon_label.text = icon_emoji if icon_emoji != null else "猎"
 	icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	icon_label.add_theme_font_size_override("font_size", 48)
 	vbox.add_child(icon_label)
@@ -89,21 +109,21 @@ func _create_card(char_data: Resource) -> PanelContainer:
 	vbox.add_child(desc_label)
 
 	var stats_label := Label.new()
-	stats_label.text = "❤ HP: %d
-👟 速度: %d
-⚔ 伤害: x%.2f" % [
+	stats_label.text = "生命: %d
+速度: %d
+伤害: x%.2f" % [
 		int(char_data.base_hp), int(char_data.base_speed), char_data.base_damage_mult
 	]
 	stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(stats_label)
 
 	var weapon_label := Label.new()
-	weapon_label.text = "🔫 初始: %s" % char_data.initial_weapon
+	weapon_label.text = "初始武器: %s" % _weapon_display_name(char_data.initial_weapon)
 	weapon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(weapon_label)
 
 	var passive_label := Label.new()
-	passive_label.text = "🌟 %s
+	passive_label.text = "%s
 %s" % [char_data.passive_name, char_data.passive_description]
 	passive_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	passive_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -119,13 +139,13 @@ func _create_card(char_data: Resource) -> PanelContainer:
 	btn.custom_minimum_size = Vector2(0, 44)
 	_apply_button_style(btn)
 	if not is_unlocked:
-		btn.text = "🔒 解锁 (💎 %d)" % char_data.unlock_cost
+		btn.text = "解锁 (血晶 %d)" % char_data.unlock_cost
 		btn.disabled = (not save_mgr) or save_mgr.get_blood_crystals() < char_data.unlock_cost
 		var cid: String = char_data.char_id
 		var cost: int = char_data.unlock_cost
 		btn.pressed.connect(func(): _unlock_character(cid, cost))
 	elif is_selected:
-		btn.text = "✅ 已选择"
+		btn.text = "已选择"
 		btn.disabled = true
 	else:
 		btn.text = "选择角色"

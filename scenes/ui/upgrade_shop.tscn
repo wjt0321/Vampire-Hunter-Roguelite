@@ -34,13 +34,13 @@ layout_mode = 2
 
 [node name="TitleLabel" type="Label" parent="Panel/VBoxContainer/Header"]
 layout_mode = 2
-text = "🏪 升级商店"
+text = "升级商店"
 theme_override_font_sizes/font_size = 24
 size_flags_horizontal = 3
 
 [node name="CrystalsLabel" type="Label" parent="Panel/VBoxContainer/Header"]
 layout_mode = 2
-text = "💎 血晶: 0"
+text = "血晶: 0"
 theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.5, 0.3, 1.0, 1.0)
 

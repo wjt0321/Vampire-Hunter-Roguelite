@@ -11,12 +11,12 @@ signal shop_closed
 var save_mgr: Node
 
 const UPGRADE_INFO: Dictionary = {
-	"base_damage": {"name": "基础伤害", "desc": "+5% 武器伤害", "icon": "⚔"},
-	"base_hp": {"name": "基础血量", "desc": "+10 最大生命", "icon": "❤"},
-	"base_speed": {"name": "基础速度", "desc": "+5% 移动速度", "icon": "👟"},
-	"base_armor": {"name": "基础护甲", "desc": "+3 伤害减免", "icon": "🛡"},
-	"xp_bonus": {"name": "经验加成", "desc": "+10% 经验获取", "icon": "✨"},
-	"blood_crystal_bonus": {"name": "血晶加成", "desc": "+10% 血晶获取", "icon": "💎"},
+	"base_damage": {"name": "基础伤害", "desc": "+5% 武器伤害", "icon": "攻"},
+	"base_hp": {"name": "基础血量", "desc": "+10 最大生命", "icon": "命"},
+	"base_speed": {"name": "基础速度", "desc": "+5% 移动速度", "icon": "疾"},
+	"base_armor": {"name": "基础护甲", "desc": "+3 伤害减免", "icon": "甲"},
+	"xp_bonus": {"name": "经验加成", "desc": "+10% 经验获取", "icon": "验"},
+	"blood_crystal_bonus": {"name": "血晶加成", "desc": "+10% 血晶获取", "icon": "晶"},
 }
 
 func _ready() -> void:
@@ -31,6 +31,12 @@ func _setup_panel_style() -> void:
 	if panel_texture:
 		var style := StyleBoxTexture.new()
 		style.texture = panel_texture
+		# 贴图原本 400×300、面板 600×500，边框会被放大 1.5 倍。
+		# 不设 content_margin 时子节点从 (0,0) 开始，标题和第一行会压在金色花纹上。
+		style.content_margin_left = 30
+		style.content_margin_right = 30
+		style.content_margin_top = 34
+		style.content_margin_bottom = 26
 		$Panel.add_theme_stylebox_override("panel", style)
 
 func _setup_back_button_style() -> void:
@@ -61,7 +67,7 @@ func show_shop() -> void:
 func _refresh_ui() -> void:
 	if not save_mgr:
 		return
-	crystals_label.text = "💎 血晶: %d" % save_mgr.get_blood_crystals()
+	crystals_label.text = "血晶: %d" % save_mgr.get_blood_crystals()
 	for child in upgrades_container.get_children():
 		child.queue_free()
 	for upgrade_id in UPGRADE_INFO:
@@ -88,7 +94,7 @@ func _refresh_ui() -> void:
 			buy_btn.text = "已满级"
 			buy_btn.disabled = true
 		else:
-			buy_btn.text = "💎 %d" % cost
+			buy_btn.text = "血晶 %d" % cost
 			buy_btn.disabled = save_mgr.get_blood_crystals() < cost
 			var uid: String = upgrade_id
 			buy_btn.pressed.connect(func(): _purchase(uid))

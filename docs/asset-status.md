@@ -40,6 +40,7 @@
 | 按钮三态 | 3 | `btn_normal` / `hover` / `pressed`，192×64 |
 | 面板与槽位 | 10 | 菜单框、升级卡片、统计面板、商店槽位、波次牌、武器槽、被动槽、选中标记、成就图标、价格牌 |
 | 角色 | 1 | `merchant` 128×128 |
+| 主菜单图标 | 8 | 手画像素（`menu_play`/`character`/`shop`/`settings`/`quit`/`daily`/`crystal` 24×24、`menu_bat` 48×48），替换原来的 emoji 字形 |
 | 售罄印章 | 1 | `sold_out` 64×24 |
 
 校验：`verify_ui.py` **9/9 通过**

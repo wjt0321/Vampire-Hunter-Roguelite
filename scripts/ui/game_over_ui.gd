@@ -92,14 +92,14 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 	
 	var title := ""
 	if is_victory:
-		title = "🦇 胜利！吸血鬼领主已被终结 🦇\n\n"
+		title = "胜利！吸血鬼领主已被终结\n\n"
 		stats_label.label_settings = null
 		stats_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4, 1.0))
 		if bg_rect:
 			bg_rect.texture = TextureManager.instance.get_ui_texture("victory_bg")
 		AudioManager.play_bgm(AudioLib.get_victory_bgm())
 	else:
-		title = "☠ 游戏结束 ☠\n\n"
+		title = "游戏结束\n\n"
 		stats_label.add_theme_color_override("font_color", Color(0.85, 0.2, 0.2, 1.0))
 		if bg_rect:
 			bg_rect.texture = TextureManager.instance.get_ui_texture("defeat_bg")
@@ -128,8 +128,8 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 	text += "受到伤害: %.0f\n" % stats.get("damage_taken", 0)
 
 	if save_mgr:
-		text += "\n💎 获得血晶: +%d\n" % crystals
-		text += "💎 总血晶: %d" % save_mgr.get_blood_crystals()
+		text += "\n获得血晶: +%d\n" % crystals
+		text += "总血晶: %d" % save_mgr.get_blood_crystals()
 	if daily_line != "":
 		text += "\n" + daily_line
 	stats_label.text = text
@@ -155,10 +155,10 @@ func _update_achievement_display() -> void:
 		achievement_label.text = ""
 		return
 	
-	var text := "\n🏆 本局解锁成就:\n"
+	var text := "\n本局解锁成就:\n"
 	for ach_id in unlocked:
 		var info: Dictionary = achievement_mgr.get_achievement_info(ach_id)
-		text += "  %s %s\n" % [info.get("icon", "🏆"), info.get("name", ach_id)]
+		text += "  %s %s\n" % [info.get("icon", "杯"), info.get("name", ach_id)]
 	
 	achievement_label.text = text
 

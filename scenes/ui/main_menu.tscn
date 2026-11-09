@@ -22,12 +22,35 @@ anchor_bottom = 1.0
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+[node name="TitleRow" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-text = "🧛 吸血鬼猎人 🧛"
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="BatLeft" type="TextureRect" parent="CenterContainer/VBoxContainer/TitleRow"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer/TitleRow"]
+layout_mode = 2
+text = "吸血鬼猎人"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 48
-theme_override_colors/font_color = Color(0.8, 0.15, 0.2, 1.0)
+theme_override_colors/font_color = Color(0.86, 0.16, 0.22, 1.0)
+theme_override_colors/font_outline_color = Color(0.05, 0.02, 0.03, 1.0)
+theme_override_constants/outline_size = 8
+
+[node name="BatRight" type="TextureRect" parent="CenterContainer/VBoxContainer/TitleRow"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
 
 [node name="SubtitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
@@ -36,12 +59,27 @@ horizontal_alignment = 1
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.6, 0.4, 0.5, 1.0)
 
-[node name="CrystalsLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+[node name="CrystalsRow" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-text = "💎 血晶: 0"
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="CrystalIcon" type="TextureRect" parent="CenterContainer/VBoxContainer/CrystalsRow"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CrystalsLabel" type="Label" parent="CenterContainer/VBoxContainer/CrystalsRow"]
+layout_mode = 2
+text = "血晶: 0"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 18
-theme_override_colors/font_color = Color(0.5, 0.3, 1.0, 1.0)
+theme_override_colors/font_color = Color(0.92, 0.7, 0.68, 1.0)
+theme_override_colors/font_outline_color = Color(0.05, 0.02, 0.03, 1.0)
+theme_override_constants/outline_size = 5
 
 [node name="Spacer" type="Control" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
@@ -54,35 +92,35 @@ theme_override_constants/separation = 10
 [node name="StartButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(280, 45)
-text = "⚔ 开始游戏"
+text = "开始游戏"
 pivot_offset = Vector2(140, 22)
 theme_override_font_sizes/font_size = 18
 
 [node name="CharButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(280, 45)
-text = "🧛 角色选择"
+text = "角色选择"
 pivot_offset = Vector2(140, 22)
 theme_override_font_sizes/font_size = 18
 
 [node name="ShopButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(280, 45)
-text = "🏪 升级商店"
+text = "升级商店"
 pivot_offset = Vector2(140, 22)
 theme_override_font_sizes/font_size = 18
 
 [node name="SettingsButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(280, 45)
-text = "⚙ 设置"
+text = "设置"
 pivot_offset = Vector2(140, 22)
 theme_override_font_sizes/font_size = 18
 
 [node name="QuitButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(280, 45)
-text = "🚪 退出"
+text = "退出"
 pivot_offset = Vector2(140, 22)
 theme_override_font_sizes/font_size = 18
 
@@ -105,13 +143,13 @@ theme_override_constants/separation = 16
 
 [node name="SettingsTitle" type="Label" parent="SettingsPanel/VBoxContainer"]
 layout_mode = 2
-text = "⚙ 设置"
+text = "设置"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 24
 
 [node name="MusicLabel" type="Label" parent="SettingsPanel/VBoxContainer"]
 layout_mode = 2
-text = "🎵 音乐音量"
+text = "音乐音量"
 
 [node name="MusicSlider" type="HSlider" parent="SettingsPanel/VBoxContainer"]
 layout_mode = 2
@@ -122,7 +160,7 @@ value = 0.8
 
 [node name="SFXLabel" type="Label" parent="SettingsPanel/VBoxContainer"]
 layout_mode = 2
-text = "🔊 音效音量"
+text = "音效音量"
 
 [node name="SFXSlider" type="HSlider" parent="SettingsPanel/VBoxContainer"]
 layout_mode = 2

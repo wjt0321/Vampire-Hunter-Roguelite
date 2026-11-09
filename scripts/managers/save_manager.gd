@@ -242,7 +242,7 @@ func record_daily_run(date_key: String, stats: Dictionary) -> Dictionary:
 		save_data["blood_crystals"] = int(save_data.get("blood_crystals", 0)) + crystals
 	save_data["daily_board"] = bucket
 	save_game()
-	var summary := "☀ 每日第 %d 名" % (rank + 1)
+	var summary := "每日第 %d 名" % (rank + 1)
 	if notes.size() > 0:
 		summary += " · " + "，".join(notes)
 	return {"crystals": crystals, "summary": summary, "rank": rank + 1}

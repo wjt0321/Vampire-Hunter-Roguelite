@@ -818,3 +818,11 @@
 | 2.3 Kenney Particle Pack | `effects/levelup_aura.png`、`effects/xp_collect.png`、`effects/shield_break.png`、`effects/magic_trail.png`、`effects/knife_spin.png`、`effects/btn_click.png`、`effects/achievement_unlock.png`、`weapons/bullet.png`、`weapons/magic_orb.png`、`weapons/knife.png`、`weapons/icon_frozen.png` |
 
 仍来自 Kenney UI Pack 且**未被替换**的：`ui/weapon_slot.png`、`ui/passive_slot.png`、`ui/shop_slot.png`、`ui/star_gold.png`。
+
+### 2026-11-09 主菜单图标（8 张，替换 emoji 字形）
+
+- 状态：新增 8 张，`assets/ui/menu_{play,character,shop,settings,quit,daily,crystal}.png`（24×24）与 `menu_bat.png`（48×48）
+- 来源：**本项目原创，用 PIL 按 24/48 像素网格硬边绘制**，未参考任何第三方素材
+- 用途：替换主菜单标题两侧与按钮里的 emoji（🧛 ⚔ 🏪 ⚙ 🚪 ☀ 💎），以及成就通知的 🏆
+- 生成脚本：`.workbuddy/comfy/menu_icons.py`
+- 授权：原创，无第三方权利，无需登记第三方来源

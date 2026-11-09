@@ -143,6 +143,15 @@ func _load_ui_textures():
 		"merchant": _load_texture("res://assets/ui/merchant.png"),
 		"victory_bg": _load_texture("res://assets/ui/victory_bg.png"),
 		"defeat_bg": _load_texture("res://assets/ui/defeat_bg.png"),
+		# 主菜单图标（替代 emoji 字形，24×24 像素画；menu_bat 是标题两侧的纹章 40×40）
+		"menu_play": _load_texture("res://assets/ui/menu_play.png"),
+		"menu_character": _load_texture("res://assets/ui/menu_character.png"),
+		"menu_shop": _load_texture("res://assets/ui/menu_shop.png"),
+		"menu_settings": _load_texture("res://assets/ui/menu_settings.png"),
+		"menu_quit": _load_texture("res://assets/ui/menu_quit.png"),
+		"menu_daily": _load_texture("res://assets/ui/menu_daily.png"),
+		"menu_crystal": _load_texture("res://assets/ui/menu_crystal.png"),
+		"menu_bat": _load_texture("res://assets/ui/menu_bat.png"),
 		"menu_frame": _load_texture("res://assets/ui/menu_frame.png"),
 	}
 

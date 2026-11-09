@@ -182,11 +182,11 @@ func _build_ui() -> void:
 	bottom.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_child(bottom)
 
-	_reroll_btn = _make_button("🎲 重抽")
+	_reroll_btn = _make_button("重抽")
 	_reroll_btn.pressed.connect(_on_reroll)
 	bottom.add_child(_reroll_btn)
 
-	var leave_btn := _make_button("🚪 离开商店")
+	var leave_btn := _make_button("离开商店")
 	leave_btn.pressed.connect(close)
 	bottom.add_child(leave_btn)
 
@@ -253,7 +253,7 @@ func _make_card(index: int) -> Control:
 		return card
 
 	var icon := Label.new()
-	icon.text = String(slot.get("icon", "❓"))
+	icon.text = String(slot.get("icon", "?"))
 	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	icon.add_theme_font_size_override("font_size", 34)
 	vb.add_child(icon)
@@ -282,7 +282,7 @@ func _make_card(index: int) -> Control:
 	vb.add_child(desc)
 
 	var price: int = int(slot.get("price", 0))
-	var buy_btn := _make_button("💰 %d" % price)
+	var buy_btn := _make_button("%d" % price)
 	buy_btn.custom_minimum_size = Vector2(150, 38)
 	buy_btn.disabled = _get_silver() < price
 	if not buy_btn.disabled:
@@ -290,7 +290,7 @@ func _make_card(index: int) -> Control:
 	buy_btn.pressed.connect(func(): _on_buy(index))
 	vb.add_child(buy_btn)
 
-	var lock_btn := _make_button("🔒 已锁定" if locked else "🔓 锁定")
+	var lock_btn := _make_button("已锁定" if locked else "锁定")
 	lock_btn.custom_minimum_size = Vector2(150, 30)
 	lock_btn.add_theme_font_size_override("font_size", 12)
 	lock_btn.pressed.connect(func(): _on_toggle_lock(index))
