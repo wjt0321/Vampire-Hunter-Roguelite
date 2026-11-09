@@ -12,10 +12,31 @@ signal selection_closed
 
 var save_mgr: Node
 
+## 卡片尺寸：立绘 96 + 名字 + 描述 + 三行属性 + 武器 + 被动 + 按钮
+const CARD_SIZE := Vector2(340, 420)
+
 func _ready() -> void:
 	visible = false
 	back_btn.pressed.connect(_on_back_pressed)
 	save_mgr = get_node_or_null("/root/SaveManager")
+	_setup_panel_style()
+
+## 外层大框和升级商店用同一张 stats_panel，九宫格切开，角上的宝石不再被拉伸。
+func _setup_panel_style() -> void:
+	var tex := TextureManager.instance.get_ui_texture("stats_panel")
+	if tex == null:
+		return
+	var style := StyleBoxTexture.new()
+	style.texture = tex
+	style.texture_margin_left = 48
+	style.texture_margin_right = 48
+	style.texture_margin_top = 62
+	style.texture_margin_bottom = 60
+	style.content_margin_left = 52
+	style.content_margin_right = 52
+	style.content_margin_top = 66
+	style.content_margin_bottom = 64
+	$Panel.add_theme_stylebox_override("panel", style)
 
 func show_selection() -> void:
 	visible = true
@@ -46,88 +67,119 @@ func _weapon_display_name(id: String) -> String:
 		_:
 			return id
 
+## 卡片立绘：直接用游戏内真实精灵的第一帧。
+## 角色专属图放 assets/sprites/player/{char_id}_idle.png 就会被自动取用；
+## 目前只有一套通用玩家精灵，别的角色先复用它。
+func _character_portrait(char_id: String) -> Texture2D:
+	var own := "res://assets/sprites/player/%s_idle.png" % char_id
+	var tex: Texture2D = null
+	if ResourceLoader.exists(own):
+		tex = load(own)
+	if tex == null and TextureManager.instance:
+		tex = TextureManager.instance.get_player_texture("idle")
+	if tex == null:
+		return null
+	var cell: int = tex.get_height()
+	var atlas := AtlasTexture.new()
+	atlas.atlas = tex
+	atlas.region = Rect2(0, 0, cell, cell)
+	return atlas
+
 func _create_card(char_data: Resource) -> PanelContainer:
 	var card := PanelContainer.new()
-	# 400 高装不下"图标+描述+4 项属性+初始武器+被动（可能换行）"，
-	# 第二个角色的被动描述换行后整行会溢出到卡框外面，抬到 470。
-	card.custom_minimum_size = Vector2(300, 470)
+	card.custom_minimum_size = CARD_SIZE
 
-	# 卡片背景纹理
+	# 卡片背景：九宫格切开，金框和四角宝石保持原尺寸，不随卡片拉伸
 	var card_texture := TextureManager.instance.get_ui_texture("upgrade_card")
 	if card_texture:
 		var style := StyleBoxTexture.new()
 		style.texture = card_texture
-		# 让文字离开卡框花纹
-		style.content_margin_left = 16
-		style.content_margin_right = 16
-		style.content_margin_top = 18
-		style.content_margin_bottom = 12
+		style.texture_margin_left = 28
+		style.texture_margin_right = 28
+		style.texture_margin_top = 22
+		style.texture_margin_bottom = 18
+		style.content_margin_left = 34
+		style.content_margin_right = 34
+		style.content_margin_top = 28
+		style.content_margin_bottom = 22
 		card.add_theme_stylebox_override("panel", style)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 10)
+	vbox.add_theme_constant_override("separation", 6)
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	card.add_child(vbox)
 
 	var is_unlocked: bool = save_mgr.is_character_unlocked(char_data.char_id) if save_mgr else false
 	var is_selected: bool = (save_mgr.get_selected_character() == char_data.char_id) if save_mgr else false
 
-	# 已选择标记
-	if is_selected:
-		var mark := TextureRect.new()
-		var mark_tex := TextureManager.instance.get_ui_texture("selected_mark")
-		if mark_tex:
-			mark.texture = mark_tex
-			mark.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-			mark.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			mark.custom_minimum_size = Vector2(32, 32)
-			mark.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-			vbox.add_child(mark)
+	# 立绘：套一个暗色描边槽再放图。
+	# 槽内净宽 112 = 56 的整数 2 倍，最近邻放大后像素是均匀的；
+	# 没有这层暗底时，猎人的黑色披风会直接糊在卡片的棕色底上。
+	var portrait_frame := Panel.new()
+	portrait_frame.custom_minimum_size = Vector2(132, 132)
+	portrait_frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var slot_style := StyleBoxFlat.new()
+	slot_style.bg_color = Color(0.06, 0.045, 0.055, 0.72)
+	slot_style.border_color = Color(0.62, 0.5, 0.28, 0.75)
+	slot_style.set_border_width_all(1)
+	slot_style.set_corner_radius_all(3)
+	portrait_frame.add_theme_stylebox_override("panel", slot_style)
+	vbox.add_child(portrait_frame)
+
+	var portrait := TextureRect.new()
+	portrait.texture = _character_portrait(char_data.char_id)
+	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	# 像素精灵放大必须用最近邻，否则糊成一团
+	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	portrait_frame.add_child(portrait)
+	portrait.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	portrait.offset_left = 10
+	portrait.offset_top = 10
+	portrait.offset_right = -10
+	portrait.offset_bottom = -10
 
 	var name_label := Label.new()
-	name_label.text = char_data.char_name
+	# 「已选择」用星号挂在名字前面，不再单独加一行图标 ——
+	# 多一个子节点会让两种状态的卡片高度不一致。
+	name_label.text = ("★ " if is_selected else "") + char_data.char_name
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.add_theme_font_size_override("font_size", 22)
 	if is_selected:
 		name_label.modulate = Color(1.0, 0.85, 0.2)
 	vbox.add_child(name_label)
 
-	# 角色 emoji 大图标
-	var icon_label := Label.new()
-	var icon_emoji: Variant = char_data.get("icon_emoji")
-	icon_label.text = icon_emoji if icon_emoji != null else "猎"
-	icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	icon_label.add_theme_font_size_override("font_size", 48)
-	vbox.add_child(icon_label)
-
 	var desc_label := Label.new()
 	desc_label.text = char_data.description
 	desc_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc_label.custom_minimum_size.x = 240
+	desc_label.add_theme_font_size_override("font_size", 13)
+	desc_label.custom_minimum_size.x = 250
 	desc_label.modulate = Color(0.75, 0.75, 0.75)
 	vbox.add_child(desc_label)
 
 	var stats_label := Label.new()
-	stats_label.text = "生命: %d
-速度: %d
-伤害: x%.2f" % [
+	stats_label.text = "生命 %d · 速度 %d · 伤害 x%.2f" % [
 		int(char_data.base_hp), int(char_data.base_speed), char_data.base_damage_mult
 	]
 	stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	stats_label.add_theme_font_size_override("font_size", 14)
+	stats_label.add_theme_constant_override("line_spacing", -2)
 	vbox.add_child(stats_label)
 
 	var weapon_label := Label.new()
 	weapon_label.text = "初始武器: %s" % _weapon_display_name(char_data.initial_weapon)
 	weapon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	weapon_label.add_theme_font_size_override("font_size", 14)
 	vbox.add_child(weapon_label)
 
 	var passive_label := Label.new()
-	passive_label.text = "%s
-%s" % [char_data.passive_name, char_data.passive_description]
+	passive_label.text = "%s\n%s" % [char_data.passive_name, char_data.passive_description]
 	passive_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	passive_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	passive_label.custom_minimum_size.x = 240
+	passive_label.add_theme_font_size_override("font_size", 13)
+	passive_label.custom_minimum_size.x = 250
 	passive_label.modulate = Color(0.5, 0.9, 1.0)
 	vbox.add_child(passive_label)
 
@@ -136,7 +188,7 @@ func _create_card(char_data: Resource) -> PanelContainer:
 		card.modulate = Color(0.6, 0.6, 0.6, 1.0)
 
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(0, 44)
+	btn.custom_minimum_size = Vector2(0, 42)
 	_apply_button_style(btn)
 	if not is_unlocked:
 		btn.text = "解锁 (血晶 %d)" % char_data.unlock_cost
@@ -182,6 +234,8 @@ func _apply_button_style(btn: Button) -> void:
 func _on_card_hover(card: PanelContainer, unlocked: bool) -> void:
 	if not unlocked:
 		return
+	# 不设 pivot 时节点按左上角缩放，放大后整张卡往右下跑
+	card.pivot_offset = card.size * 0.5
 	var tween := create_tween()
 	tween.tween_property(card, "scale", Vector2(1.05, 1.05), 0.15)
 	tween.parallel().tween_property(card, "modulate", Color(1.2, 1.1, 1.1, 1.0), 0.15)

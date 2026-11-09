@@ -826,3 +826,13 @@
 - 用途：替换主菜单标题两侧与按钮里的 emoji（🧛 ⚔ 🏪 ⚙ 🚪 ☀ 💎），以及成就通知的 🏆
 - 生成脚本：`.workbuddy/comfy/menu_icons.py`
 - 授权：原创，无第三方权利，无需登记第三方来源
+
+### 2026-11-09 牧师角色精灵（6 张）
+
+- 状态：新增 `assets/sprites/player/priestess_{idle,run,attack,hurt,death,shield}.png`
+- 来源：本机 ComfyUI + `图片_Qwen-Image2.1_图像编辑.json`（**本地离线推理**，未调用在线服务）
+- 参考图：`image_1` = `assets/weapons/heal_potion.png`（已验收的厚像素风格锚）；
+  `image_2` = 第一张用敌人 `mage_cast` 提供连帽长袍剪影，其余五张用 `priestess_idle` 保证同一人
+- 后处理：品红键控 → 清紫边 → 56 格下采样 → gamma 提亮 → `tools/build_pose_strips.py` 拆帧
+- 生成脚本：`.workbuddy/comfy/priestess.py`；校验：`.workbuddy/comfy/verify_priestess.py`（6/6）
+- 授权：登记为「AI 生成素材，风险 中」，同 2026-11-09 条目（Qwen-Image 系列 Apache-2.0，可商用）

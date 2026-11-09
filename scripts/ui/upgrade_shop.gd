@@ -31,12 +31,19 @@ func _setup_panel_style() -> void:
 	if panel_texture:
 		var style := StyleBoxTexture.new()
 		style.texture = panel_texture
-		# 贴图原本 400×300、面板 600×500，边框会被放大 1.5 倍。
-		# 不设 content_margin 时子节点从 (0,0) 开始，标题和第一行会压在金色花纹上。
-		style.content_margin_left = 30
-		style.content_margin_right = 30
-		style.content_margin_top = 34
-		style.content_margin_bottom = 26
+		# 贴图 400×300 里，金色花纹本身左右各约 48px、上 62px、下 60px。
+		# 之前只写了 content_margin=30，比花纹还窄，文字就压在框线外面。
+		# 现在两件事一起做：
+		#   ① texture_margin 九宫格 —— 角上的宝石和花纹按原尺寸绘制，不再被拉伸 1.5 倍变糊；
+		#   ② content_margin 在花纹内侧再让 8px，保证文字不贴花。
+		style.texture_margin_left = 48
+		style.texture_margin_right = 48
+		style.texture_margin_top = 62
+		style.texture_margin_bottom = 60
+		style.content_margin_left = 56
+		style.content_margin_right = 56
+		style.content_margin_top = 70
+		style.content_margin_bottom = 68
 		$Panel.add_theme_stylebox_override("panel", style)
 
 func _setup_back_button_style() -> void:

@@ -45,6 +45,28 @@
 
 校验：`verify_ui.py` **9/9 通过**
 
+### 2.4 角色专属精灵：牧师塞西莉亚（6 张，2026-11-09 第三轮）
+
+之前只有猎人一套玩家精灵，角色选择界面选牧师，**游戏里画面上还是猎人**——
+卡片上那个「术」字就是这件事暴露出来的症状：没有立绘可放，只能塞一个字。
+
+| 文件 | 尺寸 | 帧数 | 动作 |
+|---|---|---|---|
+| `priestess_idle` | 224×56 | 4 | 待机 |
+| `priestess_run` | 336×56 | 6 | 移动 |
+| `priestess_attack` | 224×56 | 4 | 攻击（一次性） |
+| `priestess_hurt` | 112×56 | 2 | 受击 |
+| `priestess_death` | 336×56 | 6 | 死亡（逐帧渐隐，末帧全透明） |
+| `priestess_shield` | 224×56 | 4 | 护盾 |
+
+- 存放：`assets/sprites/player/`，命名 `<角色id>_<动作>.png`
+- 接线：`texture_manager.gd` 启动时扫这个目录自动登记成 `player_character_textures`；
+  `player.gd` 的取图统一走 `_player_tex(state)`，按 `character_id` 取专属图，取不到回退通用图。
+  **以后加角色只要丢 6 个文件，不用改代码。**
+- 造型：以敌人的 `mage_cast`（连帽长袍剪影）作第一张的布局参考，
+  其余五张以 `priestess_idle` 作参考保证是同一人；象牙白长袍 + 淡金刺绣 + 暗色内裙
+- 校验：`verify_priestess.py` **6/6 通过**（尺寸/帧数/RGBA/每帧非空/四角透明/帧间有差异）
+
 ### 2.3 非正式资产替换（87 张，2026-11-09 第二轮）
 
 **怎么区分正式与非正式**（这是这一轮的判据，写下来避免下次又混）：
@@ -140,6 +162,8 @@
 |---|---|
 | `verify_all.py` | **32/32 通过** |
 | `verify_ui.py` | **9/9 通过** |
+| `verify_placeholders.py` | **87/87 通过** |
+| `verify_priestess.py` | **6/6 通过**（牧师六个动作） |
 | 底部紫带残留 | **0 张**（行跨度判据复查） |
 | 亮度过暗（p90 < 70） | **0 张** |
 | 静止横条 | **0 张** |
@@ -183,6 +207,7 @@
 | 1024 原始底图 | `.workbuddy/comfy/raw_reskin/`（32 张）、`.workbuddy/comfy/raw_new/`（第二轮 60 张原始生成图 + `tex_*_tone.png` 提亮后材质） |
 | 被清理的 8 张占位资源 | `.workbuddy/backup/dead-assets/`（保留原目录结构，直接移回 `assets/` 即可） |
 | 「弱项精修」两次试改 | `.workbuddy/backup/refine2/`（已回滚，备份仅留档） |
+| 牧师精灵（整套新增） | 删掉 `assets/sprites/player/priestess_*.png` 即回到「所有人共用猎人精灵」的状态，代码会走回退分支，不用改 |
 
 ---
 

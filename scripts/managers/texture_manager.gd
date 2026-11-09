@@ -30,6 +30,10 @@ var tile_textures: Dictionary = {}
 
 # 环境装饰物纹理
 var prop_textures: Dictionary = {}
+# 角色专属精灵：{ char_id: { pose: Texture2D } }，由文件名自动登记
+var player_character_textures: Dictionary = {}
+
+const PLAYER_POSES: Array[String] = ["idle", "run", "attack", "hurt", "death", "shield"]
 
 func _ready():
 	instance = self
@@ -55,6 +59,31 @@ func _load_player_textures():
 		"death": _load_texture("res://assets/sprites/player/player_death.png"),
 		"shield": _load_texture("res://assets/sprites/player/player_shield.png")
 	}
+	_load_character_textures()
+
+
+func _load_character_textures() -> void:
+	## 扫描玩家精灵目录，把「<角色id>_<动作>.png」登记成该角色的专属图。
+	## 这样以后加角色只需要丢文件，不用回来改代码。
+	player_character_textures.clear()
+	var dir := DirAccess.open("res://assets/sprites/player")
+	if dir == null:
+		return
+	for file in dir.get_files():
+		if not file.ends_with(".png"):
+			continue
+		var base := file.get_basename()
+		for pose in PLAYER_POSES:
+			var suffix := "_" + pose
+			if not base.ends_with(suffix) or base.length() <= suffix.length():
+				continue
+			var char_id := base.substr(0, base.length() - suffix.length())
+			if char_id == "player":
+				break
+			if not player_character_textures.has(char_id):
+				player_character_textures[char_id] = {}
+			player_character_textures[char_id][pose] = _load_texture("res://assets/sprites/player/" + file)
+			break
 
 func _load_enemy_textures():
 	enemy_textures = {
@@ -263,7 +292,12 @@ func _load_texture(path: String) -> Texture2D:
 	return null
 
 # 获取纹理的公共方法
-func get_player_texture(state: String) -> Texture2D:
+func get_player_texture(state: String, char_id: String = "") -> Texture2D:
+	## char_id 有专属图就用专属图，否则回退到通用玩家精灵。
+	if char_id != "":
+		var per: Dictionary = player_character_textures.get(char_id, {})
+		if per.has(state):
+			return per[state]
 	return player_textures.get(state, null)
 
 func get_enemy_texture(enemy_type: String, state: String) -> Texture2D:

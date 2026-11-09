@@ -159,6 +159,12 @@ func _ready() -> void:
 	hp_changed.emit(current_hp, max_hp)
 	xp_changed.emit(current_xp, xp_to_next_level, current_level)
 
+## 取当前角色的精灵：牧师有自己的图，其他角色回退到通用玩家图。
+func _player_tex(state: String) -> Texture2D:
+	if TextureManager.instance == null:
+		return null
+	return TextureManager.instance.get_player_texture(state, character_id)
+
 func _load_sprite_texture() -> void:
 	## 加载玩家精灵图。开局先贴待机，移动后再换成 run。
 	if sprite == null:
@@ -166,7 +172,7 @@ func _load_sprite_texture() -> void:
 	if not _sprite_rest_ready:
 		_sprite_rest_pos = sprite.position
 		_sprite_rest_ready = true
-	var texture := TextureManager.instance.get_player_texture("idle") if TextureManager.instance else null
+	var texture := _player_tex("idle")
 	if texture:
 		sprite.modulate = Color.WHITE
 		_apply_player_pose("idle", texture)
@@ -195,7 +201,12 @@ func apply_character_data(char_data: Resource) -> void:
 	## 应用角色数据到玩家
 	if char_data == null:
 		return
+	var prev_id := character_id
 	character_id = char_data.char_id
+	# 每个角色的精灵不同，切人要重新贴图（开局 apply_character_data 在 _ready 之后调用）
+	if character_id != prev_id and is_inside_tree():
+		_one_shot_pose = ""
+		_load_sprite_texture()
 	max_hp = char_data.base_hp
 	current_hp = max_hp
 	move_speed = char_data.base_speed
@@ -267,9 +278,9 @@ func _sync_player_pose() -> void:
 	var pose := "run" if _wants_move else "idle"
 	if pose == _player_pose:
 		return
-	var texture := TextureManager.instance.get_player_texture(pose)
+	var texture := _player_tex(pose)
 	if texture == null and pose != "idle":
-		texture = TextureManager.instance.get_player_texture("idle")
+		texture = _player_tex("idle")
 		pose = "idle"
 	if texture == null or pose == _player_pose:
 		return
@@ -298,7 +309,7 @@ func _play_one_shot(pose: String, hold: float = 0.0) -> void:
 		return
 	if TextureManager.instance == null:
 		return
-	var texture := TextureManager.instance.get_player_texture(pose)
+	var texture := _player_tex(pose)
 	if texture == null:
 		return
 	if hold <= 0.0:
@@ -532,9 +543,7 @@ func _die() -> void:
 	# 死亡横条本身就是渐隐的（末帧全透明），所以逐帧播完后直接销毁，
 	# 不再叠一层 modulate 淡出——叠了会双重变淡，角色在播到一半时就没了。
 	# 注意 physics 已停，不能靠 _tick_player_sprite 推进，得用 tween 手动走帧。
-	var death_texture: Texture2D = null
-	if TextureManager.instance != null:
-		death_texture = TextureManager.instance.get_player_texture("death")
+	var death_texture: Texture2D = _player_tex("death")
 	if death_texture != null and sprite != null:
 		_apply_player_pose("death", death_texture)
 		var total: int = maxi(sprite.hframes, 1)
