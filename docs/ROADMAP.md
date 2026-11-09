@@ -87,11 +87,24 @@
 
 背景图全部全屏拉伸；特效图（`hit_effect`、`death_explosion`、`boss_warning` 等）在代码里基本只是信号名与方法名，VFX 由 `vfx_manager.gd` 程序生成，**图片根本没被加载**。补图不会显示出来，所以不为了凑数改。
 
+**12.6 占位资产全量替换 —— 已完成（2026-11-09）。**
+
+按用户指出的问题：`assets/` 里除了 `death_explosion`、`hit_effect` 这类 1024 源图的正式资产，还有一大批"脚本画的假资源"（纯色块、径向渐变圆、带英文调试文字的方块，体积只有几百字节）。
+
+- 全量盘点出 **87 张**，分五类处理：AI 图生图 60 张（11 图标 / 13 道具 / 4 柱子 / 4 主题材质 / 16 特效 / 1 结算背景 + 11 张重试）、程序化 6 张（血条 ×3 主题 + Boss 条）、成品派生 21 张（星标 / 悬停卡 / 极小弹道 / 毒云 / 传送门 / 墙砖）
+- 图标统一改为 **48×48 原生**（原来 11 张是 32 或 64，被 UI 非整数拉伸到 48）
+- 材质做成四方连续（`np.roll` + 接缝带混合），并做分位数提亮——原始生成图均值只有 24/255
+- 特效引入**构图草图**参考（品红底 + 白色竖条 / 折线 / 圆环）：只给文字会被模型一律画成爆炸星芒
+- 校验脚本 `verify_placeholders.py` **87/87 通过**；`verify_all` 32/32、`verify_ui` 9/9；Godot 导入与运行 0 error
+- 顺手修掉一个既有 bug：`main_menu.gd` 只设 `anchors_preset`，主菜单背景的 `TextureRect` 一直是 0×0，**背景图从来没显示过**（透出引擎清屏灰）
+
+明细与回退方式见 [asset-status.md](asset-status.md) 第 2.3 节。
+
 ### 下一步
 
-Phase 12 到此收尾：出图、接线、文档三件都已完成。剩下的是三个**需要先定方向**的决定：
+Phase 12 到此收尾：出图、接线、文档三件都已完成，占位资产也已全量替换。剩下的是三个**需要先定方向**的决定：
 
-1. **12 张成品特效图是否接线** —— `achievement_unlock` / `btn_click` / `dodge_afterimage` / `freeze_effect` / `knife_spin` / `levelup_aura` / `lightning_retaliate` / `magic_trail` / `petrify_effect` / `xp_collect` 等都有美术内容但零引用，VFX 现在走 `vfx_manager.gd` 程序生成。换成贴图要逐个替换绘制逻辑
+1. **16 张特效图是否接线** —— `achievement_unlock` / `btn_click` / `dodge_afterimage` / `freeze_effect` / `knife_spin` / `levelup_aura` / `lightning_retaliate` / `magic_trail` / `petrify_effect` / `xp_collect` 等现在都是**正式美术**（第二轮重做），但零引用，VFX 仍走 `vfx_manager.gd` 程序生成。换成贴图要逐个替换绘制逻辑；贴图是单帧，动效只能靠 tween 或另做序列帧
 2. **3 个历史缺项**：`shop_bg` / `lightning_bolt` / `lightning_chain` 在所有 `.gd` / `.tscn` 里都没有引用（`lightning_chain` 只是武器 id 与场景名），补之前先决定是否接线
 3. **交互动效**：按钮悬停缩放、面板淡入、界面过渡——纯代码工作，`StyleBoxTexture` 只负责三态贴图
 

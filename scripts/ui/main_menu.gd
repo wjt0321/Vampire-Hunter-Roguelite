@@ -70,8 +70,12 @@ func _setup_background() -> void:
 		texture_rect.texture = bg_texture
 		texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		texture_rect.anchors_preset = Control.PRESET_FULL_RECT
+		# 只写 anchors_preset 不够：Control 不在容器里时 rect 仍是 0×0，
+		# 结果就是菜单背景不显示、透出引擎清屏灰。必须同时把 offset 归零。
+		texture_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		texture_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(texture_rect)
+		texture_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		move_child(texture_rect, 0)  # 移到最底层
 		bg.visible = false  # 隐藏原来的ColorRect
 

@@ -8,11 +8,11 @@
 
 ## 一、一句话结论
 
-**Phase 12 已完成闭环：出图、接线、文档三件都做完了。**
+**Phase 12 已完成闭环：出图、接线、文档三件都做完了；占位资产也清干净了。**
 
-32 张角色精灵 + 26 张 UI/图标全部完成并与代码尺寸对齐；玩家四张动作图（攻击 / 受伤 / 死亡 / 护盾）已接进 `player.gd` 并通过单测；文档旧表已按「以代码为准」修正；8 张纯色或全透明的假资源已清理。
+32 张角色精灵 + 37 张 UI/图标全部完成并与代码尺寸对齐；玩家四张动作图（攻击 / 受伤 / 死亡 / 护盾）已接进 `player.gd` 并通过单测；文档旧表已按「以代码为准」修正；**87 张脚本画的占位图（纯色块 / 渐变圆 / 带文字的调试方块）已全部重做成正式资产**（明细见 2.3）。
 
-剩下的是三件需要你先定方向的事：12 张成品特效图是否接线、3 个历史缺项是否补、交互动效是否做。
+剩下的是三件需要你先定方向的事：特效图是否接线到 `vfx_manager`、3 个历史缺项是否补、交互动效是否做。
 
 ---
 
@@ -30,11 +30,11 @@
 存放：`assets/sprites/{player,enemies,boss}/`
 校验：`verify_all` **32/32 通过**（尺寸、帧数、RGBA、四角透明、每帧填充率、亮色高光、帧间差异）
 
-### 2.2 UI 与图标（26 张，全部完成）
+### 2.2 UI 与图标（37 张，全部完成）
 
 | 类别 | 数量 | 说明 |
 |---|---|---|
-| 武器/被动图标 | 8 | 1024×1024 → **48×48**，BOX 下采样 + MEDIANCUT 32 色 |
+| 武器/被动图标 | 19 | 1024×1024 → **48×48**，BOX 下采样 + MEDIANCUT 32 色（11 张于第二轮补齐，见 2.3） |
 | 血条边框 | 1 | 1536×1024 → 裁内容 → **200×24** |
 | 菜单背景 | 2 | `menu_bg` 1344×768（压暗+暗角，让位菜单文字）、`defeat_bg` 1280×720 |
 | 按钮三态 | 3 | `btn_normal` / `hover` / `pressed`，192×64 |
@@ -43,6 +43,34 @@
 | 售罄印章 | 1 | `sold_out` 64×24 |
 
 校验：`verify_ui.py` **9/9 通过**
+
+### 2.3 非正式资产替换（87 张，2026-11-09 第二轮）
+
+**怎么区分正式与非正式**（这是这一轮的判据，写下来避免下次又混）：
+
+| | 正式资产 | 非正式资产（占位） |
+|---|---|---|
+| 来源 | AI 生成 1024 源图 → BOX 下采样 | 早期脚本用 PIL 画的 |
+| 文件体积 | 几十 KB ~ 1.4 MB | **几百字节 ~ 6 KB** |
+| 外观 | 有描边、明暗层次、限定调色板 | 纯色块、径向渐变圆、带英文调试文字的方块 |
+| 例子 | `death_explosion` / `hit_effect` / `heal_potion` | `poison_spread`（绿色渐变圆）/ `boss_warning`（红方块 + 文字） |
+
+按这个判据全量盘点后，`assets/` 里 87 张是占位，已全部重做：
+
+| 类别 | 数量 | 做法 | 为什么这么做 |
+|---|---|---|---|
+| 武器/被动图标 | 11 | AI 双参考图 → 48×48 | UI 固定按 48 画，原来的 32/64 会被非整数拉伸糊掉 |
+| 场景道具 | 13 | 同上，保持原尺寸 | 房间装饰，按 1:1 贴地 |
+| 柱子 | 4 | 同上，48×48 | 撞击体装饰 |
+| 地板/墙体 | 12 | 每主题生成 1 张无缝材质 → roll+带内混合做四方连续 → 裁 128²/128×32/32×128 | 墙是按贴图尺寸平铺的，接缝必须对齐；一次生成供 3 个成品 |
+| 特效 | 16 | 风格锚 `hit_effect` + **构图草图** → 品红抠底 | 只给文字描述会全出成"爆炸星芒"，加一张白色竖条/折线/圆环草图才能定形状 |
+| UI 条形与派生 | 12 | 程序化 + 从成品派生 | 血条是 `StyleBoxTexture` 横向整图拉伸，AI 花纹会被拉成条纹 |
+| 极小弹道 | 13 | 手排像素（8~16px） | 8px 交给 AI 只能得到糊块 |
+| 二次派生 | 6 | 从本轮成品派生 | 毒云雾/传送门/血晶/墙砖必须和源头同一画风 |
+
+**关键决定：能派生就不重新生成。** `star_gray` 从 `star_gold` 转灰度、`upgrade_card_hover` 从 `upgrade_card` 提亮+加金边、`xp_gem_small/medium` 从 `xp_gem_large` 缩、`knife_spin` 从 `icon_knife` 缩、`dodge_afterimage` 取 `player_idle` 首帧做剪影——派生版和原图**像素级对齐**，重新生成反而对不上。
+
+**已知取舍**：特效都是单帧。清单里写的"8 帧/10 帧"没有做——代码目前是 `modulate`/`scale` tween 让单帧动起来，做序列帧需要另一轮（帧间一致性比单张难得多）。
 
 ---
 
@@ -127,6 +155,18 @@
 | 资产数 | 163 → **155**（移走 8 张零引用假资源） |
 | Godot `--import` | **exit=0**，无缺失引用 |
 | 运行 `res://scenes/main.tscn` | **exit=0**，正常进第 1 层房间 1/6 |
+
+第三批（87 张占位资产替换，2026-11-09 18:04 → 19:01）：
+
+| 项目 | 结果 |
+|---|---|
+| `verify_placeholders.py`（新增） | **87/87 通过**：尺寸、RGBA、四角透明、填充率、**品红残留 0 px**、条形图不透明 |
+| `verify_all.py` / `verify_ui.py` | 仍是 **32/32** / **9/9**（精灵与已验收 UI 未被碰到） |
+| 出图 | 主模型串行 60 张（11 图标 + 13 道具 + 4 柱子 + 4 材质 + 16 特效 + 1 场景 + 11 张重试），平均 **64 秒/张** |
+| 程序化/派生 | 27 张（6 条形 + 3 星标/悬停卡/暂停/光环 + 13 极小弹道 + 6 二次派生） |
+| Godot `--headless --import` | 0 个 ERROR |
+| 运行 `res://scenes/main.tscn` | 0 个 SCRIPT ERROR / Parse Error |
+| 顺手修的既有 bug | `main_menu.gd` 只写了 `anchors_preset`，`Control` 不在容器里时 rect 仍是 0×0 → **主菜单背景一直没显示，透出引擎清屏灰**；改成 `set_anchors_and_offsets_preset` 后正常（已用删改前后两张截图对照确认，不是本轮引入的） |
 | 顺手修掉的既有 bug | `vampire_lord.gd:328` 的 `if sprite:` 缺缩进块，导致整个 Boss 脚本编译失败、Boss 战会崩（上一会话遗留） |
 
 ---
@@ -137,8 +177,9 @@
 |---|---|
 | MVP 原版精灵 | `.workbuddy/backup/sprites/` 覆盖回 `assets/sprites/` |
 | MVP 原版图标/UI | `.workbuddy/backup/icons/`、`.workbuddy/backup/ui/`、`.workbuddy/backup/ui_assets/` |
+| 第二轮被替换的 87 张占位图 | `.workbuddy/backup/placeholders/`（保留 `assets/` 原目录结构，直接覆盖回去即可） |
 | 48 格版本 | 改 `reskin_plan.json` 的 `cell` 为 48/96，跑 `reskin_pipeline.py --finalize-only` |
-| 1024 原始底图 | `.workbuddy/comfy/raw_reskin/`（32 张，去重后）；ComfyUI 输出目录 `E:\AI\ComfyUI\output\vhr_reskin\`（36 张含重跑） |
+| 1024 原始底图 | `.workbuddy/comfy/raw_reskin/`（32 张）、`.workbuddy/comfy/raw_new/`（第二轮 60 张原始生成图 + `tex_*_tone.png` 提亮后材质） |
 | 被清理的 8 张占位资源 | `.workbuddy/backup/dead-assets/`（保留原目录结构，直接移回 `assets/` 即可） |
 | 「弱项精修」两次试改 | `.workbuddy/backup/refine2/`（已回滚，备份仅留档） |
 
@@ -169,12 +210,13 @@
 | `effects/damage_numbers.png` | 160×32 | **全透明，0 像素** | 伤害数字由字体渲染 |
 | `effects/bullet_trail.png` | 16×4 | 纯黄条 | 拖尾由 `vfx_manager.spawn_bullet_trail()` 程序生成 |
 
-**另外 12 张特效图有内容但零引用**，属于「画好了没接线」，未移除：
+**上一版这里写错了，更正**：初版把「另外 12 张特效图」当成「画好了没接线」，实际上它们全是脚本画的渐变圆/星芒/文字方块，属于占位。2026-11-09 第二轮已连同其余占位一起重做（见 2.3），现在这批零引用特效是**真成品**，接线时可以直接用：
+
 `achievement_unlock`、`btn_click`、`dodge_afterimage`、`freeze_effect`、`knife_spin`、
 `levelup_aura`、`lightning_retaliate`、`magic_trail`、`petrify_effect`、`xp_collect`，
 以及 `tiles/tile_obstacle`、`tile_wall`、`tile_wall_corner`、`ui/star_icon`、`weapons/xp_gem_medium`、`xp_gem_small`。
 
-这些是成品而不是占位，留着不碍事；要启用得先决定是否用贴图替换程序特效。
+它们目前零引用（`vfx_manager.gd` 走程序绘制），要启用得先决定是否用贴图替换程序特效。
 
 验证：移除后 `Godot --import` 与运行 `res://scenes/main.tscn` 均 **exit=0**，无缺失引用报错。资产数 163 → 155。
 
@@ -201,9 +243,10 @@
 
 ## 十一、下一步（按优先级）
 
-1. **决定 12 张特效图是否接线** —— 若要让 `vfx_manager.gd` 用贴图，需要逐个替换程序绘制
+1. **决定 16 张特效图是否接线** —— 若要让 `vfx_manager.gd` 用贴图，需要逐个替换程序绘制；贴图现在是单帧，动效要么靠 tween，要么另做序列帧
 2. **`lightning_bolt` / `lightning_chain` / `shop_bg`** —— 补之前先决定是否接线
 3. **交互动效**（按钮悬停缩放、面板淡入）—— 纯代码工作
+4. **墙体只出现在房间四边 32px 的窄带上** —— 房间地板用的是 `backgrounds/room_*.png` 整图（`game_room.gd:_create_floor` 优先用背景图，背景缺失才回退纯色）。`floor_*` 材质没有任何绘制路径取用：`texture_manager` 会加载 `tile_textures[theme]["floor"]`，但全工程只取过 `wall` / `wall_v` / `pillar`。要么把它接成平铺地板，要么下次别再花时间出这 4 张
 
 > 如果你发现我在做上面三件之外的事，说明我偏了，直接叫停。
 

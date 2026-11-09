@@ -792,3 +792,29 @@
 - 脚本：`.workbuddy/comfy/reskin_pipeline.py`（`--finalize-only`），任务表 `out/reskin_plan.json`
 - 备注：16:54 → 17:13 完成，纯本地后处理；`verify_all` 32/32；底部紫带残留 0 张；Godot 导入与运行 exit=0
 - 可回退：改 `reskin_plan.json` 的 `cell` 为 48/96 重跑即可回到上一版
+
+### 2026-11-09 占位资产全量替换（87 张）
+
+- 状态：已替换 87 张脚本画的占位图（纯色块 / 径向渐变圆 / 带英文调试文字的方块）
+- 判据：正式资产 = AI 生成 1024 源图下采样（体积几十 KB ~ 1.4 MB）；占位 = PIL 脚本绘制（体积几百字节 ~ 6 KB，无描边、无明暗层次）
+- 模型 / 工作流：本机 ComfyUI + `图片_Qwen-Image2.1_图像编辑.json`（Qwen-Image 2.1 int8，**本地离线推理**，未调用任何在线服务）；节点 `width/height` 按目标比例设置（场景图 1024×576，其余 1024×1024）
+- 参考图策略：
+  - 单体 / 图标 / 道具：`image_1` = `assets/weapons/heal_potion.png`（1024，已验收的厚像素风格锚）；`image_2` = 被替换的原占位图（只提供构图与朝向）
+  - 特效：`image_1` = `assets/effects/hit_effect.png`（特效语言）；`image_2` = **构图草图**（品红底 + 白色竖条 / 折线 / 圆环，由 `make_sketch()` 生成）
+  - 材质：`image_1` = `assets/backgrounds/room_standard.png`（房间既有石墙配色）
+- 后处理：品红键控 → BOX 下采样 → MEDIANCUT 量化（40 / 56 / 96 色）；材质额外做分位数提亮（原始生成图均值仅 24/255）+ 1.1px 预模糊压掉缩小噪点；四方连续用 `np.roll` + 接缝带混合
+- 产物分布：`weapons/` 22、`tiles/` 19、`tiles/props/` 13、`effects/` 21、`ui/` 12
+- 脚本：`.workbuddy/comfy/newarts.py`（AI 60 张，`--group` 分批）、`ui_proc.py`（27 张程序化 / 派生）、`verify_placeholders.py`（87 项校验）
+- 备注：18:04 → 19:01 全程串行出图；`verify_placeholders` 87/87、`verify_all` 32/32、`verify_ui` 9/9；Godot 导入 0 error
+- 授权：登记为「AI 生成素材，风险 中」（生成物在部分地区版权归属不明确；Qwen-Image 系列模型许可为 Apache-2.0，可商用，无署名要求）
+- 可回退：`.workbuddy/backup/placeholders/`（保留 `assets/` 原目录结构）
+
+**本节生效后，下列旧登记条目不再对应实际文件（保留作历史记录）：**
+
+| 旧登记 | 已不再使用的路径 |
+|---|---|
+| 2.1 Kenney UI Pack | `ui/star_icon.png`、`ui/star_gray.png` |
+| 2.2 Kenney Game Icons | `ui/btn_pause.png`、`weapons/icon_greed.png`、`weapons/icon_lightning_shield.png`、`weapons/icon_shadow.png` |
+| 2.3 Kenney Particle Pack | `effects/levelup_aura.png`、`effects/xp_collect.png`、`effects/shield_break.png`、`effects/magic_trail.png`、`effects/knife_spin.png`、`effects/btn_click.png`、`effects/achievement_unlock.png`、`weapons/bullet.png`、`weapons/magic_orb.png`、`weapons/knife.png`、`weapons/icon_frozen.png` |
+
+仍来自 Kenney UI Pack 且**未被替换**的：`ui/weapon_slot.png`、`ui/passive_slot.png`、`ui/shop_slot.png`、`ui/star_gold.png`。
