@@ -698,3 +698,97 @@
 - 用途说明：战斗房间与 Boss 战背景音乐临时占位，现已替换为 OpenGameArt CC0 音乐
 - 修改记录：使用 AudioLibrary 中的正弦波/噪声生成算法导出为 WAV；2026-06-16 删除并替换
 - 备注：AudioLibrary 中仍保留程序生成作为音频文件缺失时的 fallback
+
+## AI 生成角色精灵（ComfyUI / Qwen-Image2.1）
+
+- 状态：已替换（Phase 12）
+- 风险：低（本机生成，未引入第三方素材）
+- 类型：角色 / 敌人 / Boss 精灵横条
+- 来源 URL：N/A
+- 来源平台：本机 ComfyUI，现役工作流 `E:\AI\ComfyUI\user\default\workflows\图片_Qwen-Image2.1_文生图.json`
+- 作者 / 版权方：项目作者（AI 辅助生成）
+- 授权名称：自制
+- 是否允许商用：是
+- 是否允许修改：是
+- 是否需要署名：否
+- 下载 / 生成日期：2026-11-09
+- 原始文件保存位置：`.workbuddy/comfy/raw/`（1024×1024 底图）
+- 项目内使用路径：`assets/sprites/player/`、`assets/sprites/enemies/`、`assets/sprites/boss/` 共 32 张
+- 用途说明：按 `docs/GDD.md` 12.3 与 `docs/art-assets-requirements.md` 第一节重绘全套精灵；48×48 格（Boss 96×96）、RGBA 透明底、8 帧/秒
+- 修改记录：1024 底图 → Python PIL 抠品红底 / 限 32 色 / 黑描边 / 拼横条；替换前的旧图备份于 `.workbuddy/backup/sprites/`
+- 备注：模型权重为本机 Qwen-Image2.1 int8；同一角色固定 seed，未做参考图锁定
+
+### 2026-11-09 重做（取代上一版 AI 文生图）
+
+上一版用 Qwen 文生图从零生成，未参考项目既有美术，风格偏暗写实、与游戏不符，已全部替换。
+
+- 状态：已替换（Phase 12 第二轮）
+- 风险：低；素材来自项目自身 `assets-downloaded/` 采集包与本机参考图生成
+- 来源 A（18 张）：`assets-downloaded/sprites/` 的成套像素帧——Gothicvania patreon collection（hero idle/run/attack/hurt、demon、ghost、hell-hound、wolf、fire-skull）、`pixel-skeleton`、`vampire-1.1`、`zombie-1.1`、`bat-1.3`、`gargoyle.png`、`mage`/`NecroGuy` 等；对应第三方授权见本文件各采集包条目与 `docs/reports/collection-report-characters.md`
+- 来源 B（14 张）：`图片_Qwen-Image2.1_图像编辑.json` 参考图生成；参考图取自本仓库已完成 MVP 的原有精灵（`.workbuddy/backup/sprites/`），只改动作、不改造型配色
+- 线上补缺：Scrapling 0.4.10（代理 127.0.0.1:10808）抓取 OGA / CraftPix 共 3 页，所得 `vampire1.zip`、`vampire-1.1.zip` 项目内已存在，CraftPix 免费包需登录，未引入新素材
+- 修改记录：取帧 → 裁透明边 → 整数倍 NEAREST 缩放 → 复用 `tools/build_pose_strips.py` 错帧/淡出/石化手法 → 拼 48×48（Boss 96×96）RGBA 横条
+- 原始底图：`.workbuddy/comfy/raw_edit/`、参考帧 `.workbuddy/comfy/refs/`；替换前旧图备份 `.workbuddy/backup/sprites/`
+- 备注：全流程串行出图，逐张耗时见 `.workbuddy/comfy/edit_batch.log`；`verify_all` 32/32 通过
+
+### 2026-11-09 造型精修（5 张由 A 转 B）
+
+`player_idle`、`zombie_walk`、`exploder_walk`、`werewolf_charge`、`skeleton_idle` 原用采集包成套帧，风格虽对但**角色身份与已完成 MVP 的原设定不符**（金发跑者替代宽檐帽猎人、白衣人替代绿皮僵尸/燃烧骷髅、白狼替代棕狼人、白蓝大骷髅替代持斧骷髅）。本地采集包再搜一遍确认无更贴合成套帧后，改用参考图生成。
+
+- 来源：`图片_Qwen-Image2.1_图像编辑.json`，参考图仍取自 `.workbuddy/backup/sprites/` 的 MVP 旧精灵，只改动作、不改造型配色
+- 修正后路线统计：采集包帧 **13 张** / 参考图生成 **19 张**，合计 32 张
+  - ⚠️ 此为**第二版**统计。随后「按图标审美全量重制」一轮已把 32 张全部换成参考图生成（采集包帧归零），当前有效状态见本文件最后两条与 [asset-status.md](asset-status.md)
+- 任务清单 `out/refine_plan.json`，逐张耗时见 `.workbuddy/comfy/edit_batch.log`（15:01:23 → 15:03:51，全程串行）
+- 对照图 `out/refine_before.png` / `out/refine_after.png`；`verify_all` 32/32 通过
+- 备注：清单二节以后的尺寸差异属于文档旧表与实际 MVP 演进的差别，现有 UI/背景/特效风格一致，**未批量重做**，以免破坏已跑通的界面
+
+### 2026-11-09 Phase 12.3 UI（图标与血条边框）
+
+- 状态：已替换 9 张（8 图标 + 1 血条边框），其余 UI 尺寸未动
+- 来源：**无新增第三方素材**。均为本项目既有 PNG 的规格转换：
+  - 8 张武器/被动图标 `assets/weapons/icon_{pistol,shotgun,magic_book,knife,poison,lightning,magnet,shield}.png`：原 1024×1024 → 48×48 像素图标（BOX 下采样 + MEDIANCUT 32 色），原图备份 `.workbuddy/backup/icons/`
+  - `assets/ui/hp_bar_border.png`：1536×1024 画布中裁出 1419×287 实际内容 → 200×24，原图备份 `.workbuddy/backup/ui/`
+- 尺寸依据：`scripts/ui/upgrade_ui.gd:528` 实际为 `custom_minimum_size = Vector2(48,48)`，按 GDD 附录 C「以代码为准」取 48，而非清单旧表的 32×32
+- 校验：`verify_ui.py` 9/9 通过；Godot 4.7.2 无头导入与运行均 exit=0
+- 脚本：`.workbuddy/comfy/pixelate_icons.py`、`verify_ui.py`；试点对比 `out/icon_pilot.png`、`out/icon_ab.png`
+
+### 2026-11-09 精灵全量重制（第三轮，审美基准 = 现有 1024 图标）
+
+前两版审美均被否（第一版暗色写实、第二版采集包幼态）。本版以项目现有 1024 图标（暗钢/皮革/金边/深红/高对比）为风格锚重做。
+
+- 状态：已替换全部 32 张（Phase 12 第三轮）
+- 模型/工作流：`图片_Qwen-Image2.1_图像编辑.json`（Qwen-Image2.1 int8，1024×1024，25 步）
+- 双参考图：`image_1` = 本仓库既有 1024 图标（风格锚，属本项目资产）；`image_2` = 本仓库 MVP 旧精灵（造型锚）
+- 提示词约束：mature 6-head proportions、禁止 chibi/cute/cartoon、Boss 动作禁止发光气场与紫色能量
+- 后处理：品红键控 → 48/96 格 → gamma 亮度校正（p90→95，只抬暗部）→ 复用 `tools/build_pose_strips.py` 错帧/淡出 → 拼横条
+- 产物与底图：`assets/sprites/**`；1024 原图 `.workbuddy/comfy/raw_reskin/`；总览 `out/reskin_final_sheet.png`
+- 脚本：`.workbuddy/comfy/reskin_pipeline.py`（可续跑），任务表 `out/reskin_plan.json`
+- 备注：全程串行，共 35 次出图（32 张 + 3 张 Boss 重跑），15:29:50 → 16:09:42；`verify_all` 32/32 通过；Godot 导入与运行 exit=0
+- 可回退：MVP 原版 `.workbuddy/backup/sprites/`；上一版可由 `rebuild.py` 从 `assets-downloaded` 重建
+
+### 2026-11-09 菜单/UI 重制（17 张）
+
+- 状态：已替换 17 张（2 背景 / 3 按钮 / 5 面板 / 6 小件 / 1 角色）
+- 模型/工作流：`图片_Qwen-Image2.1_图像编辑.json`，直接按目标比例设置节点 width/height
+- 双参考图：`image_1` = 本项目 1024 图标（风格锚）；`image_2` = 本项目原 UI 图（构图锚）
+- 后处理：玫红/品红键控 → 裁切缩放 → gamma 提亮（p90→112）；背景类改为压暗 + 暗角 + 轻虚化，保证菜单文字可读
+- 产物：`assets/ui/**`（16 张）、`assets/backgrounds/menu_bg.png`；原图备份 `.workbuddy/backup/ui_assets/`
+- 总览 `out/ui_set_v3.png`；脚本 `.workbuddy/comfy/ui_reskin.py`，任务表 `out/ui_reskin_plan.json`
+- 备注：16:15:52 → 16:34:11 共 19 次出图，全程串行；Godot 导入与运行 exit=0
+- 未做：`victory_bg`（现有可用）、`star_icon` 系列（16px 不适合生成）、`evolution_glow`（适合程序绘制）、`game_logo`（现有已达标）
+
+### 2026-11-09 精灵规格对齐与品红残边清理（32 张）
+
+- 状态：已替换全部 32 张；**无新增素材、无新增出图**，全部为既有 1024 底图的规格转换
+- 格子尺寸：`48×48 → 56×56`、`96×96 → 128×128`
+- 尺寸依据（GDD 附录 C「以代码为准」）：
+  - `scripts/player/player.gd:176` → `SpriteSheetLib.apply(sprite, texture, 56.0)`
+  - `scripts/enemies/enemy_base.gd:319` → `_present_sprite(56.0)`
+  - `scripts/enemies/vampire_lord.gd:273` → `_present_sprite(128.0 * size_mult)`
+  - 目的：图素与屏幕像素 **1:1**，消除 48→56 的 1.167 倍非整数 NEAREST 拉伸（`sprite_sheet.gd:43` 设的是 `TEXTURE_FILTER_NEAREST`，非整数放大时像素列宽会在 1px/2px 间跳）
+- 缺陷修复：新增 `purge_purple_edge()`，清除「黑角色 ↔ 品红背景」抗锯齿过渡带在脚下形成的紫红横线（修复前 21/32 张有，砖墙/石板背景上明显）。三轮判据演进见 [asset-status.md](asset-status.md) 第五节
+- 保留的设计性紫色：`boss_enraged` 披风内衬（`h=27~47` 竖直块）、`gargoyle` 石化冷色（B 通道 ×1.08）——均按形状与位置区分，未被误清
+- 产物：`assets/sprites/**`（尺寸分布 `224×56`×20、`336×56`×4、`112×56`×2、`512×128`×6）
+- 脚本：`.workbuddy/comfy/reskin_pipeline.py`（`--finalize-only`），任务表 `out/reskin_plan.json`
+- 备注：16:54 → 17:13 完成，纯本地后处理；`verify_all` 32/32；底部紫带残留 0 张；Godot 导入与运行 exit=0
+- 可回退：改 `reskin_plan.json` 的 `cell` 为 48/96 重跑即可回到上一版
