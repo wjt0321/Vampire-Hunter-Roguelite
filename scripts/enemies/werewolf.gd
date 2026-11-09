@@ -42,6 +42,9 @@ func _physics_process(delta: float) -> void:
 		charge_timer = 0.0
 		is_charging = true
 		sprite.modulate = Color(1.5, 0.5, 0.5, 1.0)  # 冲刺变红
+		var charge_tex := TextureManager.instance.get_enemy_texture("werewolf", "charge") if TextureManager.instance else null
+		if charge_tex:
+			use_sprite(charge_tex, "once")
 	_move_towards_player(delta)
 
 func _move_towards_player(_delta: float) -> void:

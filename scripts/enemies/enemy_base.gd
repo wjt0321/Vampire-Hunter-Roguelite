@@ -1,5 +1,7 @@
 extends CharacterBody2D
 class_name EnemyBase
+
+const SpriteSheetLib = preload("res://scripts/core/sprite_sheet.gd")
 ## 敌人基类脚本
 ## 所有敌人类型继承此类
 ## HP 和伤害随波次动态缩放，由 GameConfig 控制
@@ -31,6 +33,16 @@ var hp_scale: float = 1.0
 ## 注意：绝对尺寸请永远通过这个变量表达，不要直接写 sprite.scale = Vector2(x, x)，
 ## 那会把归一化比例覆盖掉——精英吸血鬼曾因此变成 333px 的巨图。
 var sprite_scale_mult: float = 1.0
+## 精灵静止时的局部位置。单张图的上下浮动从这里加减，不推碰撞体。
+var _sprite_rest_pos: Vector2 = Vector2.ZERO
+var _sprite_rest_ready: bool = false
+var _sprite_anim_time: float = 0.0
+var _sprite_frame_wait: float = 0.0
+## loop：一直循环。once：播完回到 loop 那张。hold：播完停在最后一格。
+var _sprite_play: String = "loop"
+var _sprite_loop_tex: Texture2D = null
+var _sprite_target: float = 56.0
+var _sprite_hold: bool = false
 
 # === 精英词缀（在 _ready 之前由 WaveManager / 子类赋值） ===
 ## 主词缀。空字符串 = 普通怪。取值见 EliteAffix.DATA
@@ -199,6 +211,8 @@ func _process(delta: float) -> void:
 	## 目前没有任何子类覆写 _process，所以这里是安全的。
 	if is_dead:
 		return
+	# 精灵浮动放 _process：Boss 覆写了物理帧，待机浮动不能跟着停。
+	_tick_sprite(delta)
 	if _status_vfx_cd > 0.0:
 		_status_vfx_cd -= delta
 	_tick_speed_decay(delta)
@@ -301,16 +315,60 @@ func _load_sprite_texture() -> void:
 	_adjust_sprite_scale()
 
 func _adjust_sprite_scale() -> void:
-	## 根据目标大小调整精灵缩放，所有敌人统一大小
-	if sprite and sprite.texture:
-		var texture_size: Vector2 = sprite.texture.get_size()
-		if texture_size.x > 0 and texture_size.y > 0:
-			# 目标精灵大小
-			var target_size: float = 56.0
-			# 计算缩放比例
-			var scale_factor: float = target_size / max(texture_size.x, texture_size.y)
-			# 相对倍率（分裂体缩小、精英放大），必须在归一化之后乘，不能覆盖
-			sprite.scale = Vector2(scale_factor, scale_factor) * sprite_scale_mult
+	## 小怪统一缩到 56px。横条按一格算，单张仍按长边，见 SpriteSheet。
+	_present_sprite(56.0)
+
+func use_sprite(texture: Texture2D, mode: String = "loop") -> void:
+	## mode：loop 记下这张当回家的姿态；once 播完回家；hold 播完停在末格。
+	if sprite == null or texture == null:
+		return
+	if mode == "loop":
+		_sprite_loop_tex = texture
+		_sprite_play = "loop"
+		_sprite_hold = false
+	else:
+		_sprite_play = mode
+		_sprite_hold = false
+	sprite.texture = texture
+	_present_sprite(_sprite_target if _sprite_target > 0.0 else 56.0)
+
+func _present_sprite(target_size: float) -> void:
+	if sprite == null or sprite.texture == null:
+		return
+	_sprite_target = target_size
+	if _sprite_loop_tex == null or _sprite_play == "loop":
+		_sprite_loop_tex = sprite.texture
+	if not _sprite_rest_ready:
+		_sprite_rest_pos = sprite.position
+		_sprite_rest_ready = true
+	sprite.position = _sprite_rest_pos
+	SpriteSheetLib.apply(sprite, sprite.texture, target_size, sprite_scale_mult)
+	_sprite_frame_wait = 0.0
+
+func _tick_sprite(delta: float) -> void:
+	if sprite == null or not is_instance_valid(sprite) or sprite.texture == null:
+		return
+	if not _sprite_rest_ready:
+		_sprite_rest_pos = sprite.position
+		_sprite_rest_ready = true
+	if sprite.hframes > 1 and not _sprite_hold:
+		sprite.position = _sprite_rest_pos
+		if _sprite_play == "loop":
+			_sprite_frame_wait = SpriteSheetLib.advance(sprite, _sprite_frame_wait, delta)
+		else:
+			var stepped: Array = SpriteSheetLib.advance_once(sprite, _sprite_frame_wait, delta)
+			_sprite_frame_wait = float(stepped[0])
+			if bool(stepped[1]):
+				_sprite_hold = true
+				if _sprite_play == "once" and _sprite_loop_tex != null:
+					_sprite_play = "loop"
+					_sprite_hold = false
+					sprite.texture = _sprite_loop_tex
+					_present_sprite(_sprite_target)
+		return
+	# 单张没有循环可播。1 像素、1.2 秒的浮动只是过渡，横条换上之后这条不再走。
+	_sprite_anim_time += delta
+	sprite.position = _sprite_rest_pos + Vector2(0.0, SpriteSheetLib.bob_offset(_sprite_anim_time))
 
 func _ensure_default_texture() -> void:
 	if sprite and sprite.texture == null:

@@ -127,8 +127,7 @@ func _teleport_effect() -> void:
 	if sprite:
 		var tex := TextureManager.instance.get_enemy_texture("vampire_mage", "teleport")
 		if tex:
-			sprite.texture = tex
-			_adjust_sprite_scale()
+			use_sprite(tex, "once")
 		var tween := create_tween()
 		tween.tween_property(sprite, "modulate:a", 0.0, 0.25)
 	

@@ -25,14 +25,7 @@ assets/
 
 ### 1.1 现在实际长什么样
 
-旧表写的是 32×32、4 到 10 帧。仓库里不是那样：
-
-| 范围 | 文件 | 实际画布 |
-|------|------|----------|
-| 玩家 6 张、基础敌人、Boss 6 张 | `player_*.png`、`vampire_*`、`werewolf_*`、`bat_fly`、`zombie_walk`、`skeleton_*`、`boss_*` | **1024×1024 单张** |
-| 高级敌人 | `exploder_*`、`elite_vampire_idle`、`summoner_cast`、`mage_*`、`gargoyle_*`、`prince_*` | **256×256 单张** |
-
-整张图贴到 `Sprite2D` 上，不设 `hframes`，也不逐帧播。1024 的插画被缩到 56px，细节糊成一块，姿态又不变，所以看着像贴纸。
+旧表写的是 32×32、4 到 10 帧。画面上一直在用的姿态已经收成横条（48×48 一格，Boss 96×96），由 `SpriteSheet` 按 8 帧/秒循环播放，缩放按一格算。还没改的攻击、射击、爆炸、死亡仍是原来的单张方图。
 
 另外有几张图代码根本不切换，换了文件也看不见：
 
@@ -63,8 +56,8 @@ assets/
 
 | 文件 | 现状 | 代码 | 下一版 |
 |------|------|------|--------|
-| `player_idle.png` | 1024 单张 | 唯一在用 | 4 帧呼吸循环，192×48 |
-| `player_run.png` | 1024 单张 | 未读 | 6 帧跑，288×48。要和「移动中切换」一起做 |
+| `player_idle.png` | 192×48，4 帧 | 站立时在用 | 已是下摆错帧的呼吸循环 |
+| `player_run.png` | 288×48，6 帧 | 移动时切换 | 已是落点交替的跑步循环 |
 | `player_attack.png` | 1024 单张 | 未读。开火已有挤压 | 先不做 |
 | `player_hurt.png` | 1024 单张 | 未读。受击是闪白 | 2 帧，后做 |
 | `player_death.png` | 1024 单张 | 未读 | 后做 |
@@ -76,25 +69,25 @@ assets/
 
 | 敌人 | 文件 | 代码 | 下一版 |
 |------|------|------|--------|
-| 蝙蝠 | `bat_fly.png` | 在用，全程这张 | 4 帧翅膀循环，192×48。这是最明显的发呆 |
-| 僵尸 | `zombie_walk.png` | 在用 | 6 帧拖步循环，288×48 |
-| 吸血鬼 | `vampire_idle.png` | 在用 | 4 帧呼吸循环 |
+| 蝙蝠 | `bat_fly.png` | 在用，192×48 四帧 | 翅膀上下错帧，已接循环 |
+| 僵尸 | `zombie_walk.png` | 在用，288×48 六帧 | 落点交替，已接循环 |
+| 吸血鬼 | `vampire_idle.png` | 在用，192×48 四帧 | 下摆错帧，已接循环 |
 | 吸血鬼 | `vampire_run.png` | 未切换 | 6 帧跑。要和 idle 按是否在移动切换 |
-| 狼人 | `werewolf_idle.png` | 在用 | 4 帧呼吸循环 |
-| 狼人 | `werewolf_charge.png` | 未切换 | 4 帧冲锋，播一次，冲完回 idle |
-| 骷髅射手 | `skeleton_idle.png` | 在用 | 4 帧待机循环 |
-| 骷髅射手 | `skeleton_shoot.png` | 未切换 | 4 帧拉弓，开火时播一次，回 idle |
-| 自爆者 | `exploder_walk.png` | 在用 | 4 帧行走循环 |
-| 自爆者 | `exploder_explode.png` | 引爆时换上，仍是单张 | 4 帧膨胀，播一次。现有单张可留到循环做完 |
-| 精英吸血鬼 | `elite_vampire_idle.png` | 在用 | 4 帧呼吸循环。词缀不要另画 |
-| 召唤师 | `summoner_cast.png` | 在用，没有第二姿态 | 4 帧施法循环 |
-| 法师 | `mage_cast.png` | 常态在用 | 4 帧施法循环 |
-| 法师 | `mage_teleport.png` | 瞬移时换上 | 4 帧，播一次后回 cast |
-| 石像鬼 | `gargoyle_idle.png` | 在用 | 2 帧石翼微动即可，它本来就该像石头 |
-| 石像鬼 | `gargoyle_petrify.png` / `gargoyle_wake.png` | 石化、苏醒时切换 | 后做，各 4 帧播一次 |
-| 亲王 | `prince_idle.png` | 常态 | 4 帧呼吸循环 |
-| 亲王 | `prince_dash.png` | 冲锋时切换 | 4 帧，播一次后回 idle |
-| 亲王 | `prince_rage.png` | 二阶段换上 | 4 帧循环，眼睛和披风动，不要只是染红的同一张 |
+| 狼人 | `werewolf_idle.png` | 在用，192×48 四帧 | 下摆错帧，已接循环 |
+| 狼人 | `werewolf_charge.png` | 冲锋时播一次，192×48 四帧 | 播完回到待机 |
+| 骷髅射手 | `skeleton_idle.png` | 在用，192×48 四帧 | 下摆错帧，已接循环 |
+| 骷髅射手 | `skeleton_shoot.png` | 开火时播一次，192×48 四帧 | 播完回到待机 |
+| 自爆者 | `exploder_walk.png` | 在用，192×48 四帧 | 落点交替，已接循环 |
+| 自爆者 | `exploder_explode.png` | 引爆时播，192×48 四帧 | 播完停在胀开的最后一格，直到爆炸 |
+| 精英吸血鬼 | `elite_vampire_idle.png` | 在用，192×48 四帧 | 下摆错帧。词缀不要另画 |
+| 召唤师 | `summoner_cast.png` | 在用，192×48 四帧 | 下摆错帧 |
+| 法师 | `mage_cast.png` | 常态在用，192×48 四帧 | 下摆错帧 |
+| 法师 | `mage_teleport.png` | 瞬移时播一次，192×48 四帧 | 淡出后回到施法循环 |
+| 石像鬼 | `gargoyle_idle.png` | 在用，96×48 两帧 | 翅膀错 1 像素 |
+| 石像鬼 | `gargoyle_petrify.png` / `gargoyle_wake.png` | 石化停在末格，苏醒播完回待机 | 各 192×48 四帧 |
+| 亲王 | `prince_idle.png` | 常态，192×48 四帧 | 下摆错帧 |
+| 亲王 | `prince_dash.png` | 冲锋时播一次，192×48 四帧 | 播完回到当前循环（待机或狂暴） |
+| 亲王 | `prince_rage.png` | 二阶段换上，192×48 四帧 | 下摆错帧。眼睛发光仍靠原画，没有单独加色 |
 
 ### 1.5 Boss（吸血鬼领主 / 亲王形态 / 女王形态）
 
@@ -102,10 +95,10 @@ assets/
 
 | 文件 | 代码 | 下一版 |
 |------|------|--------|
-| `boss_idle.png` | 在用 | 4 帧呼吸循环，384×96。披风动，人不要跳 |
-| `boss_enraged.png` | 狂暴时换上 | 4 帧循环 |
-| `boss_attack3.png` | 冲刺时换上 | 4 帧，播一次后回当前循环（idle 或 enraged） |
-| `boss_death.png` | 死亡时换上 | 后做 |
+| `boss_idle.png` | 在用，384×96 四帧 | 披风下摆错帧 |
+| `boss_enraged.png` | 狂暴时换上，384×96 四帧 | 披风下摆错帧 |
+| `boss_attack3.png` | 冲刺时播一次，384×96 四帧 | 播完回到当前循环（待机或狂暴） |
+| `boss_death.png` | 死亡时播，384×96 四帧 | 播完停在淡出的最后一格 |
 | `boss_attack1.png` | 未用。弹幕没有换这张图 | 先不做 |
 | `boss_attack2.png` | 未用。召唤没有换这张图 | 先不做 |
 

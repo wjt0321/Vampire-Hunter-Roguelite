@@ -67,8 +67,7 @@ func _petrify() -> void:
 	if sprite:
 		var tex := TextureManager.instance.get_enemy_texture("gargoyle", "petrify")
 		if tex:
-			sprite.texture = tex
-			_adjust_sprite_scale()
+			use_sprite(tex, "hold")
 		sprite.modulate = Color(0.7, 0.7, 0.7, 1.0)  # 轻微压暗
 		# 石化粒子
 		var vfx := get_node_or_null("/root/VFXManager")
@@ -93,8 +92,7 @@ func _unpetrify() -> void:
 	if sprite:
 		var tex := TextureManager.instance.get_enemy_texture("gargoyle", "wake")
 		if tex:
-			sprite.texture = tex
-			_adjust_sprite_scale()
+			use_sprite(tex, "once")
 		sprite.modulate = Color.WHITE
 		# 解除石化粒子
 		var vfx := get_node_or_null("/root/VFXManager")

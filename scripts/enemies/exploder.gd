@@ -65,8 +65,7 @@ func _start_detonation() -> void:
 	if sprite:
 		var tex := TextureManager.instance.get_enemy_texture("exploder", "explode")
 		if tex:
-			sprite.texture = tex
-			_adjust_sprite_scale()
+			use_sprite(tex, "hold")
 	print("💣 自爆者开始引爆倒计时!")
 
 func _explode() -> void:

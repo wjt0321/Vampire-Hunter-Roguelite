@@ -1,4 +1,6 @@
 extends CharacterBody2D
+
+const SpriteSheetLib = preload("res://scripts/core/sprite_sheet.gd")
 ## 玩家角色脚本
 ## 处理移动、生命值、经验升级等核心逻辑
 ## 射击由 WeaponManager 独立处理
@@ -115,6 +117,12 @@ var silver: int = 0
 ## 现在改成精灵挤压回弹：位置不动，只有 0.08s 的形变，收枪感还在，位移没有了。
 var _sprite_base_scale: Vector2 = Vector2.ONE
 var _fire_punch_tween: Tween = null
+var _player_pose: String = ""
+var _wants_move: bool = false
+var _sprite_rest_pos: Vector2 = Vector2.ZERO
+var _sprite_rest_ready: bool = false
+var _sprite_anim_time: float = 0.0
+var _sprite_frame_wait: float = 0.0
 # 护盾光环节点（有护盾时才存在）
 var _shield_aura: Sprite2D = null
 var _shield_pulse: Tween = null
@@ -146,34 +154,36 @@ func _ready() -> void:
 	xp_changed.emit(current_xp, xp_to_next_level, current_level)
 
 func _load_sprite_texture() -> void:
-	## 加载玩家精灵图
-	if sprite:
-		var texture := TextureManager.instance.get_player_texture("idle")
-		if texture:
-			sprite.texture = texture
-			sprite.modulate = Color.WHITE  # 重置颜色
-			# 根据碰撞体大小缩放精灵
-			_adjust_sprite_scale()
-		else:
-			# 回退到默认白色方块
-			var img := Image.create(16, 24, false, Image.FORMAT_RGBA8)
-			img.fill(Color.WHITE)
-			sprite.texture = ImageTexture.create_from_image(img)
-			_adjust_sprite_scale()
+	## 加载玩家精灵图。开局先贴待机，移动后再换成 run。
+	if sprite == null:
+		return
+	if not _sprite_rest_ready:
+		_sprite_rest_pos = sprite.position
+		_sprite_rest_ready = true
+	var texture := TextureManager.instance.get_player_texture("idle") if TextureManager.instance else null
+	if texture:
+		sprite.modulate = Color.WHITE
+		_apply_player_pose("idle", texture)
+	else:
+		var img := Image.create(16, 24, false, Image.FORMAT_RGBA8)
+		img.fill(Color.WHITE)
+		_apply_player_pose("idle", ImageTexture.create_from_image(img))
+
+func _apply_player_pose(pose: String, texture: Texture2D) -> void:
+	_player_pose = pose
+	sprite.position = _sprite_rest_pos
+	# 记下基准缩放：开火挤压是"在基准上乘一个系数再回到基准"。
+	_sprite_base_scale = SpriteSheetLib.apply(sprite, texture, 56.0)
+	_sprite_frame_wait = 0.0
+	if _fire_punch_tween != null and _fire_punch_tween.is_valid():
+		_fire_punch_tween.kill()
 
 func _adjust_sprite_scale() -> void:
-	## 根据目标大小调整精灵缩放
+	## 保留给外部在换图之后调用。按当前纹理重算一格缩放。
 	if sprite and sprite.texture:
-		var texture_size: Vector2 = sprite.texture.get_size()
-		if texture_size.x > 0 and texture_size.y > 0:
-			# 目标精灵大小
-			var target_size: float = 56.0
-			# 计算缩放比例
-			var scale_factor: float = target_size / max(texture_size.x, texture_size.y)
-			sprite.scale = Vector2(scale_factor, scale_factor)
-			# 记下基准缩放：开火挤压是"在基准上乘一个系数再回到基准"，
-			# 不能直接写死 1.0，否则会把按碰撞体算出来的缩放覆盖掉（精英怪巨型贴图就是这么来的）
-			_sprite_base_scale = sprite.scale
+		sprite.position = _sprite_rest_pos
+		_sprite_base_scale = SpriteSheetLib.apply(sprite, sprite.texture, 56.0)
+		_sprite_frame_wait = 0.0
 
 func apply_character_data(char_data: Resource) -> void:
 	## 应用角色数据到玩家
@@ -195,6 +205,8 @@ func apply_character_data(char_data: Resource) -> void:
 func _physics_process(delta: float) -> void:
 	_handle_movement()
 	_handle_rotation()
+	_sync_player_pose()
+	_tick_player_sprite(delta)
 	_process_passive_items(delta)
 	_process_character_passive(delta)
 	_process_powerup(delta)
@@ -234,8 +246,35 @@ func _handle_movement() -> void:
 	input_dir = input_dir.normalized()
 	var total_speed_mult := speed_multiplier * (1.0 + move_speed_bonus_multiplier)
 	# 注意：这里只由输入决定速度。开火反馈是纯视觉的，不许再往 velocity 里塞东西。
+	_wants_move = input_dir != Vector2.ZERO
 	velocity = input_dir * move_speed * total_speed_mult
 	move_and_slide()
+
+func _sync_player_pose() -> void:
+	## run 横条还是单张时，切过去看起来和 idle 一样。
+	## 切换先写上，等 288×48 的跑步条换进来才会被看见。
+	if sprite == null or TextureManager.instance == null:
+		return
+	var pose := "run" if _wants_move else "idle"
+	if pose == _player_pose:
+		return
+	var texture := TextureManager.instance.get_player_texture(pose)
+	if texture == null and pose != "idle":
+		texture = TextureManager.instance.get_player_texture("idle")
+		pose = "idle"
+	if texture == null or pose == _player_pose:
+		return
+	_apply_player_pose(pose, texture)
+
+func _tick_player_sprite(delta: float) -> void:
+	if sprite == null or sprite.texture == null:
+		return
+	if sprite.hframes > 1:
+		sprite.position = _sprite_rest_pos
+		_sprite_frame_wait = SpriteSheetLib.advance(sprite, _sprite_frame_wait, delta)
+		return
+	_sprite_anim_time += delta
+	sprite.position = _sprite_rest_pos + Vector2(0.0, SpriteSheetLib.bob_offset(_sprite_anim_time))
 
 func _handle_rotation() -> void:
 	var mouse_pos := get_global_mouse_position()

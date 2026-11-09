@@ -101,6 +101,9 @@ func _attack() -> void:
 
 		get_tree().current_scene.add_child(projectile)
 
+	var shoot_tex := TextureManager.instance.get_enemy_texture("skeleton", "shoot") if TextureManager.instance else null
+	if shoot_tex:
+		use_sprite(shoot_tex, "once")
 	# 播放射击动画（闪烁）
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", Color(1.5, 1.5, 1.5, 1.0), 0.1)

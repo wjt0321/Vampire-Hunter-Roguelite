@@ -269,14 +269,8 @@ func _load_sprite_texture() -> void:
 			_adjust_sprite_scale()
 
 func _adjust_sprite_scale() -> void:
-	## BOSS使用更大的目标大小
-	if sprite and sprite.texture:
-		var texture_size: Vector2 = sprite.texture.get_size()
-		if texture_size.x > 0 and texture_size.y > 0:
-			# BOSS目标大小为128像素（形态越大越有压迫感）
-			var target_size: float = 128.0 * size_mult
-			var scale_factor: float = target_size / max(texture_size.x, texture_size.y)
-			sprite.scale = Vector2(scale_factor, scale_factor)
+	## Boss 目标 128px，形态倍率乘在目标上。横条同样按一格算。
+	_present_sprite(128.0 * size_mult)
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -332,10 +326,8 @@ func _physics_process(delta: float) -> void:
 				attack_state = AttackState.COOLDOWN
 				# 恢复 idle 贴图
 				if sprite:
-					var tex := TextureManager.instance.get_boss_texture("idle")
-					if tex:
-						sprite.texture = tex
-						_adjust_sprite_scale()
+				if _sprite_loop_tex != null:
+					use_sprite(_sprite_loop_tex, "loop")
 
 func _check_phase_transition() -> void:
 	if not phase_changed and current_hp <= max_hp * phase_threshold:
@@ -358,8 +350,7 @@ func _enrage_effect() -> void:
 	if sprite:
 		var tex := TextureManager.instance.get_boss_texture("enraged")
 		if tex:
-			sprite.texture = tex
-			_adjust_sprite_scale()
+			use_sprite(tex, "loop")
 	# 闪烁红色
 	var tween := create_tween().set_loops(3)
 	tween.tween_property(sprite, "modulate", Color(2.0, 0.3, 0.3, 1.0), 0.15)
@@ -381,8 +372,7 @@ func _desperate_effect() -> void:
 	if sprite:
 		var tex := TextureManager.instance.get_boss_texture("enraged")
 		if tex:
-			sprite.texture = tex
-			_adjust_sprite_scale()
+			use_sprite(tex, "loop")
 	# 闪烁暗红
 	var tween := create_tween().set_loops(5)
 	tween.tween_property(sprite, "modulate", Color(3.0, 0.1, 0.1, 1.0), 0.1)
@@ -527,8 +517,7 @@ func _attack_dash() -> void:
 	if sprite:
 		var tex := TextureManager.instance.get_boss_texture("attack3")
 		if tex:
-			sprite.texture = tex
-			_adjust_sprite_scale()
+			use_sprite(tex, "once")
 	print("💨 冲刺预备!")
 
 
@@ -622,8 +611,7 @@ func _die() -> void:
 	if sprite:
 		var tex := TextureManager.instance.get_boss_texture("death")
 		if tex:
-			sprite.texture = tex
-			_adjust_sprite_scale()
+			use_sprite(tex, "hold")
 	# Boss 死亡动画（更壮观）
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", Color(5.0, 0.0, 0.0, 1.0), 0.3)

@@ -77,8 +77,7 @@ func _start_charge() -> void:
 	if sprite:
 		var tex := TextureManager.instance.get_enemy_texture("vampire_prince", "dash")
 		if tex:
-			sprite.texture = tex
-			_adjust_sprite_scale()
+			use_sprite(tex, "once")
 	
 	# 冲锋预警
 	_flash_red()
@@ -101,10 +100,8 @@ func _start_charge() -> void:
 		is_charging = false
 		# 恢复 idle 贴图
 		if sprite:
-			var tex := TextureManager.instance.get_enemy_texture("vampire_prince", "idle")
-			if tex:
-				sprite.texture = tex
-				_adjust_sprite_scale()
+			if _sprite_loop_tex != null:
+				use_sprite(_sprite_loop_tex, "loop")
 
 func _flash_red() -> void:
 	## 冲锋预警红色闪烁
@@ -130,8 +127,7 @@ func _enter_second_phase() -> void:
 	if sprite:
 		var tex := TextureManager.instance.get_enemy_texture("vampire_prince", "rage")
 		if tex:
-			sprite.texture = tex
-			_adjust_sprite_scale()
+			use_sprite(tex, "loop")
 		sprite.modulate = Color(1.2, 0.8, 0.8, 1.0)  # 略微发红
 	
 	# 播放音效
