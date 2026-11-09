@@ -8,8 +8,11 @@
 
 ## 一、一句话结论
 
-**Phase 12 的「出图」部分已经结束。** 32 张角色精灵 + 26 张 UI/图标全部完成、规格与代码对齐、Godot 导入与运行通过。
-剩下的不是图，是**代码接线**和**文档旧表**——这两件都不该靠继续出图解决。
+**Phase 12 已完成闭环：出图、接线、文档三件都做完了。**
+
+32 张角色精灵 + 26 张 UI/图标全部完成并与代码尺寸对齐；玩家四张动作图（攻击 / 受伤 / 死亡 / 护盾）已接进 `player.gd` 并通过单测；文档旧表已按「以代码为准」修正；8 张纯色或全透明的假资源已清理。
+
+剩下的是三件需要你先定方向的事：12 张成品特效图是否接线、3 个历史缺项是否补、交互动效是否做。
 
 ---
 
@@ -115,6 +118,17 @@
 | Godot `--quit-after 180` 运行 | **exit=0**（仅既有退出时 2 个对象泄漏警告） |
 | 本轮后处理耗时 | 16:54 → 17:13，约 19 分钟（含 4 次判据调试重跑，**未重新出图**） |
 
+第二批（四张动作图接线 + 文档 + 占位清理）：
+
+| 项目 | 结果 |
+|---|---|
+| 玩家四张动作图单测 | `apply_recoil→attack`、`take_damage→hurt`、`grant_shield→shield`、`_die→death` 全部命中；0.8s 后回 idle；死亡 1.2s 后销毁（`tools/_test_player_actions.tscn`） |
+| 六张玩家纹理 | 全部加载，帧数 4/6/4/2/6/4 与素材一致 |
+| 资产数 | 163 → **155**（移走 8 张零引用假资源） |
+| Godot `--import` | **exit=0**，无缺失引用 |
+| 运行 `res://scenes/main.tscn` | **exit=0**，正常进第 1 层房间 1/6 |
+| 顺手修掉的既有 bug | `vampire_lord.gd:328` 的 `if sprite:` 缺缩进块，导致整个 Boss 脚本编译失败、Boss 战会崩（上一会话遗留） |
+
 ---
 
 ## 七、回退方式
@@ -125,23 +139,71 @@
 | MVP 原版图标/UI | `.workbuddy/backup/icons/`、`.workbuddy/backup/ui/`、`.workbuddy/backup/ui_assets/` |
 | 48 格版本 | 改 `reskin_plan.json` 的 `cell` 为 48/96，跑 `reskin_pipeline.py --finalize-only` |
 | 1024 原始底图 | `.workbuddy/comfy/raw_reskin/`（32 张，去重后）；ComfyUI 输出目录 `E:\AI\ComfyUI\output\vhr_reskin\`（36 张含重跑） |
+| 被清理的 8 张占位资源 | `.workbuddy/backup/dead-assets/`（保留原目录结构，直接移回 `assets/` 即可） |
+| 「弱项精修」两次试改 | `.workbuddy/backup/refine2/`（已回滚，备份仅留档） |
 
 ---
 
 ## 八、明确没做的（边界，防止误以为漏了）
 
-1. **`player_attack/hurt/death/shield` 四张没有接进代码**。文件已备好，但 `player.gd` 仍走开火挤压/护盾光环的程序特效。这是 ROADMAP 原本就写的"先不接"，属于产品决定。
-2. **`lightning_bolt` / `lightning_chain` / `shop_bg` 三个历史缺项没有补**。在所有 `.gd` / `.tscn` 里都搜不到引用（`lightning_chain` 只是武器 id 和场景名），补了也不显示。
-3. **12.4 背景 / 12.5 特效没有改图**。背景全屏拉伸；特效图在代码里基本只是信号名，VFX 由 `vfx_manager.gd` 程序生成，图片未被加载。
-4. **没有改 `art-assets-requirements.md` 的旧尺寸表**。那是文档债，改文档比改图安全——改图会动到已经跑通的界面。
-5. **交互动效没有做**。按钮三态贴图已就位（`StyleBoxTexture` 会自动切换），但缩放、光晕、淡入这些需要改 `.gd`，属于代码层。
+1. **`lightning_bolt` / `lightning_chain` / `shop_bg` 三个历史缺项没有补**。在所有 `.gd` / `.tscn` 里都搜不到引用（`lightning_chain` 只是武器 id 和场景名），补了也不会显示。
+2. **12 张特效图有内容但零引用，没有接线**。VFX 目前走 `vfx_manager.gd` 程序生成，要不要换成贴图是另一个决定，不在资产范围内。
+3. **12.4 背景没改图**。背景全是 `TextureRect` 全屏拉伸，现有 `room_standard` / `menu_bg` 是成品美术，改尺寸看不出差别。
+4. **交互动效没有做**。按钮三态贴图已就位（`StyleBoxTexture` 自动切换），但缩放、光晕、淡入需要改 `.gd`。
+5. **没有为「弱项」硬改图**。见第十节——评估后判定它们不是缺陷。
 
 ---
 
-## 九、下一步（按优先级）
+## 九、占位资源清理
 
-1. **决定是否接那四张玩家动作图** —— 要改 `player.gd` 的特效分支，属于玩法/手感范畴，需要你定
-2. **修 `art-assets-requirements.md` 的旧表** —— 把 32×32 之类的旧规格改成"以代码为准"并指向本文档
-3. **弱项精修（可选）** —— `icon_lightning` 填充率仅 13.4%（法杖本身细）、`icon_magic_book` 紫色光效吞掉书本轮廓、`mage_teleport`/`mage_cast` 整体偏紫偏暗
+`assets/` 下**没有任何 SVG**。真正的问题是 8 张「看起来像资源、其实是空的」PNG，经全局引用审计（`scripts/**/*.gd`、`scenes/**/*.tscn`、`*.tres`）确认**零引用**，已移到 `.workbuddy/backup/dead-assets/`（保留原目录结构，可原样移回）。
+
+| 文件 | 尺寸 | 实际内容 | 为什么移除 |
+|---|---|---|---|
+| `backgrounds/room_square.png` | 960×960 | 纯黑，100% 不透明 | 房间背景实际用 `room_standard.png`（完整哥特房间） |
+| `tiles/tile_floor.png` | 32×32 | 2 色灰块 | 地面实际用 `floor_dungeon.png`（18 色石砖） |
+| `tiles/tile_floor_var1.png` | 32×32 | 同上 | 同上 |
+| `tiles/tile_floor_var2.png` | 32×32 | 同上 | 同上 |
+| `tiles/tile_pillar.png` | 64×64 | **全透明，0 像素** | 空文件 |
+| `tiles/props/window.png` | 64×96 | **全透明，0 像素** | 空文件 |
+| `effects/damage_numbers.png` | 160×32 | **全透明，0 像素** | 伤害数字由字体渲染 |
+| `effects/bullet_trail.png` | 16×4 | 纯黄条 | 拖尾由 `vfx_manager.spawn_bullet_trail()` 程序生成 |
+
+**另外 12 张特效图有内容但零引用**，属于「画好了没接线」，未移除：
+`achievement_unlock`、`btn_click`、`dodge_afterimage`、`freeze_effect`、`knife_spin`、
+`levelup_aura`、`lightning_retaliate`、`magic_trail`、`petrify_effect`、`xp_collect`，
+以及 `tiles/tile_obstacle`、`tile_wall`、`tile_wall_corner`、`ui/star_icon`、`weapons/xp_gem_medium`、`xp_gem_small`。
+
+这些是成品而不是占位，留着不碍事；要启用得先决定是否用贴图替换程序特效。
+
+验证：移除后 `Godot --import` 与运行 `res://scenes/main.tscn` 均 **exit=0**，无缺失引用报错。资产数 163 → 155。
+
+---
+
+## 十、「弱项精修」的结论：不需要改
+
+上一轮我列了四个「弱项」，这一轮按**真实显示尺寸**（图标 48px、精灵 56px）重新看，结论是它们都不成立，两次修改都更差，已全部回滚（`md5` 与备份一致，`git status` 无改动）。
+
+| 资产 | 我上轮的说法 | 实测 | 结论 |
+|---|---|---|---|
+| `icon_lightning` | 填充率仅 13.4% | 48px 下法杖轮廓清楚，填充率低只是因为它细 | 不改 |
+| `icon_magic_book` | 紫光吞掉书本 | 48px 下能看出「紫符文 + 金书框」，辨识度够 | 不改 |
+| `mage_cast` | 整体偏紫偏暗 | **p90 = 95**，与 `vampire_idle` 的 95 完全一致 | 不改 |
+| `mage_teleport` | 同上 | **p90 = 96** | 不改 |
+
+试过并否掉的两个方案：
+1. **按 p90 做 gamma 提亮** → mage 两张 p90 只从 95 涨到 100，肉眼无差别（因为本来就不暗）；同时把 `icon_magic_book` 压得发闷。
+2. **只降紫色饱和度、不动亮度** → 亮度确实一点没变（96→96、95→96），但紫袍变成灰扑扑的，丢了法师的身份色，比原图差。
+
+**教训**：上一轮的「弱项」是从单帧统计和填充率指标推出来的，不是看图得出的。对小尺寸像素图，指标低不等于不可读——必须按真实显示尺寸看。
+
+---
+
+## 十一、下一步（按优先级）
+
+1. **决定 12 张特效图是否接线** —— 若要让 `vfx_manager.gd` 用贴图，需要逐个替换程序绘制
+2. **`lightning_bolt` / `lightning_chain` / `shop_bg`** —— 补之前先决定是否接线
+3. **交互动效**（按钮悬停缩放、面板淡入）—— 纯代码工作
 
 > 如果你发现我在做上面三件之外的事，说明我偏了，直接叫停。
+

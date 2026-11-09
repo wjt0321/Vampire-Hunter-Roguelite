@@ -67,7 +67,14 @@
 
 > 资产状态、来源、验收数据、回退方式见 [asset-status.md](asset-status.md)（单一事实来源，先看这份）
 
-仍是**程序效果**、有意不接图的四张：`player_attack` / `player_hurt` / `player_death` / `player_shield`。文件已备好，代码继续走开火挤压与护盾光环——这是产品决定，不是缺图。
+玩家四张动作图**已接入**，与原有程序特效叠加而不是替换：
+
+- `player_attack` ← `apply_recoil()` 时播一次，与开火挤压同时发生（挤压负责后坐力，动作帧负责姿态）
+- `player_hurt` ← 扣血时播一次，闪红照旧
+- `player_shield` ← `_grant_shield()` 时播一次；持续脉冲仍由 `_shield_aura` 程序光环负责
+- `player_death` ← `_die()` 里按帧推进 death 横条（physics 已停，改用 tween），**去掉了原来叠在外面的 modulate 淡出**，因为横条本身末帧就是全透明，叠两层会双重变淡
+
+单测 `tools/_test_player_actions.tscn` 覆盖了四条的切换与回落；跑完 0.8s 回到 `idle`。
 
 **12.3 UI 元素 —— 已完成。**
 
@@ -82,11 +89,13 @@
 
 ### 下一步
 
-Phase 12 的「出图」部分到此为止。剩下的是代码侧与文档债：
+Phase 12 到此收尾：出图、接线、文档三件都已完成。剩下的是三个**需要先定方向**的决定：
 
-1. **接线**：若要让 `player_attack/hurt/death/shield` 用图，需要改 `player.gd` 里对应的程序特效分支
-2. **清单旧表**：`art-assets-requirements.md` 二节以后的尺寸表还是旧规格（32×32 等），建议改文档而不是改图
-3. **3 个历史缺项**：`shop_bg` / `lightning_bolt` / `lightning_chain` 在所有 `.gd` / `.tscn` 里都没有引用，要补得先决定是否接线
+1. **12 张成品特效图是否接线** —— `achievement_unlock` / `btn_click` / `dodge_afterimage` / `freeze_effect` / `knife_spin` / `levelup_aura` / `lightning_retaliate` / `magic_trail` / `petrify_effect` / `xp_collect` 等都有美术内容但零引用，VFX 现在走 `vfx_manager.gd` 程序生成。换成贴图要逐个替换绘制逻辑
+2. **3 个历史缺项**：`shop_bg` / `lightning_bolt` / `lightning_chain` 在所有 `.gd` / `.tscn` 里都没有引用（`lightning_chain` 只是武器 id 与场景名），补之前先决定是否接线
+3. **交互动效**：按钮悬停缩放、面板淡入、界面过渡——纯代码工作，`StyleBoxTexture` 只负责三态贴图
+
+清单文档的旧尺寸表已按「以代码为准」修正，详见 [asset-status.md](asset-status.md)。
 
 ### 具体任务
 
