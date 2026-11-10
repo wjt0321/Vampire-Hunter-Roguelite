@@ -1,3 +1,4 @@
+@static_unload
 extends Node
 ## 纹理管理器 - 统一管理所有游戏美术资源
 
@@ -38,6 +39,14 @@ const PLAYER_POSES: Array[String] = ["idle", "run", "attack", "hurt", "death", "
 func _ready():
 	instance = self
 	_load_all_textures()
+
+func _exit_tree() -> void:
+	# 程序化视觉使用静态缓存复用资源；引擎退出前主动断开，避免 RID 留到渲染器析构之后。
+	load("res://scripts/core/readability_visuals.gd").clear_cache()
+	load("res://scripts/core/projectile_visuals.gd").clear_cache()
+	load("res://scripts/enemies/enemy_projectile.gd").clear_shared_resources()
+	if instance == self:
+		instance = null
 
 func _load_all_textures():
 	_load_player_textures()

@@ -499,12 +499,21 @@ func _run() -> void:
 	# 旧按钮不得因为新按钮而重复连接（会让 hover 音效双播）
 	_check(restart_btn.mouse_entered.get_connections().size() == conns_before,
 		"旧按钮的音效连接数不因创建深渊按钮而变化（%d）" % conns_before)
+	var abyss_hover_total: int = 0
 	if abyss_btn != null:
-		_check(abyss_btn.mouse_entered.get_connections().size() == 1,
-			"深渊按钮只连接一次 hover 音效（%d）" % abyss_btn.mouse_entered.get_connections().size())
-		_check(abyss_btn.pressed.get_connections().size() == 2,
-			"深渊按钮 pressed = 自身回调 + 音效（%d）"
-			% abyss_btn.pressed.get_connections().size())
+		abyss_hover_total = abyss_btn.mouse_entered.get_connections().size()
+		var hover_sfx_count: int = 0
+		var click_sfx_count: int = 0
+		for conn in abyss_btn.mouse_entered.get_connections():
+			if conn["callable"] == Callable(victory_ui, "_on_button_hover_sfx"):
+				hover_sfx_count += 1
+		for conn in abyss_btn.pressed.get_connections():
+			if conn["callable"] == Callable(victory_ui, "_on_button_click_sfx"):
+				click_sfx_count += 1
+		_check(hover_sfx_count == 1,
+			"深渊按钮只连接一次 hover 音效（UiFx 动效连接不计入）")
+		_check(click_sfx_count == 1,
+			"深渊按钮只连接一次点击音效（自身回调与 UiFx 不计入）")
 	# 再次展示（同一实例）不能累加连接
 	victory_ui.show_game_over({
 		"floors_cleared": 3, "rooms": 10, "wave": 5, "kills": 20,
@@ -514,7 +523,7 @@ func _run() -> void:
 	_check(restart_btn.mouse_entered.get_connections().size() == conns_before,
 		"重复展示不重复连接旧按钮（%d）" % restart_btn.mouse_entered.get_connections().size())
 	if abyss_btn != null:
-		_check(abyss_btn.mouse_entered.get_connections().size() == 1,
+		_check(abyss_btn.mouse_entered.get_connections().size() == abyss_hover_total,
 			"重复展示不重复连接深渊按钮（%d）" % abyss_btn.mouse_entered.get_connections().size())
 	victory_ui.queue_free()
 	await process_frame

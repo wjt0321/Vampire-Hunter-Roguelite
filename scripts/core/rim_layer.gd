@@ -14,7 +14,6 @@ extends Sprite2D
 ## 必须每帧跟的只有：来源贴图（换姿态）、当前帧（横条）、透明度（受击闪白/死亡淡出）。
 ## 全部"变了才写"，空转开销就是几次比较。
 
-const ReadabilityLib = preload("res://scripts/core/readability_visuals.gd")
 
 var body: Sprite2D = null
 ## 轮廓色。换色会重新取/烘一张剪影贴图。
@@ -47,7 +46,7 @@ func _sync() -> void:
 			return
 	if body.texture != _source_texture:
 		_source_texture = body.texture
-		texture = ReadabilityLib.get_silhouette_texture(_source_texture, rim_color)
+		texture = ReadabilityVisuals.get_silhouette_texture(_source_texture, rim_color)
 	if hframes != body.hframes:
 		hframes = body.hframes
 	if vframes != body.vframes:

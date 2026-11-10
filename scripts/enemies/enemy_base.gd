@@ -5,8 +5,7 @@ const SpriteSheetLib = preload("res://scripts/core/sprite_sheet.gd")
 ## 房间解析的唯一入口。用 preload 而不是直接写 class_name：
 ## 本脚本会被各敌人子类继承，preload 出来的常量在继承链上也能直接用。
 const RoomLookupLib = preload("res://scripts/core/room_lookup.gd")
-## 可读性层（轮廓 + 地面投影）。同样用 preload：敌人子类继承本脚本时能直接拿到。
-const ReadabilityLib = preload("res://scripts/core/readability_visuals.gd")
+## 可读性层（轮廓 + 地面投影）使用全局类，子类共享同一套常量与视觉接口。
 ## 敌人基类脚本
 ## 所有敌人类型继承此类
 ## HP 和伤害随波次动态缩放，由 GameConfig 控制
@@ -401,7 +400,7 @@ func _present_sprite(target_size: float) -> void:
 		return
 	# 显式钉住敌人所在的可读性图层：玩家(1) 与弹丸(2) 必须压在敌人(0) 之上，
 	# 不依赖 Sprite2D 的默认 z_index。
-	sprite.z_index = ReadabilityLib.Z_ENEMY
+	sprite.z_index = ReadabilityVisuals.Z_ENEMY
 	_sprite_target = target_size
 	if _sprite_loop_tex == null or _sprite_play == "loop":
 		_sprite_loop_tex = sprite.texture
@@ -413,8 +412,8 @@ func _present_sprite(target_size: float) -> void:
 	_sprite_frame_wait = 0.0
 	# 可读性层：轮廓 + 地面投影。跟着缩放一起重算，
 	# 精英体型倍率、Boss 形态倍率、换姿态都走这一处，不会漏。
-	ReadabilityLib.ensure_body_rim(sprite)
-	ReadabilityLib.ensure_ground_shadow(self, sprite)
+	ReadabilityVisuals.ensure_body_rim(sprite)
+	ReadabilityVisuals.ensure_ground_shadow(self, sprite)
 
 func _tick_sprite(delta: float) -> void:
 	if sprite == null or not is_instance_valid(sprite) or sprite.texture == null:

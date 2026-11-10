@@ -4,7 +4,6 @@ const SpriteSheetLib = preload("res://scripts/core/sprite_sheet.gd")
 ## 可读性层（轮廓 + 地面投影）。玩家和敌人共用同一套：
 ## 敌人轮廓暖白、玩家轮廓冷蓝，颜色相反才是"一眼分出谁是谁"的关键，
 ## 光靠体型（两者都是 56px）在怪堆里分不出来。
-const ReadabilityLib = preload("res://scripts/core/readability_visuals.gd")
 ## 玩家角色脚本
 ## 处理移动、生命值、经验升级等核心逻辑
 ## 射击由 WeaponManager 独立处理
@@ -166,7 +165,7 @@ func _ready() -> void:
 	# 视觉优先级：玩家画在敌人之上、危险弹丸之下（见 ReadabilityVisuals）。
 	# 不改这条的话，Boss 站到玩家正前方就会把玩家整个盖住。
 	if sprite != null:
-		sprite.z_index = ReadabilityLib.Z_PLAYER
+		sprite.z_index = ReadabilityVisuals.Z_PLAYER
 	# 初始化 AudioLib 缓存
 	_audio_lib = AudioLib
 	# 加载精灵图纹理
@@ -216,8 +215,8 @@ func _apply_player_pose(pose: String, texture: Texture2D) -> void:
 	_apply_punch_scale()
 	# 可读性层：冷蓝轮廓 + 地面投影。跟敌人共用同一套节点，
 	# 颜色相反（敌人暖白）才能在怪堆里分清谁是玩家。
-	ReadabilityLib.ensure_body_rim(sprite, ReadabilityLib.PLAYER_RIM_COLOR)
-	ReadabilityLib.ensure_ground_shadow(self, sprite)
+	ReadabilityVisuals.ensure_body_rim(sprite, ReadabilityVisuals.PLAYER_RIM_COLOR)
+	ReadabilityVisuals.ensure_ground_shadow(self, sprite)
 
 func _adjust_sprite_scale() -> void:
 	## 保留给外部在换图之后调用。按当前纹理重算一格缩放。

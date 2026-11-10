@@ -56,7 +56,6 @@ signal portal_entered
 signal portal_chosen(room_type: String)
 
 const DoorLabelScript = preload("res://scripts/map/door_label.gd")
-const ReadabilityLib = preload("res://scripts/core/readability_visuals.gd")
 var _choice_taken: bool = false
 
 func _ready() -> void:
@@ -353,7 +352,7 @@ func spawn_portal() -> void:
 	portal.collision_mask = 1  # 碰撞玩家
 	portal.global_position = get_safe_portal_position()
 	# 传送门是"地面上的门"：压在角色之上会把走进去的人整个盖住。
-	portal.z_index = ReadabilityLib.Z_GROUND
+	portal.z_index = ReadabilityVisuals.Z_GROUND
 
 	var portal_shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
@@ -419,7 +418,7 @@ func _build_choice_portal(pos: Vector2, info: Dictionary) -> Area2D:
 	portal.collision_layer = 0
 	portal.collision_mask = 1
 	portal.global_position = pos
-	portal.z_index = ReadabilityLib.Z_GROUND
+	portal.z_index = ReadabilityVisuals.Z_GROUND
 	portal.modulate = info.get("color", Color(0.7, 0.5, 1.0))
 
 	var portal_shape := CollisionShape2D.new()

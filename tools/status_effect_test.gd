@@ -251,9 +251,10 @@ func _run() -> void:
 	for want in ["blood_edge", "frost_bind", "blood_drain"]:
 		_check(want in ids, "卡池包含 %s" % want)
 	_check(ItemCatalog.create_passive("blood_edge") != null, "create_passive 能造出血刃")
-	# 图标必须是文字：本机字体不含 emoji，Button 上会渲染成蓝方块（GDD 附录 D.4）
-	var icon_text := String(ItemCatalog.find_passive("blood_edge").get("icon", ""))
-	_check(icon_text.length() == 1, "血刃图标是单个文字「%s」而非 emoji" % icon_text)
+	# 图标已迁移为正式贴图，验证统一贴图入口而不是旧的单字字段。
+	var icon_tex: Texture2D = ItemCatalog.get_icon_texture("blood_edge", "passive")
+	_check(icon_tex != null and icon_tex.get_size().x > 0.0,
+		"血刃使用正式图标贴图（%s）" % str(icon_tex.get_size() if icon_tex else Vector2.ZERO))
 
 	# ==================== ⑧ 圆形弹视觉 ====================
 	print("\n=== ⑧ 圆形弹亮芯 ===")

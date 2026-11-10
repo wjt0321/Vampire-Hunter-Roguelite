@@ -14,7 +14,6 @@ extends SceneTree
 
 const GRID_SIZE := 64.0
 const PLACEMENT_TOLERANCE := 1.0
-const ReadabilityLib = preload("res://scripts/core/readability_visuals.gd")
 
 var _fail: int = 0
 
@@ -54,21 +53,28 @@ func _run() -> void:
 	print("")
 	print("====== 战斗画面可读性回归测试 ======")
 
-	await _test_background_policy()
-	await _test_projectile_rim()
-	await _test_enemy_layers()
-	await _test_player_layers()
-	await _test_placement()
-	await _test_real_spawn_positions()
-	await _test_fire_punch()
-	await _test_punch_survives_pose_change()
-	await _test_passive_cap_null()
+	var args := OS.get_cmdline_user_args()
+	var only: String = args[0] if not args.is_empty() else ""
+	if only.is_empty() or only == "background": await _test_background_policy()
+	if only.is_empty() or only == "projectile": await _test_projectile_rim()
+	if only.is_empty() or only == "enemy": await _test_enemy_layers()
+	if only.is_empty() or only == "player_layers": await _test_player_layers()
+	if only.is_empty() or only == "placement": await _test_placement()
+	if only.is_empty() or only == "spawn": await _test_real_spawn_positions()
+	if only.is_empty() or only == "punch": await _test_fire_punch()
+	if only.is_empty() or only == "pose": await _test_punch_survives_pose_change()
+	if only.is_empty() or only == "passive": await _test_passive_cap_null()
 
 	print("")
 	if _fail == 0:
 		print("✅ 全部通过")
 	else:
 		print("❌ 失败 %d 项" % _fail)
+	# 测试显式拆除根节点下的场景与 autoload，避免把待删对象直接交给引擎退出阶段。
+	for child in root.get_children():
+		child.queue_free()
+	await process_frame
+	await process_frame
 	quit(1 if _fail > 0 else 0)
 
 # ==================================================
@@ -389,7 +395,7 @@ func _test_player_layers() -> void:
 	# 截图里 Boss 站在玩家正前方时把玩家整个盖住——两人 z 都是 0，
 	# 谁后进场景树谁在前，玩家直接消失。这条断言把它钉死在层级上。
 	var enemy_body := enemy.get_node("Sprite2D") as Sprite2D
-	_check(enemy_body.z_index == ReadabilityLib.Z_ENEMY,
+	_check(enemy_body.z_index == ReadabilityVisuals.Z_ENEMY,
 		"敌人显式钉在可读性图层上（z=%d == Z_ENEMY）" % enemy_body.z_index)
 	_check(body.z_index > enemy_body.z_index,
 		"玩家画在敌人之上（玩家 z=%d > 敌人 z=%d）" % [body.z_index, enemy_body.z_index])
@@ -445,12 +451,12 @@ func _test_ground_layer() -> void:
 	var marker = vfx.spawn_ground_marker(Vector2(400, 300), 60.0, Color(1, 0.2, 0.2), 3.0)
 	_check(marker != null and is_instance_valid(marker), "地面预警标记已生成")
 	if marker != null and is_instance_valid(marker):
-		_check(marker.z_index < ReadabilityLib.Z_ENEMY,
+		_check(marker.z_index < ReadabilityVisuals.Z_ENEMY,
 			"地面预警压在地板之上、角色之下（z=%d < 敌人 Z_ENEMY=%d）"
-				% [marker.z_index, ReadabilityLib.Z_ENEMY])
-		_check(marker.z_index < ReadabilityLib.Z_PLAYER,
+				% [marker.z_index, ReadabilityVisuals.Z_ENEMY])
+		_check(marker.z_index < ReadabilityVisuals.Z_PLAYER,
 			"地面预警不盖住玩家（z=%d < Z_PLAYER=%d）"
-				% [marker.z_index, ReadabilityLib.Z_PLAYER])
+				% [marker.z_index, ReadabilityVisuals.Z_PLAYER])
 		_check(marker.z_index > -10,
 			"地面预警仍在地板贴图之上（z=%d > 地板 -10）" % marker.z_index)
 		if is_instance_valid(marker):
@@ -469,18 +475,18 @@ func _test_ground_layer() -> void:
 	var portal := room.get_node_or_null("Portal") as Area2D
 	_check(portal != null, "普通传送门已生成")
 	if portal != null:
-		_check(portal.z_index < ReadabilityLib.Z_PLAYER,
+		_check(portal.z_index < ReadabilityVisuals.Z_PLAYER,
 			"传送门画在脚下，不盖住走进去的玩家（z=%d < Z_PLAYER=%d）"
-				% [portal.z_index, ReadabilityLib.Z_PLAYER])
+				% [portal.z_index, ReadabilityVisuals.Z_PLAYER])
 		_check(portal.z_index > -10, "传送门仍在地板之上（z=%d）" % portal.z_index)
 
 	var choice := room.call("_build_choice_portal", Vector2(500, 500),
 		{"type": "event", "color": Color(0.7, 0.5, 1.0)}) as Area2D
 	_check(choice != null, "岔路传送门可生成")
 	if choice != null:
-		_check(choice.z_index < ReadabilityLib.Z_PLAYER,
+		_check(choice.z_index < ReadabilityVisuals.Z_PLAYER,
 			"岔路传送门同样在角色之下（z=%d < Z_PLAYER=%d）"
-				% [choice.z_index, ReadabilityLib.Z_PLAYER])
+				% [choice.z_index, ReadabilityVisuals.Z_PLAYER])
 
 	# 传送门协程延迟 0.5s 才启用碰撞，先让它收尾再拆场景
 	await create_timer(0.6).timeout

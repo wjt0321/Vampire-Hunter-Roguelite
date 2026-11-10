@@ -59,10 +59,10 @@ func _run() -> void:
 
 	print("\n=== 2. 三档尺寸与颜色 ===")
 	var cases := [
-		{"value": 3, "size": 14.0, "name": "小怪"},
-		{"value": 12, "size": 19.0, "name": "中怪"},
-		{"value": 25, "size": 26.0, "name": "精英"},
-		{"value": 100, "size": 26.0, "name": "Boss"},
+		{"value": 3, "size": 16.0, "name": "小怪", "tex": "xp_gem_green"},
+		{"value": 12, "size": 24.0, "name": "中怪", "tex": "xp_gem_blue"},
+		{"value": 25, "size": 32.0, "name": "精英", "tex": "xp_gem_gold"},
+		{"value": 100, "size": 32.0, "name": "Boss", "tex": "xp_gem_gold"},
 	]
 	var gems: Array = []
 	for c in cases:
@@ -70,21 +70,34 @@ func _run() -> void:
 		gems.append(g)
 		await process_frame
 		var spr := g.get_node("Sprite2D") as Sprite2D
-		var expect_scale: float = float(c["size"]) / 48.0
+		var texture_manager := root.get_node_or_null("/root/TextureManager")
+		var expected_tex: Texture2D = texture_manager.get_item_texture(String(c["tex"])) if texture_manager else null
+		_check(spr.texture == expected_tex, "%s 使用 %s 正式贴图" % [c["name"], c["tex"]])
+		var expect_scale: float = float(c["size"]) / spr.texture.get_size().x
 		# 呼吸 tween 会在此刻把 scale 拉到 base*(1+pulse) 之间，所以给一个区间
 		_check(spr.scale.x >= expect_scale - 0.001 and spr.scale.x <= expect_scale * 1.20,
-			"%s（%d XP）基准尺寸 %.0fpx，实际缩放 %.3f（基准 %.3f）"
+			"%s（%d XP）目标尺寸 %.0fpx，实际缩放 %.3f（基准 %.3f）"
 			% [c["name"], int(c["value"]), float(c["size"]), spr.scale.x, expect_scale])
-		_check(spr.material is CanvasItemMaterial
-			and (spr.material as CanvasItemMaterial).blend_mode == CanvasItemMaterial.BLEND_MODE_ADD,
-			"%s 使用加色材质" % c["name"])
+		_check(spr.material == null and spr.modulate == Color.WHITE,
+			"%s 保留贴图本色，不叠加色材质或二次染色" % c["name"])
 
-	var green: Color = (gems[0].get_node("Sprite2D") as Sprite2D).modulate
-	var blue: Color = (gems[1].get_node("Sprite2D") as Sprite2D).modulate
-	var gold: Color = (gems[2].get_node("Sprite2D") as Sprite2D).modulate
-	_check(green.g > green.b and green.g > green.r, "小怪档偏绿 %s" % str(green))
-	_check(blue.b > blue.r and blue.g > blue.r, "中怪档偏蓝 %s" % str(blue))
-	_check(gold.r > gold.b and gold.g > gold.b, "精英档偏金 %s" % str(gold))
+		# 正式贴图自带颜色，颜色断言应读取像素而不是恒为白色的 modulate。
+		var tier_img: Image = spr.texture.get_image()
+		var avg := Color(0.0, 0.0, 0.0, 0.0)
+		var samples: int = 0
+		for y in tier_img.get_height():
+			for x in tier_img.get_width():
+				var pixel: Color = tier_img.get_pixel(x, y)
+				if pixel.a > 0.2:
+					avg += pixel
+					samples += 1
+		avg /= float(maxi(samples, 1))
+		var color_ok: bool = false
+		match String(c["tex"]):
+			"xp_gem_green": color_ok = avg.g > avg.r and avg.g > avg.b
+			"xp_gem_blue": color_ok = avg.b > avg.r and avg.g > avg.r
+			_: color_ok = avg.r > avg.b and avg.g > avg.b
+		_check(color_ok, "%s 贴图像素色相正确 %s" % [c["name"], str(avg)])
 
 	print("\n=== 3. 合并 ===")
 	for g in [gems[0], gems[1], gems[2], gems[3]]:

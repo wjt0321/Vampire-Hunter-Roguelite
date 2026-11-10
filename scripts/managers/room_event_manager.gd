@@ -294,9 +294,9 @@ func _tag_enemy(enemy: Node, text: String, color: Color) -> void:
 	label.text = text
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.size = Vector2(64, 14)
-	# 词缀图标在 y=-52（占位约 24px 高）。Label 的实际高度也是 24px（字号 + 描边），
-	# 所以标签必须抬到 -80 才能和图标留出空隙；-46 会直接压上去。
-	label.position = Vector2(-32, -80)
+	# 词缀图标中心在 y=-66，24px 图标的顶部为 -78；Label 实际高度为 24px，
+	# 放在 -104 后底部为 -80，与图标保留 2px 间隔。
+	label.position = Vector2(-32, -104)
 	label.add_theme_font_size_override("font_size", 11)
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.03, 0.9))

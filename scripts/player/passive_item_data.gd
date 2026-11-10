@@ -1,4 +1,5 @@
 extends Resource
+class_name PassiveItemData
 ## 被动道具数据
 ## 定义被动道具的属性和效果
 
@@ -66,8 +67,7 @@ func is_effectively_maxed() -> bool:
 	return not has_gain_at_next_level()
 
 static func create_magnet() -> Resource:
-	var script = preload("res://scripts/player/passive_item_data.gd")
-	var item = script.new()
+	var item := PassiveItemData.new()
 	item.item_id = "magnet"
 	item.item_name = "经验磁铁"
 	item.description = "增加经验宝石吸附范围"
@@ -77,8 +77,7 @@ static func create_magnet() -> Resource:
 	return item
 
 static func create_shield() -> Resource:
-	var script = preload("res://scripts/player/passive_item_data.gd")
-	var item = script.new()
+	var item := PassiveItemData.new()
 	item.item_id = "shield"
 	item.item_name = "能量护盾"
 	item.description = "定期生成抵挡伤害的护盾"
@@ -88,8 +87,7 @@ static func create_shield() -> Resource:
 	return item
 
 static func create_regeneration() -> Resource:
-	var script = preload("res://scripts/player/passive_item_data.gd")
-	var item = script.new()
+	var item := PassiveItemData.new()
 	item.item_id = "regeneration"
 	item.item_name = "生命恢复"
 	item.description = "定期恢复生命值"
@@ -99,8 +97,7 @@ static func create_regeneration() -> Resource:
 	return item
 
 static func create_greed_ring() -> Resource:
-	var script = preload("res://scripts/player/passive_item_data.gd")
-	var item = script.new()
+	var item := PassiveItemData.new()
 	item.item_id = "greed_ring"
 	item.item_name = "贪婪戒指"
 	item.description = "增加经验获取量"
@@ -110,8 +107,7 @@ static func create_greed_ring() -> Resource:
 	return item
 
 static func create_berserker_blood() -> Resource:
-	var script = preload("res://scripts/player/passive_item_data.gd")
-	var item = script.new()
+	var item := PassiveItemData.new()
 	item.item_id = "berserker_blood"
 	item.item_name = "狂战士之血"
 	item.description = "生命值低于30%时攻击力大幅提升"
@@ -121,8 +117,7 @@ static func create_berserker_blood() -> Resource:
 	return item
 
 static func create_frozen_heart() -> Resource:
-	var script = preload("res://scripts/player/passive_item_data.gd")
-	var item = script.new()
+	var item := PassiveItemData.new()
 	item.item_id = "frozen_heart"
 	item.item_name = "冰冻之心"
 	item.description = "攻击有几率冻结敌人"
@@ -132,8 +127,7 @@ static func create_frozen_heart() -> Resource:
 	return item
 
 static func create_lightning_shield() -> Resource:
-	var script = preload("res://scripts/player/passive_item_data.gd")
-	var item = script.new()
+	var item := PassiveItemData.new()
 	item.item_id = "lightning_shield"
 	item.item_name = "闪电护符"
 	item.description = "受到伤害时释放闪电反击"
@@ -143,8 +137,7 @@ static func create_lightning_shield() -> Resource:
 	return item
 
 static func create_shadow_cloak() -> Resource:
-	var script = preload("res://scripts/player/passive_item_data.gd")
-	var item = script.new()
+	var item := PassiveItemData.new()
 	item.item_id = "shadow_cloak"
 	item.item_name = "影子披风"
 	item.description = "增加闪避几率"
@@ -154,8 +147,7 @@ static func create_shadow_cloak() -> Resource:
 	return item
 
 static func create_vampiric_fang() -> Resource:
-	var script = preload("res://scripts/player/passive_item_data.gd")
-	var item = script.new()
+	var item := PassiveItemData.new()
 	item.item_id = "vampiric_fang"
 	item.item_name = "吸血獠牙"
 	item.description = "击杀敌人时概率吸血"
@@ -165,8 +157,7 @@ static func create_vampiric_fang() -> Resource:
 	return item
 
 static func create_swift_boots() -> Resource:
-	var script = preload("res://scripts/player/passive_item_data.gd")
-	var item = script.new()
+	var item := PassiveItemData.new()
 	item.item_id = "swift_boots"
 	item.item_name = "疾风靴"
 	item.description = "增加移动速度"
@@ -176,8 +167,7 @@ static func create_swift_boots() -> Resource:
 	return item
 
 static func create_lucky_clover() -> Resource:
-	var script = preload("res://scripts/player/passive_item_data.gd")
-	var item = script.new()
+	var item := PassiveItemData.new()
 	item.item_id = "lucky_clover"
 	item.item_name = "幸运四叶草"
 	item.description = "增加暴击几率"
@@ -191,8 +181,7 @@ static func create_lucky_clover() -> Resource:
 static func create_blood_edge() -> Resource:
 	## 血刃 —— 命中时概率让敌人流血。伤害按"触发的那一下"折算，
 	## 所以它天生偏爱单发高伤的武器（十字弩 / 散弹），而不是高频小弹。
-	var script = preload("res://scripts/player/passive_item_data.gd")
-	var item = script.new()
+	var item := PassiveItemData.new()
 	item.item_id = "blood_edge"
 	item.item_name = "血刃"
 	item.description = "命中时概率使敌人流血"
@@ -204,8 +193,7 @@ static func create_blood_edge() -> Resource:
 static func create_frost_bind() -> Resource:
 	## 霜缚 —— 命中时概率减速。唯一能"改变敌人到位时间"的修饰器，
 	## 对冲锋怪和围上来的近战最有用。
-	var script = preload("res://scripts/player/passive_item_data.gd")
-	var item = script.new()
+	var item := PassiveItemData.new()
 	item.item_id = "frost_bind"
 	item.item_name = "霜缚"
 	item.description = "命中时概率使敌人减速"
@@ -217,8 +205,7 @@ static func create_frost_bind() -> Resource:
 static func create_blood_drain() -> Resource:
 	## 汲取 —— 造成的伤害按比例回血。和"吸血獠牙"（击杀概率回血）不重复：
 	## 那个奖励的是清场，这个奖励的是持续输出（打 Boss / 打高血量精英）。
-	var script = preload("res://scripts/player/passive_item_data.gd")
-	var item = script.new()
+	var item := PassiveItemData.new()
 	item.item_id = "blood_drain"
 	item.item_name = "汲取"
 	item.description = "造成的伤害按比例转为生命"

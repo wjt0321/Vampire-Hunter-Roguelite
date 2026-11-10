@@ -29,6 +29,21 @@ func _ready() -> void:
 	_setup_sfx_players()
 	print("🎵 AudioManager 已初始化")
 
+func _exit_tree() -> void:
+	if _bgm_tween != null and _bgm_tween.is_valid():
+		_bgm_tween.kill()
+	_bgm_tween = null
+	if _bgm_player != null and is_instance_valid(_bgm_player):
+		_bgm_player.stop()
+		_bgm_player.stream = null
+	for player in _sfx_players:
+		if player != null and is_instance_valid(player):
+			player.stop()
+			player.stream = null
+	# 音频在独立混音线程释放 playback；停播后立即退出会让 MP3 流仍被该线程引用。
+	# 给最后一次混音留出两个常见缓冲周期，避免正常关闭游戏时误报资源泄漏。
+	OS.delay_msec(100)
+
 func _load_volume_settings() -> void:
 	## 从存档加载音量设置
 	if save_mgr and save_mgr.save_data.has("audio_settings"):

@@ -1,3 +1,4 @@
+@static_unload
 extends RefCounted
 class_name ReadabilityVisuals
 ## 战斗可读性层：轮廓 + 地面投影（纯程序化，不引入任何新美术资源）
@@ -45,8 +46,6 @@ const RIM_COLOR := Color(1.0, 0.80, 0.52, 0.52)
 ## 玩家轮廓：冷蓝。与敌人的暖白相反，怪堆里靠色相一眼分出谁是玩家——
 ## 两者都是 56px，光凭体型分不出。
 const PLAYER_RIM_COLOR := Color(0.52, 0.80, 1.0, 0.72)
-
-const RimLayerScript = preload("res://scripts/core/rim_layer.gd")
 
 static var _shadow_texture: Texture2D = null
 static var _shadow_material: CanvasItemMaterial = null
@@ -159,7 +158,8 @@ static func ensure_body_rim(body: Sprite2D, color: Color = RIM_COLOR) -> Sprite2
 	if rim == null:
 		rim = Sprite2D.new()
 		rim.name = "RimSprite"
-		rim.set_script(RimLayerScript)
+		# 运行时加载而不 const preload：RimLayer 反向依赖本类，双向预加载会形成循环引用。
+		rim.set_script(load("res://scripts/core/rim_layer.gd"))
 		rim.set("body", body)
 		body.add_child(rim)
 	# 颜色写进剪影贴图本身，不是 modulate：
@@ -169,3 +169,8 @@ static func ensure_body_rim(body: Sprite2D, color: Color = RIM_COLOR) -> Sprite2
 	rim.modulate = Color(1.0, 1.0, 1.0, color.a)
 	rim.scale = Vector2(RIM_SCALE, RIM_SCALE)
 	return rim
+
+static func clear_cache() -> void:
+	_silhouette_cache.clear()
+	_shadow_texture = null
+	_shadow_material = null

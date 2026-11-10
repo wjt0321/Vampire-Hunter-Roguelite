@@ -82,7 +82,10 @@ func _run() -> void:
 			print("❌ roll 返回空")
 	for id in ids:
 		_check(not String(_aff().display_name(id)).is_empty(), "%s 有中文名（%s）" % [id, _aff().display_name(id)])
-		_check(not String(_aff().icon(id)).is_empty(), "%s 有图标（%s）" % [id, _aff().icon(id)])
+		var texture_manager := root.get_node_or_null("/root/TextureManager")
+		var icon_tex: Texture2D = texture_manager.get_affix_icon(id) if texture_manager else null
+		_check(icon_tex != null and icon_tex.get_size().x > 0.0,
+			"%s 有正式图标贴图（%s）" % [id, str(icon_tex.get_size() if icon_tex else Vector2.ZERO)])
 	var only_excluded: bool = true
 	for i in range(100):
 		if String(_aff().roll([SHIELDED, CHARGER, SPLITTER])) == SHIELDED:

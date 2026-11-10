@@ -4,6 +4,15 @@ extends Node
 
 var _pools: Dictionary = {}
 
+func _exit_tree() -> void:
+	# 池内节点已被 remove_child 脱离场景树，退出时不会再收到 queue_free 的帧处理。
+	# 这里直接 free，避免节点及其碰撞体、贴图引用残留到引擎退出阶段。
+	for key in _pools:
+		for node in _pools[key]:
+			if is_instance_valid(node):
+				node.free()
+	_pools.clear()
+
 func acquire(scene: PackedScene) -> Node:
 	## 从对象池获取一个实例，池为空时创建新实例
 	var key := scene.resource_path

@@ -1,3 +1,4 @@
+@static_unload
 extends Node
 class_name GameConfig
 ## 游戏配置中心

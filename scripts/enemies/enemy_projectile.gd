@@ -1,3 +1,4 @@
+@static_unload
 extends Area2D
 ## 敌人投射物
 ## 骷髅射手等远程敌人发射的投射物
@@ -111,3 +112,6 @@ func _on_area_entered(area: Node2D) -> void:
 		return
 	if area.has_method("get_damage"):
 		queue_free()
+
+static func clear_shared_resources() -> void:
+	_outline_material = null

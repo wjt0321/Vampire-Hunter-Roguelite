@@ -236,6 +236,8 @@ func _create_particle_node(pos: Vector2, color: Color, size: float) -> Node2D:
 	var scene := _ensure_current_scene()
 	if scene:
 		scene.add_child(container)
+	else:
+		container.queue_free()
 	return container
 
 func _create_ring(pos: Vector2, color: Color, radius: float) -> Node2D:
@@ -256,6 +258,8 @@ func _create_ring(pos: Vector2, color: Color, radius: float) -> Node2D:
 	var scene := _ensure_current_scene()
 	if scene:
 		scene.add_child(ring)
+	else:
+		ring.queue_free()
 	return ring
 
 # ========== 新被动道具效果 ==========

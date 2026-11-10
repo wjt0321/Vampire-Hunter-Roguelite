@@ -472,14 +472,15 @@ func _run() -> void:
 			var ctrl := tagged.get_node_or_null(ctrl_name)
 			if ctrl == null:
 				continue
-			var icon := ctrl.get_node_or_null("AffixIcon") as Label
+			var icon := ctrl.get_node_or_null("AffixIcon") as Sprite2D
 			if icon == null:
 				continue
 			icon_count += 1
 			if tag == null:
 				continue
-			# 图标是 17px 字号，按 24×24 估计占位；标签的 size 是代码里设的 64×14
-			var icon_rect := Rect2(icon.position, Vector2(24, 24))
+			# 词缀图标已从 Label 迁移为 24px Sprite2D，按实际贴图与缩放计算占位。
+			var icon_size: Vector2 = icon.texture.get_size() * icon.scale
+			var icon_rect := Rect2(icon.position - icon_size * 0.5, icon_size)
 			var tag_rect := Rect2(tag.position, tag.size)
 			_check(not icon_rect.intersects(tag_rect),
 				"事件标签不压词缀图标（%s 图标 %s / 标签 %s）"

@@ -1,7 +1,7 @@
+@static_unload
 extends RefCounted
 class_name ProjectileVisuals
 
-const ReadabilityVisuals = preload("res://scripts/core/readability_visuals.gd")
 ## 弹道可视化工厂（程序化贴图，不依赖美术资源）
 ##
 ## 背景：早期所有弹丸都是 8x8 的纯色方块，在深色地板 + 二十只怪的同屏混战里
@@ -187,3 +187,10 @@ static func attach_glow(node: Node2D, color: Color, size: float) -> Sprite2D:
 	node.add_child(sprite)
 	style_sprite(sprite, color, size, size, true)
 	return sprite
+
+static func clear_cache() -> void:
+	_bolt_texture = null
+	_orb_texture = null
+	_ring_texture = null
+	_gem_texture = null
+	_additive_material = null
