@@ -18,10 +18,9 @@ const THEME_BACKGROUND_MAP: Dictionary = {
 
 var is_cleared: bool = false
 var portal_spawned: bool = false
-## 普通传送门与玩家至少保持这么远（像素）。
-## 旧版传送门固定生成在房间正中：玩家清完波一转身就踩上去了，
-## 看起来像"这间还没打完就被换掉了"。
-const PORTAL_MIN_PLAYER_DISTANCE: float = 320.0
+## 普通传送门与玩家至少保持这么远（像素），避免原地换房；
+## 落点优先取玩家周围约 220px 的镜头内安全位置，不再刻意选最远点。
+const PORTAL_MIN_PLAYER_DISTANCE: float = 160.0
 ## 传送门落点四周必须留出的间隙（门体半径 24 + 16 安全边距）。
 ## 门是直径 48px 的圆，落点离墙 10px 也算"不在墙里"，
 ## 但门会有一半卡进墙里，玩家根本走不进去。
@@ -244,70 +243,55 @@ func get_spawn_position_on_edge() -> Vector2:
 
 # === 传送门 ===
 func get_safe_portal_position() -> Vector2:
-	## 普通传送门的落点：离玩家足够远，而且不在墙/柱子/道具里。
-	## 分层兜底：
-	##   ① 随机采样里"空旷且离玩家够远"的点（首选）
-	##   ② 随机采样里任意空旷点
-	##   ③ 网格扫描找空旷点（随机 32 次全被墙挡掉时用）
-	##   ④ 网格扫描找"不在障碍里"的点（房间几乎被塞满时用）
-	##   ⑤ 房间中心（最后兜底）
-	## 注意：旧版把"最远的采样点"在过滤空旷与否**之前**记下来当兜底，
-	## 结果兜底值可能就在墙里——房间被塞满时门直接卡进墙里打不开。
+	## 优先在玩家周围 220px 的近距环上找镜头内安全点；受阻时逐步扩大/收缩。
+	## 两层网格兜底只负责避免门卡墙，不再刻意把门放到房间最远处。
 	var bounds := get_room_bounds()
-	var margin := 64.0
 	var player_pos := _get_player_global_position()
-	var far_clear := Vector2.ZERO
-	var far_clear_dist := -1.0
-	var any_clear := Vector2.ZERO
-	var any_clear_dist := -1.0
-	for i in 32:
-		var local_pos := Vector2(
-			randf_range(bounds.position.x + margin, bounds.end.x - margin),
-			randf_range(bounds.position.y + margin, bounds.end.y - margin))
-		var world_pos := to_global(local_pos)
-		if not is_position_clear(world_pos):
-			continue
-		var dist := world_pos.distance_to(player_pos)
-		if dist > any_clear_dist:
-			any_clear_dist = dist
-			any_clear = world_pos
-		if dist >= PORTAL_MIN_PLAYER_DISTANCE and dist > far_clear_dist:
-			far_clear_dist = dist
-			far_clear = world_pos
-	if far_clear_dist >= 0.0:
-		return far_clear
-	if any_clear_dist >= 0.0:
-		return any_clear
-	var grid_clear := _scan_portal_grid(bounds, player_pos, PORTAL_CLEAR_RADIUS)
+	var local_player := to_local(player_pos)
+	for radius in [220.0, 180.0, 300.0, 160.0, 360.0]:
+		for i in 16:
+			var local_pos: Vector2 = local_player + Vector2.RIGHT.rotated(TAU * float(i) / 16.0) * radius
+			if not bounds.grow(-64.0).has_point(local_pos):
+				continue
+			var world_pos := to_global(local_pos)
+			if world_pos.distance_to(player_pos) >= PORTAL_MIN_PLAYER_DISTANCE \
+				and _is_portal_visible(world_pos) and is_position_clear(world_pos):
+				return world_pos
+	var grid_clear := _scan_portal_grid(bounds, player_pos, PORTAL_CLEAR_RADIUS, PORTAL_MIN_PLAYER_DISTANCE)
 	if grid_clear != Vector2.INF:
 		return grid_clear
-	var grid_any := _scan_portal_grid(bounds, player_pos, PORTAL_MIN_CLEAR_RADIUS)
+	var grid_any := _scan_portal_grid(bounds, player_pos, PORTAL_MIN_CLEAR_RADIUS, 24.0)
 	if grid_any != Vector2.INF:
 		return grid_any
 	return to_global(get_center())
 
-func _scan_portal_grid(bounds: Rect2, player_pos: Vector2, clearance: float) -> Vector2:
-	## 网格扫描：在房间里找离玩家最远、四周还留得出 clearance 间隙的点。
-	## 随机采样只有 32 次，碰上"房间几乎被墙填满"时会全军覆没，
-	## 这时退到网格扫描，保证能给出一个不卡进墙里的落点。
-	## 返回 Vector2.INF 表示这一层没找到。
+func _is_portal_visible(world_pos: Vector2) -> bool:
+	## 有玩家相机时，门必须落在画面内并留出 48px 边缘；无相机的测试环境不做限制。
+	var cameras := get_tree().get_nodes_in_group("camera")
+	if cameras.is_empty() or not (cameras[0] is Camera2D):
+		return true
+	var camera := cameras[0] as Camera2D
+	var view_size := camera.get_viewport_rect().size / camera.zoom
+	return Rect2(camera.global_position - view_size * 0.5, view_size).grow(-48.0).has_point(world_pos)
+
+func _scan_portal_grid(bounds: Rect2, player_pos: Vector2, clearance: float, min_distance: float) -> Vector2:
+	## 网格兜底选择离玩家最近且满足安全距离的点，避免“找不到门”。
 	var area := bounds.grow(-PORTAL_GRID_INSET)
-	var best := Vector2.ZERO
-	var best_dist := -1.0
-	var found := false
+	var best := Vector2.INF
+	var best_dist := INF
 	var x := area.position.x
 	while x <= area.end.x:
 		var y := area.position.y
 		while y <= area.end.y:
 			var world_pos := to_global(Vector2(x, y))
 			var dist := world_pos.distance_to(player_pos)
-			if dist > best_dist and is_position_clear_at(world_pos, clearance):
+			if dist >= min_distance and dist < best_dist and _is_portal_visible(world_pos) \
+				and is_position_clear_at(world_pos, clearance):
 				best_dist = dist
 				best = world_pos
-				found = true
 			y += PORTAL_GRID_STEP
 		x += PORTAL_GRID_STEP
-	return best if found else Vector2.INF
+	return best
 
 func is_position_clear(world_pos: Vector2) -> bool:
 	## 这个点四周有没有墙/柱子/道具（只查物理层 5）。

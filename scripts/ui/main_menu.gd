@@ -73,6 +73,11 @@ func _setup_settings_panel() -> void:
 		style.texture_margin_right = 26.0
 		style.texture_margin_top = 24.0
 		style.texture_margin_bottom = 24.0
+		# texture_margin 只控制九宫格，内容区必须单独留出；否则文字仍贴到花纹上。
+		style.content_margin_left = 44.0
+		style.content_margin_right = 44.0
+		style.content_margin_top = 56.0
+		style.content_margin_bottom = 32.0
 		settings_panel.add_theme_stylebox_override("panel", style)
 
 func _setup_background() -> void:
@@ -262,6 +267,7 @@ func _on_shop_pressed() -> void:
 	upgrade_shop.show_shop()
 
 func _on_settings_pressed() -> void:
+	_sync_fullscreen_check()
 	settings_panel.visible = true
 	settings_panel.modulate = Color(1, 1, 1, 0)
 	var tween := create_tween()
@@ -285,6 +291,11 @@ func _on_music_changed(value: float) -> void:
 
 func _on_sfx_changed(value: float) -> void:
 	AudioManager.set_sfx_volume(value)
+
+func _sync_fullscreen_check() -> void:
+	var mode := DisplayServer.window_get_mode()
+	fullscreen_check.set_pressed_no_signal(mode == DisplayServer.WINDOW_MODE_FULLSCREEN
+		or mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
 
 func _on_fullscreen_toggled(toggled: bool) -> void:
 	if toggled:

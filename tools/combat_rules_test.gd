@@ -404,7 +404,7 @@ func _test_shoot_speed_multiplier() -> void:
 # ==================== ⑤ 手动开火 / 自动瞄准 ====================
 
 func _test_manual_fire() -> void:
-	print("\n=== ⑤ 手动开火 / 自动瞄准 ===")
+	print("\n=== ⑤ 默认自动开火 / 鼠标瞄准 ===")
 	var scene_root := _make_scene_root()
 	var wm_script = load("res://scripts/weapons/weapon_manager.gd")
 
@@ -415,24 +415,18 @@ func _test_manual_fire() -> void:
 			_shots_fired += 1
 	)
 
-	# --- 5.1 非 auto_aim（手枪）：不按 shoot 就不开火 ---
+	# --- 5.1 非 auto_aim（手枪/散弹枪）：默认也自动开火，鼠标只控制方向 ---
 	var p1 := _instantiate("res://scenes/player/player.tscn")
 	p1.position = Vector2(640, 360)
 	scene_root.add_child(p1)
 	var wm1 = wm_script.new()
 	scene_root.add_child(wm1)
-	wm1.setup(p1, "pistol")
+	wm1.setup(p1, "shotgun")
 	await create_timer(1.0).timeout
-	_check(_shots_fired == 0,
-		"没按住 shoot 时手枪不开火（实际 %d 发）" % _shots_fired)
-
-	Input.action_press("shoot")
-	await create_timer(0.6).timeout
-	Input.action_release("shoot")
-	var shots_held: int = _shots_fired
-	_check(shots_held > 0, "按住 shoot 后手枪开火（%d 发）" % shots_held)
-	_check(wm1.shoot_timers["pistol"].wait_time > 0.0,
-		"开火后计时器按真实冷却 %.3f 秒计时" % wm1.shoot_timers["pistol"].wait_time)
+	_check(_shots_fired >= 3,
+		"散弹枪不按射击键也会自动发出弹丸（实际 %d 发）" % _shots_fired)
+	_check(wm1.shoot_timers["shotgun"].wait_time > 0.0,
+		"自动开火后计时器按真实冷却 %.3f 秒计时" % wm1.shoot_timers["shotgun"].wait_time)
 
 	# --- 5.2 auto_aim（魔法书）：不按 shoot 也保持自动开火 ---
 	var p2 := _instantiate("res://scenes/player/player.tscn")
@@ -475,8 +469,8 @@ func _test_portal_placement() -> void:
 	_check(portal != null, "普通传送门已生成")
 	if portal != null:
 		var dist: float = portal.global_position.distance_to(player.global_position)
-		_check(dist >= 300.0,
-			"传送门离玩家 %.0f 像素（期望 ≥300，避免清波后原地换房）" % dist)
+		_check(dist >= 150.0 and dist <= 360.0,
+			"传送门离玩家 %.0f 像素（期望 150~360，既不原地换房也不难以寻找）" % dist)
 		# 落点验证走独立物理查询，不依赖被测实现自己的判定函数
 		_check(not _is_blocked_at(portal.global_position, PORTAL_CLEAR_RADIUS),
 			"传送门四周留出 %d 像素间隙（独立物理查询验证）" % int(PORTAL_CLEAR_RADIUS))

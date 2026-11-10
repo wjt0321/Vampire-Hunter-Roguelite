@@ -114,16 +114,19 @@ func _build_settings_panel() -> void:
 	settings_panel.name = "SettingsPanel"
 	settings_panel.visible = false
 	settings_panel.custom_minimum_size = Vector2(360, 0)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.06, 0.05, 0.08, 0.98)
-	style.border_color = Color(0.62, 0.48, 0.22, 0.9)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(8)
-	style.content_margin_left = 20
-	style.content_margin_right = 20
-	style.content_margin_top = 16
-	style.content_margin_bottom = 16
-	settings_panel.add_theme_stylebox_override("panel", style)
+	var panel_texture := TextureManager.instance.get_ui_texture("stats_panel")
+	if panel_texture:
+		var style := StyleBoxTexture.new()
+		style.texture = panel_texture
+		style.texture_margin_left = 26.0
+		style.texture_margin_right = 26.0
+		style.texture_margin_top = 24.0
+		style.texture_margin_bottom = 24.0
+		style.content_margin_left = 44.0
+		style.content_margin_right = 44.0
+		style.content_margin_top = 56.0
+		style.content_margin_bottom = 32.0
+		settings_panel.add_theme_stylebox_override("panel", style)
 	$CenterContainer.add_child(settings_panel)
 
 	var vbox := VBoxContainer.new()

@@ -188,18 +188,9 @@ func _process(delta: float) -> void:
 		if shoot_timers.has(timer_key):
 			var timer: Timer = shoot_timers[timer_key]
 			if timer.is_stopped():
-				if not _can_fire(weapon):
-					continue
+				# 所有武器默认自动开火；auto_aim=false 只表示用鼠标指定方向。
 				_fire_weapon(weapon)
 				timer.start(get_fire_interval(weapon))
-
-func _can_fire(weapon) -> bool:
-	## 开火许可。自动瞄准武器保持自动开火；
-	## 非自动瞄准武器必须按住 shoot —— 早期所有武器都在自动开火，
-	## 玩家的"瞄准"完全不起作用，按不按鼠标都一样。
-	if "auto_aim" in weapon and bool(weapon.get("auto_aim")):
-		return true
-	return Input.is_action_pressed("shoot")
 
 func _get_shoot_speed_multiplier() -> float:
 	## 玩家当前的射速倍率（"射速 +20%" 这类升级和道具的汇总值）。
