@@ -981,17 +981,18 @@ func _spawn_blood_burst(weapon) -> void:
 	cloud.damage_multiplier = (player.get_total_damage_multiplier() if player else 1.0) * get_weapon_decay(weapon)
 	cloud.duration = weapon.get_scaled_cloud_duration()
 	cloud.tick_interval = 0.12
-	# 血色比旧版亮一档：旧 tint (0.72,0.06,0.12,0.6) 在暗地板上就是一团黑影
-	cloud.tint = Color(0.86, 0.12, 0.2, 0.5)
+	# 持续区域只保留淡红色范围提示，爆发瞬间由短时贴图承担。
+	cloud.tint = Color(0.86, 0.12, 0.2, 0.28)
 	cloud.set_size(weapon.get_scaled_cloud_size())
 	_ensure_current_scene()
 	if _current_scene:
 		_current_scene.add_child(cloud)
-	# 爆点演出：死亡爆炸贴图染血红 + 冲击环，"爆"字才立得住
+	# 1024px 源图按世界尺寸缩小到约 184px；普通混合避免多次爆发烧成一片白红。
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
 		vfx.spawn_texture_fx("explosion", target_pos,
-			{"scale_from": 0.5, "scale_to": 1.2, "color": Color(1.0, 0.35, 0.4), "duration": 0.45})
+			{"scale_from": 0.06, "scale_to": 0.18, "color": Color(1.0, 0.35, 0.4, 0.75),
+			 "duration": 0.35, "additive": false})
 		vfx.spawn_ground_marker(target_pos, 70.0, Color(0.8, 0.1, 0.18, 0.7), 0.5)
 	_play_shoot_sound(weapon.weapon_id)
 

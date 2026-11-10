@@ -17,14 +17,23 @@ var _enemies_in_cloud: Array = []
 @onready var sprite: Sprite2D = $Sprite2D
 
 func _ready() -> void:
-	# 创建范围视觉效果（颜色由 tint 决定：毒雾绿 / 血爆红）
+	# 正式雾团贴图统一按 128px 基准尺寸显示，与碰撞半径 64px 对齐。
 	if sprite:
-		if sprite.texture == null:
-			var img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
-			img.fill(tint)
-			sprite.texture = ImageTexture.create_from_image(img)
-		else:
+		var cloud_tex: Texture2D = TextureManager.instance.get_effect_texture("poison_spread")
+		if cloud_tex != null:
+			sprite.texture = cloud_tex
+			sprite.scale = Vector2(128.0 / cloud_tex.get_width(), 128.0 / cloud_tex.get_height())
 			sprite.modulate = tint
+		elif sprite.texture == null:
+			# 缺图时使用径向渐变，不再用实心方块充当毒雾。
+			var img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+			for y in 64:
+				for x in 64:
+					var dist := Vector2(x - 31.5, y - 31.5).length() / 32.0
+					var alpha := tint.a * clampf(1.0 - dist, 0.0, 1.0)
+					img.set_pixel(x, y, Color(tint.r, tint.g, tint.b, alpha))
+			sprite.texture = ImageTexture.create_from_image(img)
+			sprite.modulate = Color.WHITE
 	
 	# 连接信号（使用一次性连接避免重复）
 	if not body_entered.is_connected(_on_body_entered):
