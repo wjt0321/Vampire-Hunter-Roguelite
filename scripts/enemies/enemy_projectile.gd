@@ -12,10 +12,21 @@ extends Area2D
 ## 视觉尺寸（像素）。刻意比碰撞体略大：看着够大，判定仍然好躲
 @export var visual_length: float = 16.0
 @export var visual_thickness: float = 10.0
+## 暗边尺寸倍率与浓度。
+## 纯加色亮芯在浅色石砖上会"糊进"地板（加色只能变亮，亮地板本来就近饱和），
+## 所以在亮芯**底下**再垫一层不发光、比地板暗的柔边轮廓：
+## 深色地板靠亮芯发光，浅色地板靠暗边定形，两种场景至少有一种拉得开。
+const OUTLINE_SCALE: float = 1.55
+const OUTLINE_ALPHA: float = 0.72
+const OUTLINE_COLOR := Color(0.05, 0.02, 0.08)
 var direction: Vector2 = Vector2.RIGHT
 var damage: float = 10.0
 var distance_traveled: float = 0.0
 var _age: float = 0.0
+
+## 暗边材质全场共享：每个弹丸 new 一份会在同屏几十发时白占几十份等价资源，
+## 材质内容恒定，静态惰性创建一次即可（同 ProjectileVisuals.get_additive_material）。
+static var _outline_material: CanvasItemMaterial = null
 
 @onready var sprite: Sprite2D = $Sprite2D
 
@@ -37,6 +48,30 @@ func apply_visual_style(color: Color, length: float = 16.0, thickness: float = 1
 	if sprite == null:
 		return
 	ProjectileVisuals.style_sprite(sprite, color, length, thickness, true)
+	_ensure_outline(length, thickness)
+
+func _ensure_outline(length: float, thickness: float) -> void:
+	## 暗边必须在亮芯之前画（子节点顺序决定同 z_index 下的绘制顺序）。
+	## 只在尺寸变化时改缩放，换色不动它——暗边永远是同一层"剪影"。
+	var outline := get_node_or_null("Outline") as Sprite2D
+	if outline == null:
+		outline = Sprite2D.new()
+		outline.name = "Outline"
+		add_child(outline)
+		move_child(outline, 0)
+		outline.texture = ProjectileVisuals.get_orb_texture()
+		outline.material = _get_outline_material()
+		outline.modulate = Color(OUTLINE_COLOR.r, OUTLINE_COLOR.g, OUTLINE_COLOR.b, OUTLINE_ALPHA)
+	outline.z_index = 0
+	var tex_size: Vector2 = outline.texture.get_size()
+	var diameter: float = maxf(length, thickness) * OUTLINE_SCALE
+	outline.scale = Vector2(diameter / tex_size.x, diameter / tex_size.y)
+
+static func _get_outline_material() -> CanvasItemMaterial:
+	if _outline_material == null:
+		_outline_material = CanvasItemMaterial.new()
+		_outline_material.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+	return _outline_material
 
 func _physics_process(delta: float) -> void:
 	var move_distance := speed * delta
@@ -60,4 +95,19 @@ func _on_body_entered(body: Node2D) -> void:
 		queue_free()
 	# 碰到墙壁销毁
 	elif body.is_in_group("walls"):
+		queue_free()
+
+func _on_area_entered(area: Node2D) -> void:
+	## 玩家子弹能打掉敌方弹丸。
+	## 场景里一直连着 area_entered，但这个方法从来没实现过：
+	## 报错刷屏的同时，"玩家用子弹挡弹幕"这件事其实一次都没发生过。
+	## 口径：撞上就销毁**敌方弹丸**，玩家子弹照飞不误（谁挡谁，不互相抵消）。
+	##
+	## 判定用"是不是玩家弹丸"，而不是物理层：毒雾和血爆也挂在 LAYER_BULLET 上，
+	## 按层判断的话，玩家一圈毒雾就把射向自己的敌方弹幕一只只吃掉，
+	## 双方都看不见发生了什么。玩家弹丸（手枪弹 / 飞刀 / 弩箭 / 圣光弹）
+	## 都有 get_damage()，范围效果没有，用这个接口区分最省事。
+	if area == null or not is_instance_valid(area):
+		return
+	if area.has_method("get_damage"):
 		queue_free()

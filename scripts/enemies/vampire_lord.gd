@@ -4,7 +4,7 @@ extends "res://scripts/enemies/enemy_base.gd"
 ## 50% 血量以下进入狂暴模式
 
 enum BossPhase { NORMAL, ENRAGED, DESPERATE }
-enum AttackState { IDLE, BARRAGE, SUMMON, DASH, COOLDOWN, DASH_WINDUP, NOVA_WINDUP }
+enum AttackState { IDLE, BARRAGE, SUMMON, DASH, COOLDOWN, DASH_WINDUP, NOVA_WINDUP, BARRAGE_WINDUP }
 
 # === Boss 属性 ===
 @export var barrage_count: int = 8         # 弹幕数量
@@ -38,6 +38,10 @@ var dash_direction: Vector2 = Vector2.ZERO
 ## 冲刺前摇 / 新星前摇：给玩家 0.5 秒看清地面预警再躲
 const DASH_WINDUP: float = 0.45
 const NOVA_WINDUP: float = 0.55
+## 环形弹幕前摇。旧实现是"选到弹幕 → 同一帧就把一圈弹全射出去"，
+## 玩家连 Boss 抬手的动作都看不到，弹幕就已经糊在脸上了。
+## 现在先亮地面预警圈、站定蓄力 BARRAGE_WINDUP 秒，再真的开火。
+const BARRAGE_WINDUP: float = 0.6
 var windup_timer: float = 0.0
 var phase_changed: bool = false
 var desperate_changed: bool = false
@@ -317,6 +321,14 @@ func _physics_process(delta: float) -> void:
 				windup_timer = 0.0
 				_release_nova()
 
+		AttackState.BARRAGE_WINDUP:
+			# 蓄力期间站定不动：一边滑一边蓄力，玩家根本读不出"要开火了"
+			windup_timer += delta
+			velocity = Vector2.ZERO
+			if windup_timer >= BARRAGE_WINDUP:
+				windup_timer = 0.0
+				_release_barrage()
+
 		AttackState.DASH:
 			dash_timer += delta
 			velocity = dash_direction * dash_speed
@@ -414,10 +426,20 @@ func _choose_attack() -> void:
 			_attack_nova()
 
 func _attack_barrage() -> void:
-	## 弹幕攻击：向四周发射弹丸
-	attack_state = AttackState.COOLDOWN
+	## 环形弹幕：先前摇，再开火。
+	## 前摇期间 Boss 站定不动，只亮地面预警圈——玩家有机会拉开距离或者穿过去。
+	attack_state = AttackState.BARRAGE_WINDUP
+	windup_timer = 0.0
 	_play_attack_strip("attack1")
 	_telegraph_attack()
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx:
+		vfx.spawn_ground_marker(global_position, 170.0, _get_projectile_color(), BARRAGE_WINDUP)
+	print("🔥 弹幕蓄力!")
+
+func _release_barrage() -> void:
+	## 前摇结束：真的射出一圈弹丸
+	attack_state = AttackState.COOLDOWN
 	var count: int = barrage_count
 	for i in range(count):
 		var angle: float = (TAU / float(count)) * float(i)
@@ -445,8 +467,8 @@ func _get_projectile_color() -> Color:
 
 func _spawn_boss_projectile(direction: Vector2) -> void:
 	var proj := Area2D.new()
-	proj.collision_layer = 2
-	proj.collision_mask = 1
+	proj.collision_layer = GameConfig.LAYER_ENEMY_BULLET
+	proj.collision_mask = GameConfig.LAYER_PLAYER | GameConfig.LAYER_WALL
 
 	var shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()

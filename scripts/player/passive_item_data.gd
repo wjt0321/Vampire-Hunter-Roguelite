@@ -43,6 +43,28 @@ func level_up() -> bool:
 func is_max_level() -> bool:
 	return current_level >= MAX_LEVEL
 
+## 实际生效数值：套上 GameConfig 里的真实上限。
+## 冰冻之心满级 raw 25.9% 实际只给 25%，吸血獠牙 raw 29.1% 只给 28%。
+func effective_value_at(level: int) -> float:
+	return GameConfig.cap_passive_value(item_id, get_scaled_value_at(level))
+
+func effective_value() -> float:
+	return effective_value_at(current_level)
+
+func has_gain_at_next_level() -> bool:
+	## 再投一级到底涨不涨。上限截断之后存在"等级还能升、数值不动"的情况，
+	## 这时把卡留在选池里等于让玩家拿一次升级换一个数字没变的提示。
+	if is_max_level():
+		return false
+	var now: float = effective_value_at(current_level)
+	var next: float = effective_value_at(current_level + 1)
+	return absf(next - now) > GameConfig.PASSIVE_GAIN_EPSILON
+
+func is_effectively_maxed() -> bool:
+	## 池子/商店过滤用这个，而不是 is_max_level()：
+	## 只认 5 级的话，"撞了上限但没到 5 级"的道具会一直占着升级位。
+	return not has_gain_at_next_level()
+
 static func create_magnet() -> Resource:
 	var script = preload("res://scripts/player/passive_item_data.gd")
 	var item = script.new()

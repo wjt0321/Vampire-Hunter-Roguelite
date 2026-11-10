@@ -308,19 +308,44 @@ func _run() -> void:
 		"取不到 DPS 时不做修正（宁可不动也别乱动）")
 
 	# 集成：只留手枪时，估算 DPS 应当贴近期望值
-	# （前面测试已经给玩家发了散弹枪，不清掉的话两把武器的 DPS 会叠加）
+	#
+	# 前面几段会真的推进游戏（选卡、契约、进休息房），玩家身上可能留下
+	# 各种影响 DPS 的状态：射速卡 +20%、狂暴掉落物 ×1.5、暴击、狂战士之血、
+	# 甚至手枪自己升了级。⑨ 原本只复位了 current_level / damage_multiplier /
+	# crit_chance，漏掉射速倍率时会算出 19.2（= 16 × 1.2），偶发一条红。
+	# 这里按"基准 1.0 构筑"统一隔离，而不是放宽断言：
+	# 断言仍钉死手枪 4 伤害 / 0.25 间隔 = 16 DPS，以及软挂钩的上下限。
 	var saved_weapons: Array = wm.weapons.duplicate()
+	var saved_level: int = player.current_level
+	var saved_dmg: float = player.damage_multiplier
+	var saved_shoot: float = player.shoot_speed_multiplier
+	var saved_powerup: float = player.powerup_damage_mult
+	var saved_crit: float = player.crit_chance
+	var saved_berserker: float = player.berserker_bonus
+
 	var only_pistol: Array = []
 	for w in wm.weapons:
 		if String(w.weapon_id) == "pistol":
+			# 武器自身等级同样受属性卡/进化影响，一起归零到基准
+			w.current_level = 1
 			only_pistol.append(w)
 	wm.weapons = only_pistol
 	player.current_level = 1
 	player.damage_multiplier = 1.0
+	player.shoot_speed_multiplier = 1.0
+	player.powerup_damage_mult = 1.0
 	player.crit_chance = 0.0
+	player.berserker_bonus = 0.0
+
 	var est: float = main_scene._estimate_player_dps()
 	_check(absf(est - 16.0) < 0.6, "只有手枪时估算 DPS = %.1f（期望 16）" % est)
 	wm.weapons = saved_weapons
+	player.current_level = saved_level
+	player.shoot_speed_multiplier = saved_shoot
+	player.powerup_damage_mult = saved_powerup
+	player.crit_chance = saved_crit
+	player.berserker_bonus = saved_berserker
+	# damage_multiplier 不复位：下面一段要把它设成 4.0 验证软因子上升
 
 	# 把玩家做强：软因子应当上升，且不超过上限
 	player.damage_multiplier = 4.0

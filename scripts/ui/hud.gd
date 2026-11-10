@@ -14,6 +14,16 @@ extends CanvasLayer
 
 var silver_label: Label = null
 var evolution_label: Label = null
+## 三条横幅各自一个 Label。之前 toast / 进化都复用 wave_banner，
+## 所以"第 3 波"刚弹出就被"攻击 ×1.30"顶掉，玩家只看到一个瞬间的文字。
+var _evolution_banner: Label = null
+var _toast_banner: Label = null
+## Boss 战标志：Boss 有自己的血条和阶段，波次编号在这时是纯噪音
+var _boss_mode: bool = false
+
+var _wave_banner_tween: Tween = null
+var _evo_banner_tween: Tween = null
+var _toast_tween: Tween = null
 
 # === 局内 Build 面板（武器/被动等级一览） ===
 var player_ref: Node = null
@@ -40,13 +50,81 @@ func _ready() -> void:
 	# 其他 UI（升级卡）要给玩家即时反馈时按组找 HUD，不去猜节点路径
 	add_to_group("hud")
 	wave_banner.visible = false
+	_apply_hud_style()
 	_setup_bar_textures()
 	_create_silver_label()
 	_create_evolution_label()
+	_create_banner_stage()
 	_create_shield_indicator()
 	_create_build_panel()
 	_create_event_label()
 	_connect_achievement_fx()
+
+func _apply_hud_style() -> void:
+	## 720p 是设计基准分辨率（project.godot 1280×720）。TopBar 原来沿用主题默认 12~14 号，
+	## 在 720p 上压在暗色地板背景上基本读不出来。这里统一抬到 16~20 号并加描边：
+	## 描边比加粗更有效——文字叠在血红色地砖或特效上时，靠字形笔画本身没有对比。
+	for lbl: Label in [wave_label, kills_label, room_label, time_label, level_label]:
+		if lbl == null:
+			continue
+		lbl.add_theme_color_override("font_outline_color", Color(0.03, 0.02, 0.05, 0.95))
+		lbl.add_theme_constant_override("outline_size", 3)
+		lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.55))
+		lbl.add_theme_constant_override("shadow_offset_x", 1)
+		lbl.add_theme_constant_override("shadow_offset_y", 1)
+	wave_label.add_theme_font_size_override("font_size", 20)
+	wave_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.72))
+	kills_label.add_theme_font_size_override("font_size", 16)
+	kills_label.add_theme_color_override("font_color", Color(0.94, 0.88, 0.86))
+	room_label.add_theme_font_size_override("font_size", 16)
+	room_label.add_theme_color_override("font_color", Color(0.82, 0.88, 1.0))
+	time_label.add_theme_font_size_override("font_size", 16)
+	time_label.add_theme_color_override("font_color", Color(0.86, 0.86, 0.9))
+	level_label.add_theme_font_size_override("font_size", 16)
+	level_label.add_theme_color_override("font_color", Color(0.8, 0.88, 1.0))
+	hp_label.add_theme_color_override("font_outline_color", Color(0.03, 0.02, 0.05, 0.95))
+	hp_label.add_theme_constant_override("outline_size", 3)
+
+func _create_banner_stage() -> void:
+	## 三条横幅分三个高度：波次最上、进化居中、toast 最下。
+	## 分开的另一个理由是生命周期不同——波次挂 1.5s，进化 2.6s，toast 1.1s；
+	## 共用一个 Label 时短的会把长的提前掐断。
+	wave_banner.add_theme_font_size_override("font_size", 34)
+	wave_banner.add_theme_color_override("font_outline_color", Color(0.02, 0.01, 0.03, 0.95))
+	wave_banner.add_theme_constant_override("outline_size", 6)
+	_set_banner_rect(wave_banner, -120, -60)
+
+	_evolution_banner = _make_stage_label("EvolutionBanner", 24, Color(1.0, 0.86, 0.42))
+	_set_banner_rect(_evolution_banner, -40, 4)
+
+	_toast_banner = _make_stage_label("ToastBanner", 19, Color(0.92, 0.96, 1.0))
+	_set_banner_rect(_toast_banner, 26, 62)
+
+func _make_stage_label(node_name: String, font_size: int, color: Color) -> Label:
+	var lbl := Label.new()
+	lbl.name = node_name
+	lbl.text = ""
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lbl.add_theme_font_size_override("font_size", font_size)
+	lbl.add_theme_color_override("font_color", color)
+	lbl.add_theme_color_override("font_outline_color", Color(0.02, 0.01, 0.03, 0.95))
+	lbl.add_theme_constant_override("outline_size", 5)
+	lbl.visible = false
+	add_child(lbl)
+	return lbl
+
+func _set_banner_rect(lbl: Label, top: float, bottom: float) -> void:
+	lbl.set_anchors_preset(Control.PRESET_CENTER)
+	lbl.anchor_left = 0.5
+	lbl.anchor_right = 0.5
+	lbl.anchor_top = 0.5
+	lbl.anchor_bottom = 0.5
+	lbl.offset_left = -300.0
+	lbl.offset_right = 300.0
+	lbl.offset_top = top
+	lbl.offset_bottom = bottom
 
 func _create_event_label() -> void:
 	## 局内目标事件的状态行（"猎杀 12 秒" / "守卫 ×3"）。
@@ -350,28 +428,59 @@ func _stop_evo_pulse() -> void:
 		evolution_label.modulate = Color.WHITE
 
 func show_evolution_banner(text: String) -> void:
-	## 宝箱进化时的横幅
-	wave_banner.text = "进化：%s" % text
-	wave_banner.visible = true
-	wave_banner.modulate = Color(1, 1, 1, 1)
-	var tween := create_tween()
-	tween.tween_interval(1.6)
-	tween.tween_property(wave_banner, "modulate:a", 0.0, 0.5)
-	tween.tween_callback(func(): wave_banner.visible = false)
+	## 宝箱进化时的横幅。独立节点：进化是"这一局最值得高兴的时刻"，
+	## 和 1 秒就走的 toast 挤在同一个位置会被顺手抹掉。
+	if _evolution_banner == null:
+		return
+	if _evo_banner_tween != null and _evo_banner_tween.is_valid():
+		_evo_banner_tween.kill()
+	_evolution_banner.text = "进化 · %s" % text
+	_evolution_banner.visible = true
+	_evolution_banner.modulate = Color(1, 1, 1, 1)
+	_evo_banner_tween = create_tween()
+	_evo_banner_tween.tween_interval(2.2)
+	_evo_banner_tween.tween_property(_evolution_banner, "modulate:a", 0.0, 0.5)
+	_evo_banner_tween.tween_callback(func(): _evolution_banner.visible = false)
 
 func show_toast(text: String) -> void:
-	## 一行短提示，复用波次横幅的位置。
-	## 用在"选项生效了"这种需要立刻被看见、但不值得开面板的时刻
+	## 一行短提示：用在"选项生效了"这种需要立刻被看见、但不值得开面板的时刻
 	## （例如补给卡把攻击 ×1.30 抬到 ×1.40）。
-	if wave_banner == null:
+	## 走自己的 Label：早期复用波次横幅，选完升级顺手一个 toast 就把
+	## "第 4 波"顶掉了，玩家既没看到波次也没看清数值。
+	if _toast_banner == null:
 		return
-	wave_banner.text = text
-	wave_banner.visible = true
-	wave_banner.modulate = Color(1, 1, 1, 1)
-	var tween := create_tween()
-	tween.tween_interval(1.1)
-	tween.tween_property(wave_banner, "modulate:a", 0.0, 0.4)
-	tween.tween_callback(func(): wave_banner.visible = false)
+	if _toast_tween != null and _toast_tween.is_valid():
+		_toast_tween.kill()
+	_toast_banner.text = text
+	_toast_banner.visible = true
+	_toast_banner.modulate = Color(1, 1, 1, 1)
+	_toast_tween = create_tween()
+	_toast_tween.tween_interval(1.1)
+	_toast_tween.tween_property(_toast_banner, "modulate:a", 0.0, 0.4)
+	_toast_tween.tween_callback(func(): _toast_banner.visible = false)
+
+## Boss 房里 main 会往波次标签写这个占位文案（GameConfig.ROOM_LABELS 的 boss 项）。
+## Boss 名和阶段已经在血条上，再挂一个 "BOSS" 是同一个信息说两遍。
+const BOSS_PLACEHOLDER := GameConfig.ROOM_LABEL_BOSS
+
+func set_boss_mode(active: bool) -> void:
+	## Boss 战：波次编号没有意义（Boss 不计入波次，wave_label 会永远停在上一个数字），
+	## 继续挂着只会让玩家以为"还差几波才打完"。留计时/房间/击杀这些真信息。
+	_boss_mode = active
+	if active:
+		_hide_wave_banner()
+		wave_label.visible = false
+		return
+	# 退出时不无条件显示：房间里躺着的还是占位文案 "BOSS"，
+	# 打开 visible 会先闪一下这个已经没有意义的词，直到下一句
+	# "拾取战利品…" 把它覆盖。占位文案不复活的判断交给下面这句。
+	if wave_label.text == BOSS_PLACEHOLDER:
+		# 连文案一起清掉：只藏 visible 的话，任何一条"把 visible 打开"的路径
+		# 都会让这个词复活，下次又得靠运气避开。
+		wave_label.text = ""
+		wave_label.visible = false
+		return
+	wave_label.visible = true
 
 func _create_silver_label() -> void:
 	## 银币计数放在击杀数旁边：代码建，避免为一个 Label 去改 hud.tscn
@@ -402,7 +511,7 @@ func _process(delta: float) -> void:
 	game_time += delta
 	var minutes := int(game_time) / 60
 	var seconds := int(game_time) % 60
-	time_label.text = "⏱ %02d:%02d" % [minutes, seconds]
+	time_label.text = "%02d:%02d" % [minutes, seconds]
 	_update_shield_indicator()
 	_build_refresh_timer += delta
 	if _build_refresh_timer >= 0.25:
@@ -435,7 +544,14 @@ func update_xp(current_xp: int, xp_needed: int, level: int) -> void:
 	level_label.text = "Lv.%d" % level
 
 func update_wave(wave_number: int) -> void:
-	wave_label.text = "Wave %d" % wave_number
+	## Boss 战里不写波次：Boss 不计入波次，这个数字会永远停在进场前那一波。
+	if _boss_mode:
+		_hide_wave_banner()
+		return
+	wave_label.text = "第 %d 波" % wave_number
+	# Boss 模式会把它藏起来，退出后如果只改文字不改 visible，
+	# 波次标签就再也不出现了（"下一波开始"是唯一该把它请回来的时机）。
+	wave_label.visible = true
 	wave_label.modulate = Color(1, 1, 1, 1)
 	_show_wave_banner(wave_number)
 
@@ -446,11 +562,18 @@ func set_wave_status(text: String, dim: bool = false) -> void:
 	## 「wave4 没有任何东西」说的就是这个：HUD 显示 Wave 4，房里是宝箱房。
 	if wave_label == null:
 		return
+	if _boss_mode:
+		# Boss 房也在走这条路径（main 会写 "BOSS"）。Boss 有自己的血条和名字，
+		# 再挂一个"BOSS"标签属于同一个信息说两遍，还挤掉真正需要的空间。
+		wave_label.visible = false
+		wave_label.text = text
+		return
 	wave_label.text = text
+	wave_label.visible = true
 	wave_label.modulate = Color(1, 1, 1, 0.45) if dim else Color(1, 1, 1, 1)
 
 func update_kills(total_kills: int) -> void:
-	kills_label.text = "击杀: %d" % total_kills
+	kills_label.text = "击杀 %d" % total_kills
 
 func update_room(room_number: int) -> void:
 	room_label.text = "房间 %d" % room_number
@@ -512,14 +635,23 @@ func _spawn_banner_glow() -> void:
 	tw.chain().tween_callback(glow.queue_free)
 
 func _show_wave_banner(wave_number: int) -> void:
-	wave_banner.text = "=== WAVE %d ===" % wave_number
+	if _boss_mode:
+		return
+	if _wave_banner_tween != null and _wave_banner_tween.is_valid():
+		_wave_banner_tween.kill()
+	wave_banner.text = "第 %d 波" % wave_number
 	wave_banner.visible = true
 	wave_banner.modulate = Color(1, 1, 1, 1)
 	_spawn_banner_glow()
-	var tween := create_tween()
-	tween.tween_interval(1.5)
-	tween.tween_property(wave_banner, "modulate:a", 0.0, 0.5)
-	tween.tween_callback(func(): wave_banner.visible = false)
+	_wave_banner_tween = create_tween()
+	_wave_banner_tween.tween_interval(1.5)
+	_wave_banner_tween.tween_property(wave_banner, "modulate:a", 0.0, 0.5)
+	_wave_banner_tween.tween_callback(func(): wave_banner.visible = false)
+
+func _hide_wave_banner() -> void:
+	if _wave_banner_tween != null and _wave_banner_tween.is_valid():
+		_wave_banner_tween.kill()
+	wave_banner.visible = false
 
 func _setup_bar_textures() -> void:
 	## 设置血条和经验条的纹理

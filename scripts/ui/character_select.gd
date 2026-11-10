@@ -17,6 +17,7 @@ const CARD_SIZE := Vector2(340, 420)
 
 func _ready() -> void:
 	visible = false
+	back_btn.focus_mode = Control.FOCUS_NONE
 	back_btn.pressed.connect(_on_back_pressed)
 	save_mgr = get_node_or_null("/root/SaveManager")
 	_setup_panel_style()
@@ -239,6 +240,8 @@ func _create_card(char_data: Resource) -> PanelContainer:
 
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(0, 42)
+	# Space 是开火键。角色卡按钮留在键盘焦点链里，按 Space 会直接换角色。
+	btn.focus_mode = Control.FOCUS_NONE
 	_apply_button_style(btn)
 	if not is_unlocked:
 		btn.text = "解锁 (血晶 %d)" % char_data.unlock_cost

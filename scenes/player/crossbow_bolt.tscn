@@ -8,7 +8,7 @@ size = Vector2(12, 4)
 
 [node name="CrossbowBolt" type="Area2D"]
 collision_layer = 4
-collision_mask = 2
+collision_mask = 18
 script = ExtResource("1_bolt")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]

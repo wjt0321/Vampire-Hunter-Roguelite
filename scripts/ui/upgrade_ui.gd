@@ -21,6 +21,9 @@ var banished_keys: Array = []
 var banish_mode: bool = false
 ## 当前展示的 3 个选项（重抽/测试需要读它）
 var current_options: Array = []
+## 局内固定随机源。每日挑战由 main 注入（同一种子 → 同一手牌）；
+## 普通局为空，继续走全局随机，行为不变。
+var rng: RandomNumberGenerator = null
 
 var _reroll_button: Button = null
 var _skip_button: Button = null
@@ -57,7 +60,7 @@ func show_upgrade(player_node: Node, weapon_mgr: Node = null) -> void:
 	weapon_manager = weapon_mgr
 	visible = true
 	banish_mode = false
-	get_tree().paused = true
+	PauseController.acquire(self)
 
 	_render_options()
 	_refresh_footer()
@@ -75,10 +78,9 @@ func _render_options() -> void:
 	## 重建时会和新按钮同时存在于容器里（重抽时最明显——6 张卡挤在一起）。
 	var available_options := _get_available_options()
 	if available_options.is_empty():
-		available_options = _get_basic_rewards()
+		available_options = _available_basic_rewards()
 
-	available_options.shuffle()
-	current_options = available_options.slice(0, mini(3, available_options.size()))
+	current_options = draw_options(available_options)
 
 	for child in options_container.get_children():
 		options_container.remove_child(child)
@@ -127,11 +129,13 @@ func _decorate_option(option: Dictionary) -> Dictionary:
 				opt["badge"] = "NEW"
 				opt["badge_color"] = Color(0.42, 0.95, 0.58)
 				opt["level_text"] = "新被动 · Lv.1"
-				# 新拿到的也写明幅度：只写"命中时概率流血"等于没告诉你多大概率
+				# 新拿到的只写"拿到手就是什么效果"。
+				# 之前写 get_scaled_value_at(1) → get_scaled_value_at(2)，
+				# 第一次见到这张卡的玩家看到"流血 25% → 33%"，读起来像"拿了立刻升一级"，
+				# 而且一半信息在讲他还没做的决定。升级前后对比只留给"升级"分支。
 				var fresh = ItemCatalog.create_passive(opt_id)
 				if fresh != null:
-					opt["desc"] = _passive_value_text(opt_id,
-						fresh.get_scaled_value_at(1), fresh.get_scaled_value_at(2))
+					opt["desc"] = _passive_value_current(opt_id, fresh.get_scaled_value_at(1))
 			else:
 				var cur: int = int(p.current_level)
 				opt["badge"] = "升级"
@@ -171,22 +175,86 @@ func _find_owned_passive(passive_id: String):
 			return p
 	return null
 
+func _cap_passive_value(passive_id: String, value: float) -> float:
+	## 被动预览必须和 player._apply_passive_effect() 用同一套上限。
+	## 表在 GameConfig.cap_passive_value()：这里再抄一份 minf，
+	## 以后改上限就会漏掉一边，卡面又开始承诺不存在的增益。
+	return GameConfig.cap_passive_value(passive_id, value)
+
+func _passive_value_current(passive_id: String, value: float) -> String:
+	## 新被动只有"当前这一级的效果"，没有下一级对比。
+	## 单位和 _passive_value_text 保持一致：同一张卡在两处读起来应该是同一种说法。
+	value = _cap_passive_value(passive_id, value)
+	match passive_id:
+		"shield":
+			return "每 %.0fs 生成一次护盾" % value
+		"lightning_shield":
+			return "受击反击 %.0f 伤害" % value
+		"magnet":
+			# 磁铁的 base_value 是"倍率"，实际加成 = 50px × 倍率。
+			# 按 (倍率 - 1) 折算成百分比会在 Lv.1 写出 "+0%" ——
+			# 而 Lv.1 其实已经给了 +50px，玩家会以为这件道具是空卡。
+			return "拾取范围 +%.0f" % (GameConfig.MAGNET_BASE_RANGE * value)
+		"blood_edge":
+			return "命中时 %.0f%% 几率使敌人流血" % (value * 100.0)
+		"frost_bind":
+			return "命中时 %.0f%% 几率使敌人减速" % (value * 100.0)
+		"blood_drain":
+			return "造成伤害的 %.1f%% 转为生命" % (value * 100.0)
+		"regeneration":
+			return "每 5 秒恢复 %.0f%% 最大生命" % (value * 100.0)
+		"greed_ring":
+			return "经验获取 +%.0f%%" % (value * 100.0)
+		"berserker_blood":
+			return "低血时伤害 +%.0f%%" % (value * 100.0)
+		"frozen_heart":
+			return "命中 %.0f%% 几率冻结敌人" % (value * 100.0)
+		"shadow_cloak":
+			return "闪避几率 +%.0f%%" % (value * 100.0)
+		"vampiric_fang":
+			return "击杀 %.0f%% 几率回血" % (value * 100.0)
+		"swift_boots":
+			return "移动速度 +%.0f%%" % (value * 100.0)
+		"lucky_clover":
+			return "暴击几率 +%.0f%%" % (value * 100.0)
+		_:
+			return "效果 %.0f%%" % (value * 100.0)
+
 func _passive_value_text(passive_id: String, cur_value: float, next_value: float) -> String:
 	## 被动数值量级不统一（有的是倍率 1.3、有的是 0.08、有的是 30 秒），
 	## 所以按 id 决定单位，别用一个通式硬套
+	cur_value = _cap_passive_value(passive_id, cur_value)
+	next_value = _cap_passive_value(passive_id, next_value)
 	match passive_id:
 		"shield":
 			return "冷却 %.0fs → %.0fs" % [cur_value, next_value]
 		"lightning_shield":
 			return "反击 %.0f → %.0f 伤害" % [cur_value, next_value]
 		"magnet":
-			return "吸附范围 +%.0f%% → +%.0f%%" % [(cur_value - 1.0) * 100.0, (next_value - 1.0) * 100.0]
+			return "拾取范围 +%.0f → +%.0f" % [
+				GameConfig.MAGNET_BASE_RANGE * cur_value, GameConfig.MAGNET_BASE_RANGE * next_value]
 		"blood_edge":
 			return "流血几率 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
 		"frost_bind":
 			return "减速几率 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
 		"blood_drain":
 			return "伤害转治疗 %.1f%% → %.1f%%" % [cur_value * 100.0, next_value * 100.0]
+		"regeneration":
+			return "每 5 秒回复 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
+		"greed_ring":
+			return "经验获取 +%.0f%% → +%.0f%%" % [cur_value * 100.0, next_value * 100.0]
+		"berserker_blood":
+			return "低血时伤害 +%.0f%% → +%.0f%%" % [cur_value * 100.0, next_value * 100.0]
+		"frozen_heart":
+			return "冻结几率 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
+		"shadow_cloak":
+			return "闪避几率 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
+		"vampiric_fang":
+			return "回血几率 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
+		"swift_boots":
+			return "移动速度 +%.0f%% → +%.0f%%" % [cur_value * 100.0, next_value * 100.0]
+		"lucky_clover":
+			return "暴击几率 +%.0f%% → +%.0f%%" % [cur_value * 100.0, next_value * 100.0]
 		_:
 			return "效果 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
 
@@ -194,23 +262,26 @@ func _stat_preview(stat_id: String) -> String:
 	## 属性卡显示"现在 → 选完"，让加成幅度可比较
 	if player == null:
 		return ""
+	var lv := "　" + _stat_level_text(stat_id)
 	match stat_id:
 		"damage":
-			return "攻击 ×%.2f → ×%.2f" % [player.damage_multiplier,
-				player.damage_multiplier + GameConfig.UPGRADE_DAMAGE_MULT]
+			return "攻击 ×%.2f → ×%.2f%s" % [player.damage_multiplier,
+				player.damage_multiplier + GameConfig.UPGRADE_DAMAGE_MULT, lv]
 		"speed":
-			return "移速 ×%.2f → ×%.2f" % [player.speed_multiplier,
-				player.speed_multiplier + GameConfig.UPGRADE_SPEED_MULT]
+			return "移速 ×%.2f → ×%.2f%s" % [player.speed_multiplier,
+				player.speed_multiplier + GameConfig.UPGRADE_SPEED_MULT, lv]
 		"shoot_speed":
-			return "射速 ×%.2f → ×%.2f" % [player.shoot_speed_multiplier,
-				player.shoot_speed_multiplier + GameConfig.UPGRADE_SHOOT_SPEED_MULT]
+			return "射速 ×%.2f → ×%.2f%s" % [player.shoot_speed_multiplier,
+				player.shoot_speed_multiplier + GameConfig.UPGRADE_SHOOT_SPEED_MULT, lv]
 		"max_hp":
-			return "生命 %.0f → %.0f" % [player.max_hp, player.max_hp + GameConfig.UPGRADE_MAX_HP]
+			return "生命 %.0f → %.0f%s" % [player.max_hp,
+				player.max_hp + GameConfig.UPGRADE_MAX_HP, lv]
 		"armor":
-			return "护甲 %.0f → %.0f" % [player.armor, player.armor + GameConfig.UPGRADE_ARMOR]
+			return "护甲 %.0f → %.0f%s" % [player.armor,
+				player.armor + GameConfig.UPGRADE_ARMOR, lv]
 		"pickup_range":
-			return "拾取 %.0f → %.0f" % [player.pickup_range_bonus,
-				player.pickup_range_bonus + GameConfig.UPGRADE_PICKUP_RANGE]
+			return "拾取 %.0f → %.0f%s" % [player.pickup_range_bonus,
+				player.pickup_range_bonus + GameConfig.UPGRADE_PICKUP_RANGE, lv]
 	return ""
 
 func _basic_preview(reward_id: String) -> String:
@@ -234,6 +305,28 @@ func _basic_preview(reward_id: String) -> String:
 	return ""
 
 # ==================== 重抽 / 跳过 ====================
+
+## 按当前随机源抽牌。rng 为空时用全局随机（普通局行为不变）。
+## 抽牌与渲染分开：测试可以直接调这里断言"同种子同手牌"，
+## 不用真的把界面搭起来。
+## count <= 0 表示"整池洗一遍不截断"（洗牌/复现用）；默认截成手牌张数。
+func draw_options(options: Array, count: int = 3) -> Array:
+	var pool: Array = options.duplicate()
+	if rng != null:
+		_shuffle_with_rng(pool)
+	else:
+		pool.shuffle()
+	if count <= 0:
+		return pool
+	return pool.slice(0, mini(count, pool.size()))
+
+func _shuffle_with_rng(items: Array) -> void:
+	## 与 Array.shuffle 同样的 Fisher-Yates，只是随机数来自注入的 rng
+	for i in range(items.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp: Variant = items[i]
+		items[i] = items[j]
+		items[j] = tmp
 
 func _build_footer() -> void:
 	var vbox := $CenterContainer/PanelContainer/VBoxContainer as VBoxContainer
@@ -406,16 +499,24 @@ func _close_and_emit() -> void:
 	tween.tween_property(panel, "modulate:a", 0.0, 0.15)
 	tween.tween_callback(func():
 		visible = false
-		get_tree().paused = false
+		PauseController.release(self)
 		upgrade_selected.emit()
 	)
 
 func _get_available_options() -> Array:
 	## 获取可用的升级选项
 	var available: Array = []
-	
-	# 添加属性升级（总是可用）
-	available.append_array(ItemCatalog.STATS.duplicate())
+
+	# 添加属性升级（单卡 5 级上限 + 共享总预算；满级或预算用尽的都不再进池）
+	# stat_available 记录"还有没有能升级的属性卡"：属性卡全满或预算用尽之后
+	# 就要把既有补给卡放回池子里，否则这条分支永远走不到。
+	var stat_available: bool = false
+	if not _is_stat_budget_exhausted():
+		for stat_opt in ItemCatalog.STATS:
+			if _is_stat_maxed(stat_opt["id"]):
+				continue
+			stat_available = true
+			available.append(stat_opt)
 	
 	# 武器槽位信息
 	var owned_ids: Array = []
@@ -453,7 +554,44 @@ func _get_available_options() -> Array:
 				kept.append(opt)
 		available = kept
 
+	# 属性卡全部满级 / 预算用尽 → 启用既有补给卡。
+	# 旧逻辑是"整个池子空了才用补给卡"，可属性卡没有上限时池子永远不空，
+	# 补给卡这条分支等于一段永远走不到的死代码。
+	if not stat_available:
+		available.append_array(_available_basic_rewards())
+
 	return available
+
+func _is_stat_maxed(stat_id: String) -> bool:
+	## 属性卡是否已满级。没有玩家时一律当作没满（测试与预览都走这里）
+	if player == null or not player.has_method("is_stat_maxed"):
+		return false
+	return bool(player.call("is_stat_maxed", stat_id))
+
+func _is_stat_budget_exhausted() -> bool:
+	## 属性卡的共享总预算是否用满。没有玩家时一律当作没满
+	if player == null or not player.has_method("is_stat_budget_exhausted"):
+		return false
+	return bool(player.call("is_stat_budget_exhausted"))
+
+func _stat_level_text(stat_id: String) -> String:
+	## 属性卡提示：单卡等级 + 本局共享属性点用量，例如 "Lv.2/5 · 属性点 8/12"。
+	## 只给单卡等级时，玩家看不出"这局还能买几张属性"，会在"再开一条线"和
+	## "把这条练满"之间瞎猜，直到池子空了才发现触顶。
+	if player == null or not player.has_method("get_stat_level"):
+		return ""
+	if not player.has_method("get_stat_max_level"):
+		return ""
+	var cur: int = int(player.call("get_stat_level", stat_id))
+	var max_lv: int = int(player.call("get_stat_max_level"))
+	# 显示的是"选完之后的等级"。夹到上限：满级的卡写 "Lv.6/5" 是自相矛盾的
+	var text: String = "Lv.%d/%d" % [mini(cur + 1, max_lv), max_lv]
+	if player.has_method("get_total_stat_level") and player.has_method("get_total_stat_max_level"):
+		var used: int = int(player.call("get_total_stat_level"))
+		var budget: int = int(player.call("get_total_stat_max_level"))
+		if budget > 0:
+			text += " · 属性点 %d/%d" % [used, budget]
+	return text
 
 func _is_weapon_evolved(weapon_id: String) -> bool:
 	## 检查武器是否已进化
@@ -462,14 +600,17 @@ func _is_weapon_evolved(weapon_id: String) -> bool:
 	return weapon_manager.is_weapon_evolved(weapon_id)
 
 func _is_passive_maxed(passive_id: String) -> bool:
-	## 检查被动道具是否已满级
+	## 满级判定统一走 passive_item_data.is_effectively_maxed()：
+	## 只看 is_max_level() 会漏掉"上限已经截住、下一级不涨"的道具——
+	## 那种卡进了池子，玩家选完会发现卡面数字和选之前一模一样。
 	if player == null or not player.has_method("get_owned_passive_items"):
 		return false
 
 	for item in player.passive_items:
 		if item.item_id == passive_id:
-			# 使用 is_max_level() 方法检查是否满级
-			return item.is_max_level()
+			if item.has_method("is_effectively_maxed"):
+				return bool(item.is_effectively_maxed())
+			return bool(item.is_max_level())
 	return false
 
 func _get_basic_rewards() -> Array:
@@ -482,9 +623,25 @@ func _get_basic_rewards() -> Array:
 		{"id": "damage_boost", "name": "伤害提升", "desc": "攻击倍率 +10%（本局永久）", "type": "basic"},
 	]
 
+func _available_basic_rewards() -> Array:
+	## 补给卡的**唯一出口**。
+	##
+	## 所有要给补给卡的地方都必须走这里。之前有两个出口：
+	## 选池构建（过滤了放逐）和"池子空了"的兜底（没过滤）——
+	## 玩家放逐了"生命恢复"，兜底又把同一张卡塞回池子，放逐形同虚设。
+	var kept: Array = []
+	for basic in _get_basic_rewards():
+		if is_banished(basic):
+			continue
+		kept.append(basic)
+	return kept
+
 func _create_option_button(option: Dictionary) -> Button:
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(222, 196)
+	# Space 是开火键。按钮可聚焦时 Space 会被当成"按下当前焦点按钮"，
+	# 玩家在面板还开着的那一帧按住开火就会直接选掉一张卡。
+	btn.focus_mode = Control.FOCUS_NONE
 	# 大卡放大 3% 就够，5% 会让三张卡在屏幕上互相压边
 	UiFx.hover(btn, 1.03)
 	if banish_mode:

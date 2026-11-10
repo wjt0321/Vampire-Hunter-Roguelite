@@ -41,7 +41,7 @@ func show_boss_bar(boss_name: String) -> void:
 
 func end_intro() -> void:
 	## 登场演出结束：血条已填满，进入正常战斗状态
-	phase_label.text = "Phase 1"
+	phase_label.text = "第 1 阶段"
 	phase_label.modulate = Color.WHITE
 
 func update_hp(current: float, max_val: float) -> void:
@@ -50,12 +50,12 @@ func update_hp(current: float, max_val: float) -> void:
 func update_phase(phase: int) -> void:
 	match phase:
 		1:
-			phase_label.text = "狂暴模式!"
+			phase_label.text = "第 2 阶段 · 狂暴"
 			phase_label.modulate = Color(1.0, 0.3, 0.3, 1.0)
 			# 血条颜色变红
 			hp_bar.modulate = Color(1.5, 0.5, 0.5, 1.0)
 		2:
-			phase_label.text = "绝望模式!"
+			phase_label.text = "第 3 阶段 · 绝望"
 			phase_label.modulate = Color(1.0, 0.1, 0.1, 1.0)
 			hp_bar.modulate = Color(2.0, 0.3, 0.3, 1.0)
 

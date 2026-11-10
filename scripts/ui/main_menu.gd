@@ -60,6 +60,11 @@ func _setup_settings_panel() -> void:
 	## 设置面板使用统一面板纹理。
 	## stats_panel 纹理自带约 24px 金框；不设 texture_margin 时 PanelContainer
 	## 会把内容从纹理边缘开始摆（滑块/按钮压在金框外面），必须九宫格拉出内容区。
+	# 设置面板里的 CheckButton / 滑块同样是键盘可聚焦控件，
+	# 聚焦后 Space 会被它们吃掉（Space 是开火键）。
+	fullscreen_check.focus_mode = Control.FOCUS_NONE
+	music_slider.focus_mode = Control.FOCUS_NONE
+	sfx_slider.focus_mode = Control.FOCUS_NONE
 	var panel_texture := TextureManager.instance.get_ui_texture("stats_panel")
 	if panel_texture:
 		var style := StyleBoxTexture.new()
@@ -157,6 +162,7 @@ func _create_daily_button() -> void:
 	daily_btn.custom_minimum_size = Vector2(280, 45)
 	daily_btn.add_theme_font_size_override("font_size", 18)
 	daily_btn.pivot_offset = Vector2(140, 22)
+	daily_btn.focus_mode = Control.FOCUS_NONE
 	box.add_child(daily_btn)
 	box.move_child(daily_btn, shop_btn.get_index() + 1)
 	daily_btn.pressed.connect(_on_daily_pressed)
@@ -168,6 +174,10 @@ func _create_daily_button() -> void:
 
 func _setup_button_effects() -> void:
 	for btn in [start_btn, char_btn, shop_btn, daily_btn, settings_btn, quit_btn, back_btn]:
+		# Space 是开火键，而 Button 默认 focus_mode = FOCUS_ALL：
+		# 只要菜单里任何一个按钮吃到焦点，按 Space 就会被 ui_accept 吞掉，
+		# 玩家以为在开枪，实际把「开始游戏」按了下去。
+		btn.focus_mode = Control.FOCUS_NONE
 		btn.mouse_entered.connect(func(): _on_button_hover(btn))
 		btn.mouse_exited.connect(func(): _on_button_unhover(btn))
 		btn.pressed.connect(_on_button_click)

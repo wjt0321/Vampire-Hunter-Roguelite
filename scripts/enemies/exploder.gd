@@ -93,10 +93,15 @@ func _explode() -> void:
 		vfx.spawn_death_particles(global_position, Color.ORANGE, 20)
 	
 	# 自爆者死亡（不触发正常死亡流程，避免重复音效）
+	# 掉落必须在这里自己补：自爆者不走基类的 _die()，
+	# 所以以前自爆成功一次就白白丢掉经验与银币——玩家拿到的永远比账面少。
 	is_dead = true
 	enemy_died.emit(self)
 	# 记录击杀成就
 	_record_kill_for_achievement()
+	# 掉落经验宝石与银币（落点已由基类钳回房间内）
+	_drop_xp_gem()
+	_drop_silver()
 	
 	# 禁用碰撞
 	collision_shape.set_deferred("disabled", true)

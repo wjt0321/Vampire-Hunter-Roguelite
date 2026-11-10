@@ -8,7 +8,7 @@ radius = 5.0
 
 [node name="HolyBolt" type="Area2D"]
 collision_layer = 4
-collision_mask = 2
+collision_mask = 18
 script = ExtResource("1_holy")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]

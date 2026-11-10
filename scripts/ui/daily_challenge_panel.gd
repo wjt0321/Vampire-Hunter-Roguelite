@@ -124,6 +124,8 @@ func _build() -> void:
 	var start := Button.new()
 	start.text = "开始今日挑战"
 	start.custom_minimum_size = Vector2(180, 42)
+	# Space 是开火键：这个面板出现在菜单上，按钮吃焦点会把开火键吞掉。
+	start.focus_mode = Control.FOCUS_NONE
 	start.pressed.connect(func():
 		visible = false
 		start_requested.emit()
@@ -133,6 +135,7 @@ func _build() -> void:
 	var back := Button.new()
 	back.text = "返回"
 	back.custom_minimum_size = Vector2(120, 42)
+	back.focus_mode = Control.FOCUS_NONE
 	back.pressed.connect(func():
 		visible = false
 		closed.emit()

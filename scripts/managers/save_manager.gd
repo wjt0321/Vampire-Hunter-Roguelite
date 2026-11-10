@@ -4,39 +4,60 @@ extends Node
 
 const SAVE_PATH: String = "user://save_data.json"
 
+## 工具测试专用存档前缀：每个测试套件一个独立文件，跑完即删。
+const TEST_SAVE_PREFIX: String = "user://test_"
+
 ## 存档版本号：结构或数值体系变化时 +1，并在 _migrate_save 中补迁移逻辑
 const SAVE_VERSION: int = 2
 
+## 实际生效的存档路径。真实游戏 = SAVE_PATH；工具测试用 use_test_save_path() 切走。
+var save_path: String = SAVE_PATH
+## 工具脚本运行（godot --script res://xxx.gd）时为 true：此时禁止写玩家真实存档。
+var is_tool_run: bool = false
+## 当前测试套件名。非空表示存档指向 user://test_<套件>.json。
+var test_suite: String = ""
+
 # === 默认存档数据 ===
-var save_data: Dictionary = {
-	"version": SAVE_VERSION,
-	"blood_crystals": 0,         # 血晶货币
-	"total_runs": 0,             # 总局数
-	"best_wave": 0,              # 最高波次
-	"best_rooms": 0,             # 最多房间
-	"total_kills": 0,            # 累计击杀
-	# 永久升级
-	"upgrades": {
-		"base_damage": 0,        # 基础伤害增加（每级 +5%）
-		"base_hp": 0,            # 基础血量增加（每级 +10）
-		"base_speed": 0,         # 基础速度增加（每级 +5%）
-		"base_armor": 0,         # 基础护甲增加（每级 +3）
-		"xp_bonus": 0,           # 经验加成（每级 +10%）
-		"blood_crystal_bonus": 0, # 血晶获取加成（每级 +10%）
-	},
-	# 解锁角色
-	"unlocked_characters": ["hunter"],
-	"selected_character": "hunter",
-	# 深渊阶梯：历史最高通关深渊层
-	"best_abyss": 0,
-	# 每日挑战：只留当天的本地排名。换日清空，不跟历史最佳混在一张表里。
-	"daily_board": {
-		"date": "",
-		"participation_claimed": false,
-		"best_bonus_claimed": false,
-		"runs": [],
-	},
-}
+var save_data: Dictionary = _default_save_data()
+
+
+func _default_save_data() -> Dictionary:
+	return {
+		"version": SAVE_VERSION,
+		"blood_crystals": 0,         # 血晶货币
+		"total_runs": 0,             # 总局数
+		"best_wave": 0,              # 最高波次
+		"best_rooms": 0,             # 最多房间
+		"total_kills": 0,            # 累计击杀
+		# 永久升级
+		"upgrades": {
+			"base_damage": 0,        # 基础伤害增加（每级 +5%）
+			"base_hp": 0,            # 基础血量增加（每级 +10）
+			"base_speed": 0,         # 基础速度增加（每级 +5%）
+			"base_armor": 0,         # 基础护甲增加（每级 +3）
+			"xp_bonus": 0,           # 经验加成（每级 +10%）
+			"blood_crystal_bonus": 0, # 血晶获取加成（每级 +10%）
+		},
+		# 解锁角色
+		"unlocked_characters": ["hunter"],
+		"selected_character": "hunter",
+		# 深渊阶梯：历史最高通关深渊层
+		"best_abyss": 0,
+		# 每日挑战：只留当天的本地排名。换日清空，不跟历史最佳混在一张表里。
+		"daily_board": {
+			"date": "",
+			"participation_claimed": false,
+			"best_bonus_claimed": false,
+			"runs": [],
+		},
+		# 音量设置。默认值与 AudioManager 自己的兜底值一致（0.1）。
+		"audio_settings": {
+			"music_volume": 0.1,
+			"sfx_volume": 0.1,
+		},
+		# 已解锁的成就 id 列表。AchievementManager 往里写，存档时一起带走。
+		"achievements": [],
+	}
 
 # 升级价格（每级递增）
 const UPGRADE_COSTS: Dictionary = {
@@ -51,22 +72,37 @@ const UPGRADE_COSTS: Dictionary = {
 const MAX_UPGRADE_LEVEL: int = 5
 
 func _ready() -> void:
+	var detected := detect_tool_run(OS.get_cmdline_args())
+	if bool(detected.get("is_tool", false)):
+		# 工具运行：存档落到独立的测试文件，绝不读写真实玩家存档
+		is_tool_run = true
+		test_suite = String(detected.get("suite", "tool"))
+		save_path = _tool_save_path(test_suite)
+		clear_test_save(test_suite)
 	load_game()
 
+func _exit_tree() -> void:
+	## 工具运行结束删掉本次的测试存档，不在用户目录留垃圾
+	if test_suite != "":
+		clear_test_save(test_suite)
+
 func save_game() -> void:
-	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if save_path == SAVE_PATH and is_tool_run:
+		push_error("工具测试禁止写玩家真实存档 %s：请改用 use_test_save_path() 切到测试存档" % SAVE_PATH)
+		return
+	var file := FileAccess.open(save_path, FileAccess.WRITE)
 	if file == null:
 		push_error("无法保存: %s" % FileAccess.get_open_error())
 		return
 	file.store_string(JSON.stringify(save_data, "\t"))
 	file.close()
-	print("💾 存档已保存")
+	print("💾 存档已保存 (%s)" % save_path)
 
 func load_game() -> void:
-	if not FileAccess.file_exists(SAVE_PATH):
-		print("📂 未找到存档，使用默认数据")
+	if not FileAccess.file_exists(save_path):
+		print("📂 未找到存档 (%s)，使用默认数据" % save_path)
 		return
-	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	var file := FileAccess.open(save_path, FileAccess.READ)
 	if file == null:
 		return
 	var json := JSON.new()
@@ -89,7 +125,65 @@ func load_game() -> void:
 			# 合并数据（保留新增字段）
 			_merge_dict(save_data, loaded)
 			_sanitize_save()
-		print("📂 存档已加载 (v%d)" % SAVE_VERSION)
+		print("📂 存档已加载 (v%d) %s" % [SAVE_VERSION, save_path])
+
+# === 测试隔离（只给 tools/ 下的工具测试用） ===
+
+func use_test_save_path(suite: String) -> String:
+	## 把存档切到 user://test_<suite>.json，测试期间只在测试文件里读写。
+	## 会清掉上一次遗留的测试存档，保证每次运行从干净状态开始。返回切换后的路径。
+	test_suite = suite
+	save_path = _tool_save_path(suite)
+	clear_test_save(suite)
+	save_data = _default_save_data()
+	return save_path
+
+func clear_test_save(suite: String) -> void:
+	## 删除属于该测试的临时存档。只删 user://test_*.json，永远不碰玩家真实存档。
+	var path := _tool_save_path(suite)
+	if FileAccess.file_exists(path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+
+func _tool_save_path(suite: String) -> String:
+	return "%s%s.json" % [TEST_SAVE_PREFIX, suite]
+
+func detect_tool_run(args: PackedStringArray) -> Dictionary:
+	## 判断这次运行是不是工具测试，并给出套件名。返回 {"is_tool": bool, "suite": String}
+	##
+	## 规则：
+	##   出现 --script / -s → 工具运行（真实游戏不会用这两个参数）
+	##   参数里有 res://tools/*.tscn 或本项目 tools/ 下的场景 → 工具运行
+	##   其余（真实游戏、编辑器启动的普通场景）→ 不是工具运行
+	for i in args.size():
+		var arg := String(args[i])
+		if arg == "--script" or arg == "-s":
+			var script_path := ""
+			if i + 1 < args.size():
+				script_path = String(args[i + 1])
+			return {"is_tool": true, "suite": _safe_suite_name(script_path)}
+		if _is_tool_scene_path(arg):
+			return {"is_tool": true, "suite": _safe_suite_name(arg)}
+	return {"is_tool": false, "suite": ""}
+
+func _is_tool_scene_path(arg: String) -> bool:
+	## 只有明确指向 tools/ 的场景才算工具运行，避免把正常游戏场景误判成工具
+	var p := arg.replace("\\", "/")
+	if not p.ends_with(".tscn"):
+		return false
+	if p.begins_with("res://tools/"):
+		return true
+	var project_root := ProjectSettings.globalize_path("res://").replace("\\", "/").rstrip("/")
+	return p.begins_with(project_root + "/tools/")
+
+func _safe_suite_name(raw: String) -> String:
+	## 套件名取安全 basename：只留文件名、去掉扩展名、非法文件名字符换成下划线
+	var name := raw.replace("\\", "/").get_file()
+	if name.get_extension() != "":
+		name = name.get_basename()
+	var safe := ""
+	for ch in name:
+		safe += ch if ch.is_valid_filename() else "_"
+	return safe if safe != "" else "tool"
 
 func _migrate_save(data: Dictionary, from_version: int) -> Dictionary:
 	## 逐版本升级存档结构
@@ -113,7 +207,12 @@ func _sanitize_save() -> void:
 	save_data["blood_crystals"] = maxi(int(save_data.get("blood_crystals", 0)), 0)
 	save_data["total_runs"] = maxi(int(save_data.get("total_runs", 0)), 0)
 	save_data["total_kills"] = maxi(int(save_data.get("total_kills", 0)), 0)
-	var ups: Dictionary = save_data.get("upgrades", {})
+	var ups = save_data.get("upgrades", null)
+	if not (ups is Dictionary):
+		# 手改存档 / 写坏的存档会把 upgrades 写成字符串或数组。
+		# 旧写法是 `var ups: Dictionary = save_data.get("upgrades", {})`：
+		# 右边不是字典时这一行本身就是类型错误 → 读档当场崩，整局游戏读不出存档。
+		ups = {}
 	for key in UPGRADE_COSTS.keys():
 		ups[key] = clampi(int(ups.get(key, 0)), 0, MAX_UPGRADE_LEVEL)
 	save_data["upgrades"] = ups
@@ -126,14 +225,49 @@ func _sanitize_save() -> void:
 	if not (save_data.get("selected_character", "") in unlocked):
 		save_data["selected_character"] = "hunter"
 	_sanitize_daily_board()
+	_sanitize_audio_settings()
+	_sanitize_achievements()
+
+func _sanitize_audio_settings() -> void:
+	## 音量设置洗白：不是字典就整段换成默认，音量一律夹回 0~1。
+	## 手改存档或旧档写出 9.0 / -3.0 时，AudioManager 会拿它去设 AudioServer 音量，
+	## 负数会让引擎报错、超过 1 会把音量顶满。
+	var audio = save_data.get("audio_settings", null)
+	if not (audio is Dictionary):
+		audio = {}
+	var settings: Dictionary = audio
+	settings["music_volume"] = clampf(float(settings.get("music_volume", 0.1)), 0.0, 1.0)
+	settings["sfx_volume"] = clampf(float(settings.get("sfx_volume", 0.1)), 0.0, 1.0)
+	save_data["audio_settings"] = settings
+
+func _sanitize_achievements() -> void:
+	## 成就列表洗白：不是数组就换成空数组，顺手去掉重复项和空串。
+	var achs = save_data.get("achievements", null)
+	if not (achs is Array):
+		achs = []
+	var cleaned: Array = []
+	for id in achs:
+		var key: String = String(id)
+		if key == "" or key in cleaned:
+			continue
+		cleaned.append(key)
+	save_data["achievements"] = cleaned
 
 func _merge_dict(target: Dictionary, source: Dictionary) -> void:
+	## target = 默认存档，source = 存档文件。source 覆盖 target。
+	##
+	## 旧实现只处理"两边都有"的键：target 里没有的键直接被丢掉。
+	## 于是存档文件里有、默认存档里没有的字段（audio_settings / achievements）
+	## 在每次读档时整段消失——玩家调好的音量和已解锁的成就全部归零。
+	## 现在补上"source 有、target 没有 → 直接收下"这一条。
 	for key in source:
-		if target.has(key):
-			if target[key] is Dictionary and source[key] is Dictionary:
-				_merge_dict(target[key], source[key])
-			else:
-				target[key] = source[key]
+		if not target.has(key):
+			target[key] = source[key]
+			continue
+		if target[key] is Dictionary and source[key] is Dictionary:
+			_merge_dict(target[key], source[key])
+		else:
+			target[key] = source[key]
 
 # === 血晶奖励计算 ===
 func calculate_blood_crystals(stats: Dictionary) -> int:

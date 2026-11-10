@@ -1,6 +1,10 @@
 extends CharacterBody2D
 
 const SpriteSheetLib = preload("res://scripts/core/sprite_sheet.gd")
+## 可读性层（轮廓 + 地面投影）。玩家和敌人共用同一套：
+## 敌人轮廓暖白、玩家轮廓冷蓝，颜色相反才是"一眼分出谁是谁"的关键，
+## 光靠体型（两者都是 56px）在怪堆里分不出来。
+const ReadabilityLib = preload("res://scripts/core/readability_visuals.gd")
 ## 玩家角色脚本
 ## 处理移动、生命值、经验升级等核心逻辑
 ## 射击由 WeaponManager 独立处理
@@ -18,6 +22,11 @@ var _audio_lib: AudioLibrary = null
 var current_hp: float = max_hp
 var is_invincible: bool = false
 @export var invincible_duration: float = 0.5
+
+# === 受击击退 ===
+## 独立于移动速度的一份速度：受击时被推开，之后按 KNOCKBACK_DECAY 衰减。
+var knockback_velocity: Vector2 = Vector2.ZERO
+const KNOCKBACK_DECAY: float = 900.0
 
 # === 经验与升级 ===
 var current_xp: int = 0
@@ -117,6 +126,11 @@ var silver: int = 0
 ## 现在改成精灵挤压回弹：位置不动，只有 0.08s 的形变，收枪感还在，位移没有了。
 var _sprite_base_scale: Vector2 = Vector2.ONE
 var _fire_punch_tween: Tween = null
+## 挤压进度 0..1（0 = 压到最扁，1 = 回弹到基准）。用进度而不是绝对缩放，
+## 这样中途换姿态重算基准时形变不会丢。
+var _punch_progress: float = 1.0
+var _punch_amount: float = 1.0
+var _punch_axis_vertical: bool = false
 var _player_pose: String = ""
 var _wants_move: bool = false
 var _sprite_rest_pos: Vector2 = Vector2.ZERO
@@ -149,6 +163,10 @@ func _ready() -> void:
 	add_to_group("player")
 	current_hp = max_hp
 	xp_to_next_level = GameConfig.get_xp_required(current_level)
+	# 视觉优先级：玩家画在敌人之上、危险弹丸之下（见 ReadabilityVisuals）。
+	# 不改这条的话，Boss 站到玩家正前方就会把玩家整个盖住。
+	if sprite != null:
+		sprite.z_index = ReadabilityLib.Z_PLAYER
 	# 初始化 AudioLib 缓存
 	_audio_lib = AudioLib
 	# 加载精灵图纹理
@@ -187,8 +205,19 @@ func _apply_player_pose(pose: String, texture: Texture2D) -> void:
 	# 记下基准缩放：开火挤压是"在基准上乘一个系数再回到基准"。
 	_sprite_base_scale = SpriteSheetLib.apply(sprite, texture, 56.0)
 	_sprite_frame_wait = 0.0
-	if _fire_punch_tween != null and _fire_punch_tween.is_valid():
-		_fire_punch_tween.kill()
+	# 这里**不能** kill `_fire_punch_tween`。
+	# 挤压补间是独立的，只驱动 `_punch_progress` 从 0 走到 1，
+	# 每帧把形变乘到**当前** `_sprite_base_scale` 上（见 `_apply_punch_scale`）。
+	# 杀掉它等于把进度永远冻在第 0 帧：开火瞬间受击/开盾，
+	# 角色就保持压扁状态直到下一次开火。谁建 tween 谁负责 kill（`_fire_punch`）。
+	# SpriteSheetLib.apply 写的是**基准**缩放，开火挤压是在它之上再乘一个系数，
+	# 如果换了姿态却只留基准值，玩家就看不到后坐（旧实现正是这样把挤压抹掉了）。
+	# 所以换完图立刻按当前挤压进度把形变重新贴回去，动作与后坐可以同时存在。
+	_apply_punch_scale()
+	# 可读性层：冷蓝轮廓 + 地面投影。跟敌人共用同一套节点，
+	# 颜色相反（敌人暖白）才能在怪堆里分清谁是玩家。
+	ReadabilityLib.ensure_body_rim(sprite, ReadabilityLib.PLAYER_RIM_COLOR)
+	ReadabilityLib.ensure_ground_shadow(self, sprite)
 
 func _adjust_sprite_scale() -> void:
 	## 保留给外部在换图之后调用。按当前纹理重算一格缩放。
@@ -220,7 +249,7 @@ func apply_character_data(char_data: Resource) -> void:
 	])
 
 func _physics_process(delta: float) -> void:
-	_handle_movement()
+	_handle_movement(delta)
 	_handle_rotation()
 	_sync_player_pose()
 	_tick_player_sprite(delta)
@@ -240,25 +269,46 @@ func _fire_punch(direction: Vector2) -> void:
 		return
 	if _sprite_base_scale == Vector2.ONE:
 		_sprite_base_scale = sprite.scale
-	var punch: float = GameConfig.PLAYER_FIRE_PUNCH_SCALE
 	# 竖直方向开火时压在横轴上，横向开火时压在纵轴上，观感更贴近"后坐"
 	var axis_vertical: bool = absf(direction.normalized().y) > absf(direction.normalized().x)
-	var squashed: Vector2 = _sprite_base_scale
-	if axis_vertical:
-		squashed = Vector2(punch, 2.0 - punch) * _sprite_base_scale
-	else:
-		squashed = Vector2(2.0 - punch, punch) * _sprite_base_scale
+	_punch_axis_vertical = axis_vertical
+	_punch_amount = GameConfig.PLAYER_FIRE_PUNCH_SCALE
+	_punch_progress = 0.0
 
 	if _fire_punch_tween != null and _fire_punch_tween.is_valid():
 		_fire_punch_tween.kill()
-	sprite.scale = squashed
-	_fire_punch_tween = create_tween()
-	_fire_punch_tween.tween_property(sprite, "scale", _sprite_base_scale,
-		GameConfig.PLAYER_FIRE_PUNCH_TIME).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-	# 开火姿态：与挤压同时发生，一个演动作一个给后坐力，互不抢属性
+	# 开火姿态先切：它会换贴图并重算基准缩放，
+	# 顺序反过来的话下面刚建好的回弹 tween 会被换姿态顺手 kill 掉（挤压就卡在最扁的状态）。
 	_play_one_shot("attack")
+	_apply_punch_scale()
+	# 挤压进度从 0% 补到 100%，回调里逐帧把形变乘到**当前**基准上。
+	# 不用 tween_property(sprite, "scale") 直接写死目标值：
+	# 那样 tween 会把"当时算出的绝对缩放"当成目标，中途换姿态（attack 姿态换图重设基准）
+	# 就会打回旧值，动作一切换挤压就消失——这正是"开火没有后坐感"的老 bug。
+	_fire_punch_tween = create_tween()
+	_fire_punch_tween.tween_method(_set_punch_progress, 0.0, 1.0,
+		GameConfig.PLAYER_FIRE_PUNCH_TIME).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 
-func _handle_movement() -> void:
+func _set_punch_progress(value: float) -> void:
+	_punch_progress = clampf(value, 0.0, 1.0)
+	_apply_punch_scale()
+
+func _apply_punch_scale() -> void:
+	## 把"当前挤压进度"乘到基准缩放上。进度 1.0 = 完全回弹 = 基准。
+	if sprite == null or not is_instance_valid(sprite):
+		return
+	if _punch_progress >= 1.0:
+		sprite.scale = _sprite_base_scale
+		return
+	var punch: float = _punch_amount + (1.0 - _punch_amount) * _punch_progress
+	var factor := Vector2(1.0, 1.0)
+	if _punch_axis_vertical:
+		factor = Vector2(punch, 2.0 - punch)
+	else:
+		factor = Vector2(2.0 - punch, punch)
+	sprite.scale = factor * _sprite_base_scale
+
+func _handle_movement(delta: float) -> void:
 	var input_dir := Vector2.ZERO
 	input_dir.x = Input.get_axis("move_left", "move_right")
 	input_dir.y = Input.get_axis("move_up", "move_down")
@@ -266,7 +316,10 @@ func _handle_movement() -> void:
 	var total_speed_mult := speed_multiplier * (1.0 + move_speed_bonus_multiplier)
 	# 注意：这里只由输入决定速度。开火反馈是纯视觉的，不许再往 velocity 里塞东西。
 	_wants_move = input_dir != Vector2.ZERO
-	velocity = input_dir * move_speed * total_speed_mult
+	# 受击击退走独立速度：早期直接写进 velocity，而这一行每帧覆盖 velocity，
+	# 结果受击后人物根本没被推开。现在叠加在移动速度上，并按摩擦衰减。
+	velocity = input_dir * move_speed * total_speed_mult + knockback_velocity
+	knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * delta)
 	move_and_slide()
 
 func _sync_player_pose() -> void:
@@ -372,7 +425,46 @@ func spend_silver(amount: int) -> bool:
 	return true
 
 # === 升级效果应用 ===
+## 基础属性卡的等级（每张卡各自计数）。
+## 属性卡有等级上限：满级后既不再进池，也不再叠数值——
+## 否则属性卡可以无限叠，"Build 选择"就退化成纯数值膨胀。
+var stat_levels: Dictionary = {}
+
+func get_stat_level(stat_id: String) -> int:
+	return int(stat_levels.get(stat_id, 0))
+
+func get_stat_max_level() -> int:
+	return GameConfig.MAX_STAT_LEVEL
+
+func get_total_stat_level() -> int:
+	## 本局所有属性卡等级之和
+	var total: int = 0
+	for key in stat_levels:
+		total += int(stat_levels[key])
+	return total
+
+func get_total_stat_max_level() -> int:
+	## 属性卡的共享总预算（所有属性卡等级之和的上限）
+	return GameConfig.MAX_TOTAL_STAT_LEVEL
+
+func is_stat_budget_exhausted() -> bool:
+	## 总预算是否已经用满
+	return get_total_stat_level() >= get_total_stat_max_level()
+
+func is_stat_maxed(stat_id: String) -> bool:
+	return get_stat_level(stat_id) >= get_stat_max_level()
+
 func apply_upgrade(upgrade_type: String) -> void:
+	# 满级后不再生效。升级界面本来就不会再发满级的卡，
+	# 这里再挡一道：别的地方直接调 apply_upgrade 时也不会把数值叠穿。
+	if is_stat_maxed(upgrade_type):
+		return
+	# 共享总预算用满后同样不再生效。
+	# 单卡上限管的是"这一张最多 5 级"，总预算管的是"这一局总共能堆多少属性"——
+	# 两道闸都要有，否则玩家换个方向照样能把属性叠穿预算。
+	if is_stat_budget_exhausted():
+		return
+	stat_levels[upgrade_type] = get_stat_level(upgrade_type) + 1
 	match upgrade_type:
 		"damage":
 			damage_multiplier += GameConfig.UPGRADE_DAMAGE_MULT
@@ -402,6 +494,11 @@ func spend_hp(amount: float) -> bool:
 	return true
 
 func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO) -> void:
+	# 死亡保护：玩家已经死了（或血量已经归零）就不再吃伤害。
+	# 旧版没有这道闸，玩家死后残留的接触伤害、弹幕会反复触发 _die()，
+	# 结算界面被重复触发多次。
+	if _player_dead or current_hp <= 0.0:
+		return
 	if is_invincible:
 		return
 	amount = GameConfig.scale_incoming_damage(amount)
@@ -432,10 +529,10 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO) -> void
 	# 受击姿态：只有 2 帧，播完立刻回 idle/run；闪红仍由 _flash_damage 负责
 	_play_one_shot("hurt")
 
-	# 受击击退
+	# 受击击退：写进独立速度，不碰移动速度（见 _handle_movement）
 	if source_position != Vector2.ZERO:
 		var knockback_dir := (global_position - source_position).normalized()
-		velocity += knockback_dir * 300.0
+		knockback_velocity += knockback_dir * 300.0
 
 	# 播放受击音效
 	AudioManager.play_sfx(_audio_lib.get_sound("player_hurt"))
@@ -697,12 +794,12 @@ func _apply_passive_effect(item) -> void:
 			# 只补"磁力这一项"的差额，不能直接赋值：
 			# 直接写 pickup_range_bonus = 50×倍率 会把猎人自带的 +20 和
 			# "拾取范围 +30" 升级一起冲掉，而且再升一级又会重算。
-			var want_bonus: float = 50.0 * magnet_multiplier
+			var want_bonus: float = GameConfig.MAGNET_BASE_RANGE * magnet_multiplier
 			pickup_range_bonus += want_bonus - _magnet_bonus_applied
 			_magnet_bonus_applied = want_bonus
 		1:  # SHIELD
 			has_shield_item = true
-			shield_cooldown = maxf(item.get_scaled_value(), 8.0)
+			shield_cooldown = _passive_capped(item)
 			shield_timer = 0.0
 			# 拿到道具立刻亮一层：原来要空等 30 秒冷却，玩家会以为"这东西没生效"
 			if GameConfig.SHIELD_FIRST_GRANT_IMMEDIATE and not has_shield:
@@ -714,23 +811,38 @@ func _apply_passive_effect(item) -> void:
 		4:  # BERSERKER
 			berserker_bonus = item.get_scaled_value()
 		5:  # FROZEN
-			freeze_chance = minf(item.get_scaled_value(), GameConfig.PASSIVE_MAX_FREEZE)
+			freeze_chance = _passive_capped(item)
 		6:  # LIGHTNING_SHIELD
 			lightning_retaliate_damage = item.get_scaled_value()
 		7:  # SHADOW
-			dodge_chance = minf(item.get_scaled_value(), GameConfig.PASSIVE_MAX_DODGE)
+			dodge_chance = _passive_capped(item)
 		8:  # VAMPIRIC
-			lifesteal_chance = minf(item.get_scaled_value(), GameConfig.PASSIVE_MAX_LIFESTEAL)
+			lifesteal_chance = _passive_capped(item)
 		9:  # SWIFT
 			move_speed_bonus_multiplier = item.get_scaled_value()
 		10: # CLOVER
-			crit_chance = minf(item.get_scaled_value(), GameConfig.PASSIVE_MAX_CRIT)
+			crit_chance = _passive_capped(item)
 		11: # BLEED
-			bleed_chance = minf(item.get_scaled_value(), GameConfig.PASSIVE_MAX_BLEED_CHANCE)
+			bleed_chance = _passive_capped(item)
 		12: # SLOW
-			slow_chance = minf(item.get_scaled_value(), GameConfig.PASSIVE_MAX_SLOW_CHANCE)
+			slow_chance = _passive_capped(item)
 		13: # DRAIN
-			drain_ratio = minf(item.get_scaled_value(), GameConfig.PASSIVE_MAX_DRAIN)
+			drain_ratio = _passive_capped(item)
+
+func _passive_capped(item) -> float:
+	## 生效值一律经 GameConfig.cap_passive_value()。
+	## 升级卡预览、满级判定、这里三处共用同一张上限表——
+	## 分散成 minf 各处一份时，改上限必然漏掉一边。
+	##
+	## 空值必须显式返回：GDScript 对 null 取属性只会**报运行时错误并中断整个函数**，
+	## 返回值变成 null，调用方 float(null) 侥幸是 0.0，控制台却每帧刷错误。
+	if item == null:
+		return 0.0
+	if not (item.has_method("get_scaled_value") and "item_id" in item):
+		return 0.0
+	if item.has_method("effective_value"):
+		return float(item.effective_value())
+	return GameConfig.cap_passive_value(String(item.item_id), item.get_scaled_value())
 
 func on_dealt_damage(amount: float) -> void:
 	## 汲取的入账口。由敌人基类在每次受伤时回调。

@@ -16,30 +16,47 @@ const PRESS_TIME := 0.07
 
 const META_TWEEN := "ui_fx_tween"
 
-## 给按钮接上悬停 / 按下 / 点击涟漪。重复调用是安全的（只挂一次信号）。
+## 给按钮接上悬停 / 按下 / 点击涟漪。重复调用是安全的（只挂一次信号），
+## 但每次都更新悬停幅度：同一批按钮可能先被通用逻辑挂 1.05，
+## 又被具体界面用 1.03 覆盖（三选一大卡放大会压边）。
+## 之前是"已经有 meta 就 return"，后一次幅度被静默丢掉，界面看起来像没生效。
 static func hover(btn: Control, amount: float = HOVER_SCALE) -> void:
 	if btn == null:
 		return
+	btn.set_meta("ui_fx_amount", amount)
 	if btn.has_meta("ui_fx_hover"):
 		return
 	btn.set_meta("ui_fx_hover", true)
-	btn.set_meta("ui_fx_amount", amount)
-	btn.mouse_entered.connect(func() -> void: _scale_to(btn, Vector2.ONE * amount, HOVER_TIME))
+	btn.mouse_entered.connect(func() -> void:
+		_scale_to(btn, Vector2.ONE * _amount_of(btn, amount), HOVER_TIME))
 	btn.mouse_exited.connect(func() -> void: _scale_to(btn, Vector2.ONE, HOVER_TIME))
 	# BaseButton 才有按下状态；纯 Control（比如面板）只要悬停
 	if btn is BaseButton:
 		btn.button_down.connect(func() -> void:
 			_scale_to(btn, Vector2.ONE * PRESS_SCALE, PRESS_TIME))
 		btn.button_up.connect(func() -> void:
-			_scale_to(btn, Vector2.ONE * float(btn.get_meta("ui_fx_amount", amount)), HOVER_TIME))
+			_scale_to(btn, Vector2.ONE * _amount_of(btn, amount), HOVER_TIME))
 		btn.pressed.connect(func() -> void: click_ripple(btn))
+
+static func _amount_of(btn: Control, fallback: float) -> float:
+	## 幅度存在 meta 上、每次悬停现读，而不是被 lambda 捕获死：
+	## 捕获的话 hover(btn, 1.03) 只改 meta，补间仍然用第一次的 1.05。
+	if btn == null or not is_instance_valid(btn):
+		return fallback
+	if not btn.has_meta("ui_fx_amount"):
+		return fallback
+	return float(btn.get_meta("ui_fx_amount"))
 
 static func _scale_to(node: Control, target: Vector2, dur: float) -> void:
 	if node == null or not is_instance_valid(node):
 		return
-	var prev: Variant = node.get_meta(META_TWEEN, null)
-	if prev is Tween and prev.is_valid():
-		prev.kill()
+	# get_meta(name, default) 在 Godot 4 里只有 default != Variant() 才会走到默认值，
+	# 显式传 null 等于没传，会打 "does not have any 'meta' values with the key"。
+	# 先 has_meta 再取，才是"可能没有"这个语义的正确写法。
+	if node.has_meta(META_TWEEN):
+		var prev: Variant = node.get_meta(META_TWEEN)
+		if prev is Tween and prev.is_valid():
+			prev.kill()
 	if node.scale.is_equal_approx(target):
 		return
 	# 布局完成前 size 是 0，这时设 pivot 会得到 (0,0)，放大就从左上角开始

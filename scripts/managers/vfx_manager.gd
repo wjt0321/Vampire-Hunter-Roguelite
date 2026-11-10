@@ -165,7 +165,9 @@ func spawn_ground_marker(pos: Vector2, radius: float, color: Color = Color(1.0, 
 
 	var root := Node2D.new()
 	root.global_position = pos
-	root.z_index = 2  # 地面层：压在地板之上、角色之下
+	# 地面层：压在地板之上、角色之下。这里原来写的是 2，比玩家(1)还高，
+	# 预警圈会盖在角色身上——注释说的和实际做的不是一回事。
+	root.z_index = ReadabilityVisuals.Z_GROUND
 
 	var fill := Polygon2D.new()
 	fill.polygon = _circle_points(radius, 28)

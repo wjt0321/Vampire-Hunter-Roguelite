@@ -54,14 +54,13 @@ func open(player_node: Node, weapon_mgr: Node = null) -> void:
 	_refresh()
 	visible = true
 	# 暂停世界，玩家可以慢慢挑（和升级界面一致）
-	get_tree().paused = true
+	PauseController.acquire(self)
 
 func close() -> void:
 	if not visible:
 		return
 	visible = false
-	if get_tree().paused:
-		get_tree().paused = false
+	PauseController.release(self)
 	shop_closed.emit()
 
 # ---------------------------------------------------------------- 货架逻辑
@@ -96,11 +95,16 @@ func _build_pool() -> Array:
 	return pool
 
 func _is_passive_maxed(passive_id: String) -> bool:
+	## 与升级三选一共用同一条判定（passive_item_data.is_effectively_maxed）。
+	## 两处各写一份的话，会出现"商店还在卖、三选一已经过滤掉"的错位。
 	if player == null or not ("passive_items" in player):
 		return false
 	for item in player.passive_items:
-		if item.item_id == passive_id and item.has_method("is_max_level"):
-			return item.is_max_level()
+		if item.item_id == passive_id:
+			if item.has_method("is_effectively_maxed"):
+				return bool(item.is_effectively_maxed())
+			if item.has_method("is_max_level"):
+				return bool(item.is_max_level())
 	return false
 
 func _roll_all() -> void:
@@ -206,6 +210,9 @@ func _make_button(text: String) -> Button:
 	var btn := Button.new()
 	btn.text = text
 	btn.custom_minimum_size = Vector2(150, 42)
+	# Space = 开火（见 project.godot 的 shoot 动作）。按钮可聚焦时
+	# Space 会先被当成"按下焦点按钮"，玩家一边开火一边点商店就会误买。
+	btn.focus_mode = Control.FOCUS_NONE
 	btn.add_theme_font_size_override("font_size", 16)
 	btn.add_theme_stylebox_override("normal", _make_style(Color(0.14, 0.11, 0.16, 1.0), Color(0.5, 0.4, 0.22, 0.9)))
 	btn.add_theme_stylebox_override("hover", _make_style(Color(0.22, 0.17, 0.14, 1.0), Color(0.95, 0.8, 0.42, 1.0)))

@@ -23,12 +23,11 @@ func open(player_node: Node) -> void:
 		_build_ui()
 	_refresh()
 	visible = true
-	get_tree().paused = true
+	PauseController.acquire(self)
 
 func close() -> void:
 	visible = false
-	if get_tree().paused:
-		get_tree().paused = false
+	PauseController.release(self)
 
 func _choose(kind: String) -> void:
 	close()
@@ -97,12 +96,14 @@ func _build_ui() -> void:
 
 	_gamble_btn = Button.new()
 	_gamble_btn.custom_minimum_size = Vector2(210, 64)
+	_gamble_btn.focus_mode = Control.FOCUS_NONE
 	_gamble_btn.pressed.connect(func(): _choose("gamble"))
 	row.add_child(_gamble_btn)
 
 	var leave := Button.new()
 	leave.text = "离开\n不献血，也没有奖励"
 	leave.custom_minimum_size = Vector2(210, 64)
+	leave.focus_mode = Control.FOCUS_NONE
 	leave.pressed.connect(func(): _choose("leave"))
 	row.add_child(leave)
 

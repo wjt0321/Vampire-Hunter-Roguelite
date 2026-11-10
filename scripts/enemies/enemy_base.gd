@@ -2,6 +2,11 @@ extends CharacterBody2D
 class_name EnemyBase
 
 const SpriteSheetLib = preload("res://scripts/core/sprite_sheet.gd")
+## 房间解析的唯一入口。用 preload 而不是直接写 class_name：
+## 本脚本会被各敌人子类继承，preload 出来的常量在继承链上也能直接用。
+const RoomLookupLib = preload("res://scripts/core/room_lookup.gd")
+## 可读性层（轮廓 + 地面投影）。同样用 preload：敌人子类继承本脚本时能直接拿到。
+const ReadabilityLib = preload("res://scripts/core/readability_visuals.gd")
 ## 敌人基类脚本
 ## 所有敌人类型继承此类
 ## HP 和伤害随波次动态缩放，由 GameConfig 控制
@@ -74,6 +79,12 @@ var _bleed_tick_timer: float = 0.0
 ## 状态特效的内部冷却：高攻速武器每发都会命中，不加这个会 20 只怪同时滴血喷粒子
 var _status_vfx_cd: float = 0.0
 
+# === 接触伤害 ===
+## 接触感应区。缓存下来，持续结算时不用每帧 get_node。
+var _contact_area: Area2D = null
+## 接触伤害的结算冷却。上一次结算后要等一个无敌帧才允许下一次。
+var _contact_cd: float = 0.0
+
 # 冻结状态
 var is_frozen: bool = false
 var freeze_timer: float = 0.0
@@ -113,6 +124,8 @@ func _ready() -> void:
 	_load_sprite_texture()
 	# 查找玩家节点
 	_find_player()
+	# 缓存接触感应区：持续接触伤害靠它判断"现在还贴着玩家吗"
+	_contact_area = _find_contact_area()
 	# 表现与行为挂在子节点上：一半敌人自己覆写了 _physics_process，基类钩子对它们无效
 	if not affix_ids.is_empty():
 		_attach_affix_controllers(affix_ids)
@@ -217,6 +230,57 @@ func _process(delta: float) -> void:
 		_status_vfx_cd -= delta
 	_tick_speed_decay(delta)
 	_tick_bleed(delta)
+	_tick_contact_damage(delta)
+
+func _find_contact_area() -> Area2D:
+	## 找接触感应区。优先用约定的 "ContactArea"，没有就退而求其次找任意 Area2D 子节点。
+	var named := get_node_or_null("ContactArea")
+	if named is Area2D:
+		return named
+	for child in get_children():
+		if child is Area2D:
+			return child
+	return null
+
+func _tick_contact_damage(delta: float) -> void:
+	## 接触中的敌人按玩家既有无敌帧持续结算伤害。
+	## 旧实现只有 body_entered 一次性触发：贴住不动就再也不掉血，
+	## 玩家只要站住不动就能白嫖无敌帧。现在按无敌帧节奏（0.5 秒）重复结算。
+	if is_dead:
+		return
+	_contact_cd -= delta
+	if _contact_cd > 0.0:
+		return
+	if _contact_area == null or not is_instance_valid(_contact_area):
+		return
+	var body := _find_contact_body()
+	if body == null:
+		return
+	if not _can_damage_body(body):
+		return
+	# 玩家还在无敌帧里 → 这一轮不结算，等无敌结束再扣，
+	# 否则冷却会被推后，节奏会变成"每 1 秒一次"而不是"每 0.5 秒一次"。
+	if "is_invincible" in body and bool(body.get("is_invincible")):
+		return
+	body.take_damage(contact_damage, global_position)
+	_contact_cd = GameConfig.PLAYER_INVINCIBLE_DURATION
+
+func _can_damage_body(body: Node2D) -> bool:
+	## 目标还能挨打吗。
+	## 玩家血量归零（或者已经死亡）时不再结算接触伤害：
+	## 否则敌人会对着尸体反复结算，血条早就空了还会继续掉。
+	if body == null or not is_instance_valid(body):
+		return false
+	if "current_hp" in body and float(body.get("current_hp")) <= 0.0:
+		return false
+	return true
+
+func _find_contact_body() -> Node2D:
+	## 当前还贴在感应区里的玩家
+	for body in _contact_area.get_overlapping_bodies():
+		if body.is_in_group("player") and body.has_method("take_damage"):
+			return body
+	return null
 
 func _tick_speed_decay(delta: float) -> void:
 	if _haste_remaining > 0.0:
@@ -335,6 +399,9 @@ func use_sprite(texture: Texture2D, mode: String = "loop") -> void:
 func _present_sprite(target_size: float) -> void:
 	if sprite == null or sprite.texture == null:
 		return
+	# 显式钉住敌人所在的可读性图层：玩家(1) 与弹丸(2) 必须压在敌人(0) 之上，
+	# 不依赖 Sprite2D 的默认 z_index。
+	sprite.z_index = ReadabilityLib.Z_ENEMY
 	_sprite_target = target_size
 	if _sprite_loop_tex == null or _sprite_play == "loop":
 		_sprite_loop_tex = sprite.texture
@@ -344,6 +411,10 @@ func _present_sprite(target_size: float) -> void:
 	sprite.position = _sprite_rest_pos
 	SpriteSheetLib.apply(sprite, sprite.texture, target_size, sprite_scale_mult)
 	_sprite_frame_wait = 0.0
+	# 可读性层：轮廓 + 地面投影。跟着缩放一起重算，
+	# 精英体型倍率、Boss 形态倍率、换姿态都走这一处，不会漏。
+	ReadabilityLib.ensure_body_rim(sprite)
+	ReadabilityLib.ensure_ground_shadow(self, sprite)
 
 func _tick_sprite(delta: float) -> void:
 	if sprite == null or not is_instance_valid(sprite) or sprite.texture == null:
@@ -573,17 +644,12 @@ func _clamp_drop_position(pos: Vector2) -> Vector2:
 	## 掉落点必须落在可走区域里。
 	## 冲锋/击退/自爆会把敌人推出墙外，死在墙里就掉在墙里——
 	## 那枚宝石玩家永远走不到（吸附半径再大也够不着），正是"有经验点捡不到"的另一半来源。
-	var node: Node = get_parent()
-	while node != null:
-		if node.has_method("get_room_bounds"):
-			var bounds: Rect2 = node.call("get_room_bounds")
-			var margin := 24.0
-			return Vector2(
-				clampf(pos.x, bounds.position.x + margin, bounds.end.x - margin),
-				clampf(pos.y, bounds.position.y + margin, bounds.end.y - margin)
-			)
-		node = node.get_parent()
-	return pos
+	##
+	## 旧实现沿父链找 get_room_bounds，但 enemy 的父节点是 Main（主场景根），
+	## Main 没有这个方法 → 整段钳制**被静默跳过**（不报错、不报警），掉落照旧掉在墙外。
+	## 现在统一走 RoomLookup：它是全项目唯一的房间解析入口
+	## （wave_manager / vampire_mage / weapon_manager 用的都是它）。
+	return RoomLookupLib.clamp_into_room(pos, 24.0, self)
 
 func _loot_scaled(base_value: int) -> int:
 	## 掉落倍率取整：按小数部分做概率进位，保证长期期望正好等于 base×mult。
@@ -601,14 +667,18 @@ func _drop_silver() -> void:
 	var amount: int = _loot_scaled(silver_value)
 	if amount <= 0:
 		return
+	## 先把落点钳回房间内，再谈合并。
+	## 旧实现拿 global_position 直接比距离：怪死在墙外时，落点也在墙外，
+	## 跟房里的银币永远差着半个房间，合并不了；而且新币也会掉在墙外够不着。
+	var drop_pos: Vector2 = _clamp_drop_position(global_position)
 	for coin in get_tree().get_nodes_in_group("silver_coins"):
-		if is_instance_valid(coin) and coin.global_position.distance_squared_to(global_position) < 900.0:
+		if is_instance_valid(coin) and coin.global_position.distance_squared_to(drop_pos) < 900.0:
 			coin.value += amount
 			return
 	var packed: PackedScene = preload("res://scenes/player/silver_coin.tscn")
 	var coin := packed.instantiate()
 	coin.value = amount
-	coin.global_position = global_position
+	coin.global_position = drop_pos
 
 	var parent: Node = get_tree().current_scene
 	if parent == null:
@@ -621,4 +691,8 @@ func _drop_silver() -> void:
 func _on_contact_area_body_entered(body: Node2D) -> void:
 	## 碰到玩家时造成伤害
 	if body.is_in_group("player") and body.has_method("take_damage"):
+		if not _can_damage_body(body):
+			return
 		body.take_damage(contact_damage, global_position)
+		# 首次接触的这一次算进冷却：后续按无敌帧节奏继续结算
+		_contact_cd = GameConfig.PLAYER_INVINCIBLE_DURATION

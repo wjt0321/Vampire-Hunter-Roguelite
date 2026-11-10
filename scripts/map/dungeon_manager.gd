@@ -65,6 +65,14 @@ const WEIGHT_REST: float = 0.20
 var current_floor: int = 1
 var room_in_floor: int = 0
 var rooms_cleared_total: int = 0
+## 本层已经进入的战斗房数量。商店/宝箱/休息房**不**计入。
+## 远程敌人按"战斗房"逐间解禁（见 GameConfig.RANGED_UNLOCK_ROOM_BY_FLOOR）：
+## 旧口径是 room_in_floor（房间序号），一间宝箱房就白白吃掉一个解禁名额，
+## 于是第 1 层永远轮不到射手。
+var combat_rooms_entered: int = 0
+## 进入当前这间房之前，本层已经清掉的战斗房数。
+## 远程解禁判定的入参就是它（不是 room_in_floor）。
+var combat_rooms_before_current: int = 0
 var _room_plan: Array = []
 var _combat_theme_cursor: int = 0
 ## 岔路：房间下标 → 事件房类型。计划表本身仍写 "combat"，不选就走原计划。
@@ -88,6 +96,8 @@ func start_dungeon() -> void:
 	current_floor = 1
 	room_in_floor = 0
 	rooms_cleared_total = 0
+	combat_rooms_entered = 0
+	combat_rooms_before_current = 0
 	_combat_theme_cursor = 0
 	_generate_room_plan()
 	floor_started.emit(current_floor, get_current_floor_data())
@@ -104,6 +114,8 @@ func advance_floor() -> bool:
 
 	current_floor += 1
 	room_in_floor = 0
+	combat_rooms_entered = 0
+	combat_rooms_before_current = 0
 	_combat_theme_cursor = 0
 	_generate_room_plan()
 	floor_started.emit(current_floor, get_current_floor_data())
@@ -192,7 +204,19 @@ func consume_room() -> String:
 		_pending_choice = ""
 	room_in_floor += 1
 	rooms_cleared_total += 1
+	# 战斗房计数。先记"进本房之前已清的战斗房数"，再把本房计进去。
+	# 顺序不能反：反了的话本房自己就参与了自己的解禁判定。
+	combat_rooms_before_current = combat_rooms_entered
+	if is_combat_room(room_type):
+		combat_rooms_entered += 1
 	return room_type
+
+## 这间房算不算"战斗房"。
+## 战斗房 = 普通战斗 + 迷雾房 + 镜像房（都要刷怪）。
+## Boss 房单独算：它只刷 Boss，不参与远程解禁的计数。
+## 商店/宝箱/休息房更不算——它们不吃掉远程解禁的名额。
+func is_combat_room(room_type: String) -> bool:
+	return room_type == "combat" or room_type == "fog" or room_type == "mirror"
 
 func peek_room_choices() -> Array:
 	## 下一间的门口选项。没有岔路时只有计划中的那一间。

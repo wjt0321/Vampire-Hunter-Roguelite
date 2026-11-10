@@ -525,9 +525,28 @@ func _clamp_into_room(pos: Vector2, margin: float) -> Vector2:
 	return RoomLookupScript.clamp_into_bounds(pos, margin, _room_bounds_global())
 
 func _get_spawn_position() -> Vector2:
-	## 在玩家周围的圆圈外随机位置生成，但限制在房间范围内
+	## 在玩家周围的圆圈外随机位置生成，但限制在房间范围内。
+	##
+	## 边界钳制只保证"在房间里"，不保证"不在柱子里"：柱子/道具生成后，
+	## 圆环上的落点可能正好落在它们内部，怪会卡在障碍里出不来。
+	## 所以钳制之后再做一次**有界**空旷重采样（见 _escape_into_clear_space）：
+	## 先重摇几轮角度，还不行就沿落点四周找最近的空地。
+	## 只改落点，不动碰撞规则、不动刷怪节奏。
 	var angle := randf() * TAU
-	var offset := Vector2(cos(angle), sin(angle)) * spawn_distance
+	var spawn_pos := _spawn_from_angle(angle, 0.0)
+	for attempt in 3:
+		if _is_spawn_point_clear(spawn_pos):
+			return spawn_pos
+		# 重摇角度，顺便把半径抖一点，避免总是同一个圆周
+		angle += randf_range(0.6, 2.1)
+		spawn_pos = _spawn_from_angle(angle, attempt)
+	return _escape_into_clear_space(spawn_pos)
+
+func _spawn_from_angle(angle: float, attempt: int) -> Vector2:
+	## 单次落点计算：玩家周围 spawn_distance 的圆上，钳进房间，镜像房再反射一次。
+	## attempt 只用来做轻微半径抖动，不改变"屏幕外刷怪"这个基本语义。
+	var radius: float = spawn_distance * (1.0 + 0.08 * float(attempt))
+	var offset := Vector2(cos(angle), sin(angle)) * radius
 	var spawn_pos := player.global_position + offset
 
 	# 90 = 墙厚 32 + 怪碰撞半径 + 视觉余量：贴着钳制线刷出的怪看起来在墙上
@@ -543,6 +562,29 @@ func _get_spawn_position() -> Vector2:
 			spawn_pos = _clamp_into_room(spawn_pos, margin)
 
 	return spawn_pos
+
+func _is_spawn_point_clear(pos: Vector2) -> bool:
+	## 落点四周有没有墙/柱子/道具。
+	## 半径用怪的碰撞半径（约 14px）+ 一点余量：只要怪的圆心不贴在障碍上就够了。
+	## 房间节点缺失时返回 true（不猜，保持旧行为而不是随机吞掉刷怪）。
+	var room := _find_room_node()
+	if room == null or not room.has_method("is_position_clear_at"):
+		return true
+	return bool(room.is_position_clear_at(pos, 22.0))
+
+func _escape_into_clear_space(pos: Vector2) -> Vector2:
+	## 有界逃逸：以原落点为圆心，由近及远扫几圈同心圆，取第一个空地。
+	## 找不到就原样返回——宁可怪刷得难看一点，也不能因为房间被塞满就完全不刷怪。
+	const RING_STEPS: int = 12
+	const RADII: Array[float] = [40.0, 72.0, 110.0, 150.0, 200.0]
+	for radius in RADII:
+		for i in RING_STEPS:
+			var a: float = TAU * float(i) / float(RING_STEPS)
+			var candidate := pos + Vector2(cos(a), sin(a)) * radius
+			candidate = _clamp_into_room(candidate, 90.0)
+			if _is_spawn_point_clear(candidate):
+				return candidate
+	return pos
 
 func _on_enemy_died(enemy: Node2D) -> void:
 	enemies_alive -= 1

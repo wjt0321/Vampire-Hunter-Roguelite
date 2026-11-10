@@ -66,6 +66,9 @@ func _setup_button_effects() -> void:
 func _apply_button_style(btn: Button) -> void:
 	## 只作用单个按钮：动态创建的深渊按钮不能走"整面板重连"，
 	## 那会给已有的 Restart/Menu 再叠一次音效连接（hover/click 双播）。
+	## 焦点也一样：统一在这里设，动态建的 AbyssButton 才不会漏。
+	## Space 是开火键，按钮吃到焦点就会被 ui_accept 吞掉。
+	btn.focus_mode = Control.FOCUS_NONE
 	var normal := TextureManager.instance.get_ui_texture("btn_normal")
 	var hover := TextureManager.instance.get_ui_texture("btn_hover")
 	var pressed := TextureManager.instance.get_ui_texture("btn_pressed")
@@ -96,7 +99,7 @@ func _on_button_click_sfx() -> void:
 
 func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 	visible = true
-	get_tree().paused = true
+	PauseController.acquire(self)
 	
 	var crystals: int = 0
 	var daily_line := ""
@@ -241,16 +244,18 @@ func _make_achievement_row(ach_id: String, ach_name: String) -> HBoxContainer:
 	return row
 
 func _on_restart_pressed() -> void:
-	get_tree().paused = false
+	PauseController.release(self)
 	restart_requested.emit()
 
 func _on_menu_pressed() -> void:
-	get_tree().paused = false
+	PauseController.release(self)
 	menu_requested.emit()
 
 func _on_abyss_pressed() -> void:
-	## 深渊阶梯：+1 等级后重开。先归零 paused（reload 不会自动解）
-	get_tree().paused = false
+	## 深渊阶梯：+1 等级后重开。reload_current_scene() 不会替新场景解掉
+	## 上一帧留下的暂停（上一轮踩过：无尽阶梯第一层就是冻结画面），
+	## 所以这里走"场景即将整体重载"的专用入口，它自己会解除暂停。
+	PauseController.reset_for_scene_change()
 	abyss_continue_requested.emit()
 
 func _setup_abyss_button(victory: bool) -> void:

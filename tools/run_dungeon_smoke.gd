@@ -5,6 +5,7 @@ extends SceneTree
 ##       验证层推进、Boss 形态切换、通关判定都不报错。
 
 var _fail: int = 0
+var _save_mgr: Node = null
 
 func _initialize() -> void:
 	_run()
@@ -16,10 +17,18 @@ func _check(cond: bool, msg: String) -> void:
 		print("  ❌ %s" % msg)
 		_fail += 1
 
+func _isolate_save() -> void:
+	## 存档隔离：Boss 击杀会解锁成就并结算血晶，这里把存档切到
+	## user://test_run_dungeon_smoke.json，绝不写玩家真实存档。
+	_save_mgr = root.get_node_or_null("SaveManager")
+	if _save_mgr != null:
+		_save_mgr.call("use_test_save_path", "run_dungeon_smoke")
+
 func _run() -> void:
 	await process_frame
 	print("")
 	print("====== 地下城全流程冒烟测试 ======")
+	_isolate_save()
 
 	var main_scene = load("res://scenes/main.tscn").instantiate()
 	root.add_child(main_scene)
@@ -120,4 +129,7 @@ func _print_result() -> void:
 	else:
 		print("⚠️ 失败 %d 项，请检查上方 ❌ 条目" % _fail)
 	print("=================================")
+	if _save_mgr != null:
+		# 只删本次测试自己的临时存档
+		_save_mgr.call("clear_test_save", "run_dungeon_smoke")
 	quit(1 if _fail > 0 else 0)

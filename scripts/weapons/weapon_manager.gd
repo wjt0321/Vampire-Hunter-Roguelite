@@ -188,8 +188,33 @@ func _process(delta: float) -> void:
 		if shoot_timers.has(timer_key):
 			var timer: Timer = shoot_timers[timer_key]
 			if timer.is_stopped():
+				if not _can_fire(weapon):
+					continue
 				_fire_weapon(weapon)
-				timer.start(weapon.get_scaled_fire_rate())
+				timer.start(get_fire_interval(weapon))
+
+func _can_fire(weapon) -> bool:
+	## 开火许可。自动瞄准武器保持自动开火；
+	## 非自动瞄准武器必须按住 shoot —— 早期所有武器都在自动开火，
+	## 玩家的"瞄准"完全不起作用，按不按鼠标都一样。
+	if "auto_aim" in weapon and bool(weapon.get("auto_aim")):
+		return true
+	return Input.is_action_pressed("shoot")
+
+func _get_shoot_speed_multiplier() -> float:
+	## 玩家当前的射速倍率（"射速 +20%" 这类升级和道具的汇总值）。
+	## 实际冷却和 DPS 估算都从这里取值，避免两处口径不一致：
+	## 冷却按倍率算、估算却按基础值算，难度软挂钩会低估玩家的强度。
+	if player != null and is_instance_valid(player) and "shoot_speed_multiplier" in player:
+		return maxf(float(player.get("shoot_speed_multiplier")), 0.05)
+	return 1.0
+
+func get_fire_interval(weapon) -> float:
+	## 实际开火间隔 = 武器基础间隔 ÷ 玩家的射速倍率。
+	## 早期 shoot_speed_multiplier 只存了个值，从不参与计算，
+	## "射速 +20%" 这类卡拿在手里完全没有效果。
+	var interval: float = weapon.get_scaled_fire_rate()
+	return maxf(interval / _get_shoot_speed_multiplier(), 0.02)
 
 func add_weapon(weapon_data) -> void:
 	if weapon_data == null:
@@ -214,7 +239,7 @@ func add_weapon(weapon_data) -> void:
 		ach_mgr.record_weapon_used(weapon_data.weapon_id)
 
 	var timer := Timer.new()
-	timer.wait_time = weapon_data.get_scaled_fire_rate()
+	timer.wait_time = get_fire_interval(weapon_data)
 	timer.one_shot = true
 	add_child(timer)
 	shoot_timers[weapon_data.weapon_id] = timer
@@ -338,7 +363,7 @@ func _evolve_weapon(weapon_id: String, evolution: WeaponEvolution) -> void:
 
 			# 更新计时器
 			if shoot_timers.has(weapon_id):
-				shoot_timers[weapon_id].wait_time = weapon.get_scaled_fire_rate()
+				shoot_timers[weapon_id].wait_time = get_fire_interval(weapon)
 
 			weapon_evolved.emit(weapon, evolution)
 			print("✨ %s 已进化为 %s!" % [weapon_id, evolution.evolution_name])
@@ -428,11 +453,14 @@ func estimate_run_dps() -> float:
 	## 刻意不去统计真实伤害：take_damage 有 4 个子类覆写，打点必然漏，
 	## 而漏掉的伤害会让"玩家明明很强却被判成弱"。
 	var total: float = 0.0
+	var shoot_mult: float = _get_shoot_speed_multiplier()
 	for i in range(weapons.size()):
 		var w = weapons[i]
 		if w == null:
 			continue
-		var interval: float = maxf(float(w.get_scaled_fire_rate()), 0.05)
+		# 间隔要和真实开火一致（含射速倍率），
+		# 否则玩家拿了一堆射速卡，估算 DPS 还是按基础间隔算，难度软挂钩会低估他。
+		var interval: float = maxf(float(w.get_scaled_fire_rate()) / shoot_mult, 0.05)
 		var per_cycle: float = float(w.get_scaled_damage()) * float(w.get_scaled_projectile_count())
 		var dps: float = per_cycle / interval
 		# 多武器收益递减，和实际伤害计算保持一致

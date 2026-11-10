@@ -1,5 +1,7 @@
 extends RefCounted
 class_name ProjectileVisuals
+
+const ReadabilityVisuals = preload("res://scripts/core/readability_visuals.gd")
 ## 弹道可视化工厂（程序化贴图，不依赖美术资源）
 ##
 ## 背景：早期所有弹丸都是 8x8 的纯色方块，在深色地板 + 二十只怪的同屏混战里
@@ -174,8 +176,9 @@ static func style_sprite(sprite: Sprite2D, color: Color, length: float, thicknes
 	)
 	sprite.modulate = color
 	sprite.material = get_additive_material()
-	# 弹丸永远画在敌人之上，否则被怪堆埋掉
-	sprite.z_index = 1
+	# 弹丸画在敌人**和玩家**之上：被怪堆埋掉会看不见弹道，
+	# 被玩家身体挡住则直接影响"够不够得着"的走位判断。
+	sprite.z_index = ReadabilityVisuals.Z_PROJECTILE
 
 ## 给一个"没有 Sprite 子节点"的动态弹丸临时挂上发光外观
 static func attach_glow(node: Node2D, color: Color, size: float) -> Sprite2D:

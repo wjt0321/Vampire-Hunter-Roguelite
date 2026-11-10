@@ -12,6 +12,20 @@ const PLAYER_INVINCIBLE_DURATION: float = 0.5
 const PLAYER_PICKUP_RANGE: float = 100.0
 const PLAYER_CRIT_DAMAGE: float = 2.0
 
+# ==================== 2D 物理层 ====================
+
+# 与 project.godot 的 layer_names 一一对应（位掩码，1/2/4/8/16/32）。
+# 墙、柱、道具统一在 LAYER_WALL；玩家、敌人、双方弹丸各自按职责与墙碰撞。
+const LAYER_PLAYER: int = 1
+const LAYER_ENEMY: int = 2
+const LAYER_BULLET: int = 4
+const LAYER_PICKUP: int = 8
+const LAYER_WALL: int = 16
+## 敌方弹幕单独一层。早期敌方弹丸挂在"敌人"层上，玩家子弹打过去时
+## 两边都算敌人对撞，分不清是谁打掉了谁；独立成层后才能只销毁敌方弹丸、
+## 让玩家子弹继续飞。
+const LAYER_ENEMY_BULLET: int = 32
+
 # ==================== 经验与升级 ====================
 
 # 升级经验公式: XP_BASE + (level-1)*XP_LINEAR + (level-1)^XP_EXPONENT
@@ -28,6 +42,25 @@ const UPGRADE_SHOOT_SPEED_MULT: float = 0.20 # +20% 射速
 const UPGRADE_MAX_HP: float = 20.0           # +20 HP
 const UPGRADE_ARMOR: float = 5.0             # +5 护甲
 const UPGRADE_PICKUP_RANGE: float = 30.0     # +30 拾取范围
+## 磁铁被动的基准吸附半径：实际加成 = 这个值 × 被动倍率。
+## 放在 GameConfig 是因为升级卡文案要按同一个数折算成 px，
+## 两处各写一个 50.0 迟早会漂开（文案写 +50，实际给 +45）。
+const MAGNET_BASE_RANGE: float = 50.0
+
+## 基础属性卡的等级上限（每张属性卡各自计数）。
+## 没有上限时属性卡可以无限叠，"Build 选择"就退化成纯数值膨胀，
+## 而且池子永远不会耗尽，补给卡那条分支等于死代码。
+const MAX_STAT_LEVEL: int = 5
+
+## 属性卡的**共享总预算**（本局所有属性卡等级之和的上限）。
+##
+## 只靠单卡 5 级上限不够：6 张卡 × 5 级 = 30 级，属性依然能堆到很厚，
+## 而且"全部单卡满级"要 30 级才触发，实机里几乎等不到 → 补给卡分支仍是死代码。
+##
+## 12 而不是 15：一局 12 波（3 层 × 4 战斗房），玩家实际拿到的属性升级就十几张，
+## 15 级预算等于"这局摸不到顶"，专注属性的 Build 永远等不到补给卡。
+## 12 级 ≈ 2.4 张卡拉满，专注型 Build 在 12 波内必然触顶并转投补给。
+const MAX_TOTAL_STAT_LEVEL: int = 12
 
 # ==================== 护甲与减伤 ====================
 
@@ -98,9 +131,14 @@ const ENEMY_HP_LEVEL_SCALE_CAP: float = 2.0     # 等级缩放上限
 ## 远程敌人类型（用于逐层解禁判断）
 const RANGED_ENEMY_TYPES: Array = ["skeleton_archer", "vampire_mage"]
 
-## 该层的第几间房开始允许刷远程怪（下标 = floor - 1；按本层已清房间数算）
-## 第 1 层前 3 间房纯近战，第 4 间房开始出现射手，最后 2 间与 Boss 房才真正有压力
-const RANGED_UNLOCK_ROOM_BY_FLOOR: Array = [4, 2, 1]
+## 该层前几间**战斗房**不出远程怪（下标 = floor - 1）
+## 第 1 层前 2 间战斗房纯近战，第 3 间战斗房开始出现射手。
+## 计数口径是"战斗房"：商店/宝箱/休息房不吃掉这个名额（见 DungeonManager.combat_rooms_entered）。
+##
+## 阈值为什么是 2 而不是 3：岔路会把一间战斗房换成**变异房**（变异房没有战斗），
+## 本层就只剩 3 间战斗房。阈值 3 的话最后一间战斗房才解禁，
+## 而那正是变异房顶掉的那间 → 整层一个射手都不刷。阈值 2 留了一间余量。
+const RANGED_UNLOCK_ROOM_BY_FLOOR: Array = [2, 2, 1]
 
 ## 敌人开火冷却倍率（下标 = floor - 1）。第 1 层射手 2.0s → 3.4s，几乎是原来的两倍
 const ENEMY_FIRE_COOLDOWN_MULT_BY_FLOOR: Array = [1.7, 1.25, 1.0]
@@ -116,7 +154,7 @@ static func get_ranged_unlock_room(floor_index: int) -> int:
 	return int(RANGED_UNLOCK_ROOM_BY_FLOOR[idx])
 
 static func is_ranged_allowed(floor_index: int, rooms_cleared: int) -> bool:
-	## rooms_cleared 传"本层已清房间数"，从 0 开始
+	## rooms_cleared 传"本层已清的战斗房数"，从 0 开始
 	return rooms_cleared >= get_ranged_unlock_room(floor_index)
 
 static func get_enemy_fire_cooldown_mult(floor_index: int) -> float:
@@ -185,6 +223,20 @@ const FLOOR_DAMAGE_MULTIPLIERS: Array = [1.0, 1.18, 1.40]
 const FLOOR_CLEAR_HEAL_RATIO: float = 0.5
 const FLOOR_CLEAR_CRYSTALS: Array = [30, 60, 120]
 
+# 非战斗房把波次标签换成房间名（HUD 的波次位只有一格）。
+# 收在配置里而不是 main 的局部字典：HUD 要拿 "BOSS" 判断"这条是占位文案、
+# 退出 Boss 战别复活"，两处各写一次字面量迟早会漂移。
+const ROOM_LABEL_BOSS := "BOSS"
+const ROOM_LABELS: Dictionary = {
+	"shop": "商 店",
+	"treasure": "宝 箱",
+	"rest": "休 息",
+	"boss": ROOM_LABEL_BOSS,
+	"mutation": "变 异",
+	"fog": "迷 雾",
+	"mirror": "镜 像",
+}
+
 # ==================== Boss 配置 ====================
 
 const BOSS_BASE_HP: float = 800.0
@@ -205,6 +257,32 @@ const PASSIVE_MAX_DODGE: float = 0.25      # 闪避上限25%
 const PASSIVE_MAX_CRIT: float = 0.40       # 暴击上限40%
 const PASSIVE_MAX_LIFESTEAL: float = 0.28  # 吸血上限28%
 const PASSIVE_MAX_FREEZE: float = 0.25     # 冻结上限25%
+# 护盾冷却是"越低越好"，8 秒是下限（再低等于常驻无敌）
+const PASSIVE_MIN_SHIELD_COOLDOWN: float = 8.0
+# 判定"这一级到底有没有涨"的容差：浮点累加后 25.0000001 与 25.0 要算同一个数
+const PASSIVE_GAIN_EPSILON: float = 0.0005
+
+## 被动数值的真实上限。player 生效、升级卡预览、满级判定三处必须共用这一张表：
+## 谁自己抄一份 minf，就会出现"卡面写 30%、实际只有 25%"这种骗玩家投钱的情况。
+static func cap_passive_value(passive_id: String, value: float) -> float:
+	match passive_id:
+		"frozen_heart":
+			return minf(value, PASSIVE_MAX_FREEZE)
+		"vampiric_fang":
+			return minf(value, PASSIVE_MAX_LIFESTEAL)
+		"shadow_cloak":
+			return minf(value, PASSIVE_MAX_DODGE)
+		"lucky_clover":
+			return minf(value, PASSIVE_MAX_CRIT)
+		"blood_edge":
+			return minf(value, PASSIVE_MAX_BLEED_CHANCE)
+		"frost_bind":
+			return minf(value, PASSIVE_MAX_SLOW_CHANCE)
+		"blood_drain":
+			return minf(value, PASSIVE_MAX_DRAIN)
+		"shield":
+			return maxf(value, PASSIVE_MIN_SHIELD_COOLDOWN)
+	return value
 
 # ==================== 血晶经济 ====================
 
@@ -714,6 +792,11 @@ static var daily_active: bool = false
 static var daily_date: String = ""
 static var daily_seed: int = 0
 static var daily_modifier_ids: Array = []
+
+## 每日挑战里"升级抽卡"这条随机流的盐。
+## 地图与战斗各用一条独立随机流（daily_seed / daily_seed ^ 0x5A17），
+## 抽卡再单独一条：同一种子必须抽到同一手牌，否则每日挑战没法互相比较。
+const DAILY_UPGRADE_RNG_SALT: int = 0x3C0D
 
 static func start_daily(spec: Dictionary) -> void:
 	daily_active = true

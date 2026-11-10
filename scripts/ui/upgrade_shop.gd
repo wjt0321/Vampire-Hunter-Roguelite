@@ -53,6 +53,8 @@ func _setup_back_button_style() -> void:
 	_apply_button_texture(back_btn)
 
 func _apply_button_texture(btn: Button) -> void:
+	# Space 是开火键。主菜单里的元进度商店按钮同样不能吃焦点。
+	btn.focus_mode = Control.FOCUS_NONE
 	var normal := TextureManager.instance.get_ui_texture("btn_normal")
 	var hover := TextureManager.instance.get_ui_texture("btn_hover")
 	var pressed := TextureManager.instance.get_ui_texture("btn_pressed")

@@ -2,7 +2,12 @@ extends "res://scripts/enemies/enemy_base.gd"
 class_name SummonerEnemy
 ## 召唤师 — 保持距离，定期召唤小怪
 
-@export var summon_interval: float = 5.0  # 召唤间隔
+@export var summon_interval: float = 5.0  # 后续召唤间隔
+## 首次召唤的延迟。
+## 0 会让召唤师一进场就把小怪召出来：自己还没站稳就被围住，玩家连躲的空间都没有。
+## 但直接用 summon_interval（5 秒）也太空——前 5 秒屏幕上什么都不发生，
+## 玩家会以为召唤师是只普通怪。1.5 秒是折中：进场有存在感，也来得及反应。
+const FIRST_SUMMON_DELAY: float = 1.5
 @export var summon_range: float = 200.0  # 召唤距离
 @export var min_distance_to_player: float = 150.0  # 保持的最小距离
 @export var max_distance_to_player: float = 300.0  # 保持的最大距离
@@ -19,7 +24,11 @@ func _ready() -> void:
 	base_contact_damage = 8.0
 	xp_value = 20
 	super._ready()
-	
+	# 首次召唤要等 FIRST_SUMMON_DELAY（后续召唤仍是 summon_interval）。
+	# 旧实现 summon_timer 初值是 0，进场第一帧就召出 summon_count 只小怪：
+	# 召唤师自己还没站稳就被自己的小怪围住，玩家连躲的空间都没有。
+	summon_timer = FIRST_SUMMON_DELAY
+
 	# 创建召唤特效
 	_summon_particles_setup()
 
@@ -109,6 +118,22 @@ func _summon() -> void:
 		bat.hp_scale = 0.6
 
 		get_tree().current_scene.add_child(bat)
+		_connect_summoned_enemy(bat)
+
+func _connect_summoned_enemy(enemy: Node) -> void:
+	## 召唤出来的小怪必须接上击杀信号。
+	## 波次管理器给正式刷出来的怪都接了 enemy_died（计数、发成就、推进波次），
+	## 召唤物绕过 wave_manager 直接生成，信号没人接：
+	## 小怪死了不算击杀，玩家看到的击杀数永远对不上，也不发成就。
+	var wave_manager: Node = null
+	var managers := get_tree().get_nodes_in_group("wave_manager")
+	if not managers.is_empty():
+		wave_manager = managers[0]
+	if wave_manager != null and is_instance_valid(wave_manager):
+		if wave_manager.has_method("_on_enemy_died"):
+			enemy.connect("enemy_died", Callable(wave_manager, "_on_enemy_died"))
+	if player != null and is_instance_valid(player) and player.has_method("_on_enemy_died"):
+		enemy.connect("enemy_died", Callable(player, "_on_enemy_died"))
 
 func _get_enemy_type() -> String:
 	return "summoner"

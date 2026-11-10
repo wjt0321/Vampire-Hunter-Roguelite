@@ -39,12 +39,11 @@ func open(player_node: Node, floor_idx: int) -> void:
 	_refresh()
 	visible = true
 	# 和商店/升级一致：暂停世界，玩家可以慢慢看代价
-	get_tree().paused = true
+	PauseController.acquire(self)
 
 func close() -> void:
 	visible = false
-	if get_tree().paused:
-		get_tree().paused = false
+	PauseController.release(self)
 
 ## 契约是否可选：扣 20% 上限后必须仍活着。
 ## 不设这道闸门的话，残血玩家点契约 = 当场自杀（而且是他自己选的，会很气）。

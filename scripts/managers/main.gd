@@ -327,9 +327,9 @@ func _on_wave_completed(wave_number: int) -> void:
 	# 每完成一波后出现传送门
 	if current_room != null and not current_room.portal_spawned:
 		_open_room_exit(current_room)
-	# 波次标签别继续挂着 "Wave N" 让人以为还有活怪——写明已清
+	# 波次标签别继续挂着波次号让人以为还有活怪——写明已清
 	if hud and hud.has_method("set_wave_status"):
-		hud.set_wave_status("Wave %d 已清 · 走传送门" % wave_number, true)
+		hud.set_wave_status("第 %d 波已清 · 走传送门" % wave_number, true)
 
 func _on_portal_chosen(room_type: String) -> void:
 	if dungeon:
@@ -382,10 +382,13 @@ func _enter_next_room(autostart: bool = true) -> String:
 	var room_type: String = dungeon.consume_room()
 	rooms_cleared = dungeon.rooms_cleared_total
 
-	# 同步层敌人池与层倍率。第三个参数是"本层已清房间数"，
-	# 远程敌人靠它逐间解禁（room_in_floor 在 consume_room 里已经 +1，所以要 -1）
+	# 同步层敌人池与层倍率。第三个参数是"本层已清的战斗房数"，
+	# 远程敌人靠它逐间解禁。
+	# 口径必须是**战斗房**而不是房间序号：商店/宝箱/休息房也要占一间房，
+	# 旧口径下第 1 层第 3 间（哪怕是宝箱房）就把解禁名额用光了，
+	# 结果整层一个射手都不刷。DungeonManager 在 consume_room 里记好了这个数。
 	wave_manager.set_floor(dungeon.current_floor, dungeon.get_enemy_pool(),
-		maxi(dungeon.room_in_floor - 1, 0))
+		dungeon.combat_rooms_before_current)
 
 	var template: Dictionary = room_manager.get_random_template()
 	var themed := room_type == "combat" or room_type == "fog" or room_type == "mirror"
@@ -407,16 +410,9 @@ func _enter_next_room(autostart: bool = true) -> String:
 	# 非战斗房没有波次：把 HUD 的波次标签换成房间名。
 	# 否则进了宝箱房，标签还挂着上一波的 "Wave 4"，房间却空的（试玩反馈）
 	if room_type != "combat" and hud and hud.has_method("set_wave_status"):
-		var wave_text: Dictionary = {
-			"shop": "商 店",
-			"treasure": "宝 箱",
-			"rest": "休 息",
-			"boss": "BOSS",
-			"mutation": "变 异",
-			"fog": "迷 雾",
-			"mirror": "镜 像",
-		}
-		hud.set_wave_status(String(wave_text.get(room_type, "—")))
+		# 房间名表在 GameConfig：HUD 那边要拿 "BOSS" 判断"退出 Boss 战别复活占位文案"，
+		# 两处各写一份字面量的话，改一边就会出现"标签还在闪、判定已经不认识它"。
+		hud.set_wave_status(String(GameConfig.ROOM_LABELS.get(room_type, "—")))
 
 	# 上一间的事件行不要带到这间。迷雾/镜像/变异会在自己的入口里重写。
 	if hud and hud.has_method("set_event_status"):
@@ -767,6 +763,14 @@ func _apply_daily_rules() -> void:
 		var combat_rng := RandomNumberGenerator.new()
 		combat_rng.seed = GameConfig.daily_seed ^ 0x5A17
 		wave_manager.combat_rng = combat_rng
+		# 升级抽卡也用固定随机流：每日挑战的可复现性不能只覆盖地图和战斗。
+		# 边界要说清楚——同一种子 + 同一个池状态（以及同样的抽牌次数）才给同一手牌；
+		# 玩家中途重抽过、手牌池被放逐过，结果就会不同，这是设计使然，不是 bug。
+		# 用独立盐值派生，避免和地图/战斗共用同一条随机序列（共用会让后面的抽卡
+		# 结果依赖前面刷了几波怪，跨机器就不一致了）。
+		var upgrade_rng := RandomNumberGenerator.new()
+		upgrade_rng.seed = GameConfig.daily_seed ^ GameConfig.DAILY_UPGRADE_RNG_SALT
+		upgrade_ui.rng = upgrade_rng
 	print("☀ 每日挑战 %s · %s" % [GameConfig.daily_date, GameConfig.daily_name_list()])
 
 func _enter_boss_room() -> void:
@@ -805,6 +809,10 @@ func _enter_boss_room() -> void:
 		spawn_parent = self
 	spawn_parent.add_child(boss)
 	boss_hp_bar.show_boss_bar(boss_name)
+	# Boss 不计入波次（enemy_died 那条连接是空回调），波次编号打到这层就停住了。
+	# 继续挂在 HUD 上会让玩家以为"还差几波"而不是"把这条血打完"。
+	if hud and hud.has_method("set_boss_mode"):
+		hud.set_boss_mode(true)
 
 func _on_boss_intro_finished() -> void:
 	## Boss 登场演出结束，血条亮满 → 进入正常战斗
@@ -842,6 +850,8 @@ func _on_boss_defeated() -> void:
 	_boss_defeat_handled = true
 
 	boss_hp_bar.hide_boss_bar()
+	if hud and hud.has_method("set_boss_mode"):
+		hud.set_boss_mode(false)
 	wave_manager.stop()
 
 	var cleared_floor: int = dungeon.current_floor

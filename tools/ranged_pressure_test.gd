@@ -47,10 +47,14 @@ func _run() -> void:
 	var gc = load("res://scripts/core/game_config.gd")
 
 	# ==================== ① 逐层解禁 ====================
+	# 计数口径是"战斗房"（商店/宝箱/休息房不吃掉解禁名额）：
+	# 第 1 层前 2 间战斗房纯近战，第 3 间战斗房开始出现射手。
+	# 阈值是 2 而不是 3：岔路可能把一间战斗房换成没有战斗的变异房，
+	# 本层只剩 3 间战斗房，阈值 3 会让整层一个射手都不刷。
 	print("\n=== ① 远程敌人逐层解禁 ===")
-	_check(not gc.is_ranged_allowed(1, 0), "第 1 层第 1 间房：不刷远程")
-	_check(not gc.is_ranged_allowed(1, 3), "第 1 层第 4 间房（已清 3）：仍不刷远程")
-	_check(gc.is_ranged_allowed(1, 4), "第 1 层第 5 间房（已清 4）：开始刷远程")
+	_check(not gc.is_ranged_allowed(1, 0), "第 1 层第 1 间战斗房：不刷远程")
+	_check(not gc.is_ranged_allowed(1, 1), "第 1 层第 2 间战斗房：不刷远程")
+	_check(gc.is_ranged_allowed(1, 2), "第 1 层第 3 间战斗房（已清 2）：开始刷远程")
 	_check(not gc.is_ranged_allowed(2, 1), "第 2 层已清 1 间：不刷远程")
 	_check(gc.is_ranged_allowed(2, 2), "第 2 层已清 2 间：开始刷远程")
 	_check(not gc.is_ranged_allowed(3, 0), "第 3 层第 1 间房：不刷远程")
