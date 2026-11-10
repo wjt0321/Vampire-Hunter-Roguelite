@@ -509,6 +509,38 @@ func _test_portal_placement() -> void:
 	_clear_roots()
 	await process_frame
 
+	# --- ⑧c 岔路双门：预定点被墙挡住时必须挪到空地，两门不能叠在一起 ---
+	var fork_root := _make_scene_root()
+	var fork := _make_room(1280.0, 768.0)
+	fork_root.add_child(fork)
+	var center: Vector2 = fork.get_center()
+	var preferred: Array[Vector2] = [center + Vector2(-180, 48), center + Vector2(180, 48)]
+	for spot in preferred:
+		fork_root.add_child(_make_wall_body(spot, Vector2(160, 160)))
+	await physics_frame
+	await physics_frame
+	var choices: Array = [
+		{"type": "combat", "title": "继续", "color": Color.WHITE},
+		{"type": "shop", "title": "商店", "color": Color.CYAN},
+	]
+	await fork.spawn_choice_portals(choices)
+	var left := fork.get_node_or_null("Portal_combat") as Area2D
+	var right := fork.get_node_or_null("Portal_shop") as Area2D
+	_check(left != null and right != null, "岔路两扇门都已生成")
+	if left != null and right != null:
+		_check(not _is_blocked_at(left.global_position, PORTAL_CLEAR_RADIUS),
+			"左门没有落在挡住预定点的墙里")
+		_check(not _is_blocked_at(right.global_position, PORTAL_CLEAR_RADIUS),
+			"右门没有落在挡住预定点的墙里")
+		var apart: float = left.global_position.distance_to(right.global_position)
+		_check(apart >= 140.0, "两扇门相距 %.0f 像素（期望 ≥140）" % apart)
+		var bounds: Rect2 = fork.get_room_bounds()
+		_check(bounds.grow(-40.0).has_point(fork.to_local(left.global_position))
+			and bounds.grow(-40.0).has_point(fork.to_local(right.global_position)),
+			"两扇门都在房间内部")
+	_clear_roots()
+	await process_frame
+
 	# --- ⑧b 兜底顺序：房间几乎被墙填满时，落点也不能卡进障碍 ---
 	var dense_root := _make_scene_root()
 	var dense := _make_room(1280.0, 768.0)
@@ -726,6 +758,27 @@ func _test_death_and_pause_guard() -> void:
 	player.take_damage(10.0)
 	await process_frame
 	_check(_deaths == 1, "玩家已死亡后再次受击不会重复触发死亡（%d 次）" % _deaths)
+
+	# --- ⑪.1c 死亡后飞来的经验不能再升级，也不能把三选一盖在结算页上 ---
+	var level_before: int = player.current_level
+	var xp_before: int = player.current_xp
+	var level_ups: int = 0
+	player.level_up.connect(func(_lv: int) -> void: level_ups += 1)
+	player.gain_xp(5000)
+	_check(player.is_dead(), "致命一击后玩家标记为已死亡")
+	_check(player.current_level == level_before and player.current_xp == xp_before,
+		"死亡后经验不再入账（等级 %d→%d，经验 %d→%d）"
+		% [level_before, player.current_level, xp_before, player.current_xp])
+	_check(level_ups == 0, "死亡后经验不会再触发升级（%d 次）" % level_ups)
+	var upgrade_ui = load("res://scenes/ui/upgrade_ui.tscn").instantiate()
+	scene_root.add_child(upgrade_ui)
+	await process_frame
+	upgrade_ui.show_upgrade(player, null)
+	_check(upgrade_ui.visible and PauseController.is_held_by(upgrade_ui),
+		"升级界面打开时持有暂停")
+	upgrade_ui.dismiss_for_game_over()
+	_check(not upgrade_ui.visible and not PauseController.is_held_by(upgrade_ui),
+		"死亡打断会关掉升级界面并放开暂停")
 
 	# --- ⑪.1b 血量归零但没走死亡流程的边界情况 ---
 	var p_zero := _instantiate("res://scenes/player/player.tscn")
