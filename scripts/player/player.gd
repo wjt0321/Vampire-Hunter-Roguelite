@@ -386,7 +386,14 @@ func _handle_rotation() -> void:
 		sprite.flip_h = false
 
 # === 经验值相关 ===
+func is_dead() -> bool:
+	return _player_dead
+
 func gain_xp(amount: int) -> void:
+	# 死亡动画期间宝石还会飞过来。再入账会在结算页上面再弹出三选一，
+	# 升级层比结算层高，玩家点不到「重开」。
+	if _player_dead:
+		return
 	# 应用贪婪戒指加成
 	var final_amount := int(amount * (1.0 + xp_bonus_multiplier))
 	current_xp += final_amount
@@ -634,10 +641,14 @@ func _flash_damage() -> void:
 	tween.tween_property(sprite, "modulate", Color.WHITE, 0.05)
 
 func _die() -> void:
+	if _player_dead:
+		return
+	# 先打上死亡标记再发信号。player_died 的监听者会同步停波、关界面，
+	# 这些回调里如果还有经验结算，必须已经看得到「已死亡」。
+	_player_dead = true
 	player_died.emit()
 	set_physics_process(false)
 	collision_shape.set_deferred("disabled", true)
-	_player_dead = true
 	# 死亡强烈震动
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:

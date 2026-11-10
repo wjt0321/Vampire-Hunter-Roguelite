@@ -1005,6 +1005,9 @@ func _on_player_level_up(new_level: int) -> void:
 	_try_open_upgrade()
 
 func _try_open_upgrade() -> void:
+	if player != null and is_instance_valid(player) and player.has_method("is_dead") and player.is_dead():
+		_pending_upgrades = 0
+		return
 	if _upgrade_open or _pending_upgrades <= 0:
 		return
 	if upgrade_ui == null or upgrade_ui.visible:
@@ -1065,6 +1068,12 @@ func _on_weapon_evolved(weapon, evolution) -> void:
 
 func _on_player_died() -> void:
 	wave_manager.stop()
+	# 致命一击和经验入账可能落在同一帧：三选一已经盖上来了。
+	# 先把它撤掉并清掉排队中的升级，否则结算页在更低的层，玩家点不到重开。
+	_pending_upgrades = 0
+	_upgrade_open = false
+	if upgrade_ui != null and upgrade_ui.has_method("dismiss_for_game_over"):
+		upgrade_ui.dismiss_for_game_over()
 	if floor_banner:
 		floor_banner.force_hide()
 	var ach_mgr := get_node_or_null("/root/AchievementManager")

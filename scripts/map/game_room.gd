@@ -265,6 +265,44 @@ func get_safe_portal_position() -> Vector2:
 		return grid_any
 	return to_global(get_center())
 
+func _find_choice_portal_position(preferred_local: Vector2, already: Array) -> Vector2:
+	## 岔路门优先落在左右两个预定点。预定点被柱子/道具挡住时，
+	## 在附近找一块玩家走得进去的空地，两扇门之间也要留出间距。
+	var bounds := get_room_bounds()
+	var candidates: Array[Vector2] = [preferred_local]
+	for radius in [64.0, 112.0, 160.0, 208.0, 256.0]:
+		for i in 12:
+			candidates.append(preferred_local + Vector2.RIGHT.rotated(TAU * float(i) / 12.0) * radius)
+	for local_pos in candidates:
+		if not bounds.grow(-64.0).has_point(local_pos):
+			continue
+		var world_pos := to_global(local_pos)
+		if _choice_spot_separated(world_pos, already) and is_position_clear(world_pos):
+			return world_pos
+	var grid := _scan_choice_portal_grid(bounds, already)
+	if grid != Vector2.INF:
+		return grid
+	return to_global(preferred_local)
+
+func _choice_spot_separated(world_pos: Vector2, already: Array) -> bool:
+	for prev in already:
+		if world_pos.distance_to(prev) < 140.0:
+			return false
+	return true
+
+func _scan_choice_portal_grid(bounds: Rect2, already: Array) -> Vector2:
+	var area := bounds.grow(-PORTAL_GRID_INSET)
+	var x := area.position.x
+	while x <= area.end.x:
+		var y := area.position.y
+		while y <= area.end.y:
+			var world_pos := to_global(Vector2(x, y))
+			if _choice_spot_separated(world_pos, already) and is_position_clear(world_pos):
+				return world_pos
+			y += PORTAL_GRID_STEP
+		x += PORTAL_GRID_STEP
+	return Vector2.INF
+
 func _is_portal_visible(world_pos: Vector2) -> bool:
 	## 有玩家相机时，门必须落在画面内并留出 48px 边缘；无相机的测试环境不做限制。
 	var cameras := get_tree().get_nodes_in_group("camera")
@@ -386,8 +424,11 @@ func spawn_choice_portals(choices: Array) -> void:
 	room_cleared.emit()
 	var offsets: Array = [Vector2(-180, 48), Vector2(180, 48)]
 	var portals: Array = []
+	var placed: Array[Vector2] = []
 	for i in range(2):
-		portals.append(_build_choice_portal(get_center() + offsets[i], choices[i]))
+		var spot := _find_choice_portal_position(get_center() + offsets[i], placed)
+		placed.append(spot)
+		portals.append(_build_choice_portal(spot, choices[i]))
 	await get_tree().create_timer(0.5).timeout
 	for portal in portals:
 		if not is_instance_valid(portal):
@@ -401,7 +442,6 @@ func _build_choice_portal(pos: Vector2, info: Dictionary) -> Area2D:
 	portal.name = "Portal_%s" % room_type
 	portal.collision_layer = 0
 	portal.collision_mask = 1
-	portal.global_position = pos
 	portal.z_index = ReadabilityVisuals.Z_GROUND
 	portal.modulate = info.get("color", Color(0.7, 0.5, 1.0))
 
@@ -435,6 +475,9 @@ func _build_choice_portal(pos: Vector2, info: Dictionary) -> Area2D:
 		_emit_choice(body, room_type)
 	)
 	add_child(portal)
+	# 进树之后再写全局坐标。进树前写 global_position 会被当成局部坐标，
+	# 房间一旦不在原点，门就会偏到墙外。
+	portal.global_position = pos
 
 	var tween := create_tween().set_loops()
 	tween.tween_property(portal, "modulate:a", 0.45, 0.8)

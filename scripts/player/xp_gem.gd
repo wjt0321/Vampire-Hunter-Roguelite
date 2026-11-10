@@ -238,17 +238,29 @@ func auto_collect() -> void:
 		var players := get_tree().get_nodes_in_group("player")
 		if players.size() > 0:
 			player = players[0]
-	if player != null and is_instance_valid(player) and player.has_method("gain_xp"):
+	if _can_grant_xp(player):
 		player.gain_xp(xp_value)
 	xp_value = 0
 	_kill_pulse()
 	set_physics_process(false)
 	ObjectPool.release(self)
 
+func _can_grant_xp(who: Node) -> bool:
+	if who == null or not is_instance_valid(who) or not who.has_method("gain_xp"):
+		return false
+	if who.has_method("is_dead") and bool(who.call("is_dead")):
+		return false
+	return true
+
 func _collect() -> void:
-	# 通知玩家获得经验
-	if player != null and player.has_method("gain_xp"):
-		player.gain_xp(xp_value)
+	# 通知玩家获得经验。人已经倒了就只回收宝石，不再播拾取音、也不再升级。
+	if not _can_grant_xp(player):
+		xp_value = 0
+		_kill_pulse()
+		set_physics_process(false)
+		ObjectPool.release(self)
+		return
+	player.gain_xp(xp_value)
 	# 拾取 VFX
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:

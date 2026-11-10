@@ -493,6 +493,13 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				_on_skip()
 
+func dismiss_for_game_over() -> void:
+	## 玩家已死。关掉三选一并放开它持有的暂停，不要发 upgrade_selected
+	## ——那会让主场景以为「这张卡选完了」再排队开下一张。
+	visible = false
+	if PauseController.is_held_by(self):
+		PauseController.release(self)
+
 func _close_and_emit() -> void:
 	var tween := create_tween()
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
