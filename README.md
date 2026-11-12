@@ -5,7 +5,7 @@
 
 2D 哥特风 Roguelite 射击。WASD 走位、鼠标瞄准、武器自动开火，三层地下城一路杀到血族女王。
 
-宣传站：<https://wjt0321.github.io/vampire-hunter-roguelite/>（源文件在 `site/`，推到 `master` 后由 GitHub Actions 发布到 `gh-pages`）。
+宣传站：<https://wjt0321.github.io/Vampire-Hunter-Roguelite/>（源文件在 `site/`，推到 `master` 后由 GitHub Actions 发布到 `gh-pages`）。
 
 ## 截图
 
