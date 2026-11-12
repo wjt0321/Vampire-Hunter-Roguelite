@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>吸血鬼猎人 Vampire Hunter Roguelite — 2D 哥特风 Roguelite 射击</title>
+<meta name="description" content="吸血鬼猎人：2D 哥特风 Roguelite 射击游戏。三层地下城、11 把武器、11 类敌人与 3 名 Boss，自动开火、局内构筑，每一局都不一样。Godot 4.7 打造，MIT 开源。">
+<meta property="og:title" content="吸血鬼猎人 Vampire Hunter Roguelite">
+<meta property="og:description" content="三层地下城，一路杀到血族女王。2D 哥特风 Roguelite 射击。">
+<meta property="og:image" content="https://wjt0321.github.io/vampire-hunter-roguelite/assets/img/shots/gameplay.png">
+<link rel="canonical" href="https://wjt0321.github.io/vampire-hunter-roguelite/">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="dust" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-text">吸血鬼猎人<em>Vampire Hunter Roguelite</em></span>
+    </a>
+    <nav class="nav" id="nav">
+      <a href="#loop">玩法</a>
+      <a href="#build">构筑</a>
+      <a href="#shots">实机</a>
+      <a href="#weapons">武器</a>
+      <a href="#heroes">角色</a>
+      <a href="#content">内容</a>
+      <a href="#get">运行</a>
+      <a class="btn btn-ghost btn-sm" href="https://github.com/wjt0321/Vampire-Hunter-Roguelite" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="展开菜单" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main>
+
+<section class="hero">
+  <div class="hero-bg" aria-hidden="true"></div>
+  <div class="hero-veil" aria-hidden="true"></div>
+  <div class="container hero-inner">
+    <p class="eyebrow">2D 哥特风 Roguelite 射击 · Godot 4.7 · MIT 开源</p>
+    <h1 class="hero-title">吸血鬼猎人</h1>
+    <p class="hero-sub">VAMPIRE&nbsp;HUNTER&nbsp;ROGUELITE</p>
+    <p class="hero-lead">三层地下城，一路杀到血族女王。<br>武器自动开火，你只管走位与取舍。</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="#get">开始狩猎</a>
+      <a class="btn btn-ghost" href="#shots">看实机画面</a>
+      <a class="btn btn-text" href="https://github.com/wjt0321/Vampire-Hunter-Roguelite" target="_blank" rel="noopener">GitHub 源码 →</a>
+    </div>
+    <ul class="hero-stats">
+      <li><b data-count="3">0</b><span>层地下城</span></li>
+      <li><b data-count="20">0</b><span>间房间</span></li>
+      <li><b data-count="11">0</b><span>把武器</span></li>
+      <li><b data-count="11">0</b><span>类敌人</span></li>
+      <li><b data-count="3">0</b><span>名 Boss</span></li>
+      <li><b data-count="25">0</b><span>枚成就</span></li>
+    </ul>
+  </div>
+  <a class="scroll-hint" href="#loop"><span></span>深入地窖</a>
+</section>
+
+<section class="section" id="loop">
+  <div class="container">
+    <header class="section-head reveal">
+      <p class="kicker">核心循环</p>
+      <h2>一间房、一件武器、一条血路</h2>
+      <p class="section-lead">没有剧本，只有越来越糟的房间。每一层都是一次取舍：活下去，还是换一把更强的。</p>
+    </header>
+    <div class="loop-grid">
+      <article class="loop-card reveal">
+        <span class="loop-num">01</span>
+        <h3>清房</h3>
+        <p>每间战斗房刷 30 秒怪潮。杀光就开门，传送门在你脚下亮起。</p>
+      </article>
+      <article class="loop-card reveal">
+        <span class="loop-num">02</span>
+        <h3>变强</h3>
+        <p>升级三选一。可以重抽、可以放逐某个选项、也可以跳过换银币。武器满级还能进化。</p>
+      </article>
+      <article class="loop-card reveal">
+        <span class="loop-num">03</span>
+        <h3>消费</h3>
+        <p>局内银币在商店房买武器、被动与消耗品。休息房则要选：安息回血，还是缔约换收益。</p>
+      </article>
+      <article class="loop-card reveal">
+        <span class="loop-num">04</span>
+        <h3>下潜</h3>
+        <p>每层最后一间是 Boss。通关拿血晶，在元进度界面买永久升级、解锁角色。</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="build">
+  <div class="container">
+    <header class="section-head reveal">
+      <p class="kicker">构筑深度</p>
+      <h2>不是捡装备，是做选择</h2>
+      <p class="section-lead">最强的一局，往往来自你放逐了什么。</p>
+    </header>
+    <div class="feature-grid">
+      <article class="feature reveal">
+        <h3>升级三选一</h3>
+        <p>每次升级给三张卡。攻速、移速、护甲、拾取范围……都可能出现在同一屏。</p>
+      </article>
+      <article class="feature reveal">
+        <h3>放逐</h3>
+        <p>按 <kbd>B</kbd> 把某个选项永久踢出本局选池。少一张卡，换一整局的干净。</p>
+      </article>
+      <article class="feature reveal">
+        <h3>重抽与跳过</h3>
+        <p><kbd>R</kbd> 重抽三张卡，<kbd>Tab</kbd> 直接跳过换银币——手黑也有出路。</p>
+      </article>
+      <article class="feature reveal">
+        <h3>武器进化</h3>
+        <p>同一把武器叠到满级触发进化。最多同时携带 4 把，构筑空间有限。</p>
+      </article>
+      <article class="feature reveal">
+        <h3>精英词缀</h3>
+        <p>血盾、冲锋、裂变、急速四类词缀随机附着在普通敌人身上，同样的小怪不再一样。</p>
+      </article>
+      <article class="feature reveal">
+        <h3>元进度</h3>
+        <p>6 项永久升级各 5 级：伤害、生命、移速、护甲、经验与血晶加成。死了也不白死。</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="shots">
+  <div class="container">
+    <header class="section-head reveal">
+      <p class="kicker">实机画面</p>
+      <h2>没有片头，直接开打</h2>
+      <p class="section-lead">以下均为游戏内真实截图（1280×720）。</p>
+    </header>
+    <div class="shot-grid" id="shotGrid">
+      <figure class="shot reveal" data-full="assets/img/shots/gameplay.png" data-cap="战斗：武器自动开火，走位与取舍才是操作">
+        <img src="assets/img/shots/gameplay.png" alt="游戏战斗画面" loading="lazy">
+        <figcaption><span>战斗</span><small>自动开火 · 走位与取舍</small></figcaption>
+      </figure>
+      <figure class="shot reveal" data-full="assets/img/shots/upgrade.png" data-cap="升级三选一：重抽、放逐、跳过换银币">
+        <img src="assets/img/shots/upgrade.png" alt="升级三选一界面" loading="lazy">
+        <figcaption><span>升级三选一</span><small>重抽 · 放逐 · 跳过</small></figcaption>
+      </figure>
+      <figure class="shot reveal" data-full="assets/img/shots/menu.png" data-cap="主菜单：哥特圣殿背景下的入口">
+        <img src="assets/img/shots/menu.png" alt="主菜单" loading="lazy">
+        <figcaption><span>主菜单</span><small>哥特圣殿</small></figcaption>
+      </figure>
+      <figure class="shot reveal" data-full="assets/img/shots/characters.png" data-cap="角色选择：猎人阿尔忒弥斯与牧师塞西莉亚">
+        <img src="assets/img/shots/characters.png" alt="角色选择界面" loading="lazy">
+        <figcaption><span>角色选择</span><small>两名猎人 · 独立技能</small></figcaption>
+      </figure>
+      <figure class="shot reveal" data-full="assets/img/shots/shop.png" data-cap="房间商店：用局内银币买武器、被动与消耗品">
+        <img src="assets/img/shots/shop.png" alt="房间商店界面" loading="lazy">
+        <figcaption><span>房间商店</span><small>银币是本局唯一的硬通货</small></figcaption>
+      </figure>
+      <figure class="shot reveal" data-full="assets/img/shots/boss.png" data-cap="Boss 战：血族领主的多阶段弹幕">
+        <img src="assets/img/shots/boss.png" alt="Boss 战画面" loading="lazy">
+        <figcaption><span>Boss 战</span><small>血族领主 · 多阶段</small></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="weapons">
+  <div class="container">
+    <header class="section-head reveal">
+      <p class="kicker">武器库</p>
+      <h2>11 把武器，各有脾气</h2>
+      <p class="section-lead">手枪、散弹枪、魔法书、飞刀、苦无、毒雾瓶、闪电法杖、十字弩、圣光魔杖、火焰喷射器、血爆——满级可进化。</p>
+    </header>
+    <div class="weapon-grid">
+      <article class="weapon reveal"><img src="assets/img/weapons/pistol.png" alt="手枪图标"><h3>手枪</h3><p>可靠的基础武器</p></article>
+      <article class="weapon reveal"><img src="assets/img/weapons/shotgun.png" alt="散弹枪图标"><h3>散弹枪</h3><p>近距离扇形射击</p></article>
+      <article class="weapon reveal"><img src="assets/img/weapons/magic_book.png" alt="魔法书图标"><h3>魔法书</h3><p>自动追踪敌人</p></article>
+      <article class="weapon reveal"><img src="assets/img/weapons/knife.png" alt="飞刀图标"><h3>飞刀</h3><p>穿透多个敌人</p></article>
+      <article class="weapon reveal"><img src="assets/img/weapons/kunai.png" alt="苦无图标"><h3>苦无</h3><p>极高速连投暗器</p></article>
+      <article class="weapon reveal"><img src="assets/img/weapons/poison.png" alt="毒雾瓶图标"><h3>毒雾瓶</h3><p>持续伤害区域</p></article>
+      <article class="weapon reveal"><img src="assets/img/weapons/lightning.png" alt="闪电法杖图标"><h3>闪电法杖</h3><p>闪电链跳跃</p></article>
+      <article class="weapon reveal"><img src="assets/img/weapons/crossbow.png" alt="十字弩图标"><h3>十字弩</h3><p>高伤害穿透弩箭</p></article>
+      <article class="weapon reveal"><img src="assets/img/weapons/holy_wand.png" alt="圣光魔杖图标"><h3>圣光魔杖</h3><p>自动追踪的圣光弹</p></article>
+      <article class="weapon reveal"><img src="assets/img/weapons/flame_thrower.png" alt="火焰喷射器图标"><h3>火焰喷射器</h3><p>近距离持续灼烧</p></article>
+      <article class="weapon reveal"><img src="assets/img/weapons/blood_burst.png" alt="血爆图标"><h3>血爆</h3><p>在最近敌群中引爆血海</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="passives">
+  <div class="container">
+    <header class="section-head reveal">
+      <p class="kicker">被动与词缀</p>
+      <h2>小加成叠起来就是流派</h2>
+      <p class="section-lead">11 种被动 + 3 类状态修饰词条，对任意武器生效，不用逐把接线。</p>
+    </header>
+    <div class="passive-grid">
+      <div class="passive reveal"><img src="assets/img/passives/magnet.png" alt="经验磁铁"><b>经验磁铁</b><span>经验吸附范围 +30%</span></div>
+      <div class="passive reveal"><img src="assets/img/passives/shield.png" alt="能量护盾"><b>能量护盾</b><span>定期生成护盾</span></div>
+      <div class="passive reveal"><img src="assets/img/passives/regen.png" alt="生命恢复"><b>生命恢复</b><span>每 5 秒恢复生命</span></div>
+      <div class="passive reveal"><img src="assets/img/passives/greed.png" alt="贪婪戒指"><b>贪婪戒指</b><span>经验获取 +20%</span></div>
+      <div class="passive reveal"><img src="assets/img/passives/berserker.png" alt="狂战士之血"><b>狂战士之血</b><span>低血量时伤害 +50%</span></div>
+      <div class="passive reveal"><img src="assets/img/passives/frozen.png" alt="冰冻之心"><b>冰冻之心</b><span>10% 几率冻结敌人</span></div>
+      <div class="passive reveal"><img src="assets/img/passives/lightning_shield.png" alt="闪电护符"><b>闪电护符</b><span>受击时闪电反击</span></div>
+      <div class="passive reveal"><img src="assets/img/passives/shadow.png" alt="影子披风"><b>影子披风</b><span>闪避几率 +5%</span></div>
+      <div class="passive reveal"><img src="assets/img/passives/vampiric.png" alt="吸血獠牙"><b>吸血獠牙</b><span>击杀时概率回血</span></div>
+      <div class="passive reveal"><img src="assets/img/passives/swift_boots.png" alt="疾风靴"><b>疾风靴</b><span>移动速度 +10%</span></div>
+      <div class="passive reveal"><img src="assets/img/passives/clover.png" alt="幸运四叶草"><b>幸运四叶草</b><span>暴击几率 +8%</span></div>
+      <div class="passive reveal"><img src="assets/img/passives/blood_edge.png" alt="血刃"><b>血刃</b><span>命中 25% 几率使敌人流血</span></div>
+      <div class="passive reveal"><img src="assets/img/passives/frost_bind.png" alt="霜缚"><b>霜缚</b><span>命中 30% 几率使敌人减速</span></div>
+      <div class="passive reveal"><img src="assets/img/passives/blood_drain.png" alt="汲取"><b>汲取</b><span>造成伤害的 2% 转为生命</span></div>
+    </div>
+    <h3 class="sub-head reveal">四类精英词缀</h3>
+    <div class="affix-grid">
+      <div class="affix reveal"><img src="assets/img/affix/shielded.png" alt="血盾词缀"><b>血盾</b><span>普通怪身上长出血盾</span></div>
+      <div class="affix reveal"><img src="assets/img/affix/charger.png" alt="冲锋词缀"><b>冲锋</b><span>看见你就冲过来</span></div>
+      <div class="affix reveal"><img src="assets/img/affix/splitter.png" alt="裂变词缀"><b>裂变</b><span>死亡时分裂成更小的怪</span></div>
+      <div class="affix reveal"><img src="assets/img/affix/haster.png" alt="急速词缀"><b>急速</b><span>移动与攻击速度翻倍</span></div>
+    </div>
+  </div>
+</section>
+<section class="section section-alt" id="heroes">
+  <div class="container">
+    <header class="section-head reveal">
+      <p class="kicker">角色与敌人</p>
+      <h2>你要杀的东西，和替你去杀的人</h2>
+    </header>
+    <div class="hero-cards">
+      <article class="hero-card reveal">
+        <div class="sprite-frame"><span class="sprite player" data-frames="4"></span></div>
+        <h3>猎人 · 阿尔忒弥斯</h3>
+        <p>平衡型。手枪与投掷武器兼顾伤害与机动，容错高，适合第一次下潜。</p>
+        <span class="tag">平衡</span>
+      </article>
+      <article class="hero-card reveal">
+        <div class="sprite-frame"><span class="sprite priestess" data-frames="4"></span></div>
+        <h3>牧师 · 塞西莉亚</h3>
+        <p>防御型。护盾与治疗撑住前线，靠圣光与持续伤害磨掉血线。</p>
+        <span class="tag">防御</span>
+      </article>
+    </div>
+    <h3 class="sub-head reveal">11 类敌人 · 随机附带词缀</h3>
+    <div class="enemy-strip reveal">
+      <div class="enemy"><span class="sprite e4" data-enemy="bat_fly"></span><b>血蝠</b></div>
+      <div class="enemy"><span class="sprite e4" data-enemy="zombie_walk"></span><b>行尸</b></div>
+      <div class="enemy"><span class="sprite e4" data-enemy="skeleton_idle"></span><b>骷髅</b></div>
+      <div class="enemy"><span class="sprite e4" data-enemy="vampire_idle"></span><b>吸血鬼</b></div>
+      <div class="enemy"><span class="sprite e4" data-enemy="werewolf_idle"></span><b>狼人</b></div>
+      <div class="enemy"><span class="sprite e4" data-enemy="gargoyle_idle"></span><b>石像鬼</b></div>
+      <div class="enemy"><span class="sprite e4" data-enemy="exploder_walk"></span><b>爆裂者</b></div>
+      <div class="enemy"><span class="sprite e4" data-enemy="mage_cast"></span><b>术士</b></div>
+      <div class="enemy"><span class="sprite e4" data-enemy="summoner_cast"></span><b>召唤者</b></div>
+      <div class="enemy"><span class="sprite e4" data-enemy="prince_idle"></span><b>血族王子</b></div>
+      <div class="enemy"><span class="sprite e4" data-enemy="elite_vampire_idle"></span><b>精英吸血鬼</b></div>
+    </div>
+    <div class="boss-card reveal">
+      <div class="sprite-frame boss"><span class="sprite boss-sprite" data-frames="4"></span></div>
+      <div class="boss-text">
+        <p class="kicker">每层终局</p>
+        <h3>3 名 Boss</h3>
+        <p>血族领主拥有三个战斗阶段，25% 血量时进入「绝望模式」，并释放新星爆发双环弹幕。攻击前有明确的预警特效——看准了再躲。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="content">
+  <div class="container">
+    <header class="section-head reveal">
+      <p class="kicker">内容一览</p>
+      <h2>这一局有多少东西可以玩</h2>
+    </header>
+    <div class="spec-grid reveal">
+      <div class="spec"><b>3 × 6–7</b><span>地下城（层 × 房间）</span></div>
+      <div class="spec"><b>20</b><span>间房 · 12 个战斗波次</span></div>
+      <div class="spec"><b>4</b><span>套主题环境</span></div>
+      <div class="spec"><b>11</b><span>把武器（满级可进化）</span></div>
+      <div class="spec"><b>14</b><span>种被动与状态词条</span></div>
+      <div class="spec"><b>6</b><span>种属性卡</span></div>
+      <div class="spec"><b>11 + 3</b><span>类敌人 + Boss</span></div>
+      <div class="spec"><b>4</b><span>类精英词缀</span></div>
+      <div class="spec"><b>6 × 5</b><span>元进度项目 × 等级</span></div>
+      <div class="spec"><b>2</b><span>名可解锁角色</span></div>
+      <div class="spec"><b>25</b><span>枚成就徽章</span></div>
+      <div class="spec"><b>4</b><span>把武器同时携带上限</span></div>
+    </div>
+    <div class="ach-row reveal" aria-label="成就徽章墙">
+      <div class="ach-track" id="achTrack"></div>
+    </div>
+  </div>
+</section>
+<section class="section section-alt" id="controls">
+  <div class="container">
+    <header class="section-head reveal">
+      <p class="kicker">操作</p>
+      <h2>左手走位，右手瞄准</h2>
+      <p class="section-lead">所有武器默认自动开火，你不需要按射击键。</p>
+    </header>
+    <div class="key-grid reveal">
+      <div class="key-row"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><b>移动</b></div>
+      <div class="key-row"><span class="mouse">鼠标</span><b>瞄准非自动武器的方向</b></div>
+      <div class="key-row"><span><kbd>R</kbd> / <kbd>Tab</kbd></span><b>升级界面：重抽 / 跳过</b></div>
+      <div class="key-row"><span><kbd>B</kbd></span><b>升级界面：放逐（移出本局选池）</b></div>
+      <div class="key-row"><span><kbd>ESC</kbd></span><b>暂停</b></div>
+    </div>
+    <p class="note reveal">魔法书、飞刀等自动瞄准武器会锁定最近敌人；手枪、散弹枪、火焰喷射器朝鼠标方向射击，角色朝向跟随鼠标。</p>
+  </div>
+</section>
+<section class="section" id="get">
+  <div class="container">
+    <header class="section-head reveal">
+      <p class="kicker">运行与源码</p>
+      <h2>想打就现在打，想改就随便改</h2>
+    </header>
+    <div class="run-grid">
+      <article class="run-card reveal">
+        <h3>玩起来</h3>
+        <ul>
+          <li>需要 Godot 4.7+，导入 project.godot 后按 F5</li>
+          <li>仓库已导出 Windows 构建包，位于 builds 目录</li>
+        </ul>
+        <h3>拉下来跑</h3>
+        <div class="codeblock">git clone https://github.com/wjt0321/Vampire-Hunter-Roguelite
+
+# 打印 TTK 曲线与房间结构
+godot --headless --path . --script res://tools/balance_report.gd
+
+# 三层全流程冒烟
+godot --headless --path . --script res://tools/run_dungeon_smoke.gd</div>
+        <ul class="plain">
+          <li>200+ 张贴图为 AI 生成 + 程序化后处理的原创资产</li>
+          <li>生成与替换管线保留在仓库 .workbuddy/comfy/</li>
+          <li>每张素材的来源与许可登记在 docs/asset-licenses.md</li>
+        </ul>
+        <p class="run-punch">血族女王在第三层等你。</p>
+      </article>
+      <article class="run-card run-cta reveal">
+        <h3>把这一局打完</h3>
+        <p>一把手枪，一本魔法书，<br>剩下的看这一局怎么打。</p>
+        <div class="run-cta-btns">
+          <a class="btn btn-primary" href="https://github.com/wjt0321/Vampire-Hunter-Roguelite" target="_blank" rel="noopener">打开 GitHub 仓库</a>
+          <a class="btn btn-ghost" href="#shots">再看一遍实机画面</a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <b>吸血鬼猎人</b>
+      <span>Vampire Hunter Roguelite · MIT License</span>
+    </div>
+    <nav class="footer-links">
+      <a href="https://github.com/wjt0321/Vampire-Hunter-Roguelite" target="_blank" rel="noopener">GitHub 仓库</a>
+      <a href="#shots">实机截图</a>
+      <a href="#get">运行方式</a>
+    </nav>
+    <p class="footer-note">游戏画面与美术素材均为原创，由 AI 生成 + 程序化后处理完成，来源与许可见仓库 docs/asset-licenses.md。</p>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <button class="lb-close" id="lbClose" aria-label="关闭">×</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="上一张">‹</button>
+  <figure class="lb-figure">
+    <img id="lbImg" src="" alt="">
+    <figcaption id="lbCap"></figcaption>
+  </figure>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="下一张">›</button>
+</div>
+
+<script src="assets/js/main.js"></script>
+</body>
+</html>
