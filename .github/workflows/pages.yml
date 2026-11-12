@@ -1,0 +1,45 @@
+name: Publish promo site
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Publish site/ to gh-pages
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          stage=$(mktemp -d)
+          cp -a site/. "$stage/"
+          touch "$stage/.nojekyll"
+          git fetch origin gh-pages
+          git checkout gh-pages
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "$stage/." .
+          git add -A
+          if git diff --cached --quiet; then
+            echo "宣传站没有变化，跳过发布"
+            exit 0
+          fi
+          git commit -m "deploy: 发布宣传站"
+          git push origin gh-pages
