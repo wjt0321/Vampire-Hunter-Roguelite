@@ -90,6 +90,7 @@ func _ready() -> void:
 	_load_sprite_texture()
 	_create_variant_aura()
 	_find_player()
+	_contact_area = _find_contact_area()
 
 	_begin_intro()
 
@@ -277,6 +278,8 @@ func _adjust_sprite_scale() -> void:
 	_present_sprite(128.0 * size_mult)
 
 func _physics_process(delta: float) -> void:
+	if is_frozen:
+		return
 	if is_dead:
 		return
 	# 登场演出期间站着不动、不出招
@@ -367,7 +370,7 @@ func _enrage_effect() -> void:
 	tween.tween_property(sprite, "modulate", Color(2.0, 0.3, 0.3, 1.0), 0.15)
 	tween.tween_property(sprite, "modulate", Color(1.0, 0.5, 0.5, 1.0), 0.15)
 	# 增强属性
-	move_speed = 88.0 + boss_variant * 10.0
+	set_base_move_speed(88.0 + boss_variant * 10.0)
 	base_contact_damage = 30.0 + boss_variant * 4.0
 	# 只重算伤害，绝不能重算 HP（否则会重置 max_hp 并破坏血条）
 	_recalc_damage()
@@ -389,7 +392,7 @@ func _desperate_effect() -> void:
 	tween.tween_property(sprite, "modulate", Color(3.0, 0.1, 0.1, 1.0), 0.1)
 	tween.tween_property(sprite, "modulate", Color(1.0, 0.3, 0.3, 1.0), 0.1)
 	# 极大增强
-	move_speed = 120.0 + boss_variant * 8.0
+	set_base_move_speed(120.0 + boss_variant * 8.0)
 	base_contact_damage = 40.0 + boss_variant * 5.0
 	_recalc_damage()
 	barrage_count = 16 + boss_variant * 2
@@ -467,6 +470,7 @@ func _get_projectile_color() -> Color:
 
 func _spawn_boss_projectile(direction: Vector2) -> void:
 	var proj := Area2D.new()
+	proj.add_to_group("enemy_projectiles")
 	proj.collision_layer = GameConfig.LAYER_ENEMY_BULLET
 	proj.collision_mask = GameConfig.LAYER_PLAYER | GameConfig.LAYER_WALL
 
@@ -593,29 +597,17 @@ func take_damage(amount: float) -> void:
 	if intro_invulnerable:
 		_on_intro_hit_blocked()
 		return
-	current_hp -= amount
+	amount = _subtract_hp(_direct_damage(amount))
+	_after_damage_taken(amount)
 	boss_hp_changed.emit(current_hp, max_hp)
 	if current_hp <= 0:
 		_die()
 		return
 	_flash_hit()
-	_after_damage_taken(amount)
 
 func take_damage_with_knockback(amount: float, _knockback_dir: Vector2, _knockback_force: float = 120.0, _stun_duration: float = 0.08) -> void:
-	## Boss 免疫击退与硬直，但伤害必须走血条刷新。
-	## 之前没覆写这个方法，子弹走的是基类实现 → 掉血了血条却纹丝不动。
-	if is_dead:
-		return
-	if intro_invulnerable:
-		_on_intro_hit_blocked()
-		return
-	current_hp -= amount
-	boss_hp_changed.emit(current_hp, max_hp)
-	if current_hp <= 0:
-		_die()
-		return
-	_flash_hit()
-	_after_damage_taken(amount)
+	# Boss ignores displacement, but shares damage, HP and drain semantics.
+	take_damage(amount)
 
 func _die() -> void:
 	if is_dead:
@@ -634,7 +626,7 @@ func _die() -> void:
 		var gem_scene := preload("res://scenes/player/xp_gem.tscn")
 		var gem := gem_scene.instantiate() as Area2D
 		gem.global_position = global_position + Vector2(randf_range(-40, 40), randf_range(-40, 40))
-		gem.xp_value = 20
+		gem.xp_value = _loot_scaled(20)
 		get_tree().current_scene.call_deferred("add_child", gem)
 	# 禁用碰撞
 	collision_shape.set_deferred("disabled", true)

@@ -208,13 +208,38 @@ var unlocked_this_run: Array[String] = []
 
 # 引用 SaveManager
 var save_mgr: Node = null
+var _effective_game_time: float = 0.0
+var _prior_kill_categories: Dictionary = {}
+var _run_finished: bool = false
+
+func _process(delta: float) -> void:
+	_effective_game_time += delta
+	run_stats["survival_time"] = int(_effective_game_time)
+	_check_achievements()
+
+func get_effective_time() -> float:
+	return _effective_game_time
+
+func finish_run() -> void:
+	# 截止击杀与时钟；Boss/通关奖励和结算收入仍可合法入账。
+	_run_finished = true
+	set_process(false)
+
+func is_run_finished() -> bool:
+	return _run_finished
 
 func _ready() -> void:
+	# autoload 在主菜单也存在；只有 start_new_run 才启用本局计时。
+	set_process(false)
 	save_mgr = get_node_or_null("/root/SaveManager")
 	print("🏆 成就管理器已初始化")
 
 # === 开始新游戏 ===
 func start_new_run() -> void:
+	_run_finished = false
+	set_process(true)
+	_effective_game_time = 0.0
+	_prior_kill_categories = save_mgr.save_data.get("kill_categories", {}).duplicate() if save_mgr else {}
 	run_stats = {
 		"kills": 0,
 		"total_kills": 0,
@@ -229,6 +254,7 @@ func start_new_run() -> void:
 		"mage_kills": 0,
 		"summoner_kills": 0,
 		"gargoyle_kills": 0,
+		"kill_categories": {},
 		"boss_killed": false,
 		"flawless_boss_kill": false,
 		"boss_kill_time": 0,
@@ -253,8 +279,20 @@ func start_new_run() -> void:
 
 # === 更新统计 ===
 func record_kill(enemy_type: String) -> void:
+	if _run_finished:
+		return
 	run_stats["kills"] += 1
-	run_stats["total_kills"] += 1
+	var categories: Variant = run_stats.get("kill_categories", {})
+	if not (categories is Dictionary):
+		categories = {}
+	run_stats["kill_categories"] = categories
+	var category := _kill_category(enemy_type)
+	if category != "":
+		categories[category] = int(categories.get(category, 0)) + 1
+	if save_mgr != null:
+		run_stats["total_kills"] = int(save_mgr.save_data.get("total_kills", 0)) + int(run_stats["kills"])
+	else:
+		run_stats["total_kills"] += 1
 	match enemy_type:
 		"vampire":
 			run_stats["vampire_kills"] += 1
@@ -282,9 +320,19 @@ func record_kill(enemy_type: String) -> void:
 	# 检查成就
 	_check_achievements()
 
-func record_boss_kill(damage_taken_in_boss_fight: int) -> void:
+func _kill_category(enemy_type: String) -> String:
+	match enemy_type:
+		"vampire", "werewolf", "bat", "zombie", "skeleton", "exploder", "elite", "vampire_prince", "vampire_mage", "summoner", "gargoyle":
+			return enemy_type
+		"skeleton_archer":
+			return "skeleton"
+		"elite_vampire":
+			return "elite"
+	return ""
+
+func record_boss_kill(damage_taken_in_boss_fight: float) -> void:
 	run_stats["boss_killed"] = true
-	run_stats["boss_kill_time"] = int(Time.get_unix_time_from_system() - run_stats["start_time"])
+	run_stats["boss_kill_time"] = int(_effective_game_time)
 	run_stats["flawless_boss_kill"] = (damage_taken_in_boss_fight == 0)
 	_check_achievements()
 
@@ -371,6 +419,10 @@ func _check_condition(condition: String) -> bool:
 	var value: int = int(parts[2])
 
 	var stat_value: int = run_stats.get(key, 0)
+	var category_keys := {"vampire_kills": "vampire", "werewolf_kills": "werewolf", "zombie_kills": "zombie", "exploder_kills": "exploder", "elite_kills": "elite", "prince_kills": "vampire_prince"}
+	if category_keys.has(key):
+		var category: String = category_keys[key]
+		stat_value = int(_prior_kill_categories.get(category, 0)) + int(run_stats.get("kill_categories", {}).get(category, 0))
 
 	match op:
 		">=":
@@ -432,6 +484,5 @@ func get_unlocked_this_run() -> Array[String]:
 
 # === 获取本局统计 ===
 func get_run_stats() -> Dictionary:
-	# 更新生存时间
-	run_stats["survival_time"] = int(Time.get_unix_time_from_system() - run_stats["start_time"])
+	run_stats["survival_time"] = int(_effective_game_time)
 	return run_stats

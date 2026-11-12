@@ -145,7 +145,8 @@ func _test_pause_ownership(player, wm, ui, shop, altar, pact, pause_menu) -> voi
 
 	pause_menu._pause()
 	await process_frame
-	_check(_ctrl().holder_count() == 2, "暂停菜单叠加 → 持有者 2（实际 %d）" % _ctrl().holder_count())
+	_check(_ctrl().holder_count() == 1 and not pause_menu.visible,
+		"已有升级模态时拒绝在背后打开暂停菜单")
 	pause_menu._resume()
 	await process_frame
 	_check(paused, "关掉暂停菜单不解除升级的暂停")
@@ -362,25 +363,24 @@ func _test_hud(main_scene, hud, boss_bar) -> void:
 	boss_bar.visible = false
 
 	# ---- 走真实的 _on_wave_completed ----
-	# 之前只断言 set_wave_status 的入参，等于测试自己给测试喂答案：
-	# 真正写 "Wave %d 已清" 的是 main 里那一行，测试根本没碰到它。
+	# 计时结束表示出口开启，不代表怪物清光；文案必须由真实主流程写入，
+	# 不能直接调用 set_wave_status 给测试喂答案。
 	if not main_scene.has_method("_on_wave_completed"):
 		_check(false, "main 缺少 _on_wave_completed")
 		return
 	var room = main_scene.current_room
 	if room == null:
-		_check(false, "当前没有房间，无法驱动真实清波回调")
+		_check(false, "当前没有房间，无法驱动真实波次完成回调")
 		return
-	# 传送门已生成时 _open_room_exit 会直接返回，不会把文案改写成
-	# "选路 · 左…/右…"，这样断言才能稳定读到清波文案本身。
+	# 标记传送门已生成，保留现有房间出口，专门验证主流程的出口提示。
 	var portal_backup: bool = bool(room.portal_spawned)
 	room.portal_spawned = true
 	main_scene._on_wave_completed(4)
 	await process_frame
-	_check(hud.wave_label.text == "第 4 波已清 · 走传送门",
-		"真实 _on_wave_completed 写中文清波文案：%s" % hud.wave_label.text)
+	_check(hud.wave_label.text == "出口已开启 · 走传送门",
+		"真实 _on_wave_completed 明确提示出口开启，不宣称怪物清光：%s" % hud.wave_label.text)
 	_check(not hud.wave_label.text.to_lower().contains("wave"),
-		"清波文案不含英文 Wave")
+		"出口开启文案不含英文 Wave")
 	room.portal_spawned = portal_backup
 
 # ================================================================== ④ 升级卡

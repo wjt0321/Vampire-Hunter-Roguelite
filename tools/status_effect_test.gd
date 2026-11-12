@@ -222,11 +222,11 @@ func _run() -> void:
 	# 汲取：按伤害比例回调
 	_player.slow_chance = 0.0
 	_player.drain_ratio = 0.5
-	_player.drained = 0.0
 	await create_timer(gc.STATUS_VFX_COOLDOWN + 0.1).timeout
+	_player.drained = 0.0
 	e1.take_damage(10.0)
-	_check(absf(_player.drained - 5.0) < 0.01,
-		"汲取回调拿到 0.5 × 10 = %.1f" % _player.drained)
+	_check(absf(_player.drained - 10.0) < 0.01,
+		"汲取回调拿到实际伤害 10 = %.1f（比例由玩家乘一次）" % _player.drained)
 	_player.drain_ratio = 0.0
 	e1.queue_free()
 

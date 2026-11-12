@@ -31,9 +31,6 @@ func _physics_process(delta: float) -> void:
 	
 	# 处理冻结状态
 	if is_frozen:
-		freeze_timer -= delta
-		if freeze_timer <= 0:
-			_unfreeze()
 		return
 	
 	# 处理瞬移

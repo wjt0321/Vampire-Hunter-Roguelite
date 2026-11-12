@@ -225,6 +225,10 @@ func _on_settings_back_pressed() -> void:
 # ==================== 暂停 / 恢复 ====================
 
 func _pause() -> void:
+	# 模态已持有暂停时，ESC 不能在它背后再打开菜单。
+	for holder in PauseController.holders():
+		if holder != self:
+			return
 	visible = true
 	PauseController.acquire(self)
 	_disarm_abandon()

@@ -20,6 +20,8 @@ func _ready() -> void:
 	super._ready()
 
 func _physics_process(delta: float) -> void:
+	if is_frozen:
+		return
 	if is_dead or player == null or not is_instance_valid(player):
 		return
 	
@@ -128,7 +130,7 @@ func take_damage(amount: float) -> void:
 	if is_dead:
 		return
 	
-	current_hp -= amount
+	amount = _subtract_hp(_direct_damage(amount))
 	_flash_hit()
 	_after_damage_taken(amount)
 	

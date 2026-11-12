@@ -187,6 +187,10 @@ func apply_slow(mult: float, duration: float) -> void:
 	_slow_remaining = maxf(_slow_remaining, duration)
 	_refresh_speed()
 
+func set_base_move_speed(value: float) -> void:
+	_speed_base = value
+	_refresh_speed()
+
 func _refresh_speed() -> void:
 	## 移速 = 基础 × 急速 × 减速。所有修正都从这里出去。
 	if _speed_base <= 0.0:
@@ -227,6 +231,10 @@ func _process(delta: float) -> void:
 	_tick_sprite(delta)
 	if _status_vfx_cd > 0.0:
 		_status_vfx_cd -= delta
+	if is_frozen:
+		freeze_timer -= delta
+		if freeze_timer <= 0.0:
+			_unfreeze()
 	_tick_speed_decay(delta)
 	_tick_bleed(delta)
 	_tick_contact_damage(delta)
@@ -261,10 +269,19 @@ func _tick_contact_damage(delta: float) -> void:
 	# 否则冷却会被推后，节奏会变成"每 1 秒一次"而不是"每 0.5 秒一次"。
 	if "is_invincible" in body and bool(body.get("is_invincible")):
 		return
-	body.take_damage(contact_damage, global_position)
+	_deal_contact_damage(body)
 	_contact_cd = GameConfig.PLAYER_INVINCIBLE_DURATION
 
+func _deal_contact_damage(body: Node2D) -> void:
+	body.take_damage(contact_damage, global_position)
+
 func _can_damage_body(body: Node2D) -> bool:
+	if is_dead or is_frozen:
+		return false
+	if "is_petrified" in self and bool(get("is_petrified")):
+		return false
+	if "intro_invulnerable" in self and bool(get("intro_invulnerable")):
+		return false
 	## 目标还能挨打吗。
 	## 玩家血量归零（或者已经死亡）时不再结算接触伤害：
 	## 否则敌人会对着尸体反复结算，血条早就空了还会继续掉。
@@ -300,6 +317,9 @@ func _tick_bleed(delta: float) -> void:
 	bleed_remaining -= delta
 	_bleed_tick_timer -= delta
 	if _bleed_tick_timer > 0.0:
+		if bleed_remaining <= 0.0:
+			bleed_dps = 0.0
+			_bleed_tick_timer = 0.0
 		return
 	_bleed_tick_timer = GameConfig.BLEED_TICK
 	dot_damage(bleed_dps * GameConfig.BLEED_TICK)
@@ -328,7 +348,8 @@ func dot_damage(amount: float) -> void:
 	var actual := amount
 	if "armor" in self:
 		actual *= 1.0 - GameConfig.calculate_damage_reduction(float(get("armor")))
-	current_hp -= actual
+	actual = _subtract_hp(actual)
+	_report_dealt_damage(actual)
 	# Boss 的血条不刷新会显示成"打完没掉血"（take_damage 的 4 个覆写里这个是漏得最多的）。
 	# 用 emit_signal 而不是直接写 boss_hp_changed.emit —— 基类没有声明这个信号，
 	# 直接引用会让整个 EnemyBase 解析失败（连带所有子类一起炸）。
@@ -459,9 +480,6 @@ func _physics_process(delta: float) -> void:
 
 	# 处理冻结状态
 	if is_frozen:
-		freeze_timer -= delta
-		if freeze_timer <= 0:
-			_unfreeze()
 		return  # 冻结时不能移动
 
 	# 处理受击硬直与击退
@@ -491,30 +509,40 @@ func _move_towards_player(_delta: float) -> void:
 func take_damage(amount: float) -> void:
 	if is_dead:
 		return
-	current_hp -= amount
+	amount = _subtract_hp(_direct_damage(amount))
 	_apply_hit_freeze()
 	_flash_hit()
 	_after_damage_taken(amount)
 	if current_hp <= 0:
 		_die()
 
+func _direct_damage(amount: float) -> float:
+	# Every direct weapon hit rolls once, including subclass damage handlers.
+	if is_instance_valid(player) and player.has_method("roll_crit") and player.roll_crit():
+		amount *= player.crit_damage
+	return maxf(amount, 0.0)
+
+func _subtract_hp(amount: float) -> float:
+	var effective := minf(maxf(amount, 0.0), maxf(current_hp, 0.0))
+	current_hp -= effective
+	return effective
+
+func _report_dealt_damage(amount: float) -> void:
+	if amount > 0.0 and is_instance_valid(player) and player.has_method("on_dealt_damage"):
+		player.on_dealt_damage(amount)
+
 func _after_damage_taken(amount: float) -> void:
-	## 玩家侧的状态修饰器（流血 / 霜缚 / 汲取）统一在这里落地。
-	## 放在"受击方"而不是"每个命中点"：玩家的伤害来源有六处
-	## （子弹 / 飞刀 / 闪电链 / 毒云 / 环绕刃 / 武器 AOE），逐个打点必然漏掉后加的武器。
+	# Drain includes lethal hits; surviving targets alone receive on-hit statuses.
+	_report_dealt_damage(amount)
 	if is_dead or current_hp <= 0.0 or amount <= 0.0:
 		return
 	var p := player
-	if p == null or not is_instance_valid(p):
+	if not is_instance_valid(p):
 		return
+	if "freeze_chance" in p and randf() < float(p.get("freeze_chance")):
+		freeze(2.0)
 	if not ("bleed_chance" in p):
-		return  # 玩家脚本没这套字段（例如测试用的假玩家），直接跳过
-
-	# 汲取：按"这一下打出多少"结算，和击杀吸血的语义不同
-	# Godot 4 的 Object.get() 只吃一个参数（没有默认值重载），所以先判存在再取
-	var drain: float = float(p.get("drain_ratio")) if "drain_ratio" in p else 0.0
-	if drain > 0.0 and p.has_method("on_dealt_damage"):
-		p.on_dealt_damage(amount * drain)
+		return
 
 	if _status_vfx_cd > 0.0:
 		return
@@ -543,13 +571,12 @@ func _apply_hit_freeze() -> void:
 func take_damage_with_knockback(amount: float, knockback_dir: Vector2, knockback_force: float = 120.0, stun_duration: float = 0.08) -> void:
 	if is_dead:
 		return
-	current_hp -= amount
+	var hp_before := current_hp
+	take_damage(amount)
+	if is_dead or current_hp >= hp_before:
+		return
 	hit_stun_timer = maxf(hit_stun_timer, maxf(stun_duration, GameConfig.HIT_FREEZE_DURATION))
 	knockback_velocity += knockback_dir.normalized() * knockback_force
-	_flash_hit()
-	_after_damage_taken(amount)
-	if current_hp <= 0:
-		_die()
 
 func _flash_hit() -> void:
 	## 受击闪白效果
@@ -692,6 +719,6 @@ func _on_contact_area_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
 		if not _can_damage_body(body):
 			return
-		body.take_damage(contact_damage, global_position)
+		_deal_contact_damage(body)
 		# 首次接触的这一次算进冷却：后续按无敌帧节奏继续结算
 		_contact_cd = GameConfig.PLAYER_INVINCIBLE_DURATION

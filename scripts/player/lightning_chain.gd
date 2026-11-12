@@ -18,10 +18,13 @@ func _ready() -> void:
 	line.width = 3.0
 	line.default_color = Color(1.0, 1.0, 0.3, 0.8)
 	
+	_current_damage = base_damage
 	# 查找第一个目标
 	var first_target := _find_nearest_enemy(global_position)
 	if first_target:
 		_cast_lightning(global_position, first_target)
+		await get_tree().create_timer(0.2, false).timeout
+		_fade_out()
 	else:
 		queue_free()
 
@@ -33,7 +36,8 @@ func _cast_lightning(from_pos: Vector2, target: Node2D) -> void:
 	
 	# 绘制闪电
 	var points := _generate_lightning_points(from_pos, target.global_position)
-	line.points = points
+	for point in points:
+		line.add_point(to_local(point))
 	
 	# 造成伤害
 	if target.has_method("take_damage"):
@@ -55,9 +59,6 @@ func _cast_lightning(from_pos: Vector2, target: Node2D) -> void:
 			_current_damage *= damage_decay
 			_cast_lightning(target.global_position, next_target)
 	
-	# 延迟后消失
-	await get_tree().create_timer(0.2).timeout
-	_fade_out()
 
 func _find_nearest_enemy(from_pos: Vector2) -> Node2D:
 	var enemies := get_tree().get_nodes_in_group("enemies")
@@ -65,7 +66,7 @@ func _find_nearest_enemy(from_pos: Vector2) -> Node2D:
 	var nearest_dist: float = INF
 	
 	for enemy in enemies:
-		if not is_instance_valid(enemy) or _hit_enemies.has(enemy):
+		if not is_instance_valid(enemy) or enemy.get("is_dead") == true or _hit_enemies.has(enemy):
 			continue
 		var dist := from_pos.distance_squared_to(enemy.global_position)
 		if dist < nearest_dist:
@@ -80,7 +81,7 @@ func _find_next_target(from_pos: Vector2) -> Node2D:
 	var nearest_dist: float = jump_range * jump_range
 	
 	for enemy in enemies:
-		if not is_instance_valid(enemy) or _hit_enemies.has(enemy):
+		if not is_instance_valid(enemy) or enemy.get("is_dead") == true or _hit_enemies.has(enemy):
 			continue
 		var dist := from_pos.distance_squared_to(enemy.global_position)
 		if dist < nearest_dist:

@@ -56,6 +56,7 @@ signal portal_chosen(room_type: String)
 
 const DoorLabelScript = preload("res://scripts/map/door_label.gd")
 var _choice_taken: bool = false
+var _portal_used: bool = false
 
 func _ready() -> void:
 	_generate_room()
@@ -492,8 +493,10 @@ func _emit_choice(body: Node2D, room_type: String) -> void:
 		portal_chosen.emit(room_type)
 
 func _on_portal_entered(body: Node2D) -> void:
-	if body.is_in_group("player"):
-		portal_entered.emit()
+	if _portal_used or not body.is_in_group("player"):
+		return
+	_portal_used = true
+	portal_entered.emit()
 
 # === 摆位工具 ===
 func _rect_of(center_offset: Vector2, size: Vector2, origin: Vector2) -> Rect2:
@@ -746,10 +749,25 @@ func setup_rest_room() -> void:
 	add_decorations(2)
 
 func _add_prop_at(prop_name: String, pos: Vector2) -> void:
-	_create_prop(prop_name, pos)
+	var footprint := _prop_footprint(prop_name)
+	if footprint.is_empty():
+		return
+	var size: Vector2 = footprint["size"]
+	var offset: Vector2 = footprint["offset"]
+	if not is_placement_free(_rect_of(offset, size, pos)):
+		pos = find_free_position(size, offset)
+	if pos != Vector2.INF:
+		_create_prop(prop_name, pos)
 
 func _add_decoration_at(dec_name: String, pos: Vector2) -> void:
-	_create_decoration(dec_name, pos)
+	var texture := _get_prop_texture(dec_name)
+	if texture == null:
+		return
+	var size := Vector2(texture.get_width(), texture.get_height())
+	if not is_placement_free(_rect_of(Vector2.ZERO, size, pos)):
+		pos = find_free_position(size)
+	if pos != Vector2.INF:
+		_create_decoration(dec_name, pos)
 
 func _create_merchant(pos: Vector2) -> void:
 	## 在房间中放置商人立绘（无碰撞装饰）

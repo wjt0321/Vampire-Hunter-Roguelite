@@ -53,9 +53,6 @@ func _physics_process(delta: float) -> void:
 	
 	# 处理冻结状态
 	if is_frozen:
-		freeze_timer -= delta
-		if freeze_timer <= 0:
-			_unfreeze()
 		return
 	
 	var distance_to_player := global_position.distance_to(player.global_position)

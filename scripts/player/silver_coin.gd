@@ -54,8 +54,8 @@ func _process(delta: float) -> void:
 
 	var dist := global_position.distance_to(_player.global_position)
 	var range_now := base_attraction_range
-	if "pickup_range" in _player:
-		range_now += float(_player.pickup_range) * 0.5
+	if "pickup_range_bonus" in _player:
+		range_now += float(_player.pickup_range_bonus) * 0.5
 
 	if dist < 16.0:
 		_collect()

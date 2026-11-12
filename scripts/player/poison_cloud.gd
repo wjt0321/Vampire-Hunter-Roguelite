@@ -9,6 +9,7 @@ var damage_multiplier: float = 1.0
 ## 颜色（毒雾=绿，血爆=红），在生成后、入树前设置
 var tint: Color = Color(0.2, 0.8, 0.2, 0.5)
 
+var _expired: bool = false
 var _timer: float = 0.0
 var _tick_timer: float = 0.0
 var _enemies_in_cloud: Array = []
@@ -42,22 +43,24 @@ func _ready() -> void:
 		body_exited.connect(_on_body_exited)
 
 func _physics_process(delta: float) -> void:
+	if _expired:
+		return
+	var active_delta := minf(delta, maxf(duration - _timer, 0.0))
 	_timer += delta
-	_tick_timer += delta
-	
-	# 定时造成伤害
-	if _tick_timer >= tick_interval:
-		_tick_timer = 0.0
+	_tick_timer += active_delta
+	# Only elapsed active time can produce ticks, including the final interval.
+	while _tick_timer + 0.000001 >= tick_interval and tick_interval > 0.0:
+		_tick_timer -= tick_interval
 		_deal_damage_to_enemies()
-	
-	# 持续时间结束后消失
 	if _timer >= duration:
 		_fade_out()
 
 func _deal_damage_to_enemies() -> void:
+	if _expired:
+		return
 	for enemy in _enemies_in_cloud:
-		if is_instance_valid(enemy) and enemy.has_method("take_damage"):
-			enemy.take_damage(base_damage * damage_multiplier)
+		if is_instance_valid(enemy) and enemy.has_method("dot_damage"):
+			enemy.dot_damage(base_damage * damage_multiplier)
 
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("enemies") and not _enemies_in_cloud.has(body):
@@ -68,6 +71,12 @@ func _on_body_exited(body: Node2D) -> void:
 		_enemies_in_cloud.erase(body)
 
 func _fade_out() -> void:
+	if _expired:
+		return
+	_expired = true
+	set_physics_process(false)
+	set_deferred("monitoring", false)
+	_enemies_in_cloud.clear()
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(queue_free)

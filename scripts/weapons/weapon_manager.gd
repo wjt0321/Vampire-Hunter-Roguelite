@@ -207,21 +207,26 @@ func get_fire_interval(weapon) -> float:
 	var interval: float = weapon.get_scaled_fire_rate()
 	return maxf(interval / _get_shoot_speed_multiplier(), 0.02)
 
-func add_weapon(weapon_data) -> void:
-	if weapon_data == null:
-		# ItemCatalog 里不存在的 id（例如起始武器 "pistol"）会造出 null，
-		# 直接往下走会崩在 existing.weapon_id 上，这里挡一道。
-		push_warning("add_weapon 收到 null，已忽略")
-		return
+func can_add_weapon(weapon_id: String) -> bool:
+	if weapon_id.is_empty() or is_weapon_evolved(weapon_id):
+		return false
+	for existing in weapons:
+		if existing.weapon_id == weapon_id:
+			return not existing.is_max_level()
+	return weapons.size() < GameConfig.MAX_WEAPON_SLOTS
+
+func add_weapon(weapon_data) -> bool:
+	if weapon_data == null or not can_add_weapon(weapon_data.weapon_id):
+		return false
 	for existing in weapons:
 		if existing.weapon_id == weapon_data.weapon_id:
 			if existing.level_up():
 				weapon_leveled_up.emit(existing)
 				if existing.is_max_level():
-					# 满级时创建进化数据
 					_create_weapon_evolution(existing)
 				print("武器升级: %s Lv.%d" % [existing.weapon_name, existing.current_level])
-			return
+				return true
+			return false
 	weapons.append(weapon_data)
 
 	# 记录武器使用类型（成就统计）
@@ -236,6 +241,7 @@ func add_weapon(weapon_data) -> void:
 	shoot_timers[weapon_data.weapon_id] = timer
 	weapon_added.emit(weapon_data)
 	print("获得武器: %s" % weapon_data.weapon_name)
+	return true
 
 func _create_weapon_evolution(weapon) -> void:
 	## 为满级武器创建进化数据
@@ -510,12 +516,20 @@ func _fire_weapon(weapon) -> void:
 
 	var count: int = weapon.get_scaled_projectile_count()
 	var total_spread: float = weapon.spread_angle
+	if weapon.weapon_id == "shotgun":
+		var size_mult := _evolved_size(weapon.weapon_id)
+		count = int(ceil(count * size_mult))
+		total_spread *= size_mult
 	for i in range(count):
 		var angle_offset: float = 0.0
 		if count > 1:
 			angle_offset = lerp(-total_spread / 2.0, total_spread / 2.0, float(i) / float(count - 1))
 		var direction := base_direction.rotated(angle_offset)
 		_spawn_bullet(origin, direction, weapon)
+
+func _evolved_size(weapon_id: String) -> float:
+	var evo: WeaponEvolution = weapon_evolutions.get(weapon_id, null)
+	return evo.size_multiplier if evo != null and evo.is_evolved else 1.0
 
 func _get_behavior(weapon_id: String) -> String:
 	## 已进化武器的行为标识；未进化返回空串
@@ -584,6 +598,8 @@ func _spawn_orbit_blades(weapon_id: String) -> void:
 			mult,
 			tint
 		)
+		blade.weapon_manager = self
+		blade.weapon = weapon
 		_current_scene.add_child(blade)
 		_orbit_blades.append(blade)
 	print("🌪️ 刀阵环绕：%d 把飞刀（单把 %.1f 伤害）" % [blade_count, per_blade_damage])
@@ -611,7 +627,7 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 	elif weapon.weapon_id == "crossbow":
 		bullet = ObjectPool.acquire(CrossbowBoltScene)
 		if bullet.has_method("set_pierce_count"):
-			bullet.set_pierce_count(weapon.get_scaled_pierce_count())
+			bullet.set_pierce_count(int(ceil(weapon.get_scaled_pierce_count() * _evolved_size(weapon.weapon_id))))
 	elif weapon.weapon_id == "holy_wand":
 		bullet = ObjectPool.acquire(HolyBoltScene)
 		bullet.homing = true
@@ -697,7 +713,7 @@ func _refresh_enemy_cache() -> void:
 	var nearest_pos: Vector2 = Vector2.ZERO
 	
 	for enemy in enemies:
-		if not is_instance_valid(enemy):
+		if not is_instance_valid(enemy) or enemy.get("is_dead") == true:
 			continue
 		var dist := origin.distance_squared_to(enemy.global_position)
 		if dist < nearest_dist:
@@ -711,15 +727,13 @@ func _refresh_enemy_cache() -> void:
 		_nearest_enemy_dir = Vector2.ZERO
 
 func _get_nearest_enemy_direction(from: Vector2) -> Vector2:
-	# 如果缓存有效直接返回，否则实时计算一次
-	if _nearest_enemy_dir != Vector2.ZERO:
-		return _nearest_enemy_dir
+	# Recheck living targets: a cached target can die between shots.
 	
 	var enemies := get_tree().get_nodes_in_group("enemies")
 	var nearest_dist: float = INF
 	var nearest_dir: Vector2 = Vector2.ZERO
 	for enemy in enemies:
-		if not is_instance_valid(enemy):
+		if not is_instance_valid(enemy) or enemy.get("is_dead") == true:
 			continue
 		var dist := from.distance_squared_to(enemy.global_position)
 		if dist < nearest_dist:
@@ -727,7 +741,7 @@ func _get_nearest_enemy_direction(from: Vector2) -> Vector2:
 			nearest_dir = (enemy.global_position - from).normalized()
 	return nearest_dir
 
-func _create_pistol() -> Resource:
+static func _create_pistol() -> Resource:
 	var w = WeaponDataScript.new()
 	w.weapon_name = "手枪"
 	w.weapon_id = "pistol"
@@ -957,7 +971,7 @@ func _spawn_poison_cloud(weapon) -> void:
 	cloud.base_damage = weapon.get_scaled_damage()
 	cloud.damage_multiplier = (player.get_total_damage_multiplier() if player else 1.0) * get_weapon_decay(weapon)
 	cloud.duration = weapon.get_scaled_cloud_duration()
-	cloud.set_size(weapon.get_scaled_cloud_size())
+	cloud.set_size(weapon.get_scaled_cloud_size() * _evolved_size(weapon.weapon_id))
 	_ensure_current_scene()
 	if _current_scene:
 		_current_scene.add_child(cloud)
@@ -983,7 +997,7 @@ func _spawn_blood_burst(weapon) -> void:
 	cloud.tick_interval = 0.12
 	# 持续区域只保留淡红色范围提示，爆发瞬间由短时贴图承担。
 	cloud.tint = Color(0.86, 0.12, 0.2, 0.28)
-	cloud.set_size(weapon.get_scaled_cloud_size())
+	cloud.set_size(weapon.get_scaled_cloud_size() * _evolved_size(weapon.weapon_id))
 	_ensure_current_scene()
 	if _current_scene:
 		_current_scene.add_child(cloud)
@@ -1001,7 +1015,10 @@ func _spawn_lightning_chain(weapon) -> void:
 	lightning.global_position = player.global_position
 	lightning.base_damage = weapon.get_scaled_damage()
 	lightning.damage_multiplier = (player.get_total_damage_multiplier() if player else 1.0) * get_weapon_decay(weapon)
-	lightning.max_jumps = weapon.get_scaled_lightning_jumps()
+	lightning.max_jumps = int(ceil(weapon.get_scaled_lightning_jumps() * _evolved_size(weapon.weapon_id)))
+	if is_weapon_evolved(weapon.weapon_id):
+		var room := RoomLookupScript.find_room(player)
+		lightning.jump_range = room.get_room_size() if room and room.has_method("get_room_size") else 800.0
 	lightning._current_damage = lightning.base_damage
 	_ensure_current_scene()
 	if _current_scene:
@@ -1014,15 +1031,13 @@ func _spawn_lightning_chain(weapon) -> void:
 	_play_shoot_sound(weapon.weapon_id)
 
 func _get_nearest_enemy_position(from: Vector2) -> Vector2:
-	# 优先使用缓存位置
-	if _nearest_enemy_pos != Vector2.ZERO:
-		return _nearest_enemy_pos
+	# Recheck living targets before placing an attack.
 	
 	var enemies := get_tree().get_nodes_in_group("enemies")
 	var nearest_pos := Vector2.ZERO
 	var nearest_dist: float = INF
 	for enemy in enemies:
-		if not is_instance_valid(enemy):
+		if not is_instance_valid(enemy) or enemy.get("is_dead") == true:
 			continue
 		var dist := from.distance_squared_to(enemy.global_position)
 		if dist < nearest_dist:

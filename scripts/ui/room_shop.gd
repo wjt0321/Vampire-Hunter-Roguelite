@@ -81,6 +81,10 @@ func _build_pool() -> Array:
 			continue
 		if slots_full and not (w["id"] in owned_ids):
 			continue
+		if w.get("upgrade_only", false) and not (w["id"] in owned_ids):
+			continue
+		if not _can_apply_offer(w):
+			continue
 		pool.append(w.duplicate())
 
 	for p in ItemCatalog.PASSIVES:
@@ -228,6 +232,7 @@ func _refresh() -> void:
 	_silver_label.text = "持有银币：%d" % _get_silver()
 
 	for child in _slots_box.get_children():
+		_slots_box.remove_child(child)
 		child.queue_free()
 	for i in SLOT_COUNT:
 		_slots_box.add_child(_make_card(i))
@@ -300,7 +305,7 @@ func _make_card(index: int) -> Control:
 	var price: int = int(slot.get("price", 0))
 	var buy_btn := _make_button("%d" % price)
 	buy_btn.custom_minimum_size = Vector2(150, 38)
-	buy_btn.disabled = _get_silver() < price
+	buy_btn.disabled = _get_silver() < price or not _can_apply_offer(slot)
 	if not buy_btn.disabled:
 		buy_btn.add_theme_color_override("font_color", Color(1.0, 0.92, 0.6))
 	buy_btn.pressed.connect(func(): _on_buy(index))
@@ -341,38 +346,69 @@ func _on_reroll() -> void:
 	_refresh()
 
 func _on_buy(index: int) -> void:
+	if index < 0 or index >= _offers.size():
+		return
 	var slot: Dictionary = _offers[index]
 	if slot.is_empty() or _sold[index]:
 		return
 	var price: int = int(slot.get("price", 0))
 	if player == null or not player.has_method("spend_silver"):
 		return
-	if not player.spend_silver(price):
+	if price < 0 or _get_silver() < price or not _can_apply_offer(slot):
+		_refresh()
 		return
-
-	_apply_offer(slot)
+	# 同步应用成功后才收费；底层容量检查是最终裁决。
+	if not _apply_offer(slot):
+		_refresh()
+		return
+	player.spend_silver(price)
 	_sold[index] = true
 	_locked[index] = false
 	_offers[index] = {}
 	_refresh()
 
-func _apply_offer(offer: Dictionary) -> void:
+func _can_apply_offer(offer: Dictionary) -> bool:
+	if player == null:
+		return false
+	var id := String(offer.get("id", ""))
+	match String(offer.get("type", "")):
+		"weapon":
+			var entry := ItemCatalog.find_weapon(id)
+			if entry.is_empty() or weapon_manager == null:
+				return false
+			if entry.get("upgrade_only", false):
+				var owned := false
+				for weapon in weapon_manager.weapons:
+					if weapon.weapon_id == id:
+						owned = true
+				if not owned:
+					return false
+			return weapon_manager.can_add_weapon(id)
+		"passive":
+			return not ItemCatalog.find_passive(id).is_empty() and not _is_passive_maxed(id) and player.has_method("add_passive_item")
+		"consumable":
+			return not ItemCatalog.find_consumable(id).is_empty()
+	return false
+
+func _apply_offer(offer: Dictionary) -> bool:
+	if not _can_apply_offer(offer):
+		return false
 	var kind: String = String(offer.get("type", ""))
 	var id: String = String(offer.get("id", ""))
 	match kind:
 		"weapon":
-			if weapon_manager != null and weapon_manager.has_method("add_weapon"):
-				var data = ItemCatalog.create_weapon(id)
-				if data != null:
-					weapon_manager.add_weapon(data)
+			var data = ItemCatalog.create_weapon(id)
+			if data == null or not weapon_manager.add_weapon(data):
+				return false
 		"passive":
-			if player != null and player.has_method("add_passive_item"):
-				var item = ItemCatalog.create_passive(id)
-				if item != null:
-					player.add_passive_item(item)
+			var item = ItemCatalog.create_passive(id)
+			if item == null:
+				return false
+			player.add_passive_item(item)
 		"consumable":
 			_apply_consumable(id)
-	AudioManager.play_sfx(AudioLib.get_sound("pickup_xp"))
+	AudioManager.play_ui_sfx(AudioLib.get_sound("pickup_xp"))
+	return true
 
 func _apply_consumable(id: String) -> void:
 	if player == null:

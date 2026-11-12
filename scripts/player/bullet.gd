@@ -82,7 +82,7 @@ func _physics_process(delta: float) -> void:
 		ObjectPool.release(self)
 
 func _update_homing(delta: float) -> void:
-	if _homing_target == null or not is_instance_valid(_homing_target):
+	if not is_instance_valid(_homing_target) or _homing_target.get("is_dead") == true:
 		_homing_target = _find_nearest_enemy()
 	if _homing_target and is_instance_valid(_homing_target):
 		var target_dir := (_homing_target.global_position - global_position).normalized()
@@ -96,7 +96,7 @@ func _find_nearest_enemy() -> Node2D:
 	var nearest: Node2D = null
 	var nearest_dist: float = INF
 	for enemy in enemies:
-		if not is_instance_valid(enemy):
+		if not is_instance_valid(enemy) or enemy.get("is_dead") == true:
 			continue
 		var dist := global_position.distance_squared_to(enemy.global_position)
 		if dist < nearest_dist:
@@ -115,48 +115,15 @@ func _on_body_entered(body: Node2D) -> void:
 	# 碰到敌人
 	if body.has_method("take_damage"):
 		var dmg := get_damage()
-		# 暴击检查
-		if _cached_player and _cached_player.has_method("roll_crit"):
-			if _cached_player.roll_crit():
-				dmg *= _cached_player.crit_damage
-				# 暴击视觉
-				var vfx := get_node_or_null("/root/VFXManager")
-				if vfx:
-					vfx.spawn_hit_particles(global_position, Color(1.0, 0.9, 0.3), 4)
+		# Direct hit passives resolve once in the enemy damage entry.
+		if not is_instance_valid(_cached_player):
+			_cached_player = get_tree().get_first_node_in_group("player")
 		var knockback_dir := direction
 		if body.has_method("take_damage_with_knockback"):
 			body.take_damage_with_knockback(dmg, knockback_dir, 120.0, 0.08)
 		else:
 			body.take_damage(dmg)
-		# 冰冻之心效果：检查是否冻结敌人
-		_check_freeze(body)
 	ObjectPool.release(self)
-
-func _check_freeze(enemy: Node2D) -> void:
-	## 检查是否触发冰冻效果
-	# 检查敌人是否有效且存活
-	if not is_instance_valid(enemy):
-		return
-	if "is_dead" in enemy and enemy.is_dead:
-		return
-
-	# 使用缓存的玩家引用，必要时重新获取
-	if _cached_player == null or not is_instance_valid(_cached_player):
-		_cached_player = get_tree().get_first_node_in_group("player")
-	if _cached_player and _cached_player.has_method("get_owned_passive_items"):
-		# 检查是否有冰冻之心
-		for item in _cached_player.passive_items:
-			if item.item_id == "frozen_heart":
-				if randf() < _cached_player.freeze_chance:
-					# 冻结敌人
-					if enemy.has_method("freeze"):
-						enemy.freeze(2.0)  # 冻结2秒
-						print("❄️ 敌人被冻结!")
-					# 冰冻视觉效果
-					var vfx := get_node_or_null("/root/VFXManager")
-					if vfx:
-						vfx.spawn_freeze_effect(enemy.global_position)
-				break
 
 func _on_area_entered(area: Area2D) -> void:
 	# 碰到墙壁等

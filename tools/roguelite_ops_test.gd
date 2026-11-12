@@ -74,6 +74,9 @@ func _run() -> void:
 	_check(ui.banished_keys.is_empty(), "开局放逐清单为空")
 	_check(not ui.banish_mode, "默认不在放逐模式")
 
+	# 比较前后必须绑定相同玩家和武器（手枪仅持有者可升级）。
+	ui.player = player
+	ui.weapon_manager = wm
 	var base_pool: Array = ui._get_available_options()
 	var base_total := base_pool.size()
 	_check(base_total > 10, "初始选池 %d 项" % base_total)
@@ -87,7 +90,7 @@ func _run() -> void:
 	print("")
 	print("--- ② 放逐：从池中永久移除 ---")
 	# ==================================================
-	# 挑一张"一定在池里"的被动卡来放逐（初始武器手枪不在目录里，用被动最稳）
+	# 挑一张一定在池里的被动卡来放逐。
 	var victim: Dictionary = {}
 	for o in base_pool:
 		if String(o.get("type", "")) == "passive" and String(o.get("id", "")) == "lucky_clover":

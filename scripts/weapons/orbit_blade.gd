@@ -17,6 +17,8 @@ var orbit_radius: float = 92.0
 var angular_speed: float = 4.2
 var damage: float = 10.0
 var damage_multiplier: float = 1.0
+var weapon_manager: Node = null
+var weapon: Resource = null
 var color: Color = Color(0.4, 0.9, 0.95)
 
 var _angle: float = 0.0
@@ -78,9 +80,18 @@ func _strike(_delta: float) -> void:
 			continue
 
 		_cooldowns[id] = HIT_INTERVAL
-		var dmg: float = damage * damage_multiplier
+		var dmg: float = get_current_damage()
 		var dir: Vector2 = (enemy.global_position - global_position).normalized()
 		if enemy.has_method("take_damage_with_knockback"):
 			enemy.take_damage_with_knockback(dmg, dir, 40.0, 0.03)
 		elif enemy.has_method("take_damage"):
 			enemy.take_damage(dmg)
+
+func get_current_damage() -> float:
+	var mult := damage_multiplier
+	if is_instance_valid(player) and player.has_method("get_total_damage_multiplier"):
+		mult = player.get_total_damage_multiplier()
+	if is_instance_valid(weapon_manager) and weapon != null:
+		mult *= weapon_manager.get_weapon_decay(weapon)
+		return weapon.get_scaled_damage() * 0.55 * mult
+	return damage * mult

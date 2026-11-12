@@ -23,6 +23,7 @@ var _audio_lib: AudioLibrary = null
 @onready var boss_hp_bar = $BossHPBar
 
 var current_room: Node2D = null
+var _current_room_type: String = ""
 var room_manager: Node = null
 var dungeon: Node = null
 var floor_banner: CanvasLayer = null
@@ -48,9 +49,47 @@ var _boss_defeat_handled: bool = false
 ## 而升级界面是单例的。不做队列的话后一次会把前一次的选项直接顶掉（玩家白丢一次升级）。
 var _pending_upgrades: int = 0
 var _upgrade_open: bool = false
+var _run_token: int = 0
+var _room_token: int = 0
+var _room_transitioning: bool = false
+var _terminal_state: String = ""
+var _boss_damage_baseline: float = 0.0
+var debug_loot_grace_seconds: int = -1
+
+func _begin_terminal_state(state: String) -> bool:
+	if state == "death":
+		if _terminal_state == "death":
+			return false
+		_terminal_state = "death"
+		_run_token += 1
+	elif state == "victory":
+		if _terminal_state != "":
+			return false
+		_terminal_state = "victory"
+	else:
+		return false
+	# 死亡和最终胜利都取消升级，包含关闭动画与尚未打开的队列。
+	_pending_upgrades = 0
+	_upgrade_open = false
+	if upgrade_ui != null and upgrade_ui.has_method("dismiss_for_game_over"):
+		upgrade_ui.dismiss_for_game_over()
+	return true
+
+func _lifecycle_token_valid(run_token: int, room_token: int = -1, room: Node = null) -> bool:
+	if not is_instance_valid(self) or run_token != _run_token:
+		return false
+	if room_token >= 0 and room_token != _room_token:
+		return false
+	if room != null and (not is_instance_valid(room) or room != current_room):
+		return false
+	return true
 
 func _ready() -> void:
 	print("VampireHunter - 游戏启动!")
+	var initial_achievements := get_node_or_null("/root/AchievementManager")
+	if initial_achievements:
+		initial_achievements.start_new_run()
+	_run_token += 1
 	_audio_lib = AudioLib
 
 	# 深渊镜像：存档是 best_abyss 真值源，GameConfig 只是运行时副本
@@ -125,11 +164,14 @@ func _ready() -> void:
 	if room_events:
 		room_events.on_combat_room_entered(dungeon.current_floor)
 
-	# 初始化成就系统
+	# 成就时钟已在初始化阶段启动，避免开场提示漏计时间。
+
+
+func _exit_tree() -> void:
+	# 暂停菜单可直接换场景；在退出本局的统一生命周期停止时钟。
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
 	if ach_mgr:
-		ach_mgr.start_new_run()
-	
+		ach_mgr.finish_run()
 
 func _estimate_player_dps() -> float:
 	## 当前构筑的理论 DPS，供波次管理器做难度软挂钩。
@@ -200,7 +242,8 @@ func _apply_selected_character() -> String:
 
 func _connect_signals() -> void:
 	player.hp_changed.connect(hud.update_hp)
-	player.hp_changed.connect(_on_player_hp_changed)
+	if player.has_signal("damage_received"):
+		player.damage_received.connect(_on_player_damage_received)
 	player.xp_changed.connect(hud.update_xp)
 	player.silver_changed.connect(hud.update_silver)
 	player.level_up.connect(_on_player_level_up)
@@ -211,6 +254,7 @@ func _connect_signals() -> void:
 	wave_manager.enemy_killed.connect(_on_enemy_killed)
 	wave_manager.wave_completed.connect(_on_wave_completed)
 	weapon_manager.weapon_evolved.connect(_on_weapon_evolved)
+	weapon_manager.weapon_leveled_up.connect(_on_weapon_leveled_up)
 	upgrade_ui.upgrade_selected.connect(_on_upgrade_selected)
 	game_over_ui.restart_requested.connect(_on_restart)
 	game_over_ui.menu_requested.connect(_on_return_to_menu)
@@ -329,7 +373,7 @@ func _on_wave_completed(wave_number: int) -> void:
 		_open_room_exit(current_room)
 	# 波次标签别继续挂着波次号让人以为还有活怪——写明已清
 	if hud and hud.has_method("set_wave_status"):
-		hud.set_wave_status("第 %d 波已清 · 走传送门" % wave_number, true)
+		hud.set_wave_status("出口已开启 · 走传送门", true)
 
 func _on_portal_chosen(room_type: String) -> void:
 	if dungeon:
@@ -337,11 +381,18 @@ func _on_portal_chosen(room_type: String) -> void:
 	_on_portal_entered()
 
 func _on_portal_entered() -> void:
-	# 播放传送音效
+	if _room_transitioning or _terminal_state == "death":
+		return
+	_room_transitioning = true
 	AudioManager.play_sfx(_audio_lib.get_sound("teleport"))
 	_transition_to_next_room()
 
 func _transition_to_next_room() -> void:
+	if _terminal_state == "death":
+		_room_transitioning = false
+		return
+	var run_token := _run_token
+	var old_room_token := _room_token
 	wave_manager.stop()
 	# 换房前先把地上没捡的经验结算掉：宝石是房间节点的子节点，
 	# 房间一释放它们就跟着没了，不结算等于玩家白丢经验
@@ -351,6 +402,7 @@ func _transition_to_next_room() -> void:
 		enemy.queue_free()
 	for powerup in get_tree().get_nodes_in_group("powerups"):
 		powerup.queue_free()
+	_clear_enemy_projectiles()
 
 	# 淡出
 	# 注意：这里用 timer 而不是 await tween.finished。
@@ -358,7 +410,10 @@ func _transition_to_next_room() -> void:
 	# 表现为换层时整局卡死在黑屏。
 	var fade_out := create_tween()
 	fade_out.tween_property(transition_overlay, "color:a", 1.0, 0.3)
-	await get_tree().create_timer(0.3).timeout
+	await get_tree().create_timer(0.3, false).timeout
+	if not _lifecycle_token_valid(run_token, old_room_token) or _terminal_state == "death":
+		_room_transitioning = false
+		return
 
 	print("🚪 切换房间 → 第 %d 层 第 %d 间" % [dungeon.current_floor, dungeon.room_in_floor + 1])
 	# 只调用一次！曾经这里和下面各写了一次 _enter_next_room()，
@@ -368,10 +423,17 @@ func _transition_to_next_room() -> void:
 	# 淡入
 	var fade_in := create_tween()
 	fade_in.tween_property(transition_overlay, "color:a", 0.0, 0.3)
-	await get_tree().create_timer(0.3).timeout
+	await get_tree().create_timer(0.3, false).timeout
+	if not _lifecycle_token_valid(run_token) or _terminal_state == "death":
+		_room_transitioning = false
+		return
+	_room_transitioning = false
 
 func _enter_next_room(autostart: bool = true) -> String:
 	## 从地下城取出下一个房间并布置，返回房间类型
+	if _terminal_state == "death":
+		return ""
+	_room_token += 1
 	# 事件不跨房：玩家迈出房间的那一刻，没做完的事件就算失败（奖励不追发）
 	if room_events:
 		room_events.cancel()
@@ -380,6 +442,7 @@ func _enter_next_room(autostart: bool = true) -> String:
 		wave_manager.mirror_spawns = false
 		wave_manager.set_room_loot_mult(1.0)
 	var room_type: String = dungeon.consume_room()
+	_current_room_type = room_type
 	rooms_cleared = dungeon.rooms_cleared_total
 
 	# 同步层敌人池与层倍率。第三个参数是"本层已清的战斗房数"，
@@ -724,6 +787,12 @@ func _clear_fog() -> void:
 		fog_overlay.queue_free()
 	fog_overlay = null
 
+func _clear_enemy_projectiles() -> void:
+	for group_name in ["enemy_projectiles", "enemy_bullets"]:
+		for projectile in get_tree().get_nodes_in_group(group_name):
+			if is_instance_valid(projectile):
+				projectile.queue_free()
+
 func _open_room_exit(room: Node2D) -> void:
 	## 离开当前房间。下一间如果挂了岔路，就开两扇门，否则还是一扇。
 	if not is_instance_valid(room) or room != current_room:
@@ -783,6 +852,8 @@ func _enter_boss_room() -> void:
 
 	# 生成 Boss
 	var boss := boss_scene.instantiate()
+	var boss_achievements := get_node_or_null("/root/AchievementManager")
+	_boss_damage_baseline = float(boss_achievements.get_run_stats().get("damage_taken", 0.0)) if boss_achievements else 0.0
 	# 形态决定血量档位、攻击参数与光效
 	boss.boss_variant = dungeon.get_boss_variant()
 	boss.spawn_wave = maxi(wave_manager.current_wave, 1)
@@ -808,6 +879,9 @@ func _enter_boss_room() -> void:
 	if spawn_parent == null:
 		spawn_parent = self
 	spawn_parent.add_child(boss)
+	# Boss._ready 设置独立场景的深渊默认值；生成后应用完整的本局倍率。
+	if "loot_mult" in boss:
+		boss.loot_mult = wave_manager.effective_loot_mult()
 	boss_hp_bar.show_boss_bar(boss_name)
 	# Boss 不计入波次（enemy_died 那条连接是空回调），波次编号打到这层就停住了。
 	# 继续挂在 HUD 上会让玩家以为"还差几波"而不是"把这条血打完"。
@@ -843,11 +917,13 @@ func _advance_abyss() -> int:
 	return GameConfig.abyss_level
 
 func _on_boss_defeated() -> void:
-	# 防重：同一层只结算一次（历史上曾因为换房重复调用生成两个 Boss，
-	# 导致血晶翻倍、层数连跳两次）
-	if _boss_defeat_handled:
+	# 每层只结算一次；只有最终层才进入整局胜利终态。死亡可抢占最终层结算。
+	if _terminal_state == "death" or _boss_defeat_handled:
+		return
+	if dungeon.current_floor >= GameConfig.DUNGEON_FLOOR_COUNT and not _begin_terminal_state("victory"):
 		return
 	_boss_defeat_handled = true
+	var run_token := _run_token
 
 	boss_hp_bar.hide_boss_bar()
 	if hud and hud.has_method("set_boss_mode"):
@@ -862,12 +938,14 @@ func _on_boss_defeated() -> void:
 	# 记录Boss击杀成就
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
 	if ach_mgr:
-		ach_mgr.record_boss_kill(int(ach_mgr.run_stats.get("damage_taken", 0)))
+		if cleared_floor >= GameConfig.DUNGEON_FLOOR_COUNT:
+			ach_mgr.finish_run()
+		ach_mgr.record_boss_kill(maxf(float(ach_mgr.run_stats.get("damage_taken", 0.0)) - _boss_damage_baseline, 0.0))
 		ach_mgr.record_floor_cleared(cleared_floor)
 		ach_mgr.record_crystals_earned(crystals)
 
 	# 血晶奖励
-	var save_mgr := get_node_or_null("/root/SaveManager")
+	var save_mgr := _save_manager_ref()
 	if save_mgr:
 		save_mgr.add_blood_crystals(crystals)
 
@@ -880,24 +958,35 @@ func _on_boss_defeated() -> void:
 	# 清除残留敌人与掉落
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		enemy.queue_free()
+	_clear_enemy_projectiles()
 
 	# 2026-11-09 反馈：Boss 一死掉落立刻被清场，经验宝石/银币根本来不及捡。
 	# 先给 10 秒拾取窗口（HUD 倒计时 + 拾取范围临时放大），喘口气再下潜。
-	await _loot_grace_countdown(10)
+	await _loot_grace_countdown(debug_loot_grace_seconds if debug_loot_grace_seconds >= 0 else 10)
+	if not _lifecycle_token_valid(run_token) or _terminal_state == "death":
+		return
 
 	# 推进到下一层；false 表示已经是最后一层
 	var has_next: bool = dungeon.advance_floor()
 
 	await _show_floor_clear(cleared_floor, crystals)
-	await get_tree().create_timer(0.4).timeout
+	if not _lifecycle_token_valid(run_token) or _terminal_state == "death":
+		return
+	await get_tree().create_timer(0.4, false).timeout
+	if not _lifecycle_token_valid(run_token) or _terminal_state == "death":
+		return
 
 	if has_next:
 		await _show_floor_intro(dungeon.current_floor)
+		if not _lifecycle_token_valid(run_token) or _terminal_state == "death":
+			return
 		_transition_to_next_room()
 		return
 
 	# === 地下城通关结算 ===
 	await _show_dungeon_clear()
+	if not _lifecycle_token_valid(run_token) or _terminal_state == "death":
+		return
 	if ach_mgr:
 		ach_mgr.record_dungeon_clear()
 	var run_stats: Dictionary = ach_mgr.get_run_stats() if ach_mgr else {}
@@ -908,6 +997,7 @@ func _on_boss_defeated() -> void:
 		"rooms": rooms_cleared,
 		"floor": dungeon.current_floor,
 		"floors_cleared": GameConfig.DUNGEON_FLOOR_COUNT,
+		"kill_categories": run_stats.get("kill_categories", {}).duplicate(true),
 		"survival_time": run_stats.get("survival_time", 0),
 		"damage_taken": run_stats.get("damage_taken", 0),
 		"abyss_level": GameConfig.abyss_level,
@@ -917,19 +1007,19 @@ func _on_boss_defeated() -> void:
 	game_over_ui.show_game_over(stats, true)
 
 func _loot_grace_countdown(seconds: int) -> void:
-	## Boss 死后的拾取窗口：倒计时显示在 HUD 状态行，同时临时放大拾取半径，
-	## 把散落在半个屏幕外的宝石也吸过来。窗口固定给满，不做"捡完提前跳"——
-	## 这段时间也是玩家读完战利品、喘口气的节奏点。
 	if not is_instance_valid(player):
 		return
-	var base_pickup: float = float(player.pickup_range_bonus)
-	player.pickup_range_bonus = base_pickup + 260.0
+	var run_token := _run_token
+	const PICKUP_CONTRIBUTION := 260.0
+	player.pickup_range_bonus += PICKUP_CONTRIBUTION
 	for i in range(seconds, 0, -1):
 		if hud != null and is_instance_valid(hud) and hud.has_method("set_wave_status"):
 			hud.set_wave_status("拾取战利品 · %d 秒后下潜" % i, true)
-		await get_tree().create_timer(1.0).timeout
+		await get_tree().create_timer(1.0, false).timeout
+		if not _lifecycle_token_valid(run_token):
+			break
 	if is_instance_valid(player):
-		player.pickup_range_bonus = base_pickup
+		player.pickup_range_bonus = maxf(float(player.pickup_range_bonus) - PICKUP_CONTRIBUTION, 0.0)
 
 # === 楼层流程 ===
 func _on_floor_started(_floor_index: int, _floor_data: Dictionary) -> void:
@@ -1001,11 +1091,13 @@ func _on_player_level_up(new_level: int) -> void:
 	if ach_mgr:
 		ach_mgr.update_level(new_level)
 
+	if _terminal_state != "":
+		return
 	_pending_upgrades += 1
 	_try_open_upgrade()
 
 func _try_open_upgrade() -> void:
-	if player != null and is_instance_valid(player) and player.has_method("is_dead") and player.is_dead():
+	if _terminal_state != "" or (player != null and is_instance_valid(player) and player.has_method("is_dead") and player.is_dead()):
 		_pending_upgrades = 0
 		return
 	if _upgrade_open or _pending_upgrades <= 0:
@@ -1024,13 +1116,12 @@ func _on_upgrade_selected() -> void:
 	await get_tree().create_timer(0.05).timeout
 	_try_open_upgrade()
 
-func _on_player_hp_changed(current: float, _max: float) -> void:
-	# 记录受到伤害（用于无伤通关成就）
-	var damage_taken: float = _max - current
-	if damage_taken > 0:
-		var ach_mgr := get_node_or_null("/root/AchievementManager")
-		if ach_mgr:
-			ach_mgr.record_damage_taken(damage_taken)
+func _on_player_damage_received(actual_damage: float) -> void:
+	if actual_damage <= 0.0:
+		return
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr:
+		ach_mgr.record_damage_taken(actual_damage)
 
 func _on_wave_started(wave: int) -> void:
 	# 记录波次成就
@@ -1056,6 +1147,12 @@ func _refresh_evolution_hint() -> void:
 	var status: Dictionary = weapon_manager.get_evolution_status(owned)
 	hud.update_evolution(String(status.get("state", "none")), String(status.get("text", "")))
 
+func _on_weapon_leveled_up(weapon) -> void:
+	if weapon.is_max_level():
+		var ach_mgr := get_node_or_null("/root/AchievementManager")
+		if ach_mgr:
+			ach_mgr.record_weapon_maxed(weapon.weapon_name)
+
 func _on_weapon_evolved(weapon, evolution) -> void:
 	## 武器进化回调
 	print("✨ 武器进化: %s -> %s" % [weapon.weapon_name, evolution.evolution_name])
@@ -1063,20 +1160,18 @@ func _on_weapon_evolved(weapon, evolution) -> void:
 	# 记录武器大师与进化成就
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
 	if ach_mgr:
-		ach_mgr.record_weapon_maxed(weapon.weapon_name)
 		ach_mgr.record_weapon_evolved(weapon.weapon_id)
 
 func _on_player_died() -> void:
+	if not _begin_terminal_state("death"):
+		return
 	wave_manager.stop()
-	# 致命一击和经验入账可能落在同一帧：三选一已经盖上来了。
-	# 先把它撤掉并清掉排队中的升级，否则结算页在更低的层，玩家点不到重开。
-	_pending_upgrades = 0
-	_upgrade_open = false
-	if upgrade_ui != null and upgrade_ui.has_method("dismiss_for_game_over"):
-		upgrade_ui.dismiss_for_game_over()
+	_clear_enemy_projectiles()
 	if floor_banner:
 		floor_banner.force_hide()
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr:
+		ach_mgr.finish_run()
 	var run_stats: Dictionary = ach_mgr.get_run_stats() if ach_mgr else {}
 	var stats := {
 		"wave": wave_manager.current_wave,
@@ -1086,10 +1181,14 @@ func _on_player_died() -> void:
 		"floor": dungeon.current_floor if dungeon else 1,
 		"survival_time": run_stats.get("survival_time", 0),
 		"damage_taken": run_stats.get("damage_taken", 0),
+		"kill_categories": run_stats.get("kill_categories", {}).duplicate(true),
 		"daily": GameConfig.daily_active,
 		"daily_date": GameConfig.daily_date,
 	}
-	await get_tree().create_timer(0.8).timeout
+	var terminal_token := _run_token
+	await get_tree().create_timer(0.8, false).timeout
+	if not _lifecycle_token_valid(terminal_token) or _terminal_state != "death":
+		return
 	game_over_ui.show_game_over(stats)
 
 func _on_restart() -> void:

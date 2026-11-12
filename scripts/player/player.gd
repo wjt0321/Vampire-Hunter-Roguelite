@@ -29,6 +29,7 @@ const KNOCKBACK_DECAY: float = 900.0
 
 # === 经验与升级 ===
 var current_xp: int = 0
+var _xp_remainder: float = 0.0
 var current_level: int = 1
 var xp_to_next_level: int = 20
 
@@ -92,6 +93,7 @@ var shield_timer: float = 0.0
 var regen_rate: float = 0.0
 var regen_timer: float = 0.0
 # 新被动道具
+var _greed_bonus_applied: float = 0.0
 var xp_bonus_multiplier: float = 0.0  # 贪婪戒指
 var berserker_bonus: float = 0.0  # 狂战士之血
 var freeze_chance: float = 0.0  # 冰冻之心
@@ -147,6 +149,7 @@ var _shield_aura: Sprite2D = null
 var _shield_pulse: Tween = null
 
 # === 信号 ===
+signal damage_received(amount: float)
 signal hp_changed(current: float, maximum: float)
 signal xp_changed(current_xp: int, xp_needed: int, level: int)
 signal level_up(new_level: int)
@@ -395,7 +398,9 @@ func gain_xp(amount: int) -> void:
 	if _player_dead:
 		return
 	# 应用贪婪戒指加成
-	var final_amount := int(amount * (1.0 + xp_bonus_multiplier))
+	var exact := amount * (1.0 + xp_bonus_multiplier) + _xp_remainder
+	var final_amount := int(floor(exact + 0.000001))
+	_xp_remainder = maxf(exact - final_amount, 0.0)
 	current_xp += final_amount
 	while current_xp >= xp_to_next_level:
 		current_xp -= xp_to_next_level
@@ -499,14 +504,14 @@ func spend_hp(amount: float) -> bool:
 	hp_changed.emit(current_hp, max_hp)
 	return true
 
-func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO) -> void:
+func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO) -> float:
 	# 死亡保护：玩家已经死了（或血量已经归零）就不再吃伤害。
 	# 旧版没有这道闸，玩家死后残留的接触伤害、弹幕会反复触发 _die()，
 	# 结算界面被重复触发多次。
-	if _player_dead or current_hp <= 0.0:
-		return
+	if _player_dead or current_hp <= 0.0 or amount <= 0.0:
+		return 0.0
 	if is_invincible:
-		return
+		return 0.0
 	amount = GameConfig.scale_incoming_damage(amount)
 
 	# 护盾抵挡伤害
@@ -514,7 +519,7 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO) -> void
 		_break_shield()
 		_start_invincibility()
 		_flash_damage()
-		return
+		return 0.0
 
 	# 影子披风闪避检查
 	if dodge_chance > 0 and randf() < dodge_chance:
@@ -523,12 +528,17 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO) -> void
 		var vfx := get_node_or_null("/root/VFXManager")
 		if vfx:
 			vfx.spawn_dodge_effect(global_position)
-		return
+		return 0.0
 
 	# 护甲改为百分比减伤（上限 75%），避免后期固定减伤导致免疫
 	var reduction: float = GameConfig.calculate_damage_reduction(armor)
 	var actual_damage: float = maxf(amount * (1.0 - reduction), 1.0)
+	var hp_before := current_hp
 	current_hp = clampf(current_hp - actual_damage, 0.0, max_hp)
+	# Capture this hit before signals or retaliation can synchronously heal.
+	var effective_damage := maxf(hp_before - current_hp, 0.0)
+	if effective_damage > 0.0:
+		damage_received.emit(effective_damage)
 	hp_changed.emit(current_hp, max_hp)
 	_start_invincibility()
 	_flash_damage()
@@ -555,6 +565,7 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO) -> void
 
 	if current_hp <= 0:
 		_die()
+	return effective_damage
 
 func _lightning_retaliate() -> void:
 	## 闪电护符反击
@@ -566,7 +577,7 @@ func _lightning_retaliate() -> void:
 	var nearest_enemy = null
 	var nearest_dist: float = INF
 	for enemy in enemies:
-		if not is_instance_valid(enemy):
+		if not is_instance_valid(enemy) or enemy.get("is_dead") == true:
 			continue
 		var dist := global_position.distance_squared_to(enemy.global_position)
 		if dist < nearest_dist:
@@ -817,7 +828,9 @@ func _apply_passive_effect(item) -> void:
 		2:  # REGENERATION
 			regen_rate = item.get_scaled_value()
 		3:  # GREED
-			xp_bonus_multiplier = item.get_scaled_value()
+			var want_bonus: float = item.get_scaled_value()
+			xp_bonus_multiplier += want_bonus - _greed_bonus_applied
+			_greed_bonus_applied = want_bonus
 		4:  # BERSERKER
 			berserker_bonus = item.get_scaled_value()
 		5:  # FROZEN
@@ -858,6 +871,9 @@ func on_dealt_damage(amount: float) -> void:
 	## 汲取的入账口。由敌人基类在每次受伤时回调。
 	## 刻意不走 heal()：那会播治疗音效，高频武器等于持续"漏水声"。
 	## 零头先攒着，攒够阈值再结算一次，血量变化看得清也有节奏。
+	if GameConfig.has_daily("no_heal") or _player_dead or current_hp <= 0.0:
+		_drain_pool = 0.0
+		return
 	if drain_ratio <= 0.0 or amount <= 0.0:
 		return
 	_drain_pool += amount * drain_ratio

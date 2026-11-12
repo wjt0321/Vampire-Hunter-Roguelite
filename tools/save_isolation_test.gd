@@ -38,10 +38,23 @@ func _check(ok: bool, label: String) -> void:
 
 
 func _digest(path: String) -> String:
-	## 文件内容的 sha256；文件不存在时返回固定标记，方便对比"有没有被写过"
+	## 只返回摘要，不读取或输出存档内容。
 	if not FileAccess.file_exists(path):
 		return "<missing>"
 	return FileAccess.get_sha256(path)
+
+
+func _real_save_digests() -> Dictionary:
+	var digests: Dictionary = {}
+	for path in [REAL_SAVE, REAL_SAVE + ".tmp", REAL_SAVE + ".bak"]:
+		digests[path] = _digest(path)
+	return digests
+
+
+func _check_real_save_unchanged(before: Dictionary, label: String) -> void:
+	var after := _real_save_digests()
+	for path in before:
+		_check(after.get(path) == before[path], "%s: %s 只读摘要不变" % [label, path.get_file()])
 
 
 func _finish() -> void:
@@ -63,7 +76,10 @@ func _run() -> void:
 	_check(String(SaveManagerScript.SAVE_PATH) == REAL_SAVE, "真实存档路径常量就是 %s" % REAL_SAVE)
 
 	var real_before := _digest(REAL_SAVE)
-	print("   玩家真实存档基线: %s" % real_before)
+	var real_files_before := _real_save_digests()
+	print("   玩家真实存档主文件基线摘要: %s" % real_before)
+	for path in real_files_before:
+		print("   只读摘要 %s: %s" % [path.get_file(), real_files_before[path]])
 
 	# ---------- 写入目标：先确认隔离，再决定要不要写 ----------
 	var default_path := str(mgr.get("save_path"))
@@ -99,6 +115,7 @@ func _run() -> void:
 	mgr.save_data["__isolation_probe__"] = "probe-%d" % Time.get_ticks_msec()
 	mgr.call("save_game")
 	_check(_digest(REAL_SAVE) == real_before, "save_game() 没有改写玩家真实存档")
+	_check_real_save_unchanged(real_files_before, "隔离档保存")
 	_check(FileAccess.file_exists(test_path), "写入落到测试存档文件: %s" % test_path)
 
 	# ---------- 解锁成就也不会落到真实存档 ----------
@@ -107,6 +124,7 @@ func _run() -> void:
 		ach.call("start_new_run")
 		ach.call("record_kill", "vampire")  # first_blood 成就 → 内部会 save_game()
 		_check(_digest(REAL_SAVE) == real_before, "解锁成就后玩家真实存档仍未被改写")
+		_check_real_save_unchanged(real_files_before, "成就触发保存")
 	else:
 		print("⚠️ AchievementManager 不存在，跳过成就检查")
 
@@ -119,8 +137,11 @@ func _run() -> void:
 	# ---------- 清理测试数据 ----------
 	if has_clear:
 		mgr.call("clear_test_save", SUITE)
-		_check(not FileAccess.file_exists(test_path), "测试专属存档已清理: %s" % test_path)
+		_check(not FileAccess.file_exists(test_path), "测试专属主档已清理: %s" % test_path)
+		_check(not FileAccess.file_exists(test_path + ".tmp"), "测试专属 .tmp 已清理")
+		_check(not FileAccess.file_exists(test_path + ".bak"), "测试专属 .bak 已清理")
 	_check(_digest(REAL_SAVE) == real_before, "整个测试过程没有碰玩家真实存档")
+	_check_real_save_unchanged(real_files_before, "整个测试过程")
 
 	print("")
 	_finish()

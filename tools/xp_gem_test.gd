@@ -154,16 +154,26 @@ func _run() -> void:
 	_check(pick.has_meta("_in_pool") and bool(pick.get_meta("_in_pool")) or not pick.is_inside_tree(),
 		"拾取后已归还对象池（in_pool=%s）" % str(pick.get_meta("_in_pool", false)))
 
-	# 顺手验证经验确实进了玩家
+	# 等 Main 完成真实登场，再测吸附；避免首次开波结算与拾取断言重叠。
 	var main_scene = load("res://scenes/main.tscn").instantiate()
+	main_scene.debug_force_character = "hunter"
 	root.add_child(main_scene)
 	current_scene = main_scene
-	await create_timer(0.6).timeout
 	var p2 = main_scene.player
+	p2.xp_to_next_level = 9999
+	var startup_deadline: int = Time.get_ticks_msec() + 8000
+	while not main_scene.wave_manager.is_active and Time.get_ticks_msec() < startup_deadline:
+		await process_frame
+	_check(main_scene.wave_manager.is_active, "Main 完成登场并启动首波")
+	main_scene.wave_manager.stop()
+	await process_frame
+	var xp_before: int = p2.current_xp
 	var gem2 := _spawn(p2.global_position + Vector2(30, 0), 9)
 	gem2.set_physics_process(true)
-	await create_timer(0.5).timeout
+	await _wait_for_collection(gem2)
 	_check(not is_instance_valid(gem2) or not gem2.is_inside_tree(), "吸附范围内的宝石被自动拾取")
+	_check(p2.current_xp == xp_before + 9,
+		"自动拾取实际增加9经验（%d → %d）" % [xp_before, p2.current_xp])
 
 	print("\n=== 6. 对象池复用后还能吸附（玩家反馈：经验点有时候捡不到）===")
 	# 回归点：_collect() 会 set_physics_process(false)，而池化复用不重跑 _ready。
@@ -183,9 +193,13 @@ func _run() -> void:
 		var again: Area2D = pool.acquire(_gem_scene)
 		again.xp_value = 3
 		again.player = null
+		again.position = p2.global_position + Vector2(30, 0)
+		var reuse_xp_before: int = p2.current_xp
 		host.add_child(again)                     # 入树 → _enter_tree 应当重新开物理帧
 		_check(again.is_physics_processing(), "池化复用后入树即恢复物理帧（否则宝石永远躺地上）")
-		again.queue_free()
+		await _wait_for_collection(again)
+		_check(not is_instance_valid(again) or not again.is_inside_tree(), "复用宝石再次自动拾取并回池")
+		_check(p2.current_xp == reuse_xp_before + 3, "复用宝石实际增加3经验")
 
 	print("\n=== 7. 换波/换房时未拾取的经验会被结算，而不是凭空消失 ===")
 	var wm = main_scene.wave_manager
@@ -205,3 +219,9 @@ func _run() -> void:
 	print("通过 %d / 失败 %d" % [_pass, _fail])
 	print("========================================")
 	quit(0 if _fail == 0 else 1)
+
+func _wait_for_collection(gem: Area2D) -> void:
+	# 掉落 tween 占0.3秒；按终态等待，超时仍保留原拾取失败断言。
+	var deadline: int = Time.get_ticks_msec() + 2000
+	while is_instance_valid(gem) and gem.is_inside_tree() and Time.get_ticks_msec() < deadline:
+		await process_frame
