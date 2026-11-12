@@ -83,9 +83,14 @@ func _test_banish_not_bypassed() -> void:
 	var scene_root := _make_scene_root()
 	var player: Variant = _instantiate("res://scenes/player/player.tscn")
 	scene_root.add_child(player)
+	var wm: Variant = load("res://scripts/weapons/weapon_manager.gd").new()
+	scene_root.add_child(wm)
+	wm.setup(player)
+	wm.set_process(false)
 	var ui: Variant = _instantiate("res://scenes/ui/upgrade_ui.tscn")
 	scene_root.add_child(ui)
 	ui.set("player", player)
+	ui.set("weapon_manager", wm)
 	await process_frame
 
 	_check(ui.has_method("_available_basic_rewards"),
@@ -121,15 +126,25 @@ func _test_banish_not_bypassed() -> void:
 			"补给卡全被放逐后兜底出口为空（%s）" % str(basics))
 
 	# 实机路径：界面这一轮不能发出任何补给卡
-	ui.call("_render_options")
+	ui.call("show_upgrade", player, wm)
+	_check(ui.visible and paused, "真实升级入口显示面板并持有暂停")
 	var shown: Array = ui.get("current_options")
+	var legal_pool: Array = ui.call("_get_available_options")
+	_check(not shown.is_empty() and ui.options_container.get_child_count() == shown.size(),
+		"真实面板展示非空手牌且卡片按钮数匹配（%d 张）" % shown.size())
+	for option in shown:
+		_check(_contains(legal_pool, String(option.get("type", "")), String(option.get("id", "")))
+			and not bool(ui.call("is_banished", option)), "展示卡片属于合法池且未被放逐：%s" % str(option.get("id", "")))
 	var leaked: bool = false
 	for o in shown:
 		if String(o.get("type", "")) == "basic":
 			leaked = true
+	_check(_count_type(shown, "stat") == 0, "预算用满且补给全放逐后，不展示属性卡")
 	_check(not leaked,
 		"补给卡全被放逐后，界面这一轮不发补给卡（当前 %d 张）" % shown.size())
 
+	ui.call("dismiss_for_game_over")
+	_check(not ui.visible and not paused, "关闭测试升级面板后释放暂停")
 	_clear_roots()
 	await process_frame
 
@@ -424,9 +439,14 @@ func _test_supply_branch() -> void:
 	var scene_root := _make_scene_root()
 	var player: Variant = _instantiate("res://scenes/player/player.tscn")
 	scene_root.add_child(player)
+	var wm: Variant = load("res://scripts/weapons/weapon_manager.gd").new()
+	scene_root.add_child(wm)
+	wm.setup(player)
+	wm.set_process(false)
 	var ui: Variant = _instantiate("res://scenes/ui/upgrade_ui.tscn")
 	scene_root.add_child(ui)
 	ui.set("player", player)
+	ui.set("weapon_manager", wm)
 	await process_frame
 
 	# 属性卡还能升级时：补给卡不该进池（它只在池耗尽后启用）
@@ -455,8 +475,15 @@ func _test_supply_branch() -> void:
 	# 实机路径：预算用满后真正渲染出来的这一轮，属性卡位必须已被补给卡取代。
 	# 注意"取代"指的是属性卡那一档：池里还有武器与被动（合法选项），
 	# 所以不能要求整手 3 张全是补给卡——只能要求这一轮一张属性卡都没有。
-	ui.call("_render_options")
+	ui.call("show_upgrade", player, wm)
+	_check(ui.visible and paused, "真实升级入口显示面板并持有暂停")
 	var shown: Array = ui.get("current_options")
+	var legal_pool: Array = ui.call("_get_available_options")
+	_check(not shown.is_empty() and ui.options_container.get_child_count() == shown.size(),
+		"真实面板展示非空手牌且卡片按钮数匹配（%d 张）" % shown.size())
+	for option in shown:
+		_check(_contains(legal_pool, String(option.get("type", "")), String(option.get("id", "")))
+			and not bool(ui.call("is_banished", option)), "展示卡片属于合法池且未被放逐：%s" % str(option.get("id", "")))
 	_check(shown.size() > 0,
 		"预算用满后界面仍然发得出卡（当前 %d 张）" % shown.size())
 	var stat_leaked: int = 0
@@ -471,6 +498,8 @@ func _test_supply_branch() -> void:
 		_check(basics.size() == 3,
 			"预算用满后 3 张补给卡都能进池（实际 %d 张）" % basics.size())
 
+	ui.call("dismiss_for_game_over")
+	_check(not ui.visible and not paused, "关闭测试升级面板后释放暂停")
 	_clear_roots()
 	await process_frame
 
@@ -733,6 +762,8 @@ func _test_main_uses_combat_room_count() -> void:
 	# 断言以猎人为基准，不许读玩家真实存档里选的角色
 	main_scene.debug_force_character = "hunter"
 	root.add_child(main_scene)
+	# Match normal SceneTree loading so auto-fired bullets have a scene owner.
+	current_scene = main_scene
 	await process_frame
 	await process_frame
 
@@ -883,6 +914,8 @@ func _test_daily_upgrade_rng() -> void:
 	var main_scene: Variant = load("res://scenes/main.tscn").instantiate()
 	main_scene.debug_force_character = "hunter"
 	root.add_child(main_scene)
+	# Match normal SceneTree loading so auto-fired bullets have a scene owner.
+	current_scene = main_scene
 	await process_frame
 	await process_frame
 

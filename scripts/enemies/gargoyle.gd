@@ -25,24 +25,26 @@ func _physics_process(delta: float) -> void:
 	
 	# 处理冻结状态
 	if is_frozen:
-		freeze_timer -= delta
-		if freeze_timer <= 0:
-			_unfreeze()
 		return
 	
 	# 处理石化状态
 	if is_petrified:
-		petrify_timer -= delta
-		if petrify_timer <= 0:
-			_unpetrify()
 		return
 	
 	# 检查是否需要石化
 	if not has_petrified and current_hp / max_hp <= petrify_threshold:
 		_petrify()
+		return
 	
 	# 正常移动
 	_move_towards_player(delta)
+
+func _process(delta: float) -> void:
+	super._process(delta)
+	if is_petrified and not is_dead:
+		petrify_timer -= delta
+		if petrify_timer <= 0.0:
+			_unpetrify()
 
 func _move_towards_player(_delta: float) -> void:
 	var direction := (player.global_position - global_position).normalized()
@@ -115,8 +117,8 @@ func take_damage(amount: float) -> void:
 	
 	# 应用护甲减伤（百分比）
 	var reduction: float = GameConfig.calculate_damage_reduction(armor)
-	var actual_damage: float = amount * (1.0 - reduction)
-	current_hp -= actual_damage
+	var actual_damage: float = _direct_damage(amount) * (1.0 - reduction)
+	actual_damage = _subtract_hp(actual_damage)
 	_flash_hit()
 	_after_damage_taken(actual_damage)
 	

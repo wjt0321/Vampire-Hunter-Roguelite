@@ -14,6 +14,11 @@ func _check(ok: bool, label: String) -> void:
 
 func _run() -> void:
 	await process_frame
+	var save = root.get_node("SaveManager")
+	_check(save.is_tool_run and save.save_path == "user://test_settings_menu_test.json", "设置测试使用隔离档")
+	if not save.is_tool_run or not save.save_path.begins_with("user://test_"):
+		quit(1)
+		return
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 	DisplayServer.window_set_size(Vector2i(1280, 720))
 	var menu: Variant = load("res://scenes/ui/main_menu.tscn").instantiate()
@@ -76,7 +81,28 @@ func _run() -> void:
 		var pause_out := "res://tools/evidence/iteration/pause_settings_menu.png"
 		_check(pause_img != null and pause_img.save_png(pause_out) == OK,
 			"保存局内设置验收截图")
+	# Real paused settings slider must survive a music transition.
+	var audio = root.get_node("AudioManager")
+	var lib = root.get_node("AudioLib")
+	audio.set_music_volume(0.8, false)
+	audio.play_bgm(lib.get_battle_bgm(), false)
+	audio.play_bgm(lib.get_shop_bgm())
+	await create_timer(0.2).timeout
+	pause_menu.music_slider.value = 0.2
+	await create_timer(1.1).timeout
+	_check(is_equal_approx(audio.get_music_volume(), 0.2) and is_equal_approx(audio._bgm_player.volume_db, -13.9794),
+		"暂停设置滑块在切曲完成后仍保持新音量")
+	_check(is_equal_approx(save.save_data.audio_settings.music_volume, 0.2), "音量设置写入隔离档")
 	pause_menu._resume()
+	audio.play_bgm(lib.get_menu_bgm())
+	await create_timer(0.2).timeout
+	menu.music_slider.value = 0.0
+	var max_db := -1000.0
+	var deadline := Time.get_ticks_msec() + 1200
+	while Time.get_ticks_msec() < deadline:
+		await process_frame
+		max_db = maxf(max_db, audio._bgm_player.volume_db)
+	_check(max_db <= -80.0, "主菜单滑块静音后整个过渡保持静音")
 	pause_menu.queue_free()
 	menu.queue_free()
 	await process_frame

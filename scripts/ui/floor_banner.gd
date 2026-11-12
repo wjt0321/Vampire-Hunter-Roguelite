@@ -109,11 +109,11 @@ func show_card(kicker: String, title: String, subtitle: String, hint: String, ac
 	_tween.set_parallel(true)
 	_tween.tween_property(_root, "modulate:a", 1.0, FADE_IN)
 	_tween.tween_property(_veil, "color:a", VEIL_ALPHA, FADE_IN)
-	await get_tree().create_timer(FADE_IN).timeout
+	await get_tree().create_timer(FADE_IN, false).timeout
 	if my_id != _card_serial:
 		return
 
-	await get_tree().create_timer(hold).timeout
+	await get_tree().create_timer(hold, false).timeout
 	if my_id != _card_serial:
 		return
 
@@ -121,7 +121,7 @@ func show_card(kicker: String, title: String, subtitle: String, hint: String, ac
 	_tween.set_parallel(true)
 	_tween.tween_property(_root, "modulate:a", 0.0, FADE_OUT)
 	_tween.tween_property(_veil, "color:a", 0.0, FADE_OUT)
-	await get_tree().create_timer(FADE_OUT).timeout
+	await get_tree().create_timer(FADE_OUT, false).timeout
 
 	if my_id == _card_serial:
 		visible = false

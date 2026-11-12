@@ -281,8 +281,8 @@ func _apply_button_style(btn: Button) -> void:
 		btn.add_theme_color_override("font_color", Color.WHITE)
 		btn.add_theme_color_override("font_hover_color", Color(1, 0.9, 0.7, 1))
 		btn.add_theme_color_override("font_pressed_color", Color(0.9, 0.9, 0.9, 1))
-	btn.mouse_entered.connect(func(): AudioManager.play_sfx(AudioLib.get_sound("hover")))
-	btn.pressed.connect(func(): AudioManager.play_sfx(AudioLib.get_sound("button_click")))
+	btn.mouse_entered.connect(func(): AudioManager.play_ui_sfx(AudioLib.get_sound("hover")))
+	btn.pressed.connect(func(): AudioManager.play_ui_sfx(AudioLib.get_sound("button_click")))
 	UiFx.hover(btn)
 
 func _on_card_hover(card: PanelContainer, unlocked: bool) -> void:

@@ -13,6 +13,11 @@ var _max_sfx_players: int = 8
 
 # ========== BGM 过渡 ==========
 var _bgm_tween: Tween = null
+# 用户音量与曲目过渡独立；Tween 只能改淡入淡出系数。
+var _bgm_fade: float = 1.0:
+	set(value):
+		_bgm_fade = value
+		_apply_bgm_volume()
 const BGM_FADE_DURATION: float = 1.0
 
 # ========== 信号 ==========
@@ -66,13 +71,16 @@ func _setup_bgm_player() -> void:
 	_bgm_player = AudioStreamPlayer.new()
 	_bgm_player.name = "BGMPlayer"
 	_bgm_player.bus = "Music"
+	_bgm_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(_bgm_player)
 
 func _setup_sfx_players() -> void:
-	for i in range(_max_sfx_players):
+	# 最后一格只供 UI 使用，八个战斗声全暂停时仍能反馈且不抢占它们。
+	for i in range(_max_sfx_players + 1):
 		var player := AudioStreamPlayer.new()
 		player.name = "SFXPlayer_%d" % i
 		player.bus = "SFX"
+		player.process_mode = Node.PROCESS_MODE_PAUSABLE
 		add_child(player)
 		_sfx_players.append(player)
 
@@ -82,14 +90,16 @@ func play_bgm(stream: AudioStream, fade: bool = true) -> void:
 	if stream == null:
 		return
 	
+	_cancel_bgm_tween()
 	if _bgm_player.playing and fade:
 		_fade_bgm_transition(stream)
 	else:
 		_bgm_player.stream = stream
-		_bgm_player.volume_db = linear_to_db(music_volume)
+		_bgm_fade = 1.0
 		_bgm_player.play()
 
 func stop_bgm(fade: bool = true) -> void:
+	_cancel_bgm_tween()
 	if not _bgm_player.playing:
 		return
 	
@@ -98,41 +108,49 @@ func stop_bgm(fade: bool = true) -> void:
 	else:
 		_bgm_player.stop()
 
-func _fade_bgm_transition(new_stream: AudioStream) -> void:
+func _cancel_bgm_tween() -> void:
 	if _bgm_tween and _bgm_tween.is_valid():
 		_bgm_tween.kill()
-	
-	_bgm_tween = create_tween()
-	_bgm_tween.tween_property(_bgm_player, "volume_db", -40.0, BGM_FADE_DURATION / 2.0)
+	_bgm_tween = null
+
+func _apply_bgm_volume() -> void:
+	if _bgm_player != null:
+		_bgm_player.volume_db = _volume_to_db(music_volume * _bgm_fade)
+
+func _fade_bgm_transition(new_stream: AudioStream) -> void:
+	_bgm_tween = create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_bgm_tween.tween_property(self, "_bgm_fade", 0.0, BGM_FADE_DURATION / 2.0)
 	_bgm_tween.tween_callback(func():
 		_bgm_player.stream = new_stream
 		_bgm_player.play()
 	)
-	_bgm_tween.tween_property(_bgm_player, "volume_db", linear_to_db(music_volume), BGM_FADE_DURATION / 2.0)
+	_bgm_tween.tween_property(self, "_bgm_fade", 1.0, BGM_FADE_DURATION / 2.0)
 
 func _fade_bgm_out() -> void:
-	if _bgm_tween and _bgm_tween.is_valid():
-		_bgm_tween.kill()
-	
-	_bgm_tween = create_tween()
-	_bgm_tween.tween_property(_bgm_player, "volume_db", -40.0, BGM_FADE_DURATION)
+	_bgm_tween = create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_bgm_tween.tween_property(self, "_bgm_fade", 0.0, BGM_FADE_DURATION)
 	_bgm_tween.tween_callback(func():
 		_bgm_player.stop()
 	)
 
 # ========== SFX 控制 ==========
 
-func play_sfx(stream: AudioStream, pitch_random: float = 0.0) -> void:
+func play_ui_sfx(stream: AudioStream, pitch_random: float = 0.0) -> void:
+	play_sfx(stream, pitch_random, true)
+
+func play_sfx(stream: AudioStream, pitch_random: float = 0.0, during_pause: bool = false) -> void:
 	if stream == null:
 		return
 	
 	# 找到一个空闲的 SFX 播放器
-	var player := _get_available_sfx_player()
+	var player := _get_available_sfx_player(during_pause)
 	if player == null:
 		return
 	
+	# 池化节点每次借出都重置暂停语义，不能继承上次 UI/战斗用途。
+	player.process_mode = Node.PROCESS_MODE_ALWAYS if during_pause else Node.PROCESS_MODE_PAUSABLE
 	player.stream = stream
-	player.volume_db = linear_to_db(sfx_volume)
+	player.volume_db = _volume_to_db(sfx_volume)
 	
 	if pitch_random > 0.0:
 		player.pitch_scale = 1.0 + randf_range(-pitch_random, pitch_random)
@@ -140,19 +158,24 @@ func play_sfx(stream: AudioStream, pitch_random: float = 0.0) -> void:
 		player.pitch_scale = 1.0
 	
 	player.play()
+	# play() 可解除 stream_paused；在已暂停的世界里新发出的战斗音效也必须等待。
+	player.stream_paused = not player.can_process()
 
-func _get_available_sfx_player() -> AudioStreamPlayer:
+func _get_available_sfx_player(during_pause: bool = false) -> AudioStreamPlayer:
+	var count := _sfx_players.size() if during_pause else _max_sfx_players
 	# 优先找未播放的
-	for player in _sfx_players:
-		if not player.playing:
+	for i in range(count):
+		var player := _sfx_players[i]
+		if not player.playing and not player.stream_paused:
 			return player
 	
-	# 如果都在播放，找播放进度最长的
-	var oldest_player: AudioStreamPlayer = _sfx_players[0]
-	var max_position: float = 0.0
+	# 暂停中的战斗仍占用槽位，不能被 UI 覆盖；只抢占正在运行的音效。
+	var oldest_player: AudioStreamPlayer = null
+	var max_position: float = -1.0
 	
-	for player in _sfx_players:
-		if player.get_playback_position() > max_position:
+	for i in range(count):
+		var player := _sfx_players[i]
+		if not player.stream_paused and player.get_playback_position() > max_position:
 			max_position = player.get_playback_position()
 			oldest_player = player
 	
@@ -162,8 +185,7 @@ func _get_available_sfx_player() -> AudioStreamPlayer:
 
 func set_music_volume(volume: float, save: bool = true) -> void:
 	music_volume = clampf(volume, 0.0, 1.0)
-	if _bgm_player.playing:
-		_bgm_player.volume_db = linear_to_db(music_volume)
+	_apply_bgm_volume()
 	music_volume_changed.emit(music_volume)
 	if save:
 		_save_volume_settings()
@@ -182,7 +204,7 @@ func get_sfx_volume() -> float:
 
 # ========== 工具函数 ==========
 
-func linear_to_db(linear: float) -> float:
+func _volume_to_db(linear: float) -> float:
 	if linear <= 0.0:
 		return -80.0
 	return 20.0 * log(linear) / log(10.0)

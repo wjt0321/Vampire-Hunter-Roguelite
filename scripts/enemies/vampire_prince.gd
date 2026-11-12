@@ -10,6 +10,7 @@ class_name VampirePrinceEnemy
 
 var charge_timer: float = 0.0
 var is_charging: bool = false
+var is_winding_up: bool = false
 var charge_direction: Vector2 = Vector2.ZERO
 
 # 阶段转换
@@ -28,15 +29,15 @@ func _physics_process(delta: float) -> void:
 	
 	# 处理冻结状态
 	if is_frozen:
-		freeze_timer -= delta
-		if freeze_timer <= 0:
-			_unfreeze()
 		return
 	
 	# 检查阶段转换
 	if not is_second_phase and current_hp / max_hp <= 0.5:
 		_enter_second_phase()
 	
+	if is_winding_up:
+		velocity = Vector2.ZERO
+		return
 	# 处理冲锋
 	if is_charging:
 		velocity = charge_direction * charge_speed
@@ -48,6 +49,7 @@ func _physics_process(delta: float) -> void:
 	if charge_timer <= 0:
 		_start_charge()
 		charge_timer = charge_cooldown
+		return
 	
 	# 正常移动
 	_move_towards_player(delta)
@@ -68,7 +70,8 @@ func _start_charge() -> void:
 	if player == null or not is_instance_valid(player):
 		return
 	
-	is_charging = true
+	is_winding_up = true
+	velocity = Vector2.ZERO
 	charge_direction = (player.global_position - global_position).normalized()
 	
 	print("👑 血族亲王开始冲锋!")
@@ -83,18 +86,20 @@ func _start_charge() -> void:
 	_flash_red()
 	
 	# 延迟后开始冲锋
-	await get_tree().create_timer(0.3).timeout
+	await get_tree().create_timer(0.3, false).timeout
 	
 	if is_dead:
 		return
 	
+	is_winding_up = false
+	is_charging = true
 	# 冲锋特效
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
 		vfx.spawn_death_particles(global_position, Color(0.8, 0.0, 0.0, 0.8), 10)
 	
 	# 冲锋持续时间
-	await get_tree().create_timer(charge_duration).timeout
+	await get_tree().create_timer(charge_duration, false).timeout
 	
 	if not is_dead:
 		is_charging = false
@@ -115,7 +120,7 @@ func _flash_red() -> void:
 func _enter_second_phase() -> void:
 	## 进入第二阶段
 	is_second_phase = true
-	move_speed = 90.0  # 速度提升
+	set_base_move_speed(90.0)  # 速度提升
 	base_contact_damage = 30.0  # 伤害提升
 	# 只重算伤害，不重算 HP（避免重置 max_hp）
 	# 必须走 _scaled_damage()：直接 base × 波次会丢掉楼层与深渊倍率
@@ -143,7 +148,7 @@ func take_damage(amount: float) -> void:
 	if is_dead:
 		return
 	
-	current_hp -= amount
+	amount = _subtract_hp(_direct_damage(amount))
 	_flash_hit()
 	_after_damage_taken(amount)
 	
@@ -165,19 +170,15 @@ func _flash_hit() -> void:
 	var audio_lib := AudioLib
 	AudioManager.play_sfx(audio_lib.get_sound("hit_enemy"))
 
-func _on_contact_area_body_entered(body: Node2D) -> void:
-	## 碰到玩家时造成伤害并吸血
-	if body.is_in_group("player") and body.has_method("take_damage"):
-		body.take_damage(contact_damage)
-		
-		# 吸血
-		var lifesteal := contact_damage * lifesteal_percent
-		current_hp = clampf(current_hp + lifesteal, 0.0, max_hp)
-		
-		# 吸血特效
-		var vfx := get_node_or_null("/root/VFXManager")
-		if vfx:
-			vfx.spawn_hit_particles(global_position, Color(0.8, 0.0, 0.0, 0.8), 4)
+func _deal_contact_damage(body: Node2D) -> void:
+	# The player reports this hit before retaliation/drain changes its HP again.
+	var effective: Variant = body.take_damage(contact_damage, global_position)
+	if effective == null or effective <= 0.0 or is_dead:
+		return
+	current_hp = minf(current_hp + effective * lifesteal_percent, max_hp)
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx:
+		vfx.spawn_hit_particles(global_position, Color(0.8, 0.0, 0.0, 0.8), 4)
 
 func _get_enemy_type() -> String:
 	return "vampire_prince"

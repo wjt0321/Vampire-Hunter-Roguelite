@@ -44,6 +44,9 @@ assets-downloaded/
 # Build output
 builds/
 
+# Project-local portable tools (not game assets)
+.tools/
+
 # Local agent workspace
 .workbuddy/
 

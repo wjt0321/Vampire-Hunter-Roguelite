@@ -7,6 +7,7 @@ class_name ItemCatalog
 ## 加商店时如果复制一份，以后加武器就得改两处、还容易忘。所以收在这里。
 
 const WEAPONS: Array = [
+	{"id": "pistol", "name": "手枪", "desc": "可靠的基础武器", "type": "weapon", "price": 28, "upgrade_only": true},
 	{"id": "shotgun", "name": "散弹枪", "desc": "近距离扇形射击", "type": "weapon", "price": 30},
 	{"id": "magic_book", "name": "魔法书", "desc": "自动追踪敌人", "type": "weapon", "price": 32},
 	{"id": "throwing_knife", "name": "飞刀", "desc": "穿透多个敌人", "type": "weapon", "price": 28},
@@ -146,8 +147,10 @@ static func get_display_name(id: String) -> String:
 	return id
 
 static func create_weapon(id: String):
-	var W = preload("res://scripts/weapons/weapon_manager.gd")
+	var W = load("res://scripts/weapons/weapon_manager.gd")
 	match id:
+		"pistol":
+			return W._create_pistol()
 		"shotgun":
 			return W.create_shotgun()
 		"magic_book":

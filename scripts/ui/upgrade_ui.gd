@@ -25,6 +25,9 @@ var current_options: Array = []
 ## 普通局为空，继续走全局随机，行为不变。
 var rng: RandomNumberGenerator = null
 
+var _submitted: bool = false
+var _close_tween: Tween = null
+
 var _reroll_button: Button = null
 var _skip_button: Button = null
 var _banish_button: Button = null
@@ -60,9 +63,12 @@ func show_upgrade(player_node: Node, weapon_mgr: Node = null) -> void:
 	weapon_manager = weapon_mgr
 	visible = true
 	banish_mode = false
+	_submitted = false
+	if _close_tween != null:
+		_close_tween.kill()
 	PauseController.acquire(self)
 
-	_render_options()
+	_draw_and_render_options()
 	_refresh_footer()
 
 	panel.modulate = Color(1, 1, 1, 0)
@@ -72,16 +78,17 @@ func show_upgrade(player_node: Node, weapon_mgr: Node = null) -> void:
 	tween.tween_property(panel, "modulate:a", 1.0, 0.2)
 	tween.parallel().tween_property(panel, "scale", Vector2.ONE, 0.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 
-func _render_options() -> void:
-	## 抽 3 个选项并重建按钮。
-	## 用 remove_child + queue_free 而不是只 queue_free：后者要等到帧末才真的移除，
-	## 重建时会和新按钮同时存在于容器里（重抽时最明显——6 张卡挤在一起）。
+func _draw_and_render_options() -> void:
+	## 只有打开、重抽和实际放逐才消耗随机数。
 	var available_options := _get_available_options()
 	if available_options.is_empty():
 		available_options = _available_basic_rewards()
 
 	current_options = draw_options(available_options)
+	_render_options()
 
+func _render_options() -> void:
+	## 模式变化只重建当前手牌的显示。
 	for child in options_container.get_children():
 		options_container.remove_child(child)
 		child.queue_free()
@@ -301,7 +308,7 @@ func _basic_preview(reward_id: String) -> String:
 				return "生命已满 %.0f/%.0f · 选了没收益" % [before, player.max_hp]
 			return "生命 %.0f → %.0f（上限 %.0f）" % [before, after, player.max_hp]
 		"gold":
-			return "血晶 +100（结算时入账）"
+			return "血晶 +100（立即入账）"
 	return ""
 
 # ==================== 重抽 / 跳过 ====================
@@ -404,15 +411,16 @@ func _refresh_footer() -> void:
 		_reroll_button.text = "重抽 (%d)" % rerolls_left
 	else:
 		_reroll_button.text = "重抽 (-%d 银)" % cost
-	_reroll_button.disabled = not can_reroll()
+	_reroll_button.disabled = _submitted or not can_reroll()
 
 	if _banish_button != null:
 		if banish_mode:
 			_banish_button.text = "取消放逐"
 		else:
 			_banish_button.text = "放逐 (%d)" % banish_left
-		_banish_button.disabled = banish_left <= 0 and not banish_mode
+		_banish_button.disabled = _submitted or (banish_left <= 0 and not banish_mode)
 
+	_skip_button.disabled = _submitted
 	_skip_button.text = "跳过 (+%d 银)" % GameConfig.SKIP_SILVER_REWARD
 	if banish_mode:
 		_hint_label.text = "放逐模式：点任意一张卡把它从本局池移除（剩 %d 次）　B 取消" % banish_left
@@ -423,18 +431,20 @@ func _refresh_footer() -> void:
 
 func _on_reroll() -> bool:
 	## 返回是否真的重抽了（测试要用）
-	if not can_reroll():
+	if _submitted or not can_reroll():
 		return false
 	if rerolls_left > 0:
 		rerolls_left -= 1
 	else:
 		if player == null or not player.spend_silver(GameConfig.REROLL_SILVER_COST):
 			return false
-	_render_options()
+	_draw_and_render_options()
 	_refresh_footer()
 	return true
 
 func _on_skip() -> void:
+	if not _begin_submit():
+		return
 	if player != null and player.has_method("add_silver"):
 		player.add_silver(GameConfig.SKIP_SILVER_REWARD)
 	_close_and_emit()
@@ -450,7 +460,7 @@ func can_banish() -> bool:
 
 func _on_banish_toggle() -> bool:
 	## 进入/退出放逐模式。返回是否处于放逐模式（测试要用）
-	if banish_left <= 0:
+	if _submitted or banish_left <= 0:
 		return false
 	banish_mode = not banish_mode
 	_render_options()
@@ -461,7 +471,7 @@ func _on_banish_clicked(option: Dictionary) -> bool:
 	## 把这张卡从本局选池移除，并立刻补一手新的。
 	## 注意：这里**不消耗重抽次数**——放逐本身就是一次免费刷新，
 	## 否则玩家每次 ban 都要额外付一次重抽，两个功能的成本会叠乘。
-	if banish_left <= 0:
+	if _submitted or banish_left <= 0:
 		return false
 	var key := _option_key(option)
 	if key in banished_keys:
@@ -471,7 +481,7 @@ func _on_banish_clicked(option: Dictionary) -> bool:
 	banish_mode = false
 	print("🚫 放逐 %s（剩 %d 次，已 ban %d 项）" % [
 		String(option.get("name", key)), banish_left, banished_keys.size()])
-	_render_options()
+	_draw_and_render_options()
 	_refresh_footer()
 	return true
 
@@ -479,7 +489,7 @@ func is_banished(option: Dictionary) -> bool:
 	return _option_key(option) in banished_keys
 
 func _input(event: InputEvent) -> void:
-	if not visible:
+	if not visible or _submitted:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
@@ -496,15 +506,28 @@ func _input(event: InputEvent) -> void:
 func dismiss_for_game_over() -> void:
 	## 玩家已死。关掉三选一并放开它持有的暂停，不要发 upgrade_selected
 	## ——那会让主场景以为「这张卡选完了」再排队开下一张。
+	_submitted = true
+	if _close_tween != null:
+		_close_tween.kill()
 	visible = false
 	if PauseController.is_held_by(self):
 		PauseController.release(self)
 
+func _begin_submit() -> bool:
+	if _submitted:
+		return false
+	_submitted = true
+	for button in options_container.get_children():
+		if button is Button:
+			button.disabled = true
+	_refresh_footer()
+	return true
+
 func _close_and_emit() -> void:
-	var tween := create_tween()
-	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	tween.tween_property(panel, "modulate:a", 0.0, 0.15)
-	tween.tween_callback(func():
+	_close_tween = create_tween()
+	_close_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_close_tween.tween_property(panel, "modulate:a", 0.0, 0.15)
+	_close_tween.tween_callback(func():
 		visible = false
 		PauseController.release(self)
 		upgrade_selected.emit()
@@ -539,6 +562,8 @@ func _get_available_options() -> Array:
 		# 槽位已满时不再提供"新武器"，只保留已拥有武器的升级项，
 		# 否则玩家可以无限扩充武器栏，DPS 线性叠加到无双。
 		var owned: bool = weapon_opt["id"] in owned_ids
+		if weapon_opt.get("upgrade_only", false) and not owned:
+			continue
 		if slots_full and not owned:
 			continue
 		# 满级武器再出现就是废卡（卡面会写成 Lv.5 → Lv.5），直接过滤
@@ -626,7 +651,7 @@ func _get_basic_rewards() -> Array:
 	## 图标留空：本机字体不含 emoji，填 ⚔️💰❤️ 会在 Button 上渲染成蓝方块。
 	return [
 		{"id": "heal", "name": "生命恢复", "desc": "回复 30% 最大生命", "type": "basic"},
-		{"id": "gold", "name": "血晶奖励", "desc": "结算时额外获得 100 血晶", "type": "basic"},
+		{"id": "gold", "name": "血晶奖励", "desc": "100 血晶立即入账", "type": "basic"},
 		{"id": "damage_boost", "name": "伤害提升", "desc": "攻击倍率 +10%（本局永久）", "type": "basic"},
 	]
 
@@ -834,6 +859,8 @@ func _get_option_icon(option: Dictionary) -> Texture2D:
 	return null
 
 func _on_option_selected(option: Dictionary) -> void:
+	if not _begin_submit():
+		return
 	var option_type: String = option.get("type", "stat")
 	if option_type == "stat":
 		if player != null and player.has_method("apply_upgrade"):
@@ -870,9 +897,12 @@ func _apply_basic_reward(reward_id: String) -> void:
 			var save_mgr := get_node_or_null("/root/SaveManager")
 			if save_mgr:
 				save_mgr.add_blood_crystals(100)
+				var achievements := get_node_or_null("/root/AchievementManager")
+				if achievements != null:
+					achievements.record_crystals_earned(100)
 				print("+ 获得 100 血晶")
 				if hud and hud.has_method("show_toast"):
-					hud.show_toast("血晶 +100（结算时入账）")
+					hud.show_toast("血晶 +100（立即入账）")
 		"damage_boost":
 			if player != null:
 				var before: float = player.damage_multiplier

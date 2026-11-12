@@ -339,7 +339,9 @@ func _spawn_enemy() -> void:
 		is_active = false
 		return
 	
-	var count := _get_enemies_per_spawn()
+	var cap: int = GameConfig.get_enemy_alive_cap(floor_index)
+	var on_field: int = get_tree().get_nodes_in_group("enemies").size()
+	var count := mini(_get_enemies_per_spawn(), maxi(cap - on_field, 0))
 	for i in range(count):
 		var enemy_type := _pick_enemy_type()
 		var enemy_scene: PackedScene = enemy_scenes[enemy_type]
@@ -586,18 +588,18 @@ func _escape_into_clear_space(pos: Vector2) -> Vector2:
 				return candidate
 	return pos
 
-func _on_enemy_died(enemy: Node2D) -> void:
+func _on_enemy_died(_enemy: Node2D) -> void:
 	enemies_alive -= 1
-	total_kills += 1
-	enemy_killed.emit(total_kills)
+	record_external_kill()
 
-func record_external_kill(enemy_type: String = "bat") -> void:
-	## 记录非波次生成的敌人击杀（如 Boss 召唤的小怪）
+func record_external_kill(_enemy_type: String = "bat") -> void:
+	## 普通/召唤敌人共用总数入口；分类与成就仅由 EnemyBase 死亡路径记账。
+	## 保留类型参数以兼容召唤接线，不在此重复记录成就。
+	var ach_mgr := get_node_or_null("/root/AchievementManager")
+	if ach_mgr and ach_mgr.is_run_finished():
+		return
 	total_kills += 1
 	enemy_killed.emit(total_kills)
-	var ach_mgr := get_node_or_null("/root/AchievementManager")
-	if ach_mgr:
-		ach_mgr.record_kill(enemy_type)
 
 func stop() -> void:
 	is_active = false

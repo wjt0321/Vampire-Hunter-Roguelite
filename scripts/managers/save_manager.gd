@@ -16,6 +16,10 @@ var save_path: String = SAVE_PATH
 var is_tool_run: bool = false
 ## 当前测试套件名。非空表示存档指向 user://test_<套件>.json。
 var test_suite: String = ""
+var _load_blocked: bool = false
+
+func _companion_path(suffix: String) -> String:
+	return save_path + suffix
 
 # === 默认存档数据 ===
 var save_data: Dictionary = _default_save_data()
@@ -29,6 +33,7 @@ func _default_save_data() -> Dictionary:
 		"best_wave": 0,              # 最高波次
 		"best_rooms": 0,             # 最多房间
 		"total_kills": 0,            # 累计击杀
+		"kill_categories": {},       # 兼容旧档的分类累计击杀
 		# 永久升级
 		"upgrades": {
 			"base_damage": 0,        # 基础伤害增加（每级 +5%）
@@ -87,51 +92,93 @@ func _exit_tree() -> void:
 		clear_test_save(test_suite)
 
 func save_game() -> void:
+	try_save_game()
+
+func try_save_game() -> bool:
 	if save_path == SAVE_PATH and is_tool_run:
 		push_error("工具测试禁止写玩家真实存档 %s：请改用 use_test_save_path() 切到测试存档" % SAVE_PATH)
-		return
-	var file := FileAccess.open(save_path, FileAccess.WRITE)
+		return false
+	if _load_blocked:
+		push_error("存档损坏且无可用备份，拒绝覆盖 %s" % save_path)
+		return false
+	var tmp_path := _companion_path(".tmp")
+	var backup_path := _companion_path(".bak")
+	var file := FileAccess.open(tmp_path, FileAccess.WRITE)
 	if file == null:
-		push_error("无法保存: %s" % FileAccess.get_open_error())
-		return
+		push_error("无法打开临时存档: %s" % FileAccess.get_open_error())
+		return false
 	file.store_string(JSON.stringify(save_data, "\t"))
+	file.flush()
+	var write_error := file.get_error()
 	file.close()
+	if write_error != OK:
+		push_error("临时存档写入失败: %s" % write_error)
+		return false
+	if FileAccess.file_exists(save_path):
+		if not _read_valid_save(save_path).is_empty():
+			if DirAccess.copy_absolute(ProjectSettings.globalize_path(save_path), ProjectSettings.globalize_path(backup_path)) != OK:
+				push_error("无法保留有效备份 %s" % backup_path)
+				return false
+		if DirAccess.remove_absolute(ProjectSettings.globalize_path(save_path)) != OK:
+			push_error("无法替换旧存档，临时文件保留于 %s" % tmp_path)
+			return false
+	if DirAccess.rename_absolute(ProjectSettings.globalize_path(tmp_path), ProjectSettings.globalize_path(save_path)) != OK:
+		push_error("存档替换失败；恢复数据保留于 %s" % backup_path)
+		return false
 	print("💾 存档已保存 (%s)" % save_path)
+	return true
 
-func load_game() -> void:
-	if not FileAccess.file_exists(save_path):
-		print("📂 未找到存档 (%s)，使用默认数据" % save_path)
-		return
-	var file := FileAccess.open(save_path, FileAccess.READ)
+func _read_valid_save(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		return {}
+	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
-		return
+		return {}
 	var json := JSON.new()
 	var result := json.parse(file.get_as_text())
 	file.close()
-	if result != OK:
-		push_error("JSON 解析失败: %s" % json.get_error_message())
-		return
-	var loaded: Variant = json.data
-	if loaded is Dictionary:
-		var old_version: int = int(loaded.get("version", 1))
-		if old_version < SAVE_VERSION:
-			loaded = _migrate_save(loaded, old_version)
-			print("🔄 存档从 v%d 迁移到 v%d" % [old_version, SAVE_VERSION])
-			# 合并数据（保留新增字段）
-			_merge_dict(save_data, loaded)
-			_sanitize_save()
-			save_game()
+	return json.data if result == OK and json.data is Dictionary else {}
+
+func load_game() -> void:
+	_load_blocked = false
+	var loaded := _read_valid_save(save_path)
+	var recovered := false
+	var has_save_files := FileAccess.file_exists(save_path)
+	for suffix in [".bak", ".tmp"]:
+		var recovery_path := _companion_path(suffix)
+		has_save_files = has_save_files or FileAccess.file_exists(recovery_path)
+		if loaded.is_empty():
+			loaded = _read_valid_save(recovery_path)
+			recovered = not loaded.is_empty()
+	if loaded.is_empty():
+		if has_save_files:
+			_load_blocked = true
+			push_error("主存档损坏且无有效备份；保留原文件并阻止覆盖")
 		else:
-			# 合并数据（保留新增字段）
-			_merge_dict(save_data, loaded)
-			_sanitize_save()
-		print("📂 存档已加载 (v%d) %s" % [SAVE_VERSION, save_path])
+			print("📂 未找到存档 (%s)，使用默认数据" % save_path)
+		return
+	var old_version: int = int(loaded.get("version", 1))
+	if old_version < SAVE_VERSION:
+		loaded = _migrate_save(loaded, old_version)
+		print("🔄 存档从 v%d 迁移到 v%d" % [old_version, SAVE_VERSION])
+	_merge_dict(save_data, loaded)
+	_sanitize_save()
+	print("📂 存档已加载 (v%d) %s%s" % [SAVE_VERSION, save_path, "（备份恢复）" if recovered else ""])
+	if recovered or old_version < SAVE_VERSION:
+		try_save_game()
+
+func reload_from_disk() -> bool:
+	## 从当前路径重载，不改变路径、不清理文件、不重置测试状态。
+	save_data = _default_save_data()
+	load_game()
+	return not _load_blocked
 
 # === 测试隔离（只给 tools/ 下的工具测试用） ===
 
 func use_test_save_path(suite: String) -> String:
 	## 把存档切到 user://test_<suite>.json，测试期间只在测试文件里读写。
 	## 会清掉上一次遗留的测试存档，保证每次运行从干净状态开始。返回切换后的路径。
+	_load_blocked = false
 	test_suite = suite
 	save_path = _tool_save_path(suite)
 	clear_test_save(suite)
@@ -141,8 +188,10 @@ func use_test_save_path(suite: String) -> String:
 func clear_test_save(suite: String) -> void:
 	## 删除属于该测试的临时存档。只删 user://test_*.json，永远不碰玩家真实存档。
 	var path := _tool_save_path(suite)
-	if FileAccess.file_exists(path):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+	for suffix in ["", ".tmp", ".bak"]:
+		var target: String = path if suffix == "" else path + suffix
+		if FileAccess.file_exists(target):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(target))
 
 func _tool_save_path(suite: String) -> String:
 	return "%s%s.json" % [TEST_SAVE_PREFIX, suite]
@@ -207,6 +256,12 @@ func _sanitize_save() -> void:
 	save_data["blood_crystals"] = maxi(int(save_data.get("blood_crystals", 0)), 0)
 	save_data["total_runs"] = maxi(int(save_data.get("total_runs", 0)), 0)
 	save_data["total_kills"] = maxi(int(save_data.get("total_kills", 0)), 0)
+	var categories = save_data.get("kill_categories", {})
+	if not (categories is Dictionary):
+		categories = {}
+	for key in categories.keys():
+		categories[key] = maxi(int(categories[key]), 0)
+	save_data["kill_categories"] = categories
 	var ups = save_data.get("upgrades", null)
 	if not (ups is Dictionary):
 		# 手改存档 / 写坏的存档会把 upgrades 写成字符串或数组。
@@ -356,7 +411,7 @@ func record_daily_run(date_key: String, stats: Dictionary) -> Dictionary:
 	while runs.size() > DAILY_BOARD_LIMIT:
 		runs.pop_back()
 	bucket["runs"] = runs
-	var rank := 0
+	var rank := -1
 	for i in runs.size():
 		if int(runs[i].get("id", -1)) == int(entry["id"]):
 			rank = i
@@ -376,7 +431,7 @@ func record_daily_run(date_key: String, stats: Dictionary) -> Dictionary:
 		save_data["blood_crystals"] = int(save_data.get("blood_crystals", 0)) + crystals
 	save_data["daily_board"] = bucket
 	save_game()
-	var summary := "每日第 %d 名" % (rank + 1)
+	var summary := "每日第 %d 名" % (rank + 1) if rank >= 0 else "每日未上榜（本地榜单仅保留前 %d 名）" % DAILY_BOARD_LIMIT
 	if notes.size() > 0:
 		summary += " · " + "，".join(notes)
 	return {"crystals": crystals, "summary": summary, "rank": rank + 1}
@@ -439,6 +494,12 @@ func get_selected_character() -> String:
 func end_run(stats: Dictionary) -> int:
 	save_data["total_runs"] += 1
 	save_data["total_kills"] += stats.get("kills", 0)
+	var categories: Dictionary = save_data.get("kill_categories", {})
+	var run_categories: Variant = stats.get("kill_categories", {})
+	if run_categories is Dictionary:
+		for key in run_categories:
+			categories[key] = int(categories.get(key, 0)) + int(run_categories[key])
+	save_data["kill_categories"] = categories
 	if stats.get("wave", 0) > save_data["best_wave"]:
 		save_data["best_wave"] = stats.get("wave", 0)
 	if stats.get("rooms", 0) > save_data["best_rooms"]:

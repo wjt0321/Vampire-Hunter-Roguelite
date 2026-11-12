@@ -508,7 +508,11 @@ func update_silver(amount: int) -> void:	if silver_label:
 		silver_label.text = "银币 %d" % amount
 
 func _process(delta: float) -> void:
-	game_time += delta
+	var achievement_mgr := get_node_or_null("/root/AchievementManager")
+	if achievement_mgr and achievement_mgr.has_method("get_effective_time"):
+		game_time = achievement_mgr.get_effective_time()
+	else:
+		game_time += delta
 	var minutes := int(game_time) / 60
 	var seconds := int(game_time) % 60
 	time_label.text = "%02d:%02d" % [minutes, seconds]

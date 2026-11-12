@@ -23,6 +23,7 @@ var _root: Control = null
 var _pact_btn: Button = null
 var _rest_btn: Button = null
 var _hint: Label = null
+var _floor_label: Label = null
 
 func _ready() -> void:
 	layer = 96
@@ -104,12 +105,11 @@ func _build_ui() -> void:
 	title.add_theme_color_override("font_color", Color(1.0, 0.84, 0.72))
 	vbox.add_child(title)
 
-	var sub := Label.new()
-	sub.text = "第 %d 层 · 石台上还留着上一个人的血" % floor_index
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub.add_theme_font_size_override("font_size", 13)
-	sub.add_theme_color_override("font_color", Color(0.7, 0.66, 0.7))
-	vbox.add_child(sub)
+	_floor_label = Label.new()
+	_floor_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_floor_label.add_theme_font_size_override("font_size", 13)
+	_floor_label.add_theme_color_override("font_color", Color(0.7, 0.66, 0.7))
+	vbox.add_child(_floor_label)
 
 	var spacer := Control.new()
 	spacer.custom_minimum_size = Vector2(0, 10)
@@ -211,6 +211,8 @@ func _make_card(title: String, main_text: String, sub_text: String, accent: Colo
 	return btn
 
 func _refresh() -> void:
+	if _floor_label != null:
+		_floor_label.text = "第 %d 层 · 石台上还留着上一个人的血" % floor_index
 	if _pact_btn == null:
 		return
 	var pact_ok: bool = can_pact()

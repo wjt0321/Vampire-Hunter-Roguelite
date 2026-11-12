@@ -29,6 +29,8 @@ func _load_sprite_texture() -> void:
 			_adjust_sprite_scale()
 
 func _physics_process(delta: float) -> void:
+	if is_frozen:
+		return
 	if is_dead or player == null or not is_instance_valid(player):
 		return
 	

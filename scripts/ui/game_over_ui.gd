@@ -21,6 +21,7 @@ var abyss_button: Button = null
 var achievement_list: VBoxContainer = null
 ## 成就列表的滚动外层（一局解锁很多成就时不让面板撑出屏幕）
 var achievement_scroll: ScrollContainer = null
+var _run_settlement_submitted: bool = false
 
 func _ready() -> void:
 	visible = false
@@ -92,12 +93,15 @@ func _apply_button_style(btn: Button) -> void:
 		btn.pressed.connect(_on_button_click_sfx)
 
 func _on_button_hover_sfx() -> void:
-	AudioManager.play_sfx(AudioLib.get_sound("hover"))
+	AudioManager.play_ui_sfx(AudioLib.get_sound("hover"))
 
 func _on_button_click_sfx() -> void:
-	AudioManager.play_sfx(AudioLib.get_sound("button_click"))
+	AudioManager.play_ui_sfx(AudioLib.get_sound("button_click"))
 
 func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
+	if _run_settlement_submitted:
+		return
+	_run_settlement_submitted = true
 	visible = true
 	PauseController.acquire(self)
 	
@@ -109,6 +113,8 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 			var rec: Dictionary = save_mgr.record_daily_run(String(stats.get("daily_date", "")), stats)
 			crystals += int(rec.get("crystals", 0))
 			daily_line = String(rec.get("summary", ""))
+	if achievement_mgr and crystals > 0:
+		achievement_mgr.record_crystals_earned(crystals)
 	
 	if is_victory:
 		title_label.text = "胜利！吸血鬼领主已被终结"
