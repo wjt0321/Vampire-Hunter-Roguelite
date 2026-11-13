@@ -558,6 +558,13 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO) -> floa
 	var effective_damage := maxf(hp_before - current_hp, 0.0)
 	if effective_damage > 0.0:
 		damage_received.emit(effective_damage)
+		var incoming := ""
+		if has_meta("incoming_source"):
+			incoming = String(get_meta("incoming_source"))
+			remove_meta("incoming_source")
+		var hit_log: Node = get_tree().get_first_node_in_group("run_log") if is_inside_tree() else null
+		if hit_log != null and hit_log.has_method("note_hit"):
+			hit_log.call("note_hit", incoming, effective_damage)
 	hp_changed.emit(current_hp, max_hp)
 	_start_invincibility()
 	_flash_damage()
@@ -835,6 +842,67 @@ func add_passive_item(item) -> void:
 		if saves != null and saves.has_method("discover_codex"):
 			saves.discover_codex("passive", String(item.item_id))
 
+func dismantle_passive(item_id: String) -> bool:
+	var index := -1
+	var item = null
+	for i in passive_items.size():
+		if String(passive_items[i].item_id) == item_id:
+			item = passive_items[i]
+			index = i
+			break
+	if item == null:
+		return false
+	if int(item.current_level) > 1:
+		item.current_level -= 1
+		_apply_passive_effect(item)
+		return true
+	passive_items.remove_at(index)
+	_clear_passive_effect(item)
+	return true
+
+func _clear_passive_effect(item) -> void:
+	match int(item.effect_type):
+		0:
+			pickup_range_bonus = maxf(pickup_range_bonus - _magnet_bonus_applied, 0.0)
+			_magnet_bonus_applied = 0.0
+			magnet_multiplier = 1.0
+		1:
+			has_shield_item = false
+		2:
+			regen_rate = 0.0
+		3:
+			xp_bonus_multiplier = maxf(xp_bonus_multiplier - _greed_bonus_applied, 0.0)
+			_greed_bonus_applied = 0.0
+		4:
+			berserker_bonus = 0.0
+		5:
+			freeze_chance = 0.0
+		6:
+			lightning_retaliate_damage = 0.0
+		7:
+			dodge_chance = 0.0
+		8:
+			lifesteal_chance = 0.0
+		9:
+			move_speed_bonus_multiplier = 0.0
+		10:
+			crit_chance = 0.0
+		11:
+			bleed_chance = 0.0
+		12:
+			slow_chance = 0.0
+		13:
+			drain_ratio = 0.0
+		14:
+			execution_bonus_per_stack = 0.0
+			execution_stacks = 0
+		15:
+			has_time_gear = false
+			time_gear_scale = 1.0
+		16:
+			has_cold_blood = false
+			cold_blood_damage = 0.0
+
 func _apply_passive_effect(item) -> void:
 	match item.effect_type:
 		0:  # MAGNET
@@ -920,6 +988,13 @@ func on_dealt_damage(amount: float) -> void:
 	## 汲取的入账口。由敌人基类在每次受伤时回调。
 	## 刻意不走 heal()：那会播治疗音效，高频武器等于持续"漏水声"。
 	## 零头先攒着，攒够阈值再结算一次，血量变化看得清也有节奏。
+	if amount > 0.0 and is_inside_tree():
+		var source := "攻击"
+		if has_meta("outgoing_source"):
+			source = String(get_meta("outgoing_source"))
+		var dealt_log: Node = get_tree().get_first_node_in_group("run_log")
+		if dealt_log != null and dealt_log.has_method("note_dealt"):
+			dealt_log.call("note_dealt", source, amount)
 	if GameConfig.has_daily("no_heal") or _player_dead or current_hp <= 0.0:
 		_drain_pool = 0.0
 		return

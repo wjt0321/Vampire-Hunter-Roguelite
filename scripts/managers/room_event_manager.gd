@@ -38,6 +38,18 @@ var _hunt_timer: float = 0.0
 var _hunt_delay: float = 0.0
 var _guards_left: int = 0
 var _chest: Node2D = null
+var _event_nodes: Array = []
+var _nest_core: Node = null
+var _nest_time: float = 0.0
+var _nest_spawn: float = 0.0
+var _nest_adds: int = 0
+var _flee_enemy: Node = null
+var _flee_dir: Vector2 = Vector2.RIGHT
+var _seals: Array = []
+var _seal_time: Array = []
+var _bounty_enemy: Node = null
+var _bounty_mark: Vector2 = Vector2.ZERO
+var _bounty_accepted: bool = false
 ## HUD 文本降频：每 0.2 秒写一次，别每帧拼字符串
 var _hud_tick: float = 0.0
 ## 开场信息占位倒计时（秒）：> 0 时状态刷新不覆盖事件行
@@ -74,11 +86,37 @@ func on_combat_room_entered(floor_index: int) -> bool:
 	if randf() >= chance:
 		return false
 	floor_fired = floor_index
-	if randf() < GameConfig.ROOM_EVENT_HUNT_WEIGHT:
-		_start_hunt()
-	else:
-		_start_guard()
+	match _roll_event_kind():
+		"guard":
+			_start_guard()
+		"nest":
+			_start_nest()
+		"flee":
+			_start_flee()
+		"seals":
+			_start_seals()
+		"bounty":
+			_start_bounty()
+		_:
+			_start_hunt()
 	return true
+
+func _roll_event_kind() -> String:
+	var roll := randf()
+	var weights: Array = [
+		["hunt", 0.28],
+		["guard", 0.18],
+		["nest", 0.14],
+		["flee", 0.14],
+		["seals", 0.13],
+		["bounty", 0.13],
+	]
+	var acc := 0.0
+	for row in weights:
+		acc += float(row[1])
+		if roll < acc:
+			return String(row[0])
+	return "hunt"
 
 func _start_hunt() -> void:
 	kind = "hunt"
@@ -113,6 +151,14 @@ func _process(delta: float) -> void:
 			_process_hunt(delta, hud_dirty)
 		"guard":
 			_process_guard(hud_dirty)
+		"nest":
+			_process_nest(delta, hud_dirty)
+		"flee":
+			_process_flee(delta, hud_dirty)
+		"seals":
+			_process_seals(delta, hud_dirty)
+		"bounty":
+			_process_bounty(hud_dirty)
 
 func _process_hunt(delta: float, hud_dirty: bool) -> void:
 	if _hunt_enemy == null or not is_instance_valid(_hunt_enemy):
@@ -339,6 +385,200 @@ func _disconnect_hunt_killed() -> void:
 			and _hunt_enemy.enemy_died.is_connected(_on_hunt_killed):
 		_hunt_enemy.enemy_died.disconnect(_on_hunt_killed)
 
+func _start_nest() -> void:
+	kind = "nest"
+	_nest_time = 18.0
+	_nest_spawn = 1.2
+	_nest_adds = 0
+	_notify("血 巢 出 现 · 打 掉 核 心")
+	event_started.emit("nest")
+	if wave_manager == null or player == null:
+		_end(false, "血巢未现身")
+		return
+	var pos: Vector2 = _offset_from_player(220.0)
+	_nest_core = wave_manager.spawn_special_enemy("zombie", pos, [], 1.0, 2.4)
+	if _nest_core == null:
+		_end(false, "血巢未现身")
+		return
+	_nest_core.enemy_died.connect(_on_nest_killed)
+	_tag_enemy(_nest_core, "血 巢", Color(0.85, 0.2, 0.28))
+
+func _process_nest(delta: float, hud_dirty: bool) -> void:
+	_nest_time -= delta
+	_nest_spawn -= delta
+	if hud_dirty:
+		_set_hud("血巢 %.0f 秒" % maxf(_nest_time, 0.0))
+	if _nest_time <= 0.0:
+		if _nest_core != null and is_instance_valid(_nest_core):
+			_nest_core.queue_free()
+		_end(false, "血巢消失")
+		return
+	if _nest_spawn > 0.0 or _nest_adds >= 4 or wave_manager == null or _nest_core == null:
+		return
+	_nest_spawn = 2.4
+	_nest_adds += 1
+	var add: Node = wave_manager.spawn_special_enemy("bat", _offset_from_player(160.0), [], 1.0, 0.7)
+	if add != null:
+		_tag_enemy(add, "巢 虫", Color(0.7, 0.25, 0.3))
+
+func _on_nest_killed(_enemy: Node) -> void:
+	if kind != "nest":
+		return
+	_reward(28, 70, "血巢摧毁 +28 银")
+	_end(true, "血巢摧毁")
+
+func _start_flee() -> void:
+	kind = "flee"
+	_notify("逃 匿 魔 · 在 它 跑 出 去 前 打 倒")
+	event_started.emit("flee")
+	if wave_manager == null or player == null:
+		_end(false, "逃匿魔未现身")
+		return
+	var pos: Vector2 = _offset_from_player(180.0)
+	_flee_enemy = wave_manager.spawn_special_enemy("bat", pos, [], 1.0, 0.8)
+	if _flee_enemy == null:
+		_end(false, "逃匿魔未现身")
+		return
+	if _flee_enemy.has_method("set_base_move_speed"):
+		_flee_enemy.set_base_move_speed(0.0)
+	_flee_dir = _edge_direction(pos)
+	_flee_enemy.enemy_died.connect(_on_flee_killed)
+	_tag_enemy(_flee_enemy, "逃 匿", Color(0.55, 0.85, 0.95))
+
+func _process_flee(delta: float, hud_dirty: bool) -> void:
+	if _flee_enemy == null or not is_instance_valid(_flee_enemy):
+		_end(false, "逃匿魔失踪")
+		return
+	_flee_enemy.global_position += _flee_dir * 110.0 * delta
+	if hud_dirty:
+		_set_hud("拦住逃匿魔")
+	var bounds := _room_bounds()
+	var pos: Vector2 = _flee_enemy.global_position
+	if pos.x <= bounds.position.x + 28.0 or pos.x >= bounds.end.x - 28.0 \
+			or pos.y <= bounds.position.y + 28.0 or pos.y >= bounds.end.y - 28.0:
+		_flee_enemy.queue_free()
+		_end(false, "逃匿魔逃走")
+
+func _on_flee_killed(_enemy: Node) -> void:
+	if kind != "flee":
+		return
+	_reward(26, 64, "逃匿魔倒下 +26 银")
+	_end(true, "逃匿魔倒下")
+
+func _start_seals() -> void:
+	kind = "seals"
+	_seal_time = [0.0, 0.0]
+	_notify("双 封 印 · 站 在 圈 里")
+	event_started.emit("seals")
+	var bounds := _room_bounds()
+	var center := bounds.get_center()
+	_seals = [
+		_make_marker(center + Vector2(-140, 40), Color(0.45, 0.75, 0.95, 0.85)),
+		_make_marker(center + Vector2(140, -20), Color(0.45, 0.75, 0.95, 0.85)),
+	]
+
+func _process_seals(delta: float, hud_dirty: bool) -> void:
+	if player == null or not is_instance_valid(player):
+		return
+	for i in _seals.size():
+		var seal: Node2D = _seals[i]
+		if not is_instance_valid(seal):
+			continue
+		if player.global_position.distance_to(seal.global_position) <= 48.0:
+			_seal_time[i] = float(_seal_time[i]) + delta
+		var filled: float = clampf(float(_seal_time[i]) / 1.2, 0.0, 1.0)
+		seal.modulate = Color(0.45, 0.75, 0.95).lerp(Color(0.45, 0.95, 0.55), filled)
+	if hud_dirty:
+		_set_hud("封印 %.0f%% / %.0f%%" % [
+			clampf(float(_seal_time[0]) / 1.2, 0.0, 1.0) * 100.0,
+			clampf(float(_seal_time[1]) / 1.2, 0.0, 1.0) * 100.0,
+		])
+	if float(_seal_time[0]) >= 1.2 and float(_seal_time[1]) >= 1.2:
+		_reward(24, 60, "封印完成 +24 银")
+		_end(true, "封印完成")
+
+func _start_bounty() -> void:
+	kind = "bounty"
+	_bounty_accepted = false
+	_notify("悬 赏 · 走 进 标记 才 会 强化 目 标")
+	event_started.emit("bounty")
+	if wave_manager == null or player == null:
+		_end(false, "悬赏未现身")
+		return
+	var pos: Vector2 = _offset_from_player(240.0)
+	_bounty_enemy = wave_manager.spawn_special_enemy("vampire", pos, [], 1.0, 1.0)
+	if _bounty_enemy == null:
+		_end(false, "悬赏未现身")
+		return
+	_bounty_mark = pos + Vector2(70, 0)
+	_make_marker(_bounty_mark, Color(0.95, 0.75, 0.25, 0.9))
+	_bounty_enemy.enemy_died.connect(_on_bounty_killed)
+	_tag_enemy(_bounty_enemy, "可 拒 绝", Color(0.95, 0.8, 0.35))
+
+func _process_bounty(hud_dirty: bool) -> void:
+	if _bounty_enemy == null or not is_instance_valid(_bounty_enemy):
+		return
+	if not _bounty_accepted and player != null and is_instance_valid(player) \
+			and player.global_position.distance_to(_bounty_mark) <= 56.0:
+		_bounty_accepted = true
+		if "max_hp" in _bounty_enemy:
+			_bounty_enemy.max_hp *= 1.8
+			_bounty_enemy.current_hp = _bounty_enemy.max_hp
+		if "base_contact_damage" in _bounty_enemy:
+			_bounty_enemy.base_contact_damage *= 1.4
+		_tag_enemy(_bounty_enemy, "悬 赏", Color(1.0, 0.45, 0.2))
+	if hud_dirty:
+		_set_hud("悬赏已接受" if _bounty_accepted else "走进标记接受悬赏，也可以走开")
+
+func _on_bounty_killed(_enemy: Node) -> void:
+	if kind != "bounty":
+		return
+	if not _bounty_accepted:
+		_end(false, "未接受悬赏")
+		return
+	_reward(32, 72, "悬赏完成 +32 银")
+	_end(true, "悬赏完成")
+
+func _offset_from_player(distance: float) -> Vector2:
+	var angle := randf() * TAU
+	var pos: Vector2 = (player as Node2D).global_position + Vector2(cos(angle), sin(angle)) * distance
+	var bounds := _room_bounds()
+	pos.x = clampf(pos.x, bounds.position.x + 48.0, bounds.end.x - 48.0)
+	pos.y = clampf(pos.y, bounds.position.y + 48.0, bounds.end.y - 48.0)
+	return pos
+
+func _edge_direction(from: Vector2) -> Vector2:
+	var bounds := _room_bounds()
+	var center := bounds.get_center()
+	var away := from - center
+	if away.length() < 1.0:
+		away = Vector2.RIGHT
+	return away.normalized()
+
+func _make_marker(pos: Vector2, color: Color) -> Node2D:
+	var marker := Node2D.new()
+	var ring := Polygon2D.new()
+	var points := PackedVector2Array()
+	for i in 16:
+		var a := TAU * float(i) / 16.0
+		points.append(Vector2(cos(a), sin(a)) * 36.0)
+	ring.polygon = points
+	ring.color = color
+	marker.add_child(ring)
+	var scene := get_tree().current_scene if is_inside_tree() else null
+	if scene:
+		scene.add_child(marker)
+	marker.global_position = pos
+	_event_nodes.append(marker)
+	return marker
+
+func _free_event_nodes() -> void:
+	for node in _event_nodes:
+		if is_instance_valid(node):
+			node.queue_free()
+	_event_nodes.clear()
+	_seals.clear()
+
 func _end(success: bool, reason: String) -> void:
 	var finished_kind := kind
 	kind = ""
@@ -346,7 +586,15 @@ func _end(success: bool, reason: String) -> void:
 	_hunt_timer = 0.0
 	_hunt_delay = 0.0
 	_guards_left = 0
+	_nest_core = null
+	_flee_enemy = null
+	_bounty_enemy = null
+	_bounty_accepted = false
 	_announce_timer = 0.0
+	_free_event_nodes()
+	var log: Node = get_tree().get_first_node_in_group("run_log") if is_inside_tree() else null
+	if log != null and log.has_method("note_event") and finished_kind != "":
+		log.call("note_event", finished_kind, success)
 	# 宝箱回收收敛在这里（幂等）：任何结束路径——守卫刷失败、wave_manager 缺失、
 	# 换房 cancel、换层——都不会把上锁宝箱留在场上。开箱成功那条路径已经
 	# 把 _chest 交还给宝箱自己的开箱动画（见 _on_guard_died），不会被这里抢走。

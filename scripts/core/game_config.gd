@@ -137,6 +137,7 @@ const ENEMY_HP_LEVEL_SCALE_CAP: float = 2.0     # 等级缩放上限
 
 ## 远程敌人类型（用于逐层解禁判断）
 const RANGED_ENEMY_TYPES: Array = ["skeleton_archer", "vampire_mage", "lantern_wraith", "alchemist_pitcher"]
+const FAST_ENEMY_TYPES: Array = ["bat", "werewolf", "blood_hound", "moon_wing"]
 
 ## 该层前几间**战斗房**不出远程怪（下标 = floor - 1）
 ## 第 1 层前 2 间战斗房纯近战，第 3 间战斗房开始出现射手。
@@ -249,7 +250,7 @@ const ROOM_LABELS: Dictionary = {
 const BOSS_BASE_HP: float = 800.0
 # 各 tier 的 Boss 基础血量：与"层内 Boss 出现时的玩家 DPS"实测对齐
 # 设计目标 Boss 战 15-25 秒（tools/dungeon_test.gd 可验算）
-const BOSS_HP_TIERS: Array = [650.0, 1600.0, 3200.0, 4600.0, 7000.0]
+const BOSS_HP_TIERS: Array = [820.0, 1850.0, 4600.0, 7800.0, 9200.0]
 const BOSS_ENRAGE_THRESHOLD: float = 0.5    # 50% HP 狂暴
 const BOSS_DESPERATE_THRESHOLD: float = 0.25 # 25% HP 绝望
 
@@ -758,11 +759,20 @@ const ROOM_VARIANTS := {
 	"blood_tide": {"title": "血潮", "detail": "敌人更密、血更少，经验更多", "reward": "经验"},
 	"crossfire": {"title": "交叉火力", "detail": "远程从两侧出现，经验更多", "reward": "经验"},
 	"leyline": {"title": "不稳定地脉", "detail": "地面会爆，敌我都受伤，完成多给银币", "reward": "银币"},
+	"armored_patrol": {"title": "重甲巡行", "detail": "数量更少，前排更耐打，银币更多", "reward": "银币"},
+	"hunter_hall": {"title": "猎手走廊", "detail": "快速单位会冲过来，击杀掉落更高", "reward": "银币"},
+	"quiet_antechamber": {"title": "寂静前厅", "detail": "敌人很少，完成后小幅恢复，奖励也少", "reward": "恢复"},
 }
 
 static func room_variant_for_floor(floor_index: int) -> String:
-	var order := ["blood_tide", "crossfire", "leyline"]
+	var order := ["blood_tide", "crossfire", "leyline", "armored_patrol", "hunter_hall"]
 	return order[(maxi(floor_index, 1) - 1) % order.size()]
+
+static func room_safe_variant_for_floor(floor_index: int) -> String:
+	## 第 5 层的安全门本身就是低奖励的寂静前厅，凶险门才是猎手走廊。
+	if maxi(floor_index, 1) % 5 == 0:
+		return "quiet_antechamber"
+	return ""
 
 static func room_variant_info(variant_id: String) -> Dictionary:
 	return ROOM_VARIANTS.get(variant_id, {})
@@ -794,6 +804,7 @@ static func room_choice_info(room_type: String) -> Dictionary:
 		"color": Color(0.7, 0.5, 1.0),
 	})
 	info["type"] = room_type
+	info["choice_id"] = room_type
 	return info
 
 # ==================== 每日挑战（17.15） ====================

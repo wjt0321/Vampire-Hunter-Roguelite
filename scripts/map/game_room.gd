@@ -444,6 +444,7 @@ func spawn_choice_portals(choices: Array) -> void:
 
 func _build_choice_portal(pos: Vector2, info: Dictionary) -> Area2D:
 	var room_type := String(info.get("type", "combat"))
+	var choice_id := String(info.get("choice_id", room_type))
 	var portal := Area2D.new()
 	portal.name = "Portal_%s" % room_type
 	portal.collision_layer = 0
@@ -478,7 +479,7 @@ func _build_choice_portal(pos: Vector2, info: Dictionary) -> Area2D:
 
 	portal.monitoring = false
 	portal.body_entered.connect(func(body: Node2D) -> void:
-		_emit_choice(body, room_type)
+		_emit_choice(body, choice_id)
 	)
 	add_child(portal)
 	# 进树之后再写全局坐标。进树前写 global_position 会被当成局部坐标，

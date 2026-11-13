@@ -22,6 +22,17 @@ const ENEMIES := {
 	"furnace_golem": {"states": ["idle"], "blurb": "外甲在时又慢又硬，甲碎了就冲上来"},
 	"resonance_mage": {"states": ["idle"], "blurb": "把同伴连起来分摊伤害，先杀术士"},
 	"moon_wing": {"states": ["idle"], "blurb": "弧线换位后俯冲，并留下短风刃"},
+	"bat": {"states": ["idle"], "blurb": "飞得快，优先清掉以免被缠住"},
+	"vampire": {"states": ["idle"], "blurb": "近身追击，别让它贴住"},
+	"zombie": {"states": ["idle"], "blurb": "慢，血厚，用来挡路"},
+	"skeleton_archer": {"states": ["idle"], "blurb": "远处点射，用墙或近身打断"},
+	"werewolf": {"states": ["idle"], "blurb": "冲得快，横向躲开再打"},
+	"exploder": {"states": ["idle"], "blurb": "靠近会炸，自己也会伤到同伴"},
+	"summoner": {"states": ["idle"], "blurb": "先杀召唤者，再清它叫出来的东西"},
+	"vampire_mage": {"states": ["idle"], "blurb": "远程施法，不要站在弹道上"},
+	"gargoyle": {"states": ["idle"], "blurb": "会石化停住，等它落地再打"},
+	"elite_vampire": {"states": ["idle"], "blurb": "比普通血族更硬的近战"},
+	"vampire_prince": {"states": ["idle"], "blurb": "高层近战，会把人逼进角落"},
 }
 
 ## Boss：单格 128×128。先备 idle，其余动作有文件才会被读到。

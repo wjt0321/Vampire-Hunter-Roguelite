@@ -113,6 +113,8 @@ var _combat_theme_cursor: int = 0
 var _forks: Dictionary = {}
 var _variants: Dictionary = {}
 var _pending_choice: String = ""
+var _variant_choice_made: bool = false
+var _chosen_variant: String = ""
 ## 每日挑战把地图随机从全局 RNG 里拆出来。为空时仍用 randf/shuffle，普通局不变。
 var _rng: RandomNumberGenerator = null
 
@@ -221,7 +223,7 @@ func _place_forks() -> void:
 	var boss_index: int = _room_plan.size() - 1
 	var slots: Array = []
 	for i in range(1, boss_index):
-		if String(_room_plan[i]) == "combat":
+		if String(_room_plan[i]) == "combat" and not _variants.has(i):
 			slots.append(i)
 	_shuffle(slots)
 	var types: Array = GameConfig.MAP_EVENT_TYPES.duplicate()
@@ -244,6 +246,13 @@ func consume_room() -> String:
 		_generate_room_plan()
 
 	var idx: int = clampi(room_in_floor, 0, _room_plan.size() - 1)
+	if _variant_choice_made:
+		if _chosen_variant == "":
+			_variants.erase(idx)
+		else:
+			_variants[idx] = _chosen_variant
+		_variant_choice_made = false
+		_chosen_variant = ""
 	var room_type: String = String(_room_plan[idx])
 	if _pending_choice != "":
 		var event_type := String(_forks.get(idx, ""))
@@ -271,14 +280,10 @@ func peek_room_choices() -> Array:
 	if _room_plan.is_empty() or room_in_floor < 0 or room_in_floor >= _room_plan.size():
 		return [GameConfig.room_choice_info("combat")]
 	var planned := String(_room_plan[room_in_floor])
-	var choices: Array = [GameConfig.room_choice_info(planned)]
 	var variant := String(_variants.get(room_in_floor, ""))
-	if variant != "" and planned == "combat":
-		var info: Dictionary = GameConfig.room_variant_info(variant)
-		choices[0]["title"] = String(info.get("title", choices[0]["title"]))
-		choices[0]["detail"] = String(info.get("detail", ""))
-		choices[0]["reward"] = String(info.get("reward", ""))
-		choices[0]["variant"] = variant
+	if variant != "" and planned == "combat" and not _forks.has(room_in_floor):
+		return [_safe_door(current_floor), _danger_door(variant)]
+	var choices: Array = [GameConfig.room_choice_info(planned)]
 	if _forks.has(room_in_floor):
 		var event_type := String(_forks[room_in_floor])
 		if event_type != planned:
@@ -287,11 +292,46 @@ func peek_room_choices() -> Array:
 
 func choose_next(room_type: String) -> bool:
 	## 只接受当前门口真正摆出来的那几扇门。乱传一个 "boss" 不能跳关。
+	## 普通门和凶险门的房间类型都是 combat，所以用 choice_id 区分。
+	_variant_choice_made = false
+	_chosen_variant = ""
 	for choice in peek_room_choices():
-		if String(choice.get("type", "")) == room_type:
-			_pending_choice = room_type
-			return true
+		if String(choice.get("choice_id", choice.get("type", ""))) != room_type:
+			continue
+		_pending_choice = String(choice.get("type", ""))
+		if choice.has("variant"):
+			_variant_choice_made = true
+			_chosen_variant = String(choice.get("variant", ""))
+		return true
 	return false
+
+func _safe_door(floor_index: int) -> Dictionary:
+	var door := GameConfig.room_choice_info("combat")
+	var safe_id := GameConfig.room_safe_variant_for_floor(floor_index)
+	if safe_id == "":
+		door["title"] = "普通"
+		door["detail"] = "标准敌人与奖励"
+		door["variant"] = ""
+		door["choice_id"] = "combat"
+		return door
+	var info: Dictionary = GameConfig.room_variant_info(safe_id)
+	door["title"] = String(info.get("title", "普通"))
+	door["detail"] = String(info.get("detail", ""))
+	door["reward"] = String(info.get("reward", ""))
+	door["variant"] = safe_id
+	door["choice_id"] = "variant:" + safe_id
+	return door
+
+func _danger_door(variant_id: String) -> Dictionary:
+	var door := GameConfig.room_choice_info("combat")
+	var info: Dictionary = GameConfig.room_variant_info(variant_id)
+	door["title"] = String(info.get("title", "凶险"))
+	door["detail"] = String(info.get("detail", ""))
+	door["reward"] = String(info.get("reward", ""))
+	door["variant"] = variant_id
+	door["choice_id"] = "variant:" + variant_id
+	door["color"] = Color(0.86, 0.28, 0.24)
+	return door
 
 func get_forks() -> Dictionary:
 	return _forks.duplicate()

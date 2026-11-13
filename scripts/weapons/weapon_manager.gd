@@ -597,9 +597,21 @@ func estimate_run_dps() -> float:
 		total += dps
 	return total
 
+func dismantle_warning(passive_id: String) -> String:
+	var names: PackedStringArray = PackedStringArray()
+	for weapon in weapons:
+		var config: Dictionary = EVOLUTION_CONFIG.get(String(weapon.weapon_id), {})
+		var required: Array = config.get("required_passive_items", [])
+		if passive_id in required and not is_weapon_evolved(String(weapon.weapon_id)):
+			names.append(String(config.get("evolution_name", weapon.weapon_name)))
+	if names.is_empty():
+		return ""
+	return "拆掉后这些进化会失效：" + "、".join(names)
+
 func _fire_weapon(weapon) -> void:
 	if player == null or not is_instance_valid(player):
 		return
+	player.set_meta("outgoing_source", String(weapon.weapon_name))
 	
 	# 进化行为「刀阵环绕」不靠开火，靠旋转持续伤害
 	if _get_behavior(weapon.weapon_id) == "orbit":

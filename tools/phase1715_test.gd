@@ -141,6 +141,9 @@ func _test_choice() -> void:
 		var choices: Array = dm.peek_room_choices()
 		if choices.size() >= 2:
 			var event_type := String(choices[1].get("type", ""))
+			if event_type not in GameConfig.MAP_EVENT_TYPES:
+				dm.consume_room()
+				continue
 			_check(event_type in GameConfig.MAP_EVENT_TYPES, "右门是事件房（%s）" % event_type)
 			_check(String(choices[0].get("type", "")) == "combat", "左门仍是原计划的战斗房")
 			_check(not dm.choose_next("boss"), "不能把岔路选成 Boss 跳关")
@@ -159,6 +162,10 @@ func _test_choice() -> void:
 	var saw_default := false
 	while plain.room_in_floor < plain.get_room_count():
 		if plain.peek_room_choices().size() >= 2:
+			var right := String(plain.peek_room_choices()[1].get("type", ""))
+			if right not in GameConfig.MAP_EVENT_TYPES:
+				plain.consume_room()
+				continue
 			_check(not plain.choose_next("shop"), "岔路上没有商店门时不能选商店")
 			_check(plain.consume_room() == "combat", "不选事件房就进原计划的战斗房")
 			saw_default = true

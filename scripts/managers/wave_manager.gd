@@ -58,7 +58,11 @@ var _encounter_reward: String = ""
 var _last_template: String = ""
 var _core_alive: bool = false
 var variant_hp_mult: float = 1.0
+var variant_loot_mult: float = 1.0
+var variant_speed_mult: float = 1.0
 var prefer_ranged: bool = false
+var prefer_melee: bool = false
+var prefer_fast: bool = false
 var variant_spawn_bonus: int = 0
 var enemy_pool: Array = []   # 当前层允许出现的敌人类型；空则回退到按波次解锁
 ## 本层已清房间数（从 0 开始）。远程敌人按这个数逐间解禁，见 GameConfig.RANGED_UNLOCK_ROOM_BY_FLOOR
@@ -141,7 +145,11 @@ func start(player_node: Node2D) -> void:
 	_alive_probe_timer = 0.0
 	_alive_probe_cache = 0
 	variant_hp_mult = 1.0
+	variant_loot_mult = 1.0
+	variant_speed_mult = 1.0
 	prefer_ranged = false
+	prefer_melee = false
+	prefer_fast = false
 	variant_spawn_bonus = 0
 	_begin_encounter()
 	_start_next_wave()
@@ -304,7 +312,7 @@ func _get_enemies_per_spawn() -> int:
 	# 每波同时生成更多敌人。
 	# 初版是 mini(1 + wave/3, 5)，第 1 波每次只有 1 只，配合 2 秒间隔等于 0.5 只/秒，
 	# 玩家随手就清空全场。现在第 1 波每次 2 只，第 12 波以后每次 5 只。
-	var base := mini(2 + current_wave / 4, GameConfig.WAVE_MAX_SPAWN_COUNT) + variant_spawn_bonus
+	var base := maxi(mini(2 + current_wave / 4, GameConfig.WAVE_MAX_SPAWN_COUNT) + variant_spawn_bonus, 1)
 	if is_equal_approx(spawn_count_mult, 1.0):
 		return base
 	# 总量对齐：倍率 1.2 时按 2→3→2→3… 发放，长期严格等于 ×1.2。
@@ -413,6 +421,16 @@ func _spawn_enemy() -> void:
 		if _current_scene:
 			_current_scene.add_child(enemy)
 		_tag_encounter_member(enemy, planned)
+		if not is_equal_approx(variant_loot_mult, 1.0):
+			if "silver_value" in enemy:
+				enemy.silver_value = int(ceil(float(enemy.silver_value) * variant_loot_mult))
+			if "xp_value" in enemy:
+				enemy.xp_value = int(ceil(float(enemy.xp_value) * variant_loot_mult))
+		if not is_equal_approx(variant_speed_mult, 1.0) and enemy.has_method("set_base_move_speed"):
+			enemy.set_base_move_speed(float(enemy.move_speed) * variant_speed_mult)
+		var log: Node = get_tree().get_first_node_in_group("run_log") if is_inside_tree() else null
+		if log != null and log.has_method("note_peak"):
+			log.call("note_peak", "enemies", get_tree().get_nodes_in_group("enemies").size())
 		var saves := get_node_or_null("/root/SaveManager")
 		if saves != null and saves.has_method("discover_codex") and enemy.has_method("_get_enemy_type"):
 			var kind := "boss" if enemy.is_in_group("boss") else "enemy"
@@ -556,6 +574,20 @@ func _pick_enemy_type() -> String:
 				ranged_only.append(type)
 		if not ranged_only.is_empty():
 			candidates = ranged_only
+	elif prefer_melee:
+		var melee_only: Array = []
+		for type in candidates:
+			if type not in GameConfig.RANGED_ENEMY_TYPES:
+				melee_only.append(type)
+		if not melee_only.is_empty():
+			candidates = melee_only
+	if prefer_fast:
+		var fast_only: Array = []
+		for type in candidates:
+			if type in GameConfig.FAST_ENEMY_TYPES:
+				fast_only.append(type)
+		if not fast_only.is_empty():
+			candidates = fast_only
 	if candidates.is_empty():
 		return "vampire"
 

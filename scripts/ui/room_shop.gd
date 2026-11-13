@@ -13,6 +13,8 @@ signal shop_closed
 const SLOT_COUNT: int = 4
 const REROLL_COSTS: Array = [8, 14, 22, 34]
 const RECAST_COST: int = 30
+const HEAL_PRICE: int = 10
+const DISMANTLE_REFUND: int = 8
 
 var player: Node = null
 var weapon_manager: Node = null
@@ -26,7 +28,9 @@ var _rerolls: int = 0
 var carried_offer: Dictionary = {}
 var _floor_index: int = 1
 var _recast_floor: int = -1
+var _dismantle_floor: int = -1
 var _recast_btn: Button = null
+var _dismantle_btn: Button = null
 
 var _built: bool = false
 var _root: Control = null
@@ -138,6 +142,23 @@ func _roll_all() -> void:
 			continue
 		var picked: Dictionary = pool.pick_random()
 		_offers[i] = picked
+	_ensure_heal_offer()
+
+func _ensure_heal_offer() -> void:
+	for offer in _offers:
+		if String(offer.get("id", "")) == "heal" and String(offer.get("type", "")) == "consumable":
+			offer["price"] = HEAL_PRICE
+			return
+	var heal: Dictionary = ItemCatalog.find_consumable("heal")
+	if heal.is_empty():
+		return
+	heal = heal.duplicate(true)
+	heal["price"] = HEAL_PRICE
+	for i in range(SLOT_COUNT - 1, -1, -1):
+		if not _locked[i]:
+			_offers[i] = heal
+			_sold[i] = false
+			return
 
 func _current_reroll_cost() -> int:
 	return REROLL_COSTS[mini(_rerolls, REROLL_COSTS.size() - 1)]
@@ -198,7 +219,7 @@ func _build_ui() -> void:
 	_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hint_label.add_theme_font_size_override("font_size", 12)
 	_hint_label.add_theme_color_override("font_color", Color(0.65, 0.62, 0.58))
-	_hint_label.text = "同一家店里重抽会变贵。锁定的一件会带到下一间商店"
+	_hint_label.text = "血瓶每间都有。重抽会变贵。锁定的一件带到下一间，拆解每层一次"
 	vbox.add_child(_hint_label)
 
 	var bottom := HBoxContainer.new()
@@ -213,6 +234,10 @@ func _build_ui() -> void:
 	_recast_btn = _make_button("重铸")
 	_recast_btn.pressed.connect(_on_recast)
 	bottom.add_child(_recast_btn)
+
+	_dismantle_btn = _make_button("拆解")
+	_dismantle_btn.pressed.connect(_on_dismantle)
+	bottom.add_child(_dismantle_btn)
 
 	var leave_btn := _make_button("离开商店")
 	leave_btn.pressed.connect(close)
@@ -264,6 +289,10 @@ func _refresh() -> void:
 		var used := _recast_floor == _floor_index
 		_recast_btn.text = "本层已重铸" if used else "重铸 (%d 银)" % RECAST_COST
 		_recast_btn.disabled = used or _get_silver() < RECAST_COST or weapon_manager == null
+	if _dismantle_btn != null:
+		var dismantled := _dismantle_floor == _floor_index
+		_dismantle_btn.text = "本层已拆解" if dismantled else "拆解 (+%d 银)" % DISMANTLE_REFUND
+		_dismantle_btn.disabled = dismantled or player == null or not player.has_method("dismantle_passive")
 
 func _make_card(index: int) -> Control:
 	var slot: Dictionary = _offers[index]
@@ -404,6 +433,40 @@ func _confirm_recast(index: int) -> void:
 		return
 	_recast_floor = _floor_index
 	_note_shop("recast", RECAST_COST)
+	_refresh()
+
+func _on_dismantle() -> void:
+	if _dismantle_floor == _floor_index or player == null or not player.has_method("dismantle_passive"):
+		return
+	if not ("passive_items" in player) or player.passive_items.is_empty():
+		return
+	for child in _slots_box.get_children():
+		if String(child.name).begins_with("DismantleChoice"):
+			child.queue_free()
+	for i in player.passive_items.size():
+		var item = player.passive_items[i]
+		var warning := ""
+		if weapon_manager != null and weapon_manager.has_method("dismantle_warning"):
+			warning = String(weapon_manager.dismantle_warning(String(item.item_id)))
+		var label := String(item.item_name)
+		if warning != "":
+			label += "\n" + warning
+		var btn := _make_button(label)
+		btn.name = "DismantleChoice%d" % i
+		btn.custom_minimum_size = Vector2(160, 64)
+		var picked_id := String(item.item_id)
+		btn.pressed.connect(func(): _confirm_dismantle(picked_id))
+		_slots_box.add_child(btn)
+
+func _confirm_dismantle(item_id: String) -> void:
+	if _dismantle_floor == _floor_index or player == null or not player.has_method("dismantle_passive"):
+		return
+	if not player.dismantle_passive(item_id):
+		return
+	if player.has_method("add_silver"):
+		player.add_silver(DISMANTLE_REFUND)
+	_dismantle_floor = _floor_index
+	_note_shop("dismantle", 0)
 	_refresh()
 
 func _note_shop(kind: String, amount: int) -> void:

@@ -139,16 +139,25 @@ func _codex_text() -> String:
 			lines.append("Boss %s：%s" % [boss_id, slots.blurb("boss", String(boss_id))])
 		else:
 			lines.append("Boss ???")
-	for weapon_id in slots.WEAPONS.keys():
-		var known_weapon: bool = saves != null and saves.has_method("codex_known") and bool(saves.call("codex_known", "weapon", String(weapon_id)))
+	var catalog = preload("res://scripts/core/item_catalog.gd")
+	for weapon in catalog.WEAPONS:
+		var weapon_id := String(weapon.get("id", ""))
+		var known_weapon: bool = saves != null and saves.has_method("codex_known") and bool(saves.call("codex_known", "weapon", weapon_id))
 		if known_weapon:
-			lines.append("武器 %s：%s" % [weapon_id, slots.blurb("weapon", String(weapon_id))])
+			var weapon_text := slots.blurb("weapon", weapon_id)
+			if weapon_text == "":
+				weapon_text = String(weapon.get("desc", ""))
+			lines.append("武器 %s：%s" % [weapon.get("name", weapon_id), weapon_text])
 		else:
 			lines.append("武器 ???")
-	for passive_id in slots.PASSIVES.keys():
-		var known_passive: bool = saves != null and saves.has_method("codex_known") and bool(saves.call("codex_known", "passive", String(passive_id)))
+	for passive in catalog.PASSIVES:
+		var passive_id := String(passive.get("id", ""))
+		var known_passive: bool = saves != null and saves.has_method("codex_known") and bool(saves.call("codex_known", "passive", passive_id))
 		if known_passive:
-			lines.append("被动 %s：%s" % [passive_id, slots.blurb("passive", String(passive_id))])
+			var passive_text := slots.blurb("passive", passive_id)
+			if passive_text == "":
+				passive_text = String(passive.get("desc", ""))
+			lines.append("被动 %s：%s" % [passive.get("name", passive_id), passive_text])
 		else:
 			lines.append("被动 ???")
 	return "\n".join(lines)

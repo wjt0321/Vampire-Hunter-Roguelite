@@ -380,6 +380,8 @@ func _on_wave_completed(wave_number: int) -> void:
 	# 每完成一波后出现传送门
 	if dungeon != null and dungeon.current_variant() == "leyline" and is_instance_valid(player) and player.has_method("add_silver"):
 		player.add_silver(12)
+	if dungeon != null and dungeon.current_variant() == "quiet_antechamber" and is_instance_valid(player) and player.has_method("heal"):
+		player.heal(player.max_hp * 0.12)
 	if current_room != null and not current_room.portal_spawned:
 		AudioManager.play_sfx(_audio_lib.get_sound("room_clear"))
 		_open_room_exit(current_room)
@@ -871,6 +873,8 @@ func _apply_room_variant() -> void:
 	if dungeon == null or wave_manager == null:
 		return
 	var variant: String = String(dungeon.current_variant())
+	if variant != "" and variant != "quiet_antechamber":
+		wave_manager.variant_loot_mult = 1.25
 	match variant:
 		"blood_tide":
 			wave_manager.variant_hp_mult = 0.85
@@ -879,6 +883,17 @@ func _apply_room_variant() -> void:
 			wave_manager.prefer_ranged = true
 		"leyline":
 			_pulse_leyline()
+		"armored_patrol":
+			wave_manager.variant_hp_mult = 1.4
+			wave_manager.variant_spawn_bonus = -1
+			wave_manager.prefer_melee = true
+		"hunter_hall":
+			wave_manager.prefer_fast = true
+			wave_manager.variant_speed_mult = 1.2
+			wave_manager.variant_loot_mult = 1.35
+		"quiet_antechamber":
+			wave_manager.variant_spawn_bonus = -2
+			wave_manager.variant_loot_mult = 0.75
 
 func _pulse_leyline() -> void:
 	if current_room == null or not current_room.has_method("get_center"):
@@ -898,19 +913,32 @@ func _apply_floor_rule() -> void:
 			var web = preload("res://scripts/enemies/web_patch.gd").new()
 			web.global_position = pos
 			current_room.add_child(web)
+			var web_side = preload("res://scripts/enemies/web_patch.gd").new()
+			web_side.global_position = pos + Vector2(-140, 80)
+			current_room.add_child(web_side)
 		"tomb":
 			var shell = preload("res://scripts/enemies/coffin_shell.gd").new()
 			shell.revive_delay = 9999.0
 			shell.global_position = pos + Vector2(90, 30)
 			current_room.add_child(shell)
+			var shell_side = preload("res://scripts/enemies/coffin_shell.gd").new()
+			shell_side.revive_delay = 9999.0
+			shell_side.global_position = pos + Vector2(-120, -40)
+			current_room.add_child(shell_side)
 		"alchemy":
 			var puddle = preload("res://scripts/map/potion_puddle.gd").new()
 			puddle.global_position = pos
 			current_room.add_child(puddle)
+			var puddle_side = preload("res://scripts/map/potion_puddle.gd").new()
+			puddle_side.global_position = pos + Vector2(160, -70)
+			current_room.add_child(puddle_side)
 		"eclipse":
 			var well = preload("res://scripts/map/moon_well.gd").new()
 			well.global_position = pos
 			current_room.add_child(well)
+			var well_side = preload("res://scripts/map/moon_well.gd").new()
+			well_side.global_position = pos + Vector2(-150, 60)
+			current_room.add_child(well_side)
 
 func _boss_scene_for(boss_id: String) -> PackedScene:
 	match boss_id:
