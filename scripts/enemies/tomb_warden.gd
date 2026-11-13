@@ -71,3 +71,25 @@ func _raise_one() -> void:
 
 func can_revive() -> bool:
 	return ward != null and is_instance_valid(ward) and ward.get("is_dead") != true
+
+func _die() -> void:
+	if is_dead:
+		return
+	# main 的 boss_defeated 会同步清空 enemies 组；先退组才能保住死亡条带不被立刻清场。
+	remove_from_group("enemies")
+	_set_boss_collisions(false)
+	if _contact_area != null:
+		_contact_area.set_deferred("monitoring", false)
+		_contact_area.set_deferred("monitorable", false)
+	super._die()
+
+func _play_death_visual() -> void:
+	# 同血铠领主/织血母皇：boss_stage._die 不会自毁，这里必须自己 free，
+	# 结界才会经 linked_nodes 在 _exit_tree 连带清理（<0.8s 自回收契约）。
+	# 绑定本节点的 tween 随暂停冻结、随场景销毁取消；不依赖死后停掉的 _process。
+	if sprite == null:
+		queue_free()
+		return
+	var tween := create_tween()
+	tween.tween_property(sprite, "modulate:a", 0.0, 0.4)
+	tween.tween_callback(queue_free)
