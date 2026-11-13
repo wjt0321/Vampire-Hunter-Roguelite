@@ -513,6 +513,25 @@ func codex_known(kind: String, entry_id: String) -> bool:
 	var book: Dictionary = save_data.get("codex", {})
 	return entry_id in book.get(kind, [])
 
+func next_unlock_text() -> String:
+	var catalog = load("res://scripts/core/item_catalog.gd")
+	var owned: Array = save_data.get("unlocked_weapons", [])
+	var next_floor := 0
+	var names: PackedStringArray = PackedStringArray()
+	for weapon in catalog.WEAPONS:
+		var need := int(weapon.get("unlock_floor", 0))
+		var wid := String(weapon.get("id", ""))
+		if need <= 0 or wid in owned:
+			continue
+		if next_floor == 0 or need < next_floor:
+			next_floor = need
+			names = PackedStringArray([String(weapon.get("name", wid))])
+		elif need == next_floor:
+			names.append(String(weapon.get("name", wid)))
+	if next_floor == 0:
+		return "新武器已全部解锁"
+	return "下一项解锁：到达第 %d 层，%s" % [next_floor, "、".join(names)]
+
 func unlock_weapons_for_floor(floor_index: int) -> void:
 	var catalog = load("res://scripts/core/item_catalog.gd")
 	var changed := false

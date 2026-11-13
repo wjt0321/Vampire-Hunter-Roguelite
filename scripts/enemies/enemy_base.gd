@@ -288,6 +288,7 @@ func _tick_contact_damage(delta: float) -> void:
 	_contact_cd = GameConfig.PLAYER_INVINCIBLE_DURATION
 
 func _deal_contact_damage(body: Node2D) -> void:
+	body.set_meta("incoming_source", _get_enemy_type())
 	body.take_damage(contact_damage, global_position)
 
 func _can_damage_body(body: Node2D) -> bool:
@@ -364,7 +365,7 @@ func dot_damage(amount: float) -> void:
 	if "armor" in self:
 		actual *= 1.0 - GameConfig.calculate_damage_reduction(float(get("armor")))
 	actual = _subtract_hp(actual)
-	_report_dealt_damage(actual)
+	_report_with_source(actual, "流血")
 	# Boss 的血条不刷新会显示成"打完没掉血"（take_damage 的 4 个覆写里这个是漏得最多的）。
 	# 用 emit_signal 而不是直接写 boss_hp_changed.emit —— 基类没有声明这个信号，
 	# 直接引用会让整个 EnemyBase 解析失败（连带所有子类一起炸）。
@@ -577,6 +578,19 @@ func _report_dealt_damage(amount: float) -> void:
 	if amount > 0.0 and is_instance_valid(player) and player.has_method("on_dealt_damage"):
 		player.on_dealt_damage(amount)
 
+func _report_with_source(amount: float, source: String) -> void:
+	if not is_instance_valid(player):
+		_report_dealt_damage(amount)
+		return
+	var had_source := player.has_meta("outgoing_source")
+	var previous: String = String(player.get_meta("outgoing_source")) if had_source else ""
+	player.set_meta("outgoing_source", source)
+	_report_dealt_damage(amount)
+	if had_source:
+		player.set_meta("outgoing_source", previous)
+	elif player.has_meta("outgoing_source"):
+		player.remove_meta("outgoing_source")
+
 func _after_damage_taken(amount: float) -> void:
 	# Drain includes lethal hits; surviving targets alone receive on-hit statuses.
 	_report_dealt_damage(amount)
@@ -609,7 +623,7 @@ func _after_damage_taken(amount: float) -> void:
 		_cold_blood_cd = 1.4
 		var rupture := float(p.get("cold_blood_damage"))
 		_subtract_hp(rupture)
-		_report_dealt_damage(rupture)
+		_report_with_source(rupture, "寒血")
 
 func _apply_hit_freeze() -> void:
 	## 命中冻帧：让受击者停 0.05 秒，给"打中了"一个物理层面的确认。
@@ -648,6 +662,10 @@ func _die() -> void:
 	if is_dead:
 		return
 	is_dead = true
+	var kill_log: Node = get_tree().get_first_node_in_group("run_log") if is_inside_tree() else null
+	if kill_log != null and kill_log.has_method("note_kill") and is_instance_valid(player):
+		var source := String(player.get_meta("outgoing_source")) if player.has_meta("outgoing_source") else ""
+		kill_log.call("note_kill", source, _get_enemy_type())
 	enemy_died.emit(self)
 	# 记录击杀成就
 	_record_kill_for_achievement()

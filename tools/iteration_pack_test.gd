@@ -79,13 +79,42 @@ func _test_preview() -> void:
 	var saw := false
 	for _i in 6:
 		var choices: Array = dungeon.peek_room_choices()
-		if not choices.is_empty() and String(choices[0].get("variant", "")) != "":
+		var danger := ""
+		var plain_door := false
+		for choice in choices:
+			if String(choice.get("variant", "")) != "":
+				danger = String(choice.get("detail", ""))
+			if String(choice.get("choice_id", "")) == "combat":
+				plain_door = true
+		if danger != "":
 			saw = true
-			_check(String(choices[0]["detail"]) != "", "变体房的门口写了风险和收益")
+			_check(danger != "" and choices.size() >= 2 and plain_door, "变体房同时有普通门和写明风险的凶险门")
 			break
 		dungeon.consume_room()
 	_check(saw, "一层里能看到下一间的变体预告")
 	dungeon.free()
+	var routed = DungeonScript.new()
+	routed.start_dungeon()
+	var declined := false
+	for _j in 8:
+		var door_choices: Array = routed.peek_room_choices()
+		var has_danger := false
+		for door in door_choices:
+			if String(door.get("choice_id", "")).begins_with("variant:"):
+				has_danger = true
+		if has_danger:
+			_check(routed.choose_next("combat"), "可以选择普通门")
+			routed.consume_room()
+			_check(routed.current_variant() == "", "选普通门后这一间没有凶险修饰")
+			declined = true
+			break
+		routed.consume_room()
+	_check(declined, "普通门能拒绝凶险房")
+	var config = load("res://scripts/core/game_config.gd")
+	_check(config.room_variant_for_floor(4) == "armored_patrol", "第 4 层凶险房是重甲巡行")
+	_check(config.room_variant_for_floor(5) == "hunter_hall", "第 5 层凶险房是猎手走廊")
+	_check(config.room_safe_variant_for_floor(5) == "quiet_antechamber", "第 5 层安全门是寂静前厅")
+	routed.free()
 
 
 func _test_build_and_shop() -> void:
@@ -167,12 +196,39 @@ func _test_build_and_shop() -> void:
 	shop._locked[0] = true
 	shop.close()
 	_check(String(shop.carried_offer.get("id", "")) == "heal", "离开时只带走这一件")
+	shop.carried_offer = {}
+	shop.open(player, weapons, 3)
+	var heal_price := -1
+	for offer in shop._offers:
+		if String(offer.get("id", "")) == "heal":
+			heal_price = int(offer.get("price", -1))
+	_check(heal_price == 10, "没锁货时血瓶也在，价格是 10")
+	_check(String(weapons.dismantle_warning("berserker_blood")).contains("毁灭者"), "拆解会写明哪条进化会失效")
+	var silver_before: int = player.silver
+	shop._confirm_dismantle("execution_mark")
+	_check(player.passive_items.is_empty() and player.silver == silver_before + 8, "拆掉一级被动并退 8 银")
+	_check(is_equal_approx(player.execution_bonus_per_stack, 0.0), "拆掉后处刑印记不再叠伤")
+	var events = load("res://scripts/managers/room_event_manager.gd").new()
+	host.add_child(events)
+	events.player = player
+	events._start_seals()
+	player.global_position = events._seals[0].global_position
+	events._process_seals(0.4, false)
+	var kept_seal: float = float(events._seal_time[0])
+	player.global_position += Vector2(500, 0)
+	events._process_seals(0.3, false)
+	_check(is_equal_approx(float(events._seal_time[0]), kept_seal) and float(events._seal_time[1]) < 0.05,
+		"离开封印圈不会把进度清掉")
+	shop.close()
 
 	var warden = load("res://scenes/enemies/tomb_warden.tscn").instantiate()
 	warden.skip_intro = true
 	host.add_child(warden)
 	await process_frame
 	var ward: Node = warden.ward
+	paused = true
+	_check(is_instance_valid(warden) and is_instance_valid(ward), "暂停时守望者和结界都还在")
+	paused = false
 	warden.queue_free()
 	await process_frame
 	_check(not is_instance_valid(ward), "守望者离场时结界一起清掉")
@@ -180,8 +236,12 @@ func _test_build_and_shop() -> void:
 	host.add_child(log)
 	log.note_room(2, "combat", "blood_tide", "shield_wall")
 	log.note_shop("reroll", 8)
+	log.note_dealt("手枪", 40.0)
+	log.note_dealt("飞刀", 15.0)
+	log.note_kill("手枪", "zombie")
 	var text := String(log.summary())
 	_check(text.contains("第 2 层") and text.contains("重抽 1 次"), "结算复盘写得出本层和商店")
+	_check(text.contains("主要输出：手枪") and text.contains("最后一击：手枪 打死 zombie"), "复盘写得出主要输出和最后一击")
 	var saves := root.get_node_or_null("SaveManager")
 	if saves != null and saves.has_method("discover_codex"):
 		saves.discover_codex("enemy", "shield_bearer")
