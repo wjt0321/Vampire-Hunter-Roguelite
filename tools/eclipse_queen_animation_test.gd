@@ -1,5 +1,6 @@
 extends SceneTree
-## 月蚀女王行为回归（Task 1）：闪烁周期、月相门控、祭坛推进、死亡清理。
+## 月蚀女王行为回归（Task 1）+ 动画状态机（Task 4）：闪烁周期、月相门控、祭坛推进、
+## 死亡清理、6 状态映射、帧推进、表现时钟、暂停冻结、真实素材接线。
 ## 闪烁 1.4s 冷却 → _blinking 前摇 0.45s → 落点 == 玩家位置；
 ## 落点后冷却 0.7（月相 0）/ 0.4（月相 ≥ 1），safe_radius() 150/90；
 ## 祭坛 40HP 打掉 → altar_destroyed → moon_phase=1 + boss_phase_changed(1)；
@@ -81,6 +82,12 @@ func _run() -> void:
 	await _test_low_hp_advances_phase_two()
 	await _test_altar_cleaned_with_queen_exit()
 	await _test_death_self_recycle()
+	_test_state_mapping()
+	_test_frame_advance()
+	await _test_visual_timers()
+	await _test_death_animation()
+	await _test_pause_freezes_animation()
+	_test_real_assets_bootstrap()
 	_host.queue_free()
 	await process_frame
 	_finish()
@@ -138,6 +145,13 @@ func _test_interfaces_exist() -> void:
 	_check("linked_nodes" in queen, "queen exposes linked_nodes")
 	_check("move_speed" in queen and "base_contact_damage" in queen, "queen exposes move_speed/base_contact_damage")
 	_check("player" in queen and "skip_intro" in queen, "queen exposes player/skip_intro")
+	_check(queen.has_method("_show_animation"), "queen exposes _show_animation")
+	_check(queen.has_method("_tick_sprite"), "queen exposes _tick_sprite")
+	_check(queen.has_method("_set_animation_frame"), "queen exposes _set_animation_frame")
+	_check(queen.has_method("_animation_for_state"), "queen exposes _animation_for_state")
+	_check(queen.has_method("_advance_death_frame"), "queen exposes _advance_death_frame")
+	_check("_animation_textures" in queen, "queen exposes _animation_textures")
+	_check("_appear_visual_remaining" in queen and "_phase_visual_remaining" in queen, "queen exposes visual clocks")
 	_check(ResourceLoader.exists("res://scripts/enemies/moon_altar.gd"), "moon_altar script exists")
 	queen.free()
 
@@ -242,6 +256,159 @@ func _test_death_self_recycle() -> void:
 			break
 	_check(recycled, "queen self-recycles within 0.8s of death")
 	_clear_units()
+
+func _pose(queen: Node, state: String, label: String) -> void:
+	_check(queen._animation_state == state and queen.sprite.texture == _textures.get(state) and not queen.using_placeholder, label + " [" + state + "]")
+
+func _test_state_mapping() -> void:
+	## Task 4：6 状态映射与优先级 death > intro(idle) > blink > appear > phase_change > move > idle
+	var queen = _new_queen()
+	_pose(queen, "idle", "spawn has dedicated idle")
+	queen.velocity = Vector2(10.0, 0.0)
+	queen._tick_sprite(0.0)
+	_pose(queen, "move", "moving selects move")
+	queen.velocity = Vector2.ZERO
+	queen._appear_visual_remaining = queen.APPEAR_VISUAL
+	queen._phase_visual_remaining = queen.PHASE_CHANGE_VISUAL
+	queen._tick_sprite(0.0)
+	_pose(queen, "appear", "appear visual selects appear")
+	queen._blinking = true
+	queen._tick_sprite(0.0)
+	_pose(queen, "blink", "blink outranks appear and phase_change")
+	queen._blinking = false
+	queen.intro_invulnerable = true
+	queen._tick_sprite(0.0)
+	_pose(queen, "idle", "intro pins idle above action visuals")
+	queen.intro_invulnerable = false
+	_check(queen._animation_for_state() == "appear", "appear resumes when intro lifts")
+	queen._appear_visual_remaining = 0.0
+	queen._tick_sprite(0.0)
+	_pose(queen, "phase_change", "phase visual selects phase_change after appear")
+	queen._phase_visual_remaining = 0.0
+	queen._tick_sprite(0.0)
+	_pose(queen, "idle", "falls back to idle after visuals expire")
+	queen.is_dead = true
+	_check(queen._animation_for_state() == "death", "death outranks everything")
+	queen.free()
+
+func _test_frame_advance() -> void:
+	## sprite.frame 随计时推进：idle/move/blink 8fps 循环，appear/phase_change 按表现时钟匀速走帧
+	var queen = _new_queen()
+	_check(queen.sprite.frame == 0, "idle starts at frame 0")
+	queen._tick_sprite(0.13)
+	_check(queen.sprite.frame == 1, "idle loop advances with time")
+	queen._appear_visual_remaining = queen.APPEAR_VISUAL
+	queen._tick_sprite(0.0)
+	_check(queen.sprite.frame == 0, "appear strip starts at frame 0")
+	queen._tick_sprite(0.1)
+	_check(queen.sprite.frame == 1, "appear strip advances on its own clock")
+	queen._tick_sprite(0.2)
+	_check(queen.sprite.frame == 5, "appear reaches late frames on schedule")
+	queen._appear_visual_remaining = 0.0
+	queen._phase_visual_remaining = queen.PHASE_CHANGE_VISUAL
+	queen._tick_sprite(0.0)
+	_check(queen.sprite.frame == 0, "phase_change strip starts at frame 0")
+	queen._tick_sprite(0.31)
+	_check(queen.sprite.frame == 3, "phase_change advances on PHASE_CHANGE_VISUAL clock")
+	queen._phase_visual_remaining = 0.0
+	queen._blinking = true
+	queen._tick_sprite(0.0)
+	_check(queen.sprite.frame == 0, "blink strip starts at frame 0")
+	queen._tick_sprite(0.13)
+	_check(queen.sprite.frame == 1, "blink loops at base 8fps")
+	queen.free()
+
+func _test_visual_timers() -> void:
+	## appear/phase_change 表现时钟：落点帧/祭坛破碎/月相 2 判定帧同帧起播、tick 递减、到期回落
+	var queen = _new_queen()
+	# 瞬移落点同帧起播：走真实物理帧让 _physics_process 收口闪烁
+	queen._blink_to = _target.global_position
+	queen._blinking = true
+	queen._timer = 0.0
+	await physics_frame
+	_check(queen._blinking == false, "blink resolves on landing frame")
+	_check(queen._appear_visual_remaining > 0.3 and queen._appear_visual_remaining <= 0.35, "landing starts appear visual same frame")
+	_pose(queen, "appear", "landing selects appear strip immediately")
+	for i in 30:
+		await physics_frame
+	_check(queen._appear_visual_remaining == 0.0, "appear visual expires on schedule")
+	_check(queen._animation_state == "idle", "queen falls back to idle after appear visual")
+	_clear_units()
+	# 祭坛破碎同帧起播（同步路径，不经物理帧）
+	queen = _new_queen()
+	queen.altar.take_damage(1000.0)
+	_check(is_equal_approx(queen._phase_visual_remaining, 0.6), "altar destroyed starts phase visual same frame")
+	_pose(queen, "phase_change", "altar destroyed selects phase_change strip immediately")
+	queen._tick_sprite(0.4)
+	_check(queen._phase_visual_remaining > 0.0, "phase visual outlives mid strip")
+	queen._tick_sprite(0.25)
+	_check(queen._phase_visual_remaining == 0.0, "phase visual expires on schedule")
+	_pose(queen, "idle", "queen falls back to idle after phase visual")
+	_clear_units()
+	# 月相 2 判定帧同帧起播
+	queen = _new_queen()
+	queen.current_hp = queen.max_hp * 0.3
+	for i in 6:
+		await physics_frame
+	_check(queen._phase_visual_remaining > 0.4, "low hp starts phase visual on judgment frame")
+	_check(queen._animation_state == "phase_change", "phase 2 selects phase_change strip")
+	_clear_units()
+
+func _test_death_animation() -> void:
+	## 真实素材分支：death 条带 0 起播、tween 推帧可见、~0.6s 自回收（physics_frame 计窗）
+	var queen = _new_queen()
+	queen.take_damage(1000000.0)
+	_check(queen._animation_state == "death" and not queen.using_placeholder, "death selects dedicated strip")
+	_check(queen.sprite.frame == 0, "death begins at first frame")
+	var frames := 0
+	var saw_mid := false
+	while frames < 48:
+		await physics_frame
+		frames += 1
+		if not is_instance_valid(queen):
+			break
+		if queen.sprite.frame >= 3:
+			saw_mid = true
+	_check(saw_mid, "death advances visibly over strip")
+	var recycled := not is_instance_valid(queen)
+	while not recycled and frames < 56:
+		await physics_frame
+		frames += 1
+		recycled = not is_instance_valid(queen)
+	_check(recycled, "death frees itself at ~0.6s")
+	_clear_units()
+
+func _test_pause_freezes_animation() -> void:
+	## 树暂停冻结表现时钟；恢复后继续走帧（沿用基类 tick 链，不新造计时源）
+	var queen = _new_queen()
+	_target.global_position = queen.global_position  # 重叠 → 速度为零，idle 不切换状态，elapsed 不被重置
+	queen._tick_sprite(0.13)
+	var frame: int = queen.sprite.frame
+	var elapsed: float = queen._animation_elapsed
+	paused = true
+	await create_timer(0.18, true).timeout
+	_check(queen.sprite.frame == frame and queen._animation_elapsed == elapsed, "tree pause freezes animation clock")
+	paused = false
+	await create_timer(0.1, true).timeout
+	_check(queen._animation_elapsed > elapsed, "animation clock resumes after unpause")
+	queen.free()
+
+func _test_real_assets_bootstrap() -> void:
+	## --real-assets：6 张真实 PNG 全部进缓存，启动即非占位，逐条带校验列数与当前帧
+	if not _real:
+		return
+	var queen = _new_queen()
+	_check(queen.using_placeholder == false, "real assets boot without placeholder")
+	_check(queen._animation_textures.size() == 6, "all six strips cached at boot")
+	for state in STATES:
+		queen._show_animation(state)
+		_check(queen.sprite.texture == _textures.get(state) and not queen.using_placeholder, "real strip wired [" + state + "]")
+		_check(queen.sprite.hframes == 6, "strip has 6 columns [" + state + "]")
+		_check(queen.sprite.frame == 0, "strip starts at frame 0 [" + state + "]")
+	queen._show_animation("idle")
+	queen._tick_sprite(0.13)
+	_check(queen.sprite.frame == 1, "real idle loop advances with time")
+	queen.free()
 
 func _finish() -> void:
 	print("ECLIPSE_QUEEN_ANIMATION RESULT passed=%d failed=%d" % [_pass, _fail])
