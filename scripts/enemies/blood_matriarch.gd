@@ -149,6 +149,18 @@ func _melee_strike() -> void:
 		if enemy.has_method("take_damage"):
 			enemy.take_damage(18.0)
 
+func _die() -> void:
+	if is_dead:
+		return
+	# main 的 boss_defeated 会同步清空 enemies 组；先退组才能保住 0.6s 死亡条带。
+	# 房间退出仍把本节点挂到房间回收；幼虫经 linked_nodes 在 _exit_tree 连带清理。
+	remove_from_group("enemies")
+	_set_boss_collisions(false)
+	if _contact_area != null:
+		_contact_area.set_deferred("monitoring", false)
+		_contact_area.set_deferred("monitorable", false)
+	super._die()
+
 func _play_death_visual() -> void:
 	# 同血铠领主：条带死亡演出 0.6s 后 queue_free（<0.8s 自回收契约）。
 	# boss_stage._die 不会自毁，这里必须自己 free，幼虫才会经 linked_nodes 连带清理。
