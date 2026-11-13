@@ -59,3 +59,26 @@ func _physics_process(delta: float) -> void:
 
 func safe_radius() -> float:
 	return 150.0 if moon_phase == 0 else 90.0
+
+func _die() -> void:
+	if is_dead:
+		return
+	# main 的 boss_defeated 会同步清空 enemies 组；先退组才能保住死亡演出不被立刻清场。
+	remove_from_group("enemies")
+	_set_boss_collisions(false)
+	if _contact_area != null:
+		_contact_area.set_deferred("monitoring", false)
+		_contact_area.set_deferred("monitorable", false)
+	super._die()
+
+func _play_death_visual() -> void:
+	# TASK4 WIRE: Task 4 接线真实素材后此处换 death 条带 tween_method 0→6 帧
+	# （DEATH_VISUAL 0.6s，保住 <0.8s 自回收契约，祭坛才会经 linked_nodes 在
+	# _exit_tree 连带清理）；placeholder 期 0.4s 淡出兜底。
+	# 绑定本节点的 tween 随暂停冻结、随场景销毁取消；收口 tween_callback(queue_free) 不许动。
+	if sprite == null:
+		queue_free()
+		return
+	var tween := create_tween()
+	tween.tween_property(sprite, "modulate:a", 0.0, 0.4)
+	tween.tween_callback(queue_free)
