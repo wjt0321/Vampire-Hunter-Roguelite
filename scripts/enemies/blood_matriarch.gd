@@ -1,6 +1,7 @@
 extends "res://scripts/enemies/boss_stage.gd"
 ## 织血母皇。产卵、铺网，卵巢被清掉以后改成高机动近身，不再回到产卵阶段。
-## 外观先用旧 Boss 待机图染成绛红。幼虫用现成的蝙蝠，数量有上限。
+## 动画只读战斗状态：召唤/产卵/铺网的生成时点仍由 _pending_timer 0.25s 保证，
+## 动画层只做表现，不引入第二个计时源。幼虫用现成的蝙蝠，数量有上限。
 
 const EGG_CAP := 3
 const WEB_CAP := 3
@@ -9,7 +10,24 @@ const LarvaScene = preload("res://scenes/enemies/blood_larva.tscn")
 ## 6 帧动作的接触帧（第 3~4 帧）：动作第 0 帧只定种类，0.25s 后才真正落地
 const CONTACT_DELAY := 0.25
 
+const AssetSlots = preload("res://scripts/core/asset_slots.gd")
+## 破卵暴露的变身表现时长；期间速度强制为零，不改动仇恨/伤害逻辑
+const PHASE_VISUAL := 0.6
+## 动作表现时长：_pending_timer 触发后再播这么久才回落到移动/待机。
+## 只驱动画面帧推进，绝不参与生成/伤害计时（那时序归 CONTACT_DELAY 独占）。
+const ACTION_VISUAL := 0.5
+const DEATH_VISUAL := 0.60
+
 var exposed: bool = false
+var _animation_textures: Dictionary = {}
+var _fallback_texture: Texture2D
+var _animation_state: String = ""
+var _animation_elapsed: float = 0.0
+## -1.0 表示未在变身表现中；_expose() 置 0.0 起播 phase_change
+var _phase_visual_elapsed: float = -1.0
+## 最近一次已触发的动作种类及其剩余表现时间，让动作画面撑到可见结束
+var _last_action: String = ""
+var _action_visual_remaining: float = 0.0
 var eggs_laid: int = 0
 var _eggs: Array = []
 var _larvae: Array = []
@@ -81,7 +99,13 @@ func _expose() -> void:
 	exposed = true
 	move_speed = 120.0
 	base_contact_damage = 18.0
+	# 变身表现即刻起播；期间 _physics_process 强制速度为零
+	_phase_visual_elapsed = 0.0
+	_tick_sprite(0.0)
 	boss_phase_changed.emit(1)
+
+func _in_phase_visual() -> bool:
+	return _phase_visual_elapsed >= 0.0 and _phase_visual_elapsed < PHASE_VISUAL
 
 func _living_eggs() -> int:
 	var count := 0
@@ -111,7 +135,10 @@ func _web_count() -> int:
 
 func _melee_strike() -> void:
 	# 沿用血铠领主 _strike 的判定口径：96px / 0.7rad / 18 伤害。
-	# 动画帧设置（_show_animation/_set_animation_frame）留给 Task 5 动画层。
+	# 先把画面钉到接触帧 4，再回调玩家扣血；伤害时点仍归 _pending_timer 管。
+	_show_animation("melee")
+	if not using_placeholder:
+		_set_animation_frame(4)
 	var forward := (player.global_position - global_position).normalized()
 	for enemy in get_tree().get_nodes_in_group("player"):
 		if not (enemy is Node2D):
@@ -123,12 +150,107 @@ func _melee_strike() -> void:
 			enemy.take_damage(18.0)
 
 func _play_death_visual() -> void:
-	# 同血铠领主的占位死亡：淡出 0.4s 后 queue_free（正式死亡动画由 Task 5 接上）。
+	# 同血铠领主：条带死亡演出 0.6s 后 queue_free（<0.8s 自回收契约）。
 	# boss_stage._die 不会自毁，这里必须自己 free，幼虫才会经 linked_nodes 连带清理。
-	if sprite:
-		var tween := create_tween()
+	_show_animation("death")
+	sprite.rotation = 0.0
+	sprite.position = _sprite_rest_pos
+	var tween := create_tween()
+	# 绑定本节点的 tween 随暂停冻结、随场景销毁取消；不依赖死后停掉的 _process。
+	if using_placeholder:
 		tween.tween_property(sprite, "modulate:a", 0.0, 0.4)
-		tween.tween_callback(queue_free)
+	else:
+		tween.tween_method(_advance_death_frame, 0.0, 6.0, DEATH_VISUAL)
+	tween.tween_callback(queue_free)
+
+func _advance_death_frame(progress: float) -> void:
+	_set_animation_frame(int(progress))
+
+func _load_sprite_texture() -> void:
+	# 包括缺图结果一起缓存；状态 tick 不做路径检查或 load。
+	_animation_textures.clear()
+	for state in AssetSlots.BOSSES["blood_matriarch"]["states"]:
+		var texture := AssetSlots.boss_texture("blood_matriarch", state)
+		if texture != null and texture.get_size() == Vector2(768, 128):
+			_animation_textures[state] = texture
+	_fallback_texture = null
+	if TextureManager.instance != null:
+		_fallback_texture = TextureManager.instance.get_boss_texture("idle")
+	if _fallback_texture == null:
+		var image := Image.create(8, 8, false, Image.FORMAT_RGBA8)
+		image.fill(Color.WHITE)
+		_fallback_texture = ImageTexture.create_from_image(image)
+	_animation_state = ""
+	_show_animation("idle")
+
+func _show_animation(state: String) -> void:
+	if sprite == null or _animation_state == state:
+		return
+	_animation_state = state
+	_animation_elapsed = 0.0
+	var texture: Texture2D = _animation_textures.get(state)
+	using_placeholder = texture == null
+	placeholder_tint = sprite_tint
+	sprite.texture = _fallback_texture if using_placeholder else texture
+	sprite.modulate = _rest_modulate()
+	_present_sprite(128.0 * size_mult)
+
+func _animation_for_state() -> String:
+	if is_dead:
+		return "death"
+	if intro_invulnerable:
+		return "idle"
+	if _in_phase_visual():
+		return "phase_change"
+	if _pending_kind != "" or _action_visual_remaining > 0.0:
+		var kind := _pending_kind if _pending_kind != "" else _last_action
+		match kind:
+			"summon":
+				return "summon"
+			"egg":
+				return "lay_egg"
+			"web":
+				return "web_cast"
+			"melee":
+				return "melee"
+	if velocity.length_squared() > 1.0:
+		return "move"
+	return "idle"
+
+func _tick_sprite(delta: float) -> void:
+	if sprite == null or is_dead:
+		return
+	if _phase_visual_elapsed >= 0.0:
+		_phase_visual_elapsed += delta
+	if _action_visual_remaining > 0.0:
+		_action_visual_remaining = maxf(_action_visual_remaining - delta, 0.0)
+	_animation_elapsed += delta
+	_show_animation(_animation_for_state())
+	if absf(velocity.x) > 0.001:
+		sprite.flip_h = velocity.x < 0.0
+	sprite.rotation = 0.0
+	if using_placeholder:
+		super._tick_sprite(delta)
+		return
+	sprite.position = _sprite_rest_pos
+	match _animation_state:
+		"phase_change":
+			_set_animation_frame(int(_phase_visual_elapsed / PHASE_VISUAL * 6.0))
+		"lay_egg", "summon", "web_cast":
+			_set_animation_frame(clampi(int(_animation_elapsed / ACTION_VISUAL * 6.0), 0, 5))
+		"melee":
+			if _action_visual_remaining > 0.0:
+				# 已结算：接触帧 4 起手，随剩余表现时间推进到收招帧 5
+				_set_animation_frame(4 + int((1.0 - _action_visual_remaining / ACTION_VISUAL) * 2.0))
+			else:
+				# 前摇：0.25s 内从 0 推到接触帧之前
+				_set_animation_frame(clampi(int(_animation_elapsed / CONTACT_DELAY * 4.0), 0, 3))
+		_:
+			_set_animation_frame(int(_animation_elapsed * 8.0) % 6)
+
+func _set_animation_frame(frame_index: int) -> void:
+	if sprite != null:
+		sprite.frame = clampi(frame_index, 0, sprite.hframes - 1)
 
 func _physics_process(delta: float) -> void:
 	if is_dead or intro_invulnerable or player == null or not is_instance_valid(player):
@@ -137,21 +259,30 @@ func _physics_process(delta: float) -> void:
 	if _pending_timer >= 0.0:
 		_pending_timer -= delta
 		if _pending_timer < 0.0:
-			match _pending_kind:
+			var fired := _pending_kind
+			match fired:
 				"summon": summon_larva()
 				"egg": lay_egg()
 				"web": drop_web()
 				"melee": _melee_strike()
+			# 动作画面要撑到接触之后可见的时长；只影响表现帧，不影响生成时点
+			_last_action = fired
+			_action_visual_remaining = ACTION_VISUAL
 			_pending_kind = ""
 	var to_player := player.global_position - global_position
-	var speed := move_speed * (1.35 if exposed else 0.7)
-	if exposed or to_player.length() > 150.0:
-		velocity = to_player.normalized() * speed
+	if _in_phase_visual():
+		# 变身表现期间定住身体；表现结束回到原本的追击/拉开逻辑
+		velocity = Vector2.ZERO
 	else:
-		velocity = (-to_player.normalized()) * speed * 0.8
+		var speed := move_speed * (1.35 if exposed else 0.7)
+		if exposed or to_player.length() > 150.0:
+			velocity = to_player.normalized() * speed
+		else:
+			velocity = (-to_player.normalized()) * speed * 0.8
 	move_and_slide()
 	_action_timer -= delta
 	if _action_timer > 0.0:
+		_tick_sprite(0.0)
 		return
 	_action_timer = 2.4
 	if exposed:
@@ -159,6 +290,7 @@ func _physics_process(delta: float) -> void:
 		if to_player.length() <= 100.0:
 			_pending_kind = "melee"
 			_pending_timer = CONTACT_DELAY
+		_tick_sprite(0.0)
 		return
 	if _living_larvae() < LARVA_CAP:
 		_pending_kind = "summon"
@@ -167,3 +299,4 @@ func _physics_process(delta: float) -> void:
 	else:
 		_pending_kind = "web"
 	_pending_timer = CONTACT_DELAY
+	_tick_sprite(0.0)
