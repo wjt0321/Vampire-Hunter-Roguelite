@@ -9,6 +9,7 @@ var _timer: float = 1.4
 
 func _ready() -> void:
 	boss_title = "月蚀女王"
+	asset_id = "eclipse_queen"
 	boss_tier = 5
 	move_speed = 80.0
 	base_contact_damage = 14.0

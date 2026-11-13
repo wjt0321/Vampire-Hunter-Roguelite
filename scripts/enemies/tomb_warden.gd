@@ -9,6 +9,7 @@ var _revive_cd: float = 3.0
 
 func _ready() -> void:
 	boss_title = "墓穴守望者"
+	asset_id = "tomb_warden"
 	boss_tier = 3
 	move_speed = 58.0
 	base_contact_damage = 14.0

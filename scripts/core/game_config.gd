@@ -754,6 +754,19 @@ static func mirror_x(x: float, center_x: float) -> float:
 	## 绕一条竖轴翻转。布局用房间中心，刷怪用房间中心的全局坐标，同一条公式。
 	return center_x * 2.0 - x
 
+const ROOM_VARIANTS := {
+	"blood_tide": {"title": "血潮", "detail": "敌人更密、血更少，经验更多", "reward": "经验"},
+	"crossfire": {"title": "交叉火力", "detail": "远程从两侧出现，经验更多", "reward": "经验"},
+	"leyline": {"title": "不稳定地脉", "detail": "地面会爆，敌我都受伤，完成多给银币", "reward": "银币"},
+}
+
+static func room_variant_for_floor(floor_index: int) -> String:
+	var order := ["blood_tide", "crossfire", "leyline"]
+	return order[(maxi(floor_index, 1) - 1) % order.size()]
+
+static func room_variant_info(variant_id: String) -> Dictionary:
+	return ROOM_VARIANTS.get(variant_id, {})
+
 static func room_choice_info(room_type: String) -> Dictionary:
 	var fog_pct := roundi((FOG_LOOT_MULT - 1.0) * 100.0)
 	var hp_pct := roundi(MUTATION_HP_RATIO * 100.0)

@@ -86,6 +86,15 @@ static func find_consumable(id: String) -> Dictionary:
 ## 现在所有 UI（升级三选一 / 房间商店 / 元进度商店 / HUD 列表）都走这里，
 ## 拿不到贴图时调用方回退显示 catalog 里的单字。
 static func get_icon_texture(item_id: String, item_type: String = "") -> Texture2D:
+	var slots = load("res://scripts/core/asset_slots.gd")
+	if item_type == "weapon" or item_type == "fusion":
+		var weapon_icon: Texture2D = slots.weapon_icon(item_id)
+		if weapon_icon != null:
+			return weapon_icon
+	if item_type == "passive":
+		var passive_icon: Texture2D = slots.passive_icon(item_id)
+		if passive_icon != null:
+			return passive_icon
 	var key := ""
 	match item_type:
 		"weapon":

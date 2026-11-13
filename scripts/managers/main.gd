@@ -369,6 +369,8 @@ func _create_blood_pact() -> void:
 # === 房间切换 ===
 func _on_wave_completed(wave_number: int) -> void:
 	# 每完成一波后出现传送门
+	if dungeon != null and dungeon.current_variant() == "leyline" and is_instance_valid(player) and player.has_method("add_silver"):
+		player.add_silver(12)
 	if current_room != null and not current_room.portal_spawned:
 		AudioManager.play_sfx(_audio_lib.get_sound("room_clear"))
 		_open_room_exit(current_room)
@@ -503,6 +505,7 @@ func _enter_next_room(autostart: bool = true) -> String:
 			AudioManager.play_bgm(_audio_lib.get_battle_bgm())
 			if autostart:
 				wave_manager.start(player)
+				_apply_room_variant()
 				_apply_floor_rule()
 				# 事件敌人在 start 之后刷（spawn_special_enemy 要挂到当前场景）；
 				# 一间房判定一次，触发与否都由它自己打印
@@ -803,11 +806,17 @@ func _open_room_exit(room: Node2D) -> void:
 	if room.get("portal_spawned"):
 		return
 	var choices: Array = dungeon.peek_room_choices() if dungeon else []
+	if not choices.is_empty() and hud and hud.has_method("set_event_status"):
+		var next_room: Dictionary = choices[0]
+		hud.set_event_status("下一间 · %s · %s" % [next_room.get("title", ""), next_room.get("detail", "")])
 	if choices.size() >= 2 and room.has_method("spawn_choice_portals"):
 		room.spawn_choice_portals(choices)
 		_announce_door_choice(choices)
 	elif room.has_method("spawn_portal"):
-		room.spawn_portal()
+		var preview := ""
+		if not choices.is_empty():
+			preview = String(choices[0].get("title", ""))
+		room.spawn_portal(preview)
 	if room.get("portal_spawned"):
 		AudioManager.play_sfx(_audio_lib.get_sound("door_open"))
 
@@ -846,6 +855,27 @@ func _apply_daily_rules() -> void:
 		upgrade_rng.seed = GameConfig.daily_seed ^ GameConfig.DAILY_UPGRADE_RNG_SALT
 		upgrade_ui.rng = upgrade_rng
 	print("☀ 每日挑战 %s · %s" % [GameConfig.daily_date, GameConfig.daily_name_list()])
+
+func _apply_room_variant() -> void:
+	if dungeon == null or wave_manager == null:
+		return
+	var variant := dungeon.current_variant()
+	match variant:
+		"blood_tide":
+			wave_manager.variant_hp_mult = 0.85
+			wave_manager.variant_spawn_bonus = 1
+		"crossfire":
+			wave_manager.prefer_ranged = true
+		"leyline":
+			_pulse_leyline()
+
+func _pulse_leyline() -> void:
+	if current_room == null or not current_room.has_method("get_center"):
+		return
+	var puddle = preload("res://scripts/map/potion_puddle.gd").new()
+	puddle.damage = 6.0
+	puddle.global_position = current_room.to_global(current_room.get_center())
+	current_room.add_child(puddle)
 
 func _apply_floor_rule() -> void:
 	if dungeon == null or current_room == null or not current_room.has_method("get_center"):

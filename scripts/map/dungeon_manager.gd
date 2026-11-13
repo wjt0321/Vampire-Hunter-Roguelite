@@ -111,6 +111,7 @@ var _room_plan: Array = []
 var _combat_theme_cursor: int = 0
 ## 岔路：房间下标 → 事件房类型。计划表本身仍写 "combat"，不选就走原计划。
 var _forks: Dictionary = {}
+var _variants: Dictionary = {}
 var _pending_choice: String = ""
 ## 每日挑战把地图随机从全局 RNG 里拆出来。为空时仍用 randf/shuffle，普通局不变。
 var _rng: RandomNumberGenerator = null
@@ -181,6 +182,7 @@ func _generate_room_plan() -> void:
 	## 生成本层房间序列：最后一间固定 Boss，前面按配置穿插特殊房间
 	_room_plan.clear()
 	_forks.clear()
+	_variants.clear()
 	_pending_choice = ""
 	var total: int = get_room_count()
 	var boss_index: int = total - 1
@@ -199,7 +201,19 @@ func _generate_room_plan() -> void:
 		_room_plan[candidates[k]] = _roll_special_type()
 
 	_room_plan[boss_index] = "boss"
+	_place_variant()
 	_place_forks()
+
+func _place_variant() -> void:
+	## 每层只给一间战斗房一个看得见的修饰。第一间和 Boss 房不挂。
+	var slots: Array = []
+	for i in range(1, _room_plan.size() - 1):
+		if String(_room_plan[i]) == "combat":
+			slots.append(i)
+	if slots.is_empty():
+		return
+	_shuffle(slots)
+	_variants[int(slots[0])] = GameConfig.room_variant_for_floor(current_floor)
 
 func _place_forks() -> void:
 	## 只挂在“仍是战斗房”的格子上。第一间和 Boss 房不挂，
@@ -258,6 +272,13 @@ func peek_room_choices() -> Array:
 		return [GameConfig.room_choice_info("combat")]
 	var planned := String(_room_plan[room_in_floor])
 	var choices: Array = [GameConfig.room_choice_info(planned)]
+	var variant := String(_variants.get(room_in_floor, ""))
+	if variant != "" and planned == "combat":
+		var info: Dictionary = GameConfig.room_variant_info(variant)
+		choices[0]["title"] = String(info.get("title", choices[0]["title"]))
+		choices[0]["detail"] = String(info.get("detail", ""))
+		choices[0]["reward"] = String(info.get("reward", ""))
+		choices[0]["variant"] = variant
 	if _forks.has(room_in_floor):
 		var event_type := String(_forks[room_in_floor])
 		if event_type != planned:
@@ -274,6 +295,12 @@ func choose_next(room_type: String) -> bool:
 
 func get_forks() -> Dictionary:
 	return _forks.duplicate()
+
+func current_variant() -> String:
+	var idx := room_in_floor - 1
+	if idx < 0:
+		return ""
+	return String(_variants.get(idx, ""))
 
 func peek_next_room_type() -> String:
 	if _room_plan.is_empty():

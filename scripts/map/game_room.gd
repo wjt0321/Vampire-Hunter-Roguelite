@@ -362,7 +362,7 @@ func _get_player_global_position() -> Vector2:
 			return (p as Node2D).global_position
 	return to_global(get_center())
 
-func spawn_portal() -> void:
+func spawn_portal(preview: String = "") -> void:
 	if portal_spawned:
 		return
 	portal_spawned = true
@@ -399,6 +399,11 @@ func spawn_portal() -> void:
 		portal.add_child(portal_visual)
 
 	add_child(portal)
+	if preview != "":
+		var label := preload("res://scripts/map/door_label.gd").new()
+		label.text = preview
+		label.color = Color(0.95, 0.86, 0.55)
+		portal.add_child(label)
 
 	# 延迟启用碰撞
 	portal.monitoring = false

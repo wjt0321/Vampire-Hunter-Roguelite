@@ -12,6 +12,7 @@ var _action_timer: float = 1.1
 
 func _ready() -> void:
 	boss_title = "织血母皇"
+	asset_id = "blood_matriarch"
 	boss_tier = 2
 	move_speed = 62.0
 	base_contact_damage = 12.0

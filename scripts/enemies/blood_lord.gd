@@ -22,6 +22,7 @@ var _swings_left: int = 0
 
 func _ready() -> void:
 	boss_title = "血铠领主"
+	asset_id = "blood_lord"
 	boss_tier = 1
 	move_speed = 70.0
 	base_contact_damage = 16.0
