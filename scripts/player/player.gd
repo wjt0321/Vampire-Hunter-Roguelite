@@ -36,6 +36,9 @@ var xp_to_next_level: int = 20
 # === 战斗属性（可被升级修改） ===
 var damage_multiplier: float = 1.0
 var speed_multiplier: float = 1.0
+## 地面减速区（织网）。1 是正常速度，多个网不叠乘。
+var hazard_slow: float = 1.0
+var _hazard_slow_sources: int = 0
 var shoot_speed_multiplier: float = 1.0
 var pickup_range_bonus: float = 0.0
 var armor: float = 0.0  # 护甲值，通过百分比公式换算减伤
@@ -310,12 +313,21 @@ func _apply_punch_scale() -> void:
 		factor = Vector2(2.0 - punch, punch)
 	sprite.scale = factor * _sprite_base_scale
 
+func add_hazard_slow() -> void:
+	_hazard_slow_sources += 1
+	hazard_slow = 0.45
+
+func remove_hazard_slow() -> void:
+	_hazard_slow_sources = maxi(_hazard_slow_sources - 1, 0)
+	if _hazard_slow_sources == 0:
+		hazard_slow = 1.0
+
 func _handle_movement(delta: float) -> void:
 	var input_dir := Vector2.ZERO
 	input_dir.x = Input.get_axis("move_left", "move_right")
 	input_dir.y = Input.get_axis("move_up", "move_down")
 	input_dir = input_dir.normalized()
-	var total_speed_mult := speed_multiplier * (1.0 + move_speed_bonus_multiplier)
+	var total_speed_mult := speed_multiplier * (1.0 + move_speed_bonus_multiplier) * hazard_slow
 	# 注意：这里只由输入决定速度。开火反馈是纯视觉的，不许再往 velocity 里塞东西。
 	_wants_move = input_dir != Vector2.ZERO
 	# 受击击退走独立速度：早期直接写进 velocity，而这一行每帧覆盖 velocity，

@@ -84,7 +84,7 @@ func _draw_and_render_options() -> void:
 	if available_options.is_empty():
 		available_options = _available_basic_rewards()
 
-	current_options = draw_options(available_options)
+	current_options = _shape_hand(draw_options(available_options))
 	_render_options()
 
 func _render_options() -> void:
@@ -125,11 +125,15 @@ func _decorate_option(option: Dictionary) -> Dictionary:
 				opt["badge"] = "升级"
 				opt["badge_color"] = Color(1.0, 0.82, 0.35)
 				opt["level_text"] = "Lv.%d → Lv.%d" % [cur, mini(cur + 1, max_lv)]
-				# 描述换成"这一级到底加了什么"，比原来的定位文案有用
-				opt["desc"] = "伤害 %.1f → %.1f" % [
-					w.base_damage * (1.0 + (cur - 1) * GameConfig.WEAPON_DAMAGE_PER_LEVEL),
-					w.base_damage * (1.0 + cur * GameConfig.WEAPON_DAMAGE_PER_LEVEL),
-				]
+				# 卡片只写这一级真正变化的那一轴。
+				var step_text := ""
+				if w.has_method("describe_next_level"):
+					step_text = String(w.describe_next_level())
+				opt["desc"] = step_text if step_text != "" else String(opt.get("desc", ""))
+		"fusion":
+			opt["badge"] = "融合"
+			opt["badge_color"] = Color(0.95, 0.55, 1.0)
+			opt["level_text"] = "主武器留下，副武器离槽"
 		"passive":
 			var p = _find_owned_passive(opt_id)
 			if p == null:
@@ -326,6 +330,34 @@ func draw_options(options: Array, count: int = 3) -> Array:
 	if count <= 0:
 		return pool
 	return pool.slice(0, mini(count, pool.size()))
+
+const NEW_WEAPON_IDS: Array = ["scythe", "thorn_whip", "frost_bell", "repeater", "soul_lantern", "spike_tome", "chain_gun"]
+
+func _shape_hand(hand: Array) -> Array:
+	## 一手里最多一张还没拿到的新武器，避免池子变大以后养不满旧武器。
+	## 融合卡满足条件时占掉最后一格，玩家可以不选。
+	var shaped: Array = []
+	var fresh_new := false
+	for opt in hand:
+		if String(opt.get("type", "")) == "weapon" and String(opt.get("id", "")) in NEW_WEAPON_IDS:
+			if _find_owned_weapon(String(opt.get("id", ""))) == null:
+				if fresh_new:
+					continue
+				fresh_new = true
+		shaped.append(opt)
+	if weapon_manager != null and weapon_manager.has_method("get_fusion_offer"):
+		var offer: Dictionary = weapon_manager.get_fusion_offer()
+		if not offer.is_empty() and not is_banished(offer):
+			var already := false
+			for opt in shaped:
+				if String(opt.get("type", "")) == "fusion":
+					already = true
+			if not already:
+				if shaped.is_empty():
+					shaped.append(offer)
+				else:
+					shaped[shaped.size() - 1] = offer
+	return shaped
 
 func _shuffle_with_rng(items: Array) -> void:
 	## 与 Array.shuffle 同样的 Fisher-Yates，只是随机数来自注入的 rng
@@ -566,11 +598,19 @@ func _get_available_options() -> Array:
 			continue
 		if slots_full and not owned:
 			continue
+		if not owned and int(weapon_opt.get("unlock_floor", 0)) > 0 and not _is_weapon_unlocked(String(weapon_opt["id"])):
+			continue
 		# 满级武器再出现就是废卡（卡面会写成 Lv.5 → Lv.5），直接过滤
 		var owned_weapon = _find_owned_weapon(weapon_opt["id"])
 		if owned_weapon != null and owned_weapon.is_max_level():
 			continue
+		# 没有变种表的武器不能升级，也不能当作新卡塞进来后升不了级。
+		if owned_weapon != null and owned_weapon.has_method("has_level_table") and not owned_weapon.has_level_table():
+			continue
 		available.append(weapon_opt)
+		# 已有武器的升级比新武器更容易被抽到。只加权，不指定成品。
+		if owned:
+			available.append(weapon_opt)
 	
 	# 添加被动道具选项（排除已满级的）
 	for passive_opt in ItemCatalog.PASSIVES:
@@ -624,6 +664,12 @@ func _stat_level_text(stat_id: String) -> String:
 		if budget > 0:
 			text += " · 属性点 %d/%d" % [used, budget]
 	return text
+
+func _is_weapon_unlocked(weapon_id: String) -> bool:
+	var saves := get_node_or_null("/root/SaveManager")
+	if saves == null or not saves.has_method("is_weapon_unlocked"):
+		return true
+	return bool(saves.is_weapon_unlocked(weapon_id))
 
 func _is_weapon_evolved(weapon_id: String) -> bool:
 	## 检查武器是否已进化
@@ -790,8 +836,11 @@ func _get_option_icon(option: Dictionary) -> Texture2D:
 	## 2026-11-09 反馈"很多卡只有字没有图"：图标映射原本只覆盖了一半物品，
 	## 现在统一走 ItemCatalog.get_icon_texture（武器/被动/属性/消耗品一张表），
 	## 拿不到贴图再回退旧的逐项 match（未来 catalog 改动也只改一处）。
+	var lookup_type := String(option.get("type", ""))
+	if lookup_type == "fusion":
+		lookup_type = "weapon"
 	var tex: Texture2D = ItemCatalog.get_icon_texture(
-		String(option.get("id", "")), String(option.get("type", "")))
+		String(option.get("id", "")), lookup_type)
 	if tex != null:
 		return tex
 
@@ -870,6 +919,9 @@ func _on_option_selected(option: Dictionary) -> void:
 			var weapon_data = ItemCatalog.create_weapon(option["id"])
 			if weapon_data:
 				weapon_manager.add_weapon(weapon_data)
+	elif option_type == "fusion":
+		if weapon_manager != null and weapon_manager.has_method("apply_fusion"):
+			weapon_manager.apply_fusion(String(option.get("id", "")))
 	elif option_type == "passive":
 		if player != null and player.has_method("add_passive_item"):
 			var passive_data = ItemCatalog.create_passive(option["id"])

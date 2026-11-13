@@ -18,6 +18,10 @@ var distance_traveled: float = 0.0
 var max_pierce: int = 3          # 最大穿透数
 var pierce_count: int = 0        # 已穿透数
 var hit_enemies: Array = []      # 已击中的敌人（避免重复伤害）
+## 弹墙次数。飞刀 4 级给 1 次，命中墙后折返，不叠在穿透次数上。
+var bounces_left: int = 0
+var fusion_kind: String = ""
+var _released: bool = false
 
 @onready var sprite: Sprite2D = $Sprite2D
 
@@ -44,10 +48,34 @@ func reset_for_pool() -> void:
 	## 归还对象池前重置状态
 	distance_traveled = 0.0
 	pierce_count = 0
+	bounces_left = 0
+	fusion_kind = ""
+	_released = false
 	hit_enemies.clear()
 	rotation = 0.0
 	modulate = Color.WHITE
 	scale = Vector2.ONE
+
+func _notify_fusion(reason: String) -> void:
+	if fusion_kind == "" or not is_inside_tree():
+		return
+	var wm := get_tree().get_first_node_in_group("weapon_manager")
+	if wm != null and wm.has_method("on_projectile_event"):
+		wm.on_projectile_event(self, reason)
+
+func _release(reason: String) -> void:
+	if _released:
+		return
+	_released = true
+	_notify_fusion(reason)
+	ObjectPool.release(self)
+
+func _bounce() -> void:
+	bounces_left -= 1
+	direction = -direction
+	rotation = direction.angle()
+	position += direction * 10.0
+	hit_enemies.clear()
 
 func _physics_process(delta: float) -> void:
 	var move_distance := speed * delta
@@ -61,7 +89,7 @@ func _physics_process(delta: float) -> void:
 	
 	# 超出射程后归还对象池
 	if distance_traveled >= max_range:
-		ObjectPool.release(self)
+		_release("range")
 
 func get_damage() -> float:
 	return base_damage * damage_multiplier
@@ -69,7 +97,10 @@ func get_damage() -> float:
 func _on_body_entered(body: Node2D) -> void:
 	# 碰到墙壁
 	if body.is_in_group("walls"):
-		ObjectPool.release(self)
+		if bounces_left > 0:
+			_bounce()
+			return
+		_release("wall")
 		return
 	
 	# 碰到敌人
@@ -80,11 +111,13 @@ func _on_body_entered(body: Node2D) -> void:
 		
 		body.take_damage(get_damage())
 		hit_enemies.append(body)
+		# 雷矢的跳跃跟在这一下命中后面，不等弹丸彻底消失。
+		_notify_fusion("hit")
 		
 		# 检查是否还能穿透
 		pierce_count += 1
 		if pierce_count >= max_pierce:
-			ObjectPool.release(self)
+			_release("hit")
 		else:
 			# 穿透时产生小特效
 			var vfx := get_node_or_null("/root/VFXManager")
@@ -92,9 +125,11 @@ func _on_body_entered(body: Node2D) -> void:
 				vfx.spawn_hit_particles(global_position, Color.SILVER, 2)
 
 func _on_area_entered(area: Area2D) -> void:
-	# 碰到墙壁归还对象池（飞刀不能穿透墙壁）
 	if area.is_in_group("walls"):
-		ObjectPool.release(self)
+		if bounces_left > 0:
+			_bounce()
+			return
+		_release("wall")
 
 func set_pierce_count(count: int) -> void:
 	max_pierce = count

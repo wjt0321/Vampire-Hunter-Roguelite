@@ -47,6 +47,14 @@ var _sprite_play: String = "loop"
 var _sprite_loop_tex: Texture2D = null
 var _sprite_target: float = 56.0
 var _sprite_hold: bool = false
+## 专属序列帧还没到时借用旧图染色。受击闪白结束后回到这层颜色，而不是纯白。
+var using_placeholder: bool = false
+var placeholder_tint: Color = Color.WHITE
+## 网、棺材、卵这类可攻击物件不算进同屏刷怪上限。
+var counts_as_enemy: bool = true
+## 共振术士连上的同伴。受伤时把一半分给它，术士死后清空。
+var split_partner: Node = null
+var _split_lock: bool = false
 
 # === 精英词缀（在 _ready 之前由 WaveManager / 子类赋值） ===
 ## 主词缀。空字符串 = 普通怪。取值见 EliteAffix.DATA
@@ -396,6 +404,25 @@ func _get_vfx() -> Node:
 		_vfx_manager = get_node_or_null("/root/VFXManager")
 	return _vfx_manager
 
+func use_placeholder_sprite(source_type: String, state: String, tint: Color) -> void:
+	## 正式动作表补上之后，删掉调用处，改回该敌人自己的精灵。
+	using_placeholder = true
+	placeholder_tint = tint
+	if sprite == null:
+		return
+	var texture: Texture2D = null
+	if TextureManager.instance != null:
+		texture = TextureManager.instance.get_enemy_texture(source_type, state)
+	if texture != null:
+		sprite.texture = texture
+	else:
+		_ensure_default_texture()
+	sprite.modulate = tint
+	_adjust_sprite_scale()
+
+func _rest_modulate() -> Color:
+	return placeholder_tint if using_placeholder else Color.WHITE
+
 func _load_sprite_texture() -> void:
 	## 子类覆写此方法加载特定纹理
 	_ensure_default_texture()
@@ -524,7 +551,17 @@ func _direct_damage(amount: float) -> float:
 	# Every direct weapon hit rolls once, including subclass damage handlers.
 	if is_instance_valid(player) and player.has_method("roll_crit") and player.roll_crit():
 		amount *= player.crit_damage
-	return maxf(amount, 0.0)
+	amount = maxf(amount, 0.0)
+	if split_partner != null and is_instance_valid(split_partner) and not _split_lock and split_partner.get("is_dead") != true:
+		_split_lock = true
+		split_partner.set("_split_lock", true)
+		if split_partner.has_method("take_damage"):
+			split_partner.take_damage(amount * 0.5)
+		if is_instance_valid(split_partner):
+			split_partner.set("_split_lock", false)
+		_split_lock = false
+		amount *= 0.5
+	return amount
 
 func _subtract_hp(amount: float) -> float:
 	var effective := minf(maxf(amount, 0.0), maxf(current_hp, 0.0))
@@ -584,9 +621,11 @@ func take_damage_with_knockback(amount: float, knockback_dir: Vector2, knockback
 
 func _flash_hit() -> void:
 	## 受击闪白效果
+	if sprite == null:
+		return
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", Color(10.0, 10.0, 10.0, 1.0), 0.03)
-	tween.tween_property(sprite, "modulate", Color.WHITE, 0.07)
+	tween.tween_property(sprite, "modulate", _rest_modulate(), 0.07)
 	# 受击粒子
 	var vfx := _get_vfx()
 	if vfx:

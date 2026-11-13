@@ -27,6 +27,10 @@ var homing: bool = false
 var homing_strength: float = 8.0
 var _homing_target: Node2D = null
 
+## 融合行为。对象池复用，每次发射都要重写，归还时清空。
+var fusion_kind: String = ""
+var _released: bool = false
+
 func _ready() -> void:
 	# 缓存玩家引用
 	_cached_player = get_tree().get_first_node_in_group("player")
@@ -59,6 +63,8 @@ func reset_for_pool() -> void:
 	homing_strength = 8.0
 	_homing_target = null
 	_cached_player = null
+	fusion_kind = ""
+	_released = false
 	rotation = 0.0
 	modulate = Color.WHITE
 	scale = Vector2.ONE
@@ -79,7 +85,7 @@ func _physics_process(delta: float) -> void:
 		vfx.spawn_bullet_trail(global_position, Color(visual_color.r, visual_color.g, visual_color.b, 0.55))
 	# 超出射程后归还对象池
 	if distance_traveled >= max_range:
-		ObjectPool.release(self)
+		_release("range")
 
 func _update_homing(delta: float) -> void:
 	if not is_instance_valid(_homing_target) or _homing_target.get("is_dead") == true:
@@ -107,10 +113,20 @@ func _find_nearest_enemy() -> Node2D:
 func get_damage() -> float:
 	return base_damage * damage_multiplier
 
+func _release(reason: String) -> void:
+	if _released:
+		return
+	_released = true
+	if fusion_kind != "" and is_inside_tree():
+		var wm := get_tree().get_first_node_in_group("weapon_manager")
+		if wm != null and wm.has_method("on_projectile_event"):
+			wm.on_projectile_event(self, reason)
+	ObjectPool.release(self)
+
 func _on_body_entered(body: Node2D) -> void:
 	# 碰到墙壁
 	if body.is_in_group("walls"):
-		ObjectPool.release(self)
+		_release("wall")
 		return
 	# 碰到敌人
 	if body.has_method("take_damage"):
@@ -123,9 +139,9 @@ func _on_body_entered(body: Node2D) -> void:
 			body.take_damage_with_knockback(dmg, knockback_dir, 120.0, 0.08)
 		else:
 			body.take_damage(dmg)
-	ObjectPool.release(self)
+	_release("hit")
 
 func _on_area_entered(area: Area2D) -> void:
 	# 碰到墙壁等
 	if area.is_in_group("walls"):
-		ObjectPool.release(self)
+		_release("wall")

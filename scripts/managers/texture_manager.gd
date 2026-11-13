@@ -137,7 +137,28 @@ func _load_enemy_textures():
 		},
 		"elite_vampire": {
 			"idle": _load_texture("res://assets/sprites/enemies/elite_vampire_idle.png")
-		}
+		},
+		# 新敌人的专属序列帧还没到。先登记旧图，脚本里再染色，换图时只改这里。
+		"shield_guard": {
+			"idle": _load_texture("res://assets/sprites/enemies/zombie_walk.png"),
+		},
+		"blood_priest": {
+			"idle": _load_texture("res://assets/sprites/enemies/mage_cast.png"),
+		},
+		"web_weaver": {
+			"idle": _load_texture("res://assets/sprites/enemies/bat_fly.png"),
+		},
+		"coffin_guard": {
+			"idle": _load_texture("res://assets/sprites/enemies/gargoyle_idle.png"),
+		},
+		"blood_hound": {"idle": _load_texture("res://assets/sprites/enemies/werewolf_idle.png")},
+		"burrower": {"idle": _load_texture("res://assets/sprites/enemies/zombie_walk.png")},
+		"gem_leech": {"idle": _load_texture("res://assets/sprites/enemies/bat_fly.png")},
+		"lantern_wraith": {"idle": _load_texture("res://assets/sprites/enemies/mage_cast.png")},
+		"alchemist_pitcher": {"idle": _load_texture("res://assets/sprites/enemies/skeleton_idle.png")},
+		"furnace_golem": {"idle": _load_texture("res://assets/sprites/enemies/gargoyle_idle.png")},
+		"resonance_mage": {"idle": _load_texture("res://assets/sprites/enemies/summoner_cast.png")},
+		"moon_wing": {"idle": _load_texture("res://assets/sprites/enemies/bat_fly.png")},
 	}
 
 func _load_boss_textures():

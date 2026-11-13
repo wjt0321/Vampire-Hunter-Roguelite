@@ -3,56 +3,90 @@ class_name DungeonManager
 ## 地下城管理器
 ## 负责楼层推进、层内房间节奏（战斗/商店/宝箱/休息/Boss）、每层敌人池与 Boss 形态
 ##
-## 结构：3 层 × 5 房间 = 15 房间，每层最后一间为 Boss 房
+## 结构：5 层 × 7 个节点。每层 5 间战斗、1 间特殊房、1 间 Boss。
 ## 波次计数全局累加（不随楼层重置），层倍率叠加在波次缩放之上
 
 # === 层配置表 ===
-# themes      : 该层战斗房间轮流使用的视觉主题
-# enemies     : 该层的敌人池（波次仍会按 wave 做一次解锁过滤）
-# boss_variant: 传给 vampire_lord 的形态编号（0 领主 / 1 亲王 / 2 女王）
-# accent      : 楼层横幅的主题色
+# 每层 7 个节点：5 战斗 + 1 特殊 + 1 Boss。boss_id 决定场景。
+const FLOOR_BLUEPRINT: Array = [
+	{"index": 1, "boss_id": "blood_lord", "playable": true, "greybox": false},
+	{"index": 2, "boss_id": "blood_matriarch", "playable": true, "greybox": false},
+	{"index": 3, "boss_id": "tomb_warden", "playable": true, "greybox": false},
+	{"index": 4, "boss_id": "alchemist_prince", "playable": true, "greybox": false},
+	{"index": 5, "boss_id": "eclipse_queen", "playable": true, "greybox": false},
+]
+
 var floors_data: Array = [
 	{
 		"index": 1,
 		"name": "血月回廊",
 		"subtitle": "THE CRIMSON HALLS",
-		"hint": "腐朽的大厅里，血的味道还很新鲜",
-		"rooms": 6,
+		"hint": "盾卫挡在正面，绕开再打",
+		"rooms": 7,
 		"special_rooms": 1,
+		"rule": "halls",
 		"themes": ["dungeon", "castle"],
-		"enemies": ["vampire", "bat", "zombie", "skeleton_archer", "werewolf"],
-		"boss_variant": 0,
-		"boss_name": "吸血鬼领主",
+		"enemies": ["vampire", "bat", "zombie", "skeleton_archer", "werewolf", "shield_guard", "blood_hound"],
+		"boss_id": "blood_lord",
+		"boss_name": "血铠领主",
 		"accent": Color(0.78, 0.13, 0.18),
 	},
 	{
 		"index": 2,
-		"name": "骸骨墓穴",
-		"subtitle": "THE BONE CRYPT",
-		"hint": "亡者在此长眠，直到有人打扰",
+		"name": "织血巢穴",
+		"subtitle": "THE BLOOD NEST",
+		"hint": "祭司会治疗同伴，网要先清掉",
 		"rooms": 7,
-		"special_rooms": 2,
+		"special_rooms": 1,
+		"rule": "nest",
 		"themes": ["cave", "dungeon"],
 		"enemies": ["vampire", "bat", "zombie", "skeleton_archer", "werewolf",
-				"exploder", "elite_vampire", "vampire_mage"],
-		"boss_variant": 1,
-		"boss_name": "血族亲王",
-		"accent": Color(0.55, 0.28, 0.85),
+				"exploder", "vampire_mage", "blood_priest", "web_weaver", "burrower"],
+		"boss_id": "blood_matriarch",
+		"boss_name": "织血母皇",
+		"accent": Color(0.72, 0.16, 0.32),
 	},
 	{
 		"index": 3,
-		"name": "血之王座",
-		"subtitle": "THE THRONE OF BLOOD",
-		"hint": "一切的源头，就在这扇门后",
+		"name": "骸骨墓穴",
+		"subtitle": "THE BONE CRYPT",
+		"hint": "先打结界和棺材，别让亡者爬起来",
 		"rooms": 7,
-		"special_rooms": 2,
+		"special_rooms": 1,
+		"rule": "tomb",
+		"themes": ["dungeon", "cave"],
+		"enemies": ["zombie", "skeleton_archer", "gargoyle", "coffin_guard", "gem_leech", "lantern_wraith", "summoner"],
+		"boss_id": "tomb_warden",
+		"boss_name": "墓穴守望者",
+		"accent": Color(0.45, 0.55, 0.62),
+	},
+	{
+		"index": 4,
+		"name": "炼金工坊",
+		"subtitle": "THE ALCHEMY WORKS",
+		"hint": "药液敌我都会伤，可以引到怪群里",
+		"rooms": 7,
+		"special_rooms": 1,
+		"rule": "alchemy",
+		"themes": ["castle", "cave"],
+		"enemies": ["exploder", "elite_vampire", "vampire_mage", "alchemist_pitcher", "furnace_golem", "resonance_mage"],
+		"boss_id": "alchemist_prince",
+		"boss_name": "炼金亲王",
+		"accent": Color(0.35, 0.75, 0.42),
+	},
+	{
+		"index": 5,
+		"name": "月蚀王座",
+		"subtitle": "THE ECLIPSE THRONE",
+		"hint": "看月相和落点，祭坛会改场地",
+		"rooms": 7,
+		"special_rooms": 1,
+		"rule": "eclipse",
 		"themes": ["castle", "boss"],
-		"enemies": ["vampire", "bat", "zombie", "skeleton_archer", "werewolf",
-				"exploder", "elite_vampire", "vampire_mage", "summoner",
-				"gargoyle", "vampire_prince"],
-		"boss_variant": 2,
-		"boss_name": "血族女王 · 塞拉菲娜",
-		"accent": Color(0.95, 0.72, 0.25),
+		"enemies": ["vampire_prince", "elite_vampire", "gargoyle", "moon_wing", "vampire_mage", "summoner"],
+		"boss_id": "eclipse_queen",
+		"boss_name": "月蚀女王",
+		"accent": Color(0.55, 0.45, 0.9),
 	},
 ]
 
@@ -268,6 +302,9 @@ func get_floor_name() -> String:
 
 func get_boss_variant() -> int:
 	return int(get_current_floor_data().get("boss_variant", 0))
+
+func get_boss_id() -> String:
+	return String(get_current_floor_data().get("boss_id", "vampire_queen"))
 
 func get_boss_name() -> String:
 	return String(get_current_floor_data().get("boss_name", "吸血鬼领主"))

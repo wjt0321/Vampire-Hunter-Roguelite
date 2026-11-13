@@ -136,7 +136,7 @@ const ENEMY_HP_LEVEL_SCALE_CAP: float = 2.0     # 等级缩放上限
 # 不是数值问题——改伤害只会让弹幕依旧糊屏但没那么痛。
 
 ## 远程敌人类型（用于逐层解禁判断）
-const RANGED_ENEMY_TYPES: Array = ["skeleton_archer", "vampire_mage"]
+const RANGED_ENEMY_TYPES: Array = ["skeleton_archer", "vampire_mage", "lantern_wraith", "alchemist_pitcher"]
 
 ## 该层前几间**战斗房**不出远程怪（下标 = floor - 1）
 ## 第 1 层前 2 间战斗房纯近战，第 3 间战斗房开始出现射手。
@@ -145,16 +145,16 @@ const RANGED_ENEMY_TYPES: Array = ["skeleton_archer", "vampire_mage"]
 ## 阈值为什么是 2 而不是 3：岔路会把一间战斗房换成**变异房**（变异房没有战斗），
 ## 本层就只剩 3 间战斗房。阈值 3 的话最后一间战斗房才解禁，
 ## 而那正是变异房顶掉的那间 → 整层一个射手都不刷。阈值 2 留了一间余量。
-const RANGED_UNLOCK_ROOM_BY_FLOOR: Array = [2, 2, 1]
+const RANGED_UNLOCK_ROOM_BY_FLOOR: Array = [2, 2, 1, 1, 0]
 
 ## 敌人开火冷却倍率（下标 = floor - 1）。第 1 层射手 2.0s → 3.4s，几乎是原来的两倍
-const ENEMY_FIRE_COOLDOWN_MULT_BY_FLOOR: Array = [1.7, 1.25, 1.0]
+const ENEMY_FIRE_COOLDOWN_MULT_BY_FLOOR: Array = [1.7, 1.25, 1.1, 1.0, 0.95]
 
 ## 同屏敌人投射物数量上限（下标 = floor - 1）
-const ENEMY_PROJECTILE_CAP_BY_FLOOR: Array = [3, 7, 12]
+const ENEMY_PROJECTILE_CAP_BY_FLOOR: Array = [3, 6, 8, 10, 12]
 
 ## 三连发概率（下标 = floor - 1）。第 1 层永远单发
-const RANGED_TRIPLE_SHOT_CHANCE_BY_FLOOR: Array = [0.0, 0.18, 0.30]
+const RANGED_TRIPLE_SHOT_CHANCE_BY_FLOOR: Array = [0.0, 0.15, 0.22, 0.28, 0.32]
 
 static func get_ranged_unlock_room(floor_index: int) -> int:
 	var idx: int = clampi(floor_index - 1, 0, RANGED_UNLOCK_ROOM_BY_FLOOR.size() - 1)
@@ -199,7 +199,7 @@ const WAVE_MAX_SPAWN_COUNT: int = 5
 ## 杀得快→补得快（压力持续），杀得慢→不再加码（不会雪崩到动不了）。
 ## 数值参考：屏幕 1280×720、玩家速度 200，同屏 16 只时还能绕着走；
 ## 22 只开始吃走位；28 只是"满屏但仍有缝"的上限。
-const ENEMY_ALIVE_CAP_BY_FLOOR: Array = [16, 22, 28]
+const ENEMY_ALIVE_CAP_BY_FLOOR: Array = [16, 20, 24, 26, 28]
 ## 距离上限还剩几只时开始放慢补怪节奏（避免"刚杀一只立刻顶上"的窒息感）
 const ENEMY_ALIVE_CAP_SOFT_RANGE: int = 4
 
@@ -214,7 +214,7 @@ static func get_enemy_alive_cap(floor_index: int) -> int:
 
 # ==================== 地下城结构 ====================
 
-const DUNGEON_FLOOR_COUNT: int = 3        # 总层数
+const DUNGEON_FLOOR_COUNT: int = 5        # 总层数
 const DUNGEON_ROOMS_PER_FLOOR: int = 6    # 每层默认房间数（含 Boss 房），具体层可在配置里覆盖
 const DUNGEON_MAX_ROOMS_PER_FLOOR: int = 8
 
@@ -223,12 +223,12 @@ const DUNGEON_MAX_ROOMS_PER_FLOOR: int = 8
 # 波次曲线从复利改成线性后，第 12 波只有 ×2.32（旧版 ×3.3），
 # 差额必须由楼层台阶补回来，否则三层 Boss 前的杂兵会软得没有威胁。
 # 1.0 / 1.40 / 1.85 与线性曲线相乘后，第 3 层第 12 波的等效倍率 ≈ ×4.3（旧版 ×4.98）。
-const FLOOR_HP_MULTIPLIERS: Array = [1.0, 1.40, 1.85]
-const FLOOR_DAMAGE_MULTIPLIERS: Array = [1.0, 1.18, 1.40]
+const FLOOR_HP_MULTIPLIERS: Array = [1.0, 1.32, 1.68, 2.0, 2.28]
+const FLOOR_DAMAGE_MULTIPLIERS: Array = [1.0, 1.14, 1.28, 1.42, 1.55]
 
 # 层通关奖励：恢复生命百分比 + 血晶
 const FLOOR_CLEAR_HEAL_RATIO: float = 0.5
-const FLOOR_CLEAR_CRYSTALS: Array = [30, 60, 120]
+const FLOOR_CLEAR_CRYSTALS: Array = [30, 50, 75, 100, 140]
 
 # 非战斗房把波次标签换成房间名（HUD 的波次位只有一格）。
 # 收在配置里而不是 main 的局部字典：HUD 要拿 "BOSS" 判断"这条是占位文案、
@@ -491,7 +491,7 @@ const GROUND_MARKER_DURATION: float = 0.6
 
 const ELITE_AFFIX_ENABLED: bool = true
 ## 每层精英词缀的出现概率（逐层递增）
-const ELITE_AFFIX_CHANCE_BY_FLOOR: Array = [0.05, 0.13, 0.18]
+const ELITE_AFFIX_CHANCE_BY_FLOOR: Array = [0.05, 0.12, 0.16, 0.2, 0.22]
 ## 每层允许出现的词缀池。
 ##
 ## 试玩反馈第一句就是「怎么第一关小怪就有护盾啊」——第 1 层原本 10% 概率随机四选一，
@@ -501,6 +501,8 @@ const ELITE_AFFIX_CHANCE_BY_FLOOR: Array = [0.05, 0.13, 0.18]
 ## 词缀从第 2 层才开始出现。
 const ELITE_AFFIX_POOL_BY_FLOOR: Array = [
 	["haster"],
+	["haster", "charger", "splitter", "shielded"],
+	["haster", "charger", "splitter", "shielded"],
 	["haster", "charger", "splitter", "shielded"],
 	["haster", "charger", "splitter", "shielded"],
 ]
@@ -624,7 +626,7 @@ const ROOM_EVENT_ENABLED: bool = true
 ## 本层第几间战斗房起开始判定（第 1 间当教学，别刚进门就加事）
 const ROOM_EVENT_MIN_COMBAT_ROOM: int = 2
 ## 触发概率按层（每层最多触发一次）
-const ROOM_EVENT_CHANCE_BY_FLOOR: Array = [0.35, 0.40, 0.45]
+const ROOM_EVENT_CHANCE_BY_FLOOR: Array = [0.35, 0.40, 0.45, 0.45, 0.5]
 ## 猎杀权重 vs 守卫权重（守卫事件更重流程，所以低一些）
 const ROOM_EVENT_HUNT_WEIGHT: float = 0.65
 
@@ -719,7 +721,7 @@ static func abyss_rule_text() -> String:
 # 不选就还是原来的战斗房，所以旧的房间序列测试不用改。
 
 const MAP_EVENT_TYPES: Array = ["mutation", "fog", "mirror"]
-const MAP_EVENT_FORKS_BY_FLOOR: Array = [1, 2, 2]
+const MAP_EVENT_FORKS_BY_FLOOR: Array = [1, 1, 2, 2, 2]
 const MUTATION_HP_RATIO: float = 0.25
 const MUTATION_WIN_CHANCE: float = 0.55
 const MUTATION_WIN_SILVER: int = 55
