@@ -1,0 +1,10 @@
+{
+  "audio_driver": "WASAPI",
+  "captured_frames": 1731584,
+  "clipped_frames": 0,
+  "context": "Real first combat room, 35 seconds, stationary invulnerable test player, automatic fire; no listening claim",
+  "music_gain": 1.0,
+  "peak_linear": 0.525972723960876,
+  "save_result": 0,
+  "sfx_gain": 1.0
+}

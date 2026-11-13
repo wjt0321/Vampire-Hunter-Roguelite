@@ -1,0 +1,475 @@
+{
+  "version": 1,
+  "bgm_template": {
+    "1": {
+      "class_type": "CheckpointLoaderSimple",
+      "inputs": {
+        "ckpt_name": "yue2_3b_int8_convrot.safetensors"
+      }
+    },
+    "2": {
+      "class_type": "LoraLoader",
+      "inputs": {
+        "model": [
+          "1",
+          0
+        ],
+        "clip": [
+          "1",
+          1
+        ],
+        "lora_name": "ar_lora_inst_v3abc_comfyui.safetensors",
+        "strength_model": 1,
+        "strength_clip": 1
+      }
+    },
+    "3": {
+      "class_type": "LoraLoader",
+      "inputs": {
+        "model": [
+          "2",
+          0
+        ],
+        "clip": [
+          "2",
+          1
+        ],
+        "lora_name": "nar_lora_joint_v4_comfyui.safetensors",
+        "strength_model": 1,
+        "strength_clip": 1
+      }
+    },
+    "6": {
+      "class_type": "YuE2GenerateABC",
+      "inputs": {
+        "clip": [
+          "3",
+          1
+        ],
+        "style": "Gothic action roguelite battle soundtrack, instrumental only, no vocals, no choir, no speech. 128 BPM, 4/4, D minor. A memorable short harpsichord hook, tight staccato string ostinato, restrained pipe organ bass, punchy compact electronic drums. Dark, determined vampire hunter energy with a steady driving groove. The beat starts immediately, no long intro. Clear instrument separation, restrained cymbals and sub-bass, leave space for game sound effects. Consistent energy, repeating eight-bar phrases with subtle variation, no dramatic breakdown, no fade-out.",
+        "lyrics": "[instrumental]",
+        "seed": 2026111302,
+        "mode": "full",
+        "max_abc_tokens": 8192,
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "top_k": 30,
+        "repetition_penalty": 1.005,
+        "penalty_window": 100
+      }
+    },
+    "7": {
+      "class_type": "YuE2GenerateMusic",
+      "inputs": {
+        "clip": [
+          "3",
+          1
+        ],
+        "style": "Gothic action roguelite battle soundtrack, instrumental only, no vocals, no choir, no speech. 128 BPM, 4/4, D minor. A memorable short harpsichord hook, tight staccato string ostinato, restrained pipe organ bass, punchy compact electronic drums. Dark, determined vampire hunter energy with a steady driving groove. The beat starts immediately, no long intro. Clear instrument separation, restrained cymbals and sub-bass, leave space for game sound effects. Consistent energy, repeating eight-bar phrases with subtle variation, no dramatic breakdown, no fade-out.",
+        "lyrics": "[instrumental]",
+        "abc": [
+          "6",
+          0
+        ],
+        "seed": 2026111302,
+        "mode": "full",
+        "max_duration": 60,
+        "temperature": 1,
+        "top_p": 0.95,
+        "top_k": 100,
+        "repetition_penalty": 1.2,
+        "cfg_scale": 1
+      }
+    },
+    "8": {
+      "class_type": "ConditioningZeroOut",
+      "inputs": {
+        "conditioning": [
+          "7",
+          0
+        ]
+      }
+    },
+    "9": {
+      "class_type": "EmptyYuE2LatentAudio",
+      "inputs": {
+        "seconds": [
+          "7",
+          1
+        ],
+        "batch_size": 1
+      }
+    },
+    "10": {
+      "class_type": "KSampler",
+      "inputs": {
+        "model": [
+          "3",
+          0
+        ],
+        "positive": [
+          "7",
+          0
+        ],
+        "negative": [
+          "8",
+          0
+        ],
+        "latent_image": [
+          "9",
+          0
+        ],
+        "seed": 2026111302,
+        "steps": 32,
+        "cfg": 1,
+        "sampler_name": "dpm_2",
+        "scheduler": "sgm_uniform",
+        "denoise": 1
+      }
+    },
+    "11": {
+      "class_type": "VAEDecodeAudio",
+      "inputs": {
+        "samples": [
+          "10",
+          0
+        ],
+        "vae": [
+          "1",
+          2
+        ]
+      }
+    },
+    "12": {
+      "class_type": "SaveAudioAdvanced",
+      "inputs": {
+        "audio": [
+          "11",
+          0
+        ],
+        "filename_prefix": "audio/VampireHunter/audition_20261113/yue2_battle_02",
+        "format": "flac"
+      }
+    }
+  },
+  "jobs": [
+    {
+      "kind": "sfx",
+      "key": "shoot_pistol",
+      "label": "手枪",
+      "duration": 0.24,
+      "peak": -10,
+      "seed": 2026111400,
+      "prompt": "One single dry pistol gunshot, tight sharp crack and short mechanical clack, close microphone, minimal reverberation. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "shoot_shotgun",
+      "label": "霰弹枪",
+      "duration": 0.55,
+      "peak": -8,
+      "seed": 2026111401,
+      "prompt": "One single heavy shotgun blast, deep punch with a sharp crack and a short metallic rattle, close dry recording. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "shoot_magic",
+      "label": "魔法弹",
+      "duration": 0.42,
+      "peak": -13,
+      "seed": 2026111402,
+      "prompt": "One short magical energy projectile zap, bright glassy attack and soft electric whoosh tail. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "knife_throw",
+      "label": "飞刀",
+      "duration": 0.25,
+      "peak": -14,
+      "seed": 2026111403,
+      "prompt": "One swift throwing knife swish, sharp blade slicing air with a tiny metallic zing. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "poison_cloud",
+      "label": "毒雾",
+      "duration": 0.85,
+      "peak": -15,
+      "seed": 2026111404,
+      "prompt": "A single poison vial breaking followed by a brief bubbling acidic hiss and gas puff. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "lightning_chain",
+      "label": "闪电",
+      "duration": 0.55,
+      "peak": -12,
+      "seed": 2026111405,
+      "prompt": "One short electric lightning arc, sharp snapping crackle moving through several tiny sparks. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "boss_attack",
+      "label": "Boss攻击",
+      "duration": 0.9,
+      "peak": -9,
+      "seed": 2026111406,
+      "prompt": "One powerful dark magic impact, low ominous thump with a ripping energy surge and short tail. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "hit_enemy",
+      "label": "敌人受击",
+      "duration": 0.18,
+      "peak": -19,
+      "seed": 2026111407,
+      "prompt": "One short punchy flesh impact, muted thwack, dry and compact, no voice. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "enemy_death",
+      "label": "敌人死亡",
+      "duration": 0.55,
+      "peak": -16,
+      "seed": 2026111408,
+      "prompt": "One monster disintegrating into dust, short rough crumble and airy dissipating hiss, no voice. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "pickup_xp",
+      "label": "经验拾取",
+      "duration": 0.16,
+      "peak": -22,
+      "seed": 2026111409,
+      "prompt": "One tiny bright glass crystal ping, very short delicate high chime, single note. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "level_up",
+      "label": "升级",
+      "duration": 1.3,
+      "peak": -12,
+      "seed": 2026111410,
+      "prompt": "One rewarding magical ascending chime flourish, three bright bell notes with a sparkling finish. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "button_click",
+      "label": "点击",
+      "duration": 0.12,
+      "peak": -17,
+      "seed": 2026111411,
+      "prompt": "One tactile user interface click, soft wooden tick with a tiny glass accent, dry and short. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "explosion",
+      "label": "爆炸",
+      "duration": 0.85,
+      "peak": -9,
+      "seed": 2026111412,
+      "prompt": "One compact game explosion, heavy punch, gravel debris crackle and quick low frequency decay. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "shield_break",
+      "label": "护盾破裂",
+      "duration": 0.65,
+      "peak": -11,
+      "seed": 2026111413,
+      "prompt": "One magical glass shield shattering, bright brittle crack and fragments scattering with short decay. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "heal",
+      "label": "治疗",
+      "duration": 0.85,
+      "peak": -15,
+      "seed": 2026111414,
+      "prompt": "One soothing healing magic shimmer, soft rising bell tone and gentle airy sparkle. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "player_hurt",
+      "label": "玩家受伤",
+      "duration": 0.35,
+      "peak": -10,
+      "seed": 2026111415,
+      "prompt": "One blunt armor impact, deep thud with a brief rough scrape, urgent game damage feedback, no voice. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "hover",
+      "label": "悬停",
+      "duration": 0.075,
+      "peak": -24,
+      "seed": 2026111416,
+      "prompt": "One extremely subtle soft wooden interface tick, muted, short and dry. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "teleport",
+      "label": "传送",
+      "duration": 0.8,
+      "peak": -13,
+      "seed": 2026111417,
+      "prompt": "One supernatural teleport whoosh, reversed airy suction into a crisp magical pop. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "shoot_crossbow",
+      "label": "弩箭",
+      "duration": 0.3,
+      "peak": -12,
+      "seed": 2026111418,
+      "prompt": "One crossbow firing, taut bowstring twang and wooden mechanism clack with fast arrow swish. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "flame_thrower",
+      "label": "喷火",
+      "duration": 0.55,
+      "peak": -17,
+      "seed": 2026111419,
+      "prompt": "One short flamethrower burst, forceful fire whoosh and compact low roaring crackle. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "blood_burst",
+      "label": "血爆",
+      "duration": 0.65,
+      "peak": -13,
+      "seed": 2026111420,
+      "prompt": "One wet supernatural burst, deep organic splat and short low magic thump. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "holy_wand",
+      "label": "圣杖",
+      "duration": 0.45,
+      "peak": -14,
+      "seed": 2026111421,
+      "prompt": "One radiant holy magic bolt, clear bell strike with bright airy shimmer and short tail. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "purchase",
+      "label": "购买",
+      "duration": 0.55,
+      "peak": -14,
+      "seed": 2026111422,
+      "prompt": "A few gold coins dropping into a leather pouch, bright small metallic clinks, one compact event. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "chest_open",
+      "label": "宝箱",
+      "duration": 1.5,
+      "peak": -12,
+      "seed": 2026112401,
+      "prompt": "One heavy antique wooden chest lid opening. First a loud sharp iron latch clack, then thick oak creaking on rusty metal hinges and a hollow wooden knock. Close-up realistic Foley, solid heavy wood and metal. Silent background. No paper, no pages, no fabric, no music, no voice.",
+      "variant": "v2"
+    },
+    {
+      "kind": "sfx",
+      "key": "room_clear",
+      "label": "清房",
+      "duration": 1.1,
+      "peak": -14,
+      "seed": 2026111424,
+      "prompt": "One brief rewarding fantasy completion chime, a confident rising bell flourish and warm final note. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "door_open",
+      "label": "开门",
+      "duration": 0.8,
+      "peak": -17,
+      "seed": 2026111425,
+      "prompt": "One heavy dungeon door unlocking, iron latch clank and short stone sliding scrape. Isolated single game sound effect on a silent background, no speech, no music."
+    },
+    {
+      "kind": "sfx",
+      "key": "pickup_coin",
+      "label": "银币拾取",
+      "duration": 0.2,
+      "peak": -20,
+      "seed": 2026112600,
+      "prompt": "One tiny silver coin clink, crisp short metallic ring. Isolated single video game sound effect, silent background, no music, no speech."
+    },
+    {
+      "kind": "sfx",
+      "key": "pickup_magnet",
+      "label": "磁力拾取",
+      "duration": 0.65,
+      "peak": -15,
+      "seed": 2026112601,
+      "prompt": "One magical magnetic suction powerup, rising swirling energy whoosh with a clear bright completion ping. Isolated single video game sound effect, silent background, no music, no speech."
+    },
+    {
+      "kind": "sfx",
+      "key": "pickup_frenzy",
+      "label": "狂热拾取",
+      "duration": 0.8,
+      "peak": -12,
+      "seed": 2026112602,
+      "prompt": "One aggressive fantasy powerup activation, rising charged energy growl and a strong short electric impact, no human or animal voice. Isolated single video game sound effect, silent background, no music, no speech."
+    },
+    {
+      "kind": "bgm",
+      "key": "menu",
+      "label": "夜幕猎人",
+      "duration": 60,
+      "loop": true,
+      "seed": 2026112507,
+      "prompt": "Instrumental gothic chamber music loop for a dark fantasy game title screen, 96 BPM, D minor, steady 4/4. ONLY harpsichord, pizzicato cello, plucked lute and a soft ticking wooden percussion pulse. A short repeating memorable baroque melody. Small dry intimate acoustic ensemble, identical instrumentation throughout, consistent moderate energy from beginning to end. No orchestra build, no strings pad, no synthesizer pad, no voices, no vocal textures, no choir, no humming, no singing, no lyrics, no speech, no dramatic ending, no fade out.",
+      "variant": "v2"
+    },
+    {
+      "kind": "bgm",
+      "key": "battle",
+      "label": "猎杀脉冲",
+      "duration": 60,
+      "loop": true,
+      "seed": 2026111302,
+      "prompt": "Gothic action roguelite battle soundtrack, instrumental only, no vocals, no choir, no speech. 128 BPM, 4/4, D minor. A memorable short harpsichord hook, tight staccato string ostinato, restrained pipe organ bass, punchy compact electronic drums. Dark, determined vampire hunter energy with a steady driving groove. The beat starts immediately, no long intro. Clear instrument separation, restrained cymbals and sub-bass, leave space for game sound effects. Consistent energy, repeating eight-bar phrases with subtle variation, no dramatic breakdown, no fade-out.",
+      "reuse": "artifacts/music-audition-20261113/yue2_battle_02.flac"
+    },
+    {
+      "kind": "bgm",
+      "key": "boss",
+      "label": "猩红王座",
+      "duration": 60,
+      "loop": true,
+      "seed": 2026111502,
+      "prompt": "Gothic action boss battle instrumental. 144 BPM D minor. Relentless sharp string ostinato, sinister pipe organ low chords, driving tight industrial electronic drums, threatening brass stabs and short harpsichord hook. Aggressive purposeful pulse from the first second, consistent intensity, room for combat sound effects, no cymbal wash, no breakdown, no fading ending. Pure instrumental, no vocals, no singing, no choir, no speech."
+    },
+    {
+      "kind": "bgm",
+      "key": "shop",
+      "label": "烛火与银币",
+      "duration": 60,
+      "loop": true,
+      "seed": 2026111503,
+      "prompt": "Gothic fantasy safe room and merchant instrumental. 78 BPM D minor with gentle warm major turns. Delicate plucked strings, intimate harpsichord, soft cello pizzicato, sparse brushed percussion. Relaxed mysterious candlelit atmosphere, understated recurring melody, no dramatic build, quiet balanced dynamics, no fading ending. Pure instrumental, no vocals, no singing, no choir, no speech."
+    },
+    {
+      "kind": "bgm",
+      "key": "victory",
+      "label": "黎明归来",
+      "duration": 20,
+      "loop": false,
+      "seed": 2026111504,
+      "prompt": "A short triumphant gothic game victory instrumental cue. 110 BPM D major. Bright noble strings, restrained brass, harpsichord and warm bells. Immediate uplifting rising motif, decisive heroic resolution and sustained final chord, compact complete musical ending. Pure instrumental, no vocals, no singing, no choir, no speech."
+    },
+    {
+      "kind": "bgm",
+      "key": "defeat",
+      "label": "最后的烛火",
+      "duration": 20,
+      "loop": false,
+      "seed": 2026111505,
+      "prompt": "A short sorrowful gothic game defeat instrumental cue. 68 BPM D minor. Descending solo cello phrase, sparse felt piano and quiet low organ. Dignified melancholy, immediate recognizable falling motif, slowing into a soft final resolved chord, complete short ending. Pure instrumental, no vocals, no singing, no choir, no speech."
+    }
+  ]
+}

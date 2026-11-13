@@ -1,0 +1,13 @@
+{
+  "archive": "VampireHunter_complete_audio.zip",
+  "bytes": 42889249,
+  "sha256": "4af6be1c9aa5237441c026618358218882f29fbb5d0fc6eb90be0086b40547f7",
+  "zip_entries": 180,
+  "zip_crc_check": "passed",
+  "extracted_audio_sha256_matches": 35,
+  "isolated_extracted_resume": {
+    "skipped_existing_raw": 35,
+    "exit_code": 0
+  },
+  "note": "本记录在ZIP验证后生成，位于ZIP外，避免自引用哈希。"
+}

@@ -66,8 +66,11 @@ func _process(delta: float) -> void:
 		global_position = global_position.move_toward(_player.global_position, attraction_speed * delta)
 
 func _collect() -> void:
+	if is_queued_for_deletion():
+		return
 	if _player != null and is_instance_valid(_player) and _player.has_method("add_silver"):
 		_player.add_silver(value)
+		AudioManager.play_sfx(AudioLib.get_sound("pickup_coin"))
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
 		vfx.spawn_hit_particles(global_position, Color(1.0, 0.86, 0.42), 2)

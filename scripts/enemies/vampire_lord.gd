@@ -558,6 +558,7 @@ func _attack_dash() -> void:
 
 
 func _telegraph_attack() -> void:
+	AudioManager.play_sfx(AudioLib.get_sound("boss_attack"))
 	## 攻击前 Telegraph：红色闪烁 + 警告环
 	if sprite:
 		var tw := create_tween()
@@ -613,6 +614,7 @@ func _die() -> void:
 	if is_dead:
 		return
 	is_dead = true
+	AudioManager.play_sfx(AudioLib.get_sound("enemy_death"))
 	enemy_died.emit(self)
 	boss_defeated.emit()
 	# 死亡强烈震动

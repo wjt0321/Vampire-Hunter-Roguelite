@@ -106,6 +106,8 @@ func _process(delta: float) -> void:
 		global_position = global_position.move_toward(_player.global_position, attraction_speed * delta)
 
 func _collect() -> void:
+	if is_queued_for_deletion():
+		return
 	if _player != null and is_instance_valid(_player):
 		match kind:
 			"heal":
@@ -114,6 +116,7 @@ func _collect() -> void:
 				_apply_frenzy()
 			"magnet":
 				_apply_magnet()
+				AudioManager.play_sfx(AudioLib.get_sound("pickup_magnet"))
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
 		var color: Color = KINDS.get(kind, KINDS["heal"])["color"]
@@ -129,6 +132,7 @@ func _apply_heal() -> void:
 func _apply_frenzy() -> void:
 	if _player.has_method("apply_powerup_buff"):
 		_player.apply_powerup_buff(GameConfig.POWERUP_FRENZY_MULT, GameConfig.POWERUP_FRENZY_DURATION)
+		AudioManager.play_sfx(AudioLib.get_sound("pickup_frenzy"))
 
 func _apply_magnet() -> void:
 	## 直接把全场经验/银币拉向玩家一次，而不是原地收走：

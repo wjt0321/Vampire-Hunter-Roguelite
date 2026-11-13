@@ -407,7 +407,7 @@ func _apply_offer(offer: Dictionary) -> bool:
 			player.add_passive_item(item)
 		"consumable":
 			_apply_consumable(id)
-	AudioManager.play_ui_sfx(AudioLib.get_sound("pickup_xp"))
+	AudioManager.play_ui_sfx(AudioLib.get_sound("purchase"))
 	return true
 
 func _apply_consumable(id: String) -> void:

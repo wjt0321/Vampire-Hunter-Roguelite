@@ -1,0 +1,913 @@
+{
+  "assets": [
+    {
+      "kind": "sfx",
+      "key": "shoot_pistol",
+      "label": "手枪",
+      "file": "assets/audio/generated/sfx/shoot_pistol.ogg",
+      "seconds": 0.23733333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -9.912893774363631,
+      "rms_dbfs": -31.127696527824966,
+      "sha256": "475baad6b0e1b54b95e1ffb69d6c93a1e15274cd7a981cd943ac302ca28fa346",
+      "edit": {
+        "source_start_seconds": 0.032,
+        "source_end_seconds": 0.272,
+        "peak_target_dbfs": -10,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "shoot_shotgun",
+      "label": "霰弹枪",
+      "file": "assets/audio/generated/sfx/shoot_shotgun.ogg",
+      "seconds": 0.5473333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -7.930891319357034,
+      "rms_dbfs": -26.753802687833222,
+      "sha256": "88ad6173891d8d6a8b2edf17749a99d9b55d7cf915f9385e80ca8a6393fa9db4",
+      "edit": {
+        "source_start_seconds": 0.06,
+        "source_end_seconds": 0.61,
+        "peak_target_dbfs": -8,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "shoot_magic",
+      "label": "魔法弹",
+      "file": "assets/audio/generated/sfx/shoot_magic.ogg",
+      "seconds": 0.41733333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -13.041250654220145,
+      "rms_dbfs": -30.068137337847894,
+      "sha256": "2300dcb9ece57500cb71b5071c3470f5bc68294540c74aecbfd6ef469ff49ca4",
+      "edit": {
+        "source_start_seconds": 0.024,
+        "source_end_seconds": 0.444,
+        "peak_target_dbfs": -13,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "knife_throw",
+      "label": "飞刀",
+      "file": "assets/audio/generated/sfx/knife_throw.ogg",
+      "seconds": 0.24733333333333332,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -14.344144239584482,
+      "rms_dbfs": -39.158052810798864,
+      "sha256": "23b2f889b8798bb3be7ee6f6cd8d3cffe8c9c875597111ba77f7d25605fe8929",
+      "edit": {
+        "source_start_seconds": 0.068,
+        "source_end_seconds": 0.318,
+        "peak_target_dbfs": -14,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "poison_cloud",
+      "label": "毒雾",
+      "file": "assets/audio/generated/sfx/poison_cloud.ogg",
+      "seconds": 0.8473333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -14.922800364358334,
+      "rms_dbfs": -32.497852990613005,
+      "sha256": "9e9e3ff7524a73a6243f6e33679123c1f5849145c928e3e098ab69a623193f9d",
+      "edit": {
+        "source_start_seconds": 0.124,
+        "source_end_seconds": 0.974,
+        "peak_target_dbfs": -15,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "lightning_chain",
+      "label": "闪电",
+      "file": "assets/audio/generated/sfx/lightning_chain.ogg",
+      "seconds": 0.5473333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -12.216926969484255,
+      "rms_dbfs": -42.033952330180895,
+      "sha256": "b88c1dbdcbf09a9239958a940890d35f1b8d635fc5988aee559ab4755b70108e",
+      "edit": {
+        "source_start_seconds": 0.02,
+        "source_end_seconds": 0.57,
+        "peak_target_dbfs": -12,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "boss_attack",
+      "label": "Boss攻击",
+      "file": "assets/audio/generated/sfx/boss_attack.ogg",
+      "seconds": 0.8973333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -9.055534223596268,
+      "rms_dbfs": -23.80429363247831,
+      "sha256": "afcbe4bd0a4f592b17899821ac1f3cc5e28e7dfaa4338e4254324c860336f96f",
+      "edit": {
+        "source_start_seconds": 0.02,
+        "source_end_seconds": 0.92,
+        "peak_target_dbfs": -9,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "hit_enemy",
+      "label": "敌人受击",
+      "file": "assets/audio/generated/sfx/hit_enemy.ogg",
+      "seconds": 0.17733333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -18.936448825833235,
+      "rms_dbfs": -36.0558224308723,
+      "sha256": "50d560df0e2443efb01d2c627b6621e6b20bfd605d79a8d9d4b994d1753cee62",
+      "edit": {
+        "source_start_seconds": 0.12,
+        "source_end_seconds": 0.3,
+        "peak_target_dbfs": -19,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "enemy_death",
+      "label": "敌人死亡",
+      "file": "assets/audio/generated/sfx/enemy_death.ogg",
+      "seconds": 0.5613333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -16.445158487213078,
+      "rms_dbfs": -32.45113820110726,
+      "sha256": "baf7954c0cef39ecade2c0ad1de9e9136b270e5d03d1330daaada3c705075325",
+      "edit": {
+        "source_start_seconds": 0.176,
+        "source_end_seconds": 0.726,
+        "peak_target_dbfs": -16,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "pickup_xp",
+      "label": "经验拾取",
+      "file": "assets/audio/generated/sfx/pickup_xp.ogg",
+      "seconds": 0.15733333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -22.936124803779276,
+      "rms_dbfs": -39.45212325649284,
+      "sha256": "031bb1544836e7c3040d696f599b2159398947f913bb62ae96203276fd83fc5e",
+      "edit": {
+        "source_start_seconds": 0.004,
+        "source_end_seconds": 0.164,
+        "peak_target_dbfs": -22,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "level_up",
+      "label": "升级",
+      "file": "assets/audio/generated/sfx/level_up.ogg",
+      "seconds": 1.3,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -11.824440004558198,
+      "rms_dbfs": -26.91379814524675,
+      "sha256": "8bdf34a2d5655dfd5990ff5f603eb63563749a5f3dfb17df2cfc17a6e22adc88",
+      "edit": {
+        "source_start_seconds": 0.032,
+        "source_end_seconds": 1.332,
+        "peak_target_dbfs": -12,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "button_click",
+      "label": "点击",
+      "file": "assets/audio/generated/sfx/button_click.ogg",
+      "seconds": 0.11733333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -16.68722458611599,
+      "rms_dbfs": -39.22961116006484,
+      "sha256": "10fed982f2d1b56dc2837aed828ee76d98c5d0a82d3a5ab3252ead0dc32afd30",
+      "edit": {
+        "source_start_seconds": 0.004,
+        "source_end_seconds": 0.124,
+        "peak_target_dbfs": -17,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "explosion",
+      "label": "爆炸",
+      "file": "assets/audio/generated/sfx/explosion.ogg",
+      "seconds": 0.8473333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -9.146349599500589,
+      "rms_dbfs": -29.692857079819838,
+      "sha256": "8872acfc35eae24ff9ed5a30596447e9b5c0bef16188606888c307f6dad041b6",
+      "edit": {
+        "source_start_seconds": 0.072,
+        "source_end_seconds": 0.922,
+        "peak_target_dbfs": -9,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "shield_break",
+      "label": "护盾破裂",
+      "file": "assets/audio/generated/sfx/shield_break.ogg",
+      "seconds": 0.6473333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -11.399029792932986,
+      "rms_dbfs": -31.556652388532385,
+      "sha256": "454e87b210263c7f5604cad8ef943d946dce59998b110ce64a2dc8328912bc9f",
+      "edit": {
+        "source_start_seconds": 0.0,
+        "source_end_seconds": 0.65,
+        "peak_target_dbfs": -11,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "heal",
+      "label": "治疗",
+      "file": "assets/audio/generated/sfx/heal.ogg",
+      "seconds": 0.8473333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -14.931134334426314,
+      "rms_dbfs": -28.434781273121118,
+      "sha256": "7bea46316c0f637c30fc82755367d30efc5f80a9da6089fcc2226fb2fc78e0c4",
+      "edit": {
+        "source_start_seconds": 0.008,
+        "source_end_seconds": 0.858,
+        "peak_target_dbfs": -15,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "player_hurt",
+      "label": "玩家受伤",
+      "file": "assets/audio/generated/sfx/player_hurt.ogg",
+      "seconds": 0.36933333333333335,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -10.015189100750481,
+      "rms_dbfs": -24.485817084399038,
+      "sha256": "98cd99dd94c253f4d7011383490291bfa912624e5babdd5f41a05d221e2bd6b8",
+      "edit": {
+        "source_start_seconds": 0.0,
+        "source_end_seconds": 0.35,
+        "peak_target_dbfs": -10,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "hover",
+      "label": "悬停",
+      "file": "assets/audio/generated/sfx/hover.ogg",
+      "seconds": 0.07233333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -24.125943199789557,
+      "rms_dbfs": -43.05777073074985,
+      "sha256": "6bc935911ace834fe8508cf880dbb04b983d95c844f017fedf05cf4f8de64641",
+      "edit": {
+        "source_start_seconds": 0.108,
+        "source_end_seconds": 0.183,
+        "peak_target_dbfs": -24,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "teleport",
+      "label": "传送",
+      "file": "assets/audio/generated/sfx/teleport.ogg",
+      "seconds": 0.7973333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -13.023249984998007,
+      "rms_dbfs": -29.33477117622631,
+      "sha256": "224f8c3220621ddd642799404332dd8664a9fa361406a7eaba015c82d020095c",
+      "edit": {
+        "source_start_seconds": 0.748,
+        "source_end_seconds": 1.548,
+        "peak_target_dbfs": -13,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "shoot_crossbow",
+      "label": "弩箭",
+      "file": "assets/audio/generated/sfx/shoot_crossbow.ogg",
+      "seconds": 0.29733333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -12.1289293863523,
+      "rms_dbfs": -34.76917813604214,
+      "sha256": "072bc05029f907e53d7a566d60caacf614e8928cead797fc6cc7ae64c47444cd",
+      "edit": {
+        "source_start_seconds": 0.036,
+        "source_end_seconds": 0.336,
+        "peak_target_dbfs": -12,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "flame_thrower",
+      "label": "喷火",
+      "file": "assets/audio/generated/sfx/flame_thrower.ogg",
+      "seconds": 0.5473333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -16.791202412752632,
+      "rms_dbfs": -32.71313177555169,
+      "sha256": "97a1880d2eaaeef88ecc6d71a9bd5af554f74180351f91aebb83c71320cd45dd",
+      "edit": {
+        "source_start_seconds": 0.072,
+        "source_end_seconds": 0.622,
+        "peak_target_dbfs": -17,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "blood_burst",
+      "label": "血爆",
+      "file": "assets/audio/generated/sfx/blood_burst.ogg",
+      "seconds": 0.6473333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -13.281489846633868,
+      "rms_dbfs": -30.41990554799716,
+      "sha256": "31959d8b1627d8c423c22de310366811c03111342dd5abf106cd81e90b1c498e",
+      "edit": {
+        "source_start_seconds": 0.128,
+        "source_end_seconds": 0.778,
+        "peak_target_dbfs": -13,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "holy_wand",
+      "label": "圣杖",
+      "file": "assets/audio/generated/sfx/holy_wand.ogg",
+      "seconds": 0.4706666666666667,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -13.744194637101344,
+      "rms_dbfs": -34.37873217897484,
+      "sha256": "6a3d383bd0e80ee6b47a03270f14d67ffc60189eab81d0a62c74d551a46da7af",
+      "edit": {
+        "source_start_seconds": 0.0,
+        "source_end_seconds": 0.45,
+        "peak_target_dbfs": -14,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "purchase",
+      "label": "购买",
+      "file": "assets/audio/generated/sfx/purchase.ogg",
+      "seconds": 0.5473333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -14.911303855250397,
+      "rms_dbfs": -34.84290140985546,
+      "sha256": "8ba4485ed5455879c7ce2c47a65b23a25d1c9bad89b57615a1b44bdf2290b708",
+      "edit": {
+        "source_start_seconds": 0.016,
+        "source_end_seconds": 0.566,
+        "peak_target_dbfs": -14,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "chest_open",
+      "label": "宝箱",
+      "file": "assets/audio/generated/sfx/chest_open.ogg",
+      "seconds": 1.5,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -11.774799193910665,
+      "rms_dbfs": -36.685993493509805,
+      "sha256": "9dce37fb4cc319276ca37d420f35f7444dcecfe4b8d4441c505438d90f7e16a6",
+      "edit": {
+        "source_start_seconds": 0.232,
+        "source_end_seconds": 0.882,
+        "peak_target_dbfs": -12,
+        "layers": [
+          "latch/hinge first 0.65s",
+          "purchase +0.25s",
+          "level_up +0.35s"
+        ]
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "room_clear",
+      "label": "清房",
+      "file": "assets/audio/generated/sfx/room_clear.ogg",
+      "seconds": 1.1,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -14.012926073243129,
+      "rms_dbfs": -26.611966134314997,
+      "sha256": "59b133b5b498fa1c07d6a0cbd17c60c91a13302bb2750957ad21b985cd56e84f",
+      "edit": {
+        "source_start_seconds": 0.032,
+        "source_end_seconds": 1.132,
+        "peak_target_dbfs": -14,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "door_open",
+      "label": "开门",
+      "file": "assets/audio/generated/sfx/door_open.ogg",
+      "seconds": 0.82,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -17.086839091323412,
+      "rms_dbfs": -38.132916013606625,
+      "sha256": "c18a64ae4e7954ec791d419f8b420e3a7ba5937cb84e8da5c0e3f1358381d50b",
+      "edit": {
+        "source_start_seconds": 0.072,
+        "source_end_seconds": 0.872,
+        "peak_target_dbfs": -17,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "pickup_coin",
+      "label": "银币拾取",
+      "file": "assets/audio/generated/sfx/pickup_coin.ogg",
+      "seconds": 0.19733333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -20.2277649619526,
+      "rms_dbfs": -40.736513191321166,
+      "sha256": "ab1b4560493f8b662f1e736dd86445d7b8d18987a3cd0dfc532f0fa841eb3da3",
+      "edit": {
+        "source_start_seconds": 0.008,
+        "source_end_seconds": 0.208,
+        "peak_target_dbfs": -20,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "pickup_magnet",
+      "label": "磁力拾取",
+      "file": "assets/audio/generated/sfx/pickup_magnet.ogg",
+      "seconds": 0.6473333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -15.196390708968227,
+      "rms_dbfs": -28.202720822131234,
+      "sha256": "73435fc93952c7cb8a6ddf7a9129da0116bb2c552bf039eaa259ac6b767f55a9",
+      "edit": {
+        "source_start_seconds": 0.448,
+        "source_end_seconds": 1.098,
+        "peak_target_dbfs": -15,
+        "layers": []
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "pickup_frenzy",
+      "label": "狂热拾取",
+      "file": "assets/audio/generated/sfx/pickup_frenzy.ogg",
+      "seconds": 0.7973333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -11.786468378184253,
+      "rms_dbfs": -22.500113633135413,
+      "sha256": "18ec88c3a40f07066935ffe0e880ad49dc4dde2362d887c6004147d2cdd7de96",
+      "edit": {
+        "source_start_seconds": 0.02,
+        "source_end_seconds": 0.82,
+        "peak_target_dbfs": -12,
+        "layers": []
+      }
+    },
+    {
+      "kind": "bgm",
+      "key": "menu",
+      "label": "夜幕猎人",
+      "file": "assets/audio/generated/bgm/menu.ogg",
+      "seconds": 56.75,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -9.395617715386903,
+      "rms_dbfs": -23.212676745710947,
+      "sha256": "6767e20e993ef45d46140be10bae43a9605d13d4b7a8cf241f3b7e9877c539af",
+      "edit": {
+        "source_start_seconds": 1,
+        "source_end_seconds": 59.0,
+        "wrap_crossfade_seconds": 1.25,
+        "gain_db": -7.029999999999999,
+        "method": "tail/head linear overlap; cyclic rotation preserves sample continuity"
+      },
+      "loudness": {
+        "input_i": "-21.05",
+        "input_tp": "-9.39",
+        "input_lra": "3.10",
+        "input_thresh": "-31.12",
+        "output_i": "-20.03",
+        "output_tp": "-6.48",
+        "output_lra": "2.60",
+        "output_thresh": "-30.05",
+        "normalization_type": "dynamic",
+        "target_offset": "-0.97"
+      },
+      "loop": true,
+      "seam_jump": 0.000751942046917975
+    },
+    {
+      "kind": "bgm",
+      "key": "battle",
+      "label": "猎杀脉冲",
+      "file": "assets/audio/generated/bgm/battle.ogg",
+      "seconds": 57.35,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -5.848795609404118,
+      "rms_dbfs": -21.72786008374075,
+      "sha256": "c088ba6fbec8963a9475af94ff6fec7154447e32048f5d41e58dc4f041ca6c6d",
+      "edit": {
+        "source_start_seconds": 1,
+        "source_end_seconds": 59.0,
+        "wrap_crossfade_seconds": 0.65,
+        "gain_db": -5.949999999999999,
+        "method": "tail/head linear overlap; cyclic rotation preserves sample continuity"
+      },
+      "loudness": {
+        "input_i": "-21.03",
+        "input_tp": "-5.74",
+        "input_lra": "0.30",
+        "input_thresh": "-31.03",
+        "output_i": "-21.02",
+        "output_tp": "-5.73",
+        "output_lra": "0.30",
+        "output_thresh": "-31.02",
+        "normalization_type": "dynamic",
+        "target_offset": "0.02"
+      },
+      "loop": true,
+      "seam_jump": 0.0007244385778903961
+    },
+    {
+      "kind": "bgm",
+      "key": "boss",
+      "label": "猩红王座",
+      "file": "assets/audio/generated/bgm/boss.ogg",
+      "seconds": 57.35,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -3.3493237445754485,
+      "rms_dbfs": -21.80673546552976,
+      "sha256": "798f20eac177bd7bf428d0ca549f34fd46564afdc09b067c6be93b7e30aa6f80",
+      "edit": {
+        "source_start_seconds": 1,
+        "source_end_seconds": 59.0,
+        "wrap_crossfade_seconds": 0.65,
+        "gain_db": -3.1900000000000013,
+        "method": "tail/head linear overlap; cyclic rotation preserves sample continuity"
+      },
+      "loudness": {
+        "input_i": "-21.54",
+        "input_tp": "-3.29",
+        "input_lra": "7.60",
+        "input_thresh": "-31.58",
+        "output_i": "-20.17",
+        "output_tp": "-2.21",
+        "output_lra": "7.30",
+        "output_thresh": "-30.17",
+        "normalization_type": "dynamic",
+        "target_offset": "-0.83"
+      },
+      "loop": true,
+      "seam_jump": 0.0002500489354133606
+    },
+    {
+      "kind": "bgm",
+      "key": "shop",
+      "label": "烛火与银币",
+      "file": "assets/audio/generated/bgm/shop.ogg",
+      "seconds": 56.75,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -6.81223472615729,
+      "rms_dbfs": -23.520287137380976,
+      "sha256": "2c014b93450121cc8dbdc39e5c77104fa13d15476726f916f119d204a754aad3",
+      "edit": {
+        "source_start_seconds": 1,
+        "source_end_seconds": 59.0,
+        "wrap_crossfade_seconds": 1.25,
+        "gain_db": -4.82,
+        "method": "tail/head linear overlap; cyclic rotation preserves sample continuity"
+      },
+      "loudness": {
+        "input_i": "-21.28",
+        "input_tp": "-6.81",
+        "input_lra": "7.60",
+        "input_thresh": "-31.28",
+        "output_i": "-19.03",
+        "output_tp": "-6.26",
+        "output_lra": "4.20",
+        "output_thresh": "-29.03",
+        "normalization_type": "dynamic",
+        "target_offset": "-1.97"
+      },
+      "loop": true,
+      "seam_jump": 0.0011657457798719406
+    },
+    {
+      "kind": "bgm",
+      "key": "victory",
+      "label": "黎明归来",
+      "file": "assets/audio/generated/bgm/victory.ogg",
+      "seconds": 20.0,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -4.971297316143797,
+      "rms_dbfs": -24.255874369809554,
+      "sha256": "e9d5c73a945e215adb3b8b2f2cc36e68cb894cbd8f5ad0e8f7ee621434f723c3",
+      "edit": {
+        "end_fade_seconds": 2.0,
+        "gain_db": -2.379999999999999,
+        "loop": false
+      },
+      "loudness": {
+        "input_i": "-21.10",
+        "input_tp": "-4.87",
+        "input_lra": "5.30",
+        "input_thresh": "-31.38",
+        "output_i": "-20.12",
+        "output_tp": "-4.51",
+        "output_lra": "3.60",
+        "output_thresh": "-30.31",
+        "normalization_type": "dynamic",
+        "target_offset": "-0.88"
+      },
+      "loop": false
+    },
+    {
+      "kind": "bgm",
+      "key": "defeat",
+      "label": "最后的烛火",
+      "file": "assets/audio/generated/bgm/defeat.ogg",
+      "seconds": 20.0,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -7.049681167996154,
+      "rms_dbfs": -23.976868544435757,
+      "sha256": "01b6764e67bf3c7035c08e2c71489fa3d734cf88d69b9f0c5556add4a22ad541",
+      "edit": {
+        "end_fade_seconds": 2.0,
+        "gain_db": 5.329999999999998,
+        "loop": false
+      },
+      "loudness": {
+        "input_i": "-21.42",
+        "input_tp": "-7.04",
+        "input_lra": "2.10",
+        "input_thresh": "-31.56",
+        "output_i": "-21.05",
+        "output_tp": "-6.99",
+        "output_lra": "1.50",
+        "output_thresh": "-31.14",
+        "normalization_type": "dynamic",
+        "target_offset": "0.05"
+      },
+      "loop": false
+    }
+  ],
+  "reels": [
+    {
+      "file": "sfx_reel_1.mp3",
+      "entries": [
+        {
+          "start": 0,
+          "end": 0.24,
+          "key": "shoot_pistol",
+          "label": "手枪"
+        },
+        {
+          "start": 3,
+          "end": 3.55,
+          "key": "shoot_shotgun",
+          "label": "霰弹枪"
+        },
+        {
+          "start": 6,
+          "end": 6.42,
+          "key": "shoot_magic",
+          "label": "魔法弹"
+        },
+        {
+          "start": 9,
+          "end": 9.25,
+          "key": "knife_throw",
+          "label": "飞刀"
+        },
+        {
+          "start": 12,
+          "end": 12.85,
+          "key": "poison_cloud",
+          "label": "毒雾"
+        },
+        {
+          "start": 15,
+          "end": 15.55,
+          "key": "lightning_chain",
+          "label": "闪电"
+        },
+        {
+          "start": 18,
+          "end": 18.9,
+          "key": "boss_attack",
+          "label": "Boss攻击"
+        },
+        {
+          "start": 21,
+          "end": 21.18,
+          "key": "hit_enemy",
+          "label": "敌人受击"
+        },
+        {
+          "start": 24,
+          "end": 24.55,
+          "key": "enemy_death",
+          "label": "敌人死亡"
+        },
+        {
+          "start": 27,
+          "end": 27.16,
+          "key": "pickup_xp",
+          "label": "经验拾取"
+        }
+      ]
+    },
+    {
+      "file": "sfx_reel_2.mp3",
+      "entries": [
+        {
+          "start": 0,
+          "end": 1.3,
+          "key": "level_up",
+          "label": "升级"
+        },
+        {
+          "start": 3,
+          "end": 3.12,
+          "key": "button_click",
+          "label": "点击"
+        },
+        {
+          "start": 6,
+          "end": 6.85,
+          "key": "explosion",
+          "label": "爆炸"
+        },
+        {
+          "start": 9,
+          "end": 9.65,
+          "key": "shield_break",
+          "label": "护盾破裂"
+        },
+        {
+          "start": 12,
+          "end": 12.85,
+          "key": "heal",
+          "label": "治疗"
+        },
+        {
+          "start": 15,
+          "end": 15.35,
+          "key": "player_hurt",
+          "label": "玩家受伤"
+        },
+        {
+          "start": 18,
+          "end": 18.075,
+          "key": "hover",
+          "label": "悬停"
+        },
+        {
+          "start": 21,
+          "end": 21.8,
+          "key": "teleport",
+          "label": "传送"
+        },
+        {
+          "start": 24,
+          "end": 24.3,
+          "key": "shoot_crossbow",
+          "label": "弩箭"
+        },
+        {
+          "start": 27,
+          "end": 27.55,
+          "key": "flame_thrower",
+          "label": "喷火"
+        }
+      ]
+    },
+    {
+      "file": "sfx_reel_3.mp3",
+      "entries": [
+        {
+          "start": 0,
+          "end": 0.65,
+          "key": "blood_burst",
+          "label": "血爆"
+        },
+        {
+          "start": 3,
+          "end": 3.45,
+          "key": "holy_wand",
+          "label": "圣杖"
+        },
+        {
+          "start": 6,
+          "end": 6.55,
+          "key": "purchase",
+          "label": "购买"
+        },
+        {
+          "start": 9,
+          "end": 10.5,
+          "key": "chest_open",
+          "label": "宝箱"
+        },
+        {
+          "start": 12,
+          "end": 13.1,
+          "key": "room_clear",
+          "label": "清房"
+        },
+        {
+          "start": 15,
+          "end": 15.8,
+          "key": "door_open",
+          "label": "开门"
+        },
+        {
+          "start": 18,
+          "end": 18.2,
+          "key": "pickup_coin",
+          "label": "银币拾取"
+        },
+        {
+          "start": 21,
+          "end": 21.65,
+          "key": "pickup_magnet",
+          "label": "磁力拾取"
+        },
+        {
+          "start": 24,
+          "end": 24.8,
+          "key": "pickup_frenzy",
+          "label": "狂热拾取"
+        }
+      ]
+    }
+  ]
+}

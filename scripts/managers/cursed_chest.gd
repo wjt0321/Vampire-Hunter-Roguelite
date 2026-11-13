@@ -64,6 +64,7 @@ func open() -> void:
 	if _opened:
 		return
 	_opened = true
+	AudioManager.play_sfx(AudioLib.get_sound("chest_open"))
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
 		vfx.spawn_hit_particles(global_position, Color(1.0, 0.85, 0.3), 5)

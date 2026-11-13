@@ -91,6 +91,10 @@ func play_bgm(stream: AudioStream, fade: bool = true) -> void:
 		return
 	
 	_cancel_bgm_tween()
+	# 同曲请求也要先取消待切换/待停止回调，但不能重新从头播放。
+	if _bgm_player.playing and _bgm_player.stream == stream:
+		_bgm_fade = 1.0
+		return
 	if _bgm_player.playing and fade:
 		_fade_bgm_transition(stream)
 	else:
@@ -142,6 +146,16 @@ func play_sfx(stream: AudioStream, pitch_random: float = 0.0, during_pause: bool
 	if stream == null:
 		return
 	
+	# 合并同流 50ms 内的战斗连发，避免范围命中瞬间占满整个池；UI 不限流。
+	# 使用请求时间，混音线程的播放进度可能滞后一个缓冲区。
+	var requested_at := Time.get_ticks_msec()
+	if not during_pause:
+		for active in _sfx_players:
+			if active.stream == stream and active.playing and not active.stream_paused \
+					and active.process_mode == Node.PROCESS_MODE_PAUSABLE \
+					and requested_at - int(active.get_meta("audio_started_msec", 0)) < 50:
+				return
+
 	# 找到一个空闲的 SFX 播放器
 	var player := _get_available_sfx_player(during_pause)
 	if player == null:
@@ -157,6 +171,7 @@ func play_sfx(stream: AudioStream, pitch_random: float = 0.0, during_pause: bool
 	else:
 		player.pitch_scale = 1.0
 	
+	player.set_meta("audio_started_msec", requested_at)
 	player.play()
 	# play() 可解除 stream_paused；在已暂停的世界里新发出的战斗音效也必须等待。
 	player.stream_paused = not player.can_process()

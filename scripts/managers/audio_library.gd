@@ -1,41 +1,54 @@
 class_name AudioLibrary
 extends Node
 ## 音频资源库
-## 提供程序生成的默认音效
+## 正式音频必须来自 generated 资源；缺失时明确报错，不回退合成占位音。
 
 # ========== 音效生成参数 ==========
 const SAMPLE_RATE: int = 44100
 
 # ========== 真实音频文件映射 ==========
 const SFX_PATHS: Dictionary = {
-	"shoot_pistol": "res://assets/audio/sfx/sfx_shoot.ogg",
-	"shoot_shotgun": "res://assets/audio/sfx/sfx_shoot_shotgun.ogg",
-	"shoot_magic": "res://assets/audio/sfx/sfx_shoot_magic.ogg",
-	"knife_throw": "res://assets/audio/sfx/sfx_knife_throw.ogg",
-	"poison_cloud": "res://assets/audio/sfx/sfx_poison_cloud.ogg",
-	"lightning_chain": "res://assets/audio/sfx/sfx_lightning_chain.ogg",
-	"boss_attack": "res://assets/audio/sfx/sfx_boss_attack.ogg",
-	"hit_enemy": "res://assets/audio/sfx/sfx_hit_enemy.ogg",
-	"enemy_death": "res://assets/audio/sfx/sfx_enemy_death.ogg",
-	"pickup_xp": "res://assets/audio/sfx/sfx_pickup_xp.ogg",
-	"level_up": "res://assets/audio/sfx/sfx_levelup.ogg",
-	"button_click": "res://assets/audio/sfx/sfx_click.ogg",
-	"explosion": "res://assets/audio/sfx/sfx_explosion.ogg",
-	"shield_break": "res://assets/audio/sfx/sfx_shield_break.ogg",
-	"heal": "res://assets/audio/sfx/sfx_coin.ogg",
-	"player_hurt": "res://assets/audio/sfx/sfx_player_hurt.ogg",
-	"hover": "res://assets/audio/sfx/sfx_hover.ogg",
-	"teleport": "res://assets/audio/sfx/sfx_teleport.wav",
+	"shoot_pistol": "res://assets/audio/generated/sfx/shoot_pistol.ogg",
+	"shoot_shotgun": "res://assets/audio/generated/sfx/shoot_shotgun.ogg",
+	"shoot_magic": "res://assets/audio/generated/sfx/shoot_magic.ogg",
+	"knife_throw": "res://assets/audio/generated/sfx/knife_throw.ogg",
+	"poison_cloud": "res://assets/audio/generated/sfx/poison_cloud.ogg",
+	"lightning_chain": "res://assets/audio/generated/sfx/lightning_chain.ogg",
+	"boss_attack": "res://assets/audio/generated/sfx/boss_attack.ogg",
+	"hit_enemy": "res://assets/audio/generated/sfx/hit_enemy.ogg",
+	"enemy_death": "res://assets/audio/generated/sfx/enemy_death.ogg",
+	"pickup_xp": "res://assets/audio/generated/sfx/pickup_xp.ogg",
+	"pickup_coin": "res://assets/audio/generated/sfx/pickup_coin.ogg",
+	"pickup_magnet": "res://assets/audio/generated/sfx/pickup_magnet.ogg",
+	"pickup_frenzy": "res://assets/audio/generated/sfx/pickup_frenzy.ogg",
+	"level_up": "res://assets/audio/generated/sfx/level_up.ogg",
+	"button_click": "res://assets/audio/generated/sfx/button_click.ogg",
+	"explosion": "res://assets/audio/generated/sfx/explosion.ogg",
+	"shield_break": "res://assets/audio/generated/sfx/shield_break.ogg",
+	"heal": "res://assets/audio/generated/sfx/heal.ogg",
+	"player_hurt": "res://assets/audio/generated/sfx/player_hurt.ogg",
+	"hover": "res://assets/audio/generated/sfx/hover.ogg",
+	"teleport": "res://assets/audio/generated/sfx/teleport.ogg",
+	"shoot_crossbow": "res://assets/audio/generated/sfx/shoot_crossbow.ogg",
+	"flame_thrower": "res://assets/audio/generated/sfx/flame_thrower.ogg",
+	"blood_burst": "res://assets/audio/generated/sfx/blood_burst.ogg",
+	"holy_wand": "res://assets/audio/generated/sfx/holy_wand.ogg",
+	"purchase": "res://assets/audio/generated/sfx/purchase.ogg",
+	"chest_open": "res://assets/audio/generated/sfx/chest_open.ogg",
+	"room_clear": "res://assets/audio/generated/sfx/room_clear.ogg",
+	"door_open": "res://assets/audio/generated/sfx/door_open.ogg",
 }
 
 const BGM_PATHS: Dictionary = {
-	"menu": "res://assets/audio/bgm/bgm_menu.mp3",
-	"battle": "res://assets/audio/bgm/bgm_battle.mp3",
-	"boss": "res://assets/audio/bgm/bgm_boss.ogg",
-	"victory": "res://assets/audio/bgm/bgm_victory.ogg",
-	"defeat": "res://assets/audio/bgm/bgm_defeat.mp3",
-	"shop": "res://assets/audio/bgm/bgm_shop.ogg",
+	"menu": "res://assets/audio/generated/bgm/menu.ogg",
+	"battle": "res://assets/audio/generated/bgm/battle.ogg",
+	"boss": "res://assets/audio/generated/bgm/boss.ogg",
+	"victory": "res://assets/audio/generated/bgm/victory.ogg",
+	"defeat": "res://assets/audio/generated/bgm/defeat.ogg",
+	"shop": "res://assets/audio/generated/bgm/shop.ogg",
 }
+
+const LOOPING_BGMS: Array[String] = ["menu", "battle", "boss", "shop"]
 
 # ========== 缓存 ==========
 var _cached_sounds: Dictionary = {}
@@ -46,22 +59,24 @@ var _cached_bgms: Dictionary = {}
 func get_sound(sound_name: String) -> AudioStream:
 	if _cached_sounds.has(sound_name):
 		return _cached_sounds[sound_name]
-	
-	# 优先加载真实音频文件
-	if SFX_PATHS.has(sound_name):
-		var stream := _load_audio_file(SFX_PATHS[sound_name])
-		if stream:
-			_cached_sounds[sound_name] = stream
-			return stream
-	
-	var sound := _generate_sound(sound_name)
-	_cached_sounds[sound_name] = sound
-	return sound
+	if not SFX_PATHS.has(sound_name):
+		push_error("Unknown SFX key: %s" % sound_name)
+		return null
+	var stream := _load_audio_file(SFX_PATHS[sound_name])
+	# Cache missing files too: report once instead of flooding on every combat hit.
+	_cached_sounds[sound_name] = stream
+	return stream
 
-func _load_audio_file(path: String) -> AudioStream:
-	if ResourceLoader.exists(path):
-		return load(path) as AudioStream
-	return null
+func _load_audio_file(path: String, looping: bool = false) -> AudioStream:
+	if not ResourceLoader.exists(path):
+		push_error("Required audio asset missing: %s" % path)
+		return null
+	var stream := load(path) as AudioStreamOggVorbis
+	if stream == null:
+		push_error("Required audio asset is not valid Ogg Vorbis: %s" % path)
+		return null
+	stream.loop = looping
+	return stream
 
 # ========== 音效生成 ==========
 
@@ -155,49 +170,30 @@ func _generate_arpeggio(frequencies: Array, duration: float) -> AudioStreamWAV:
 func _get_cached_bgm(key: String) -> AudioStream:
 	if _cached_bgms.has(key):
 		return _cached_bgms[key]
-	var path: String = BGM_PATHS.get(key, "")
-	var stream: AudioStream = null
-	if not path.is_empty():
-		stream = _load_audio_file(path)
-	if stream:
-		_cached_bgms[key] = stream
+	if not BGM_PATHS.has(key):
+		push_error("Unknown BGM key: %s" % key)
+		return null
+	var stream := _load_audio_file(BGM_PATHS[key], key in LOOPING_BGMS)
+	_cached_bgms[key] = stream
 	return stream
 
 func get_menu_bgm() -> AudioStream:
-	var stream := _get_cached_bgm("menu")
-	if stream:
-		return stream
-	return _generate_simple_ambient(60.0, 174, 0.15)
+	return _get_cached_bgm("menu")
 
 func get_battle_bgm() -> AudioStream:
-	var stream := _get_cached_bgm("battle")
-	if stream:
-		return stream
-	return _generate_ambient_loop(30.0, [146, 174, 220], 0.4)
+	return _get_cached_bgm("battle")
 
 func get_boss_bgm() -> AudioStream:
-	var stream := _get_cached_bgm("boss")
-	if stream:
-		return stream
-	return _generate_ambient_loop(20.0, [110, 130, 164], 0.5)
+	return _get_cached_bgm("boss")
 
 func get_victory_bgm() -> AudioStream:
-	var stream := _get_cached_bgm("victory")
-	if stream:
-		return stream
-	return _generate_simple_ambient(30.0, 523, 0.3)
+	return _get_cached_bgm("victory")
 
 func get_defeat_bgm() -> AudioStream:
-	var stream := _get_cached_bgm("defeat")
-	if stream:
-		return stream
-	return _generate_ambient_loop(30.0, [110, 130], 0.3)
+	return _get_cached_bgm("defeat")
 
 func get_shop_bgm() -> AudioStream:
-	var stream := _get_cached_bgm("shop")
-	if stream:
-		return stream
-	return _generate_simple_ambient(30.0, 220, 0.2)
+	return _get_cached_bgm("shop")
 
 func _generate_ambient_loop(duration: float, base_freqs: Array, volume: float) -> AudioStreamWAV:
 	var samples := int(SAMPLE_RATE * duration)

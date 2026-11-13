@@ -498,6 +498,8 @@ func _fire_weapon(weapon) -> void:
 	# 打击感：枪口闪光 + 轻微后坐（每"次"开火一次，不是每颗子弹一次）
 	_muzzle_flash(origin, base_direction, weapon.weapon_id)
 	_apply_recoil(base_direction)
+	# 一次开火只播放一次，散弹/双管/环形弹幕共享这一声。
+	_play_shoot_sound(weapon.weapon_id)
 
 	# 进化行为：环形弹幕（放弃瞄准，向四周均匀喷射）
 	if _get_behavior(weapon.weapon_id) == "radial":
@@ -697,8 +699,6 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 		fire.color_ramp = ramp
 		bullet.add_child(fire)
 
-	# 播放射击音效
-	_play_shoot_sound(weapon.weapon_id)
 
 func _refresh_enemy_cache() -> void:
 	## 刷新最近敌人方向和位置缓存
@@ -790,15 +790,21 @@ func _play_shoot_sound(weapon_id: String) -> void:
 	match weapon_id:
 		"shotgun":
 			sound_name = "shoot_shotgun"
-		"magic_book", "holy_wand":
+		"magic_book":
 			sound_name = "shoot_magic"
-		"throwing_knife", "crossbow":
+		"holy_wand":
+			sound_name = "holy_wand"
+		"throwing_knife":
 			sound_name = "knife_throw"
+		"crossbow":
+			sound_name = "shoot_crossbow"
 		"kunai":
 			sound_name = "knife_throw"
 		"flame_thrower":
-			sound_name = "shoot_magic"
-		"blood_burst", "poison_cloud":
+			sound_name = "flame_thrower"
+		"blood_burst":
+			sound_name = "blood_burst"
+		"poison_cloud":
 			sound_name = "poison_cloud"
 		"lightning_chain":
 			sound_name = "lightning_chain"
@@ -1028,7 +1034,7 @@ func _spawn_lightning_chain(weapon) -> void:
 		var vfx := get_node_or_null("/root/VFXManager")
 		if vfx and player and is_instance_valid(player):
 			vfx.spawn_thunder_strike(player.global_position)
-	_play_shoot_sound(weapon.weapon_id)
+	# 闪电节点找到首个目标时播放一次，空场不发声。
 
 func _get_nearest_enemy_position(from: Vector2) -> Vector2:
 	# Recheck living targets before placing an attack.

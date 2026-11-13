@@ -370,6 +370,7 @@ func _create_blood_pact() -> void:
 func _on_wave_completed(wave_number: int) -> void:
 	# 每完成一波后出现传送门
 	if current_room != null and not current_room.portal_spawned:
+		AudioManager.play_sfx(_audio_lib.get_sound("room_clear"))
 		_open_room_exit(current_room)
 	# 波次标签别继续挂着波次号让人以为还有活怪——写明已清
 	if hud and hud.has_method("set_wave_status"):
@@ -555,6 +556,7 @@ func _enter_shop_room() -> void:
 
 func _enter_treasure_room() -> void:
 	print("🎁 宝箱房间!")
+	AudioManager.play_sfx(_audio_lib.get_sound("chest_open"))
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
 	if ach_mgr:
 		ach_mgr.record_room_visit("treasure")
@@ -805,6 +807,8 @@ func _open_room_exit(room: Node2D) -> void:
 		_announce_door_choice(choices)
 	elif room.has_method("spawn_portal"):
 		room.spawn_portal()
+	if room.get("portal_spawned"):
+		AudioManager.play_sfx(_audio_lib.get_sound("door_open"))
 
 func _announce_door_choice(choices: Array) -> void:
 	if choices.size() < 2 or hud == null:

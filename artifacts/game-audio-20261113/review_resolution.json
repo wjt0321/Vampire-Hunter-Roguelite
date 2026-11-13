@@ -1,0 +1,17 @@
+{
+  "scope": "限定音频接入源码、制作脚本与资源清单的独立只读审查",
+  "asset_sha256_matches": 35,
+  "gameplay_static_findings": 0,
+  "issue": {
+    "severity": "P2",
+    "description": "交付包续跑先读取包外的旧试听工作流",
+    "resolution": "已有正式raw先跳过；reuse工作流优先读取已归档API",
+    "status": "closed",
+    "checks": [
+      "屏蔽旧试听目录后battle续跑成功",
+      "屏蔽旧试听目录后全部35项EXISTS，无网络或写入",
+      "直接workflow调用与已归档API完全一致"
+    ]
+  },
+  "limits": "完整包可跳过已有raw；若复用的battle raw被删除，仍需原始FLAC恢复。审查未启动Godot。"
+}

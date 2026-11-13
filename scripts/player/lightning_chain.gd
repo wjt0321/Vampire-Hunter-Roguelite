@@ -22,6 +22,7 @@ func _ready() -> void:
 	# 查找第一个目标
 	var first_target := _find_nearest_enemy(global_position)
 	if first_target:
+		AudioManager.play_sfx(AudioLib.get_sound("lightning_chain"))
 		_cast_lightning(global_position, first_target)
 		await get_tree().create_timer(0.2, false).timeout
 		_fade_out()
@@ -48,9 +49,6 @@ func _cast_lightning(from_pos: Vector2, target: Node2D) -> void:
 	if vfx:
 		vfx.spawn_chain_arc(target.global_position)
 
-	# 播放音效
-	var audio_lib := AudioLib
-	AudioManager.play_sfx(audio_lib.get_sound("shoot_magic"))
 	
 	# 查找下一个目标
 	if _hit_enemies.size() < max_jumps:

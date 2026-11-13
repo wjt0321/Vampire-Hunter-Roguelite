@@ -608,10 +608,11 @@ func heal(amount: float) -> void:
 	# 每日「枯井」：治疗全灭，包括休息房、商店和吸血。升级加的上限不走这里。
 	if amount > 0.0 and GameConfig.has_daily("no_heal"):
 		return
+	var previous_hp := current_hp
 	current_hp = clampf(current_hp + amount, 0.0, max_hp)
 	hp_changed.emit(current_hp, max_hp)
-	if amount > 0 and _audio_lib != null:
-		AudioManager.play_sfx(_audio_lib.get_sound("heal"))
+	if current_hp > previous_hp and _audio_lib != null:
+		AudioManager.play_sfx(_audio_lib.get_sound("heal"), 0.0, get_tree().paused)
 
 func change_max_hp(delta_value: float) -> void:
 	## 增减最大生命上限（深渊契约这类"临时上限"用）。
