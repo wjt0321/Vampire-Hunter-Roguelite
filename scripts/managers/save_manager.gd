@@ -45,6 +45,8 @@ func _default_save_data() -> Dictionary:
 		},
 		# 解锁角色
 		"unlocked_characters": ["hunter"],
+		# 到达对应楼层后解锁的新武器。旧武器和首批三把不进这张表。
+		"unlocked_weapons": [],
 		"selected_character": "hunter",
 		# 深渊阶梯：历史最高通关深渊层
 		"best_abyss": 0,
@@ -277,6 +279,8 @@ func _sanitize_save() -> void:
 	if "hunter" not in unlocked:
 		unlocked.append("hunter")
 	save_data["unlocked_characters"] = unlocked
+	if not (save_data.get("unlocked_weapons", []) is Array):
+		save_data["unlocked_weapons"] = []
 	if not (save_data.get("selected_character", "") in unlocked):
 		save_data["selected_character"] = "hunter"
 	_sanitize_daily_board()
@@ -482,6 +486,27 @@ func unlock_character(char_id: String, cost: int) -> bool:
 	save_data["unlocked_characters"].append(char_id)
 	save_game()
 	return true
+
+func is_weapon_unlocked(weapon_id: String) -> bool:
+	var catalog = load("res://scripts/core/item_catalog.gd")
+	var info: Dictionary = catalog.find_weapon(weapon_id)
+	if int(info.get("unlock_floor", 0)) <= 0:
+		return true
+	return weapon_id in save_data.get("unlocked_weapons", [])
+
+func unlock_weapons_for_floor(floor_index: int) -> void:
+	var catalog = load("res://scripts/core/item_catalog.gd")
+	var changed := false
+	var owned: Array = save_data.get("unlocked_weapons", [])
+	for weapon in catalog.WEAPONS:
+		var need := int(weapon.get("unlock_floor", 0))
+		var wid := String(weapon.get("id", ""))
+		if need > 0 and floor_index >= need and wid not in owned:
+			owned.append(wid)
+			changed = true
+	if changed:
+		save_data["unlocked_weapons"] = owned
+		save_game()
 
 func select_character(char_id: String) -> void:
 	save_data["selected_character"] = char_id

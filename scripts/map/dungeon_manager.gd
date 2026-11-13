@@ -3,19 +3,17 @@ class_name DungeonManager
 ## 地下城管理器
 ## 负责楼层推进、层内房间节奏（战斗/商店/宝箱/休息/Boss）、每层敌人池与 Boss 形态
 ##
-## 结构：当前可玩 3 层，每层最后一间为 Boss 房。五层蓝图见 FLOOR_BLUEPRINT，后三层还是灰盒。
+## 结构：5 层 × 7 个节点。每层 5 间战斗、1 间特殊房、1 间 Boss。
 ## 波次计数全局累加（不随楼层重置），层倍率叠加在波次缩放之上
 
 # === 层配置表 ===
-# 正在打的只有前三层。后两层在 FLOOR_BLUEPRINT 里，Boss 还没做成，不进这一局。
-# boss_id 决定场景。boss_variant 只留给仍走旧脚本的血族女王。
-# 五层蓝图：后三层是灰盒，不能把没做完的 Boss 当成正式内容推进。
+# 每层 7 个节点：5 战斗 + 1 特殊 + 1 Boss。boss_id 决定场景。
 const FLOOR_BLUEPRINT: Array = [
 	{"index": 1, "boss_id": "blood_lord", "playable": true, "greybox": false},
 	{"index": 2, "boss_id": "blood_matriarch", "playable": true, "greybox": false},
-	{"index": 3, "boss_id": "tomb_warden", "playable": false, "greybox": true},
-	{"index": 4, "boss_id": "alchemist_prince", "playable": false, "greybox": true},
-	{"index": 5, "boss_id": "eclipse_queen", "playable": false, "greybox": true},
+	{"index": 3, "boss_id": "tomb_warden", "playable": true, "greybox": false},
+	{"index": 4, "boss_id": "alchemist_prince", "playable": true, "greybox": false},
+	{"index": 5, "boss_id": "eclipse_queen", "playable": true, "greybox": false},
 ]
 
 var floors_data: Array = [
@@ -24,10 +22,11 @@ var floors_data: Array = [
 		"name": "血月回廊",
 		"subtitle": "THE CRIMSON HALLS",
 		"hint": "盾卫挡在正面，绕开再打",
-		"rooms": 6,
+		"rooms": 7,
 		"special_rooms": 1,
+		"rule": "halls",
 		"themes": ["dungeon", "castle"],
-		"enemies": ["vampire", "bat", "zombie", "skeleton_archer", "werewolf", "shield_guard"],
+		"enemies": ["vampire", "bat", "zombie", "skeleton_archer", "werewolf", "shield_guard", "blood_hound"],
 		"boss_id": "blood_lord",
 		"boss_name": "血铠领主",
 		"accent": Color(0.78, 0.13, 0.18),
@@ -38,29 +37,56 @@ var floors_data: Array = [
 		"subtitle": "THE BLOOD NEST",
 		"hint": "祭司会治疗同伴，网要先清掉",
 		"rooms": 7,
-		"special_rooms": 2,
+		"special_rooms": 1,
+		"rule": "nest",
 		"themes": ["cave", "dungeon"],
 		"enemies": ["vampire", "bat", "zombie", "skeleton_archer", "werewolf",
-				"exploder", "elite_vampire", "vampire_mage", "blood_priest", "web_weaver"],
+				"exploder", "vampire_mage", "blood_priest", "web_weaver", "burrower"],
 		"boss_id": "blood_matriarch",
 		"boss_name": "织血母皇",
 		"accent": Color(0.72, 0.16, 0.32),
 	},
 	{
 		"index": 3,
-		"name": "血之王座",
-		"subtitle": "THE THRONE OF BLOOD",
-		"hint": "棺卫倒下后还会爬起来一次",
+		"name": "骸骨墓穴",
+		"subtitle": "THE BONE CRYPT",
+		"hint": "先打结界和棺材，别让亡者爬起来",
 		"rooms": 7,
-		"special_rooms": 2,
+		"special_rooms": 1,
+		"rule": "tomb",
+		"themes": ["dungeon", "cave"],
+		"enemies": ["zombie", "skeleton_archer", "gargoyle", "coffin_guard", "gem_leech", "lantern_wraith", "summoner"],
+		"boss_id": "tomb_warden",
+		"boss_name": "墓穴守望者",
+		"accent": Color(0.45, 0.55, 0.62),
+	},
+	{
+		"index": 4,
+		"name": "炼金工坊",
+		"subtitle": "THE ALCHEMY WORKS",
+		"hint": "药液敌我都会伤，可以引到怪群里",
+		"rooms": 7,
+		"special_rooms": 1,
+		"rule": "alchemy",
+		"themes": ["castle", "cave"],
+		"enemies": ["exploder", "elite_vampire", "vampire_mage", "alchemist_pitcher", "furnace_golem", "resonance_mage"],
+		"boss_id": "alchemist_prince",
+		"boss_name": "炼金亲王",
+		"accent": Color(0.35, 0.75, 0.42),
+	},
+	{
+		"index": 5,
+		"name": "月蚀王座",
+		"subtitle": "THE ECLIPSE THRONE",
+		"hint": "看月相和落点，祭坛会改场地",
+		"rooms": 7,
+		"special_rooms": 1,
+		"rule": "eclipse",
 		"themes": ["castle", "boss"],
-		"enemies": ["vampire", "bat", "zombie", "skeleton_archer", "werewolf",
-				"exploder", "elite_vampire", "vampire_mage", "summoner",
-				"gargoyle", "vampire_prince", "coffin_guard"],
-		"boss_id": "vampire_queen",
-		"boss_variant": 2,
-		"boss_name": "血族女王 · 塞拉菲娜",
-		"accent": Color(0.95, 0.72, 0.25),
+		"enemies": ["vampire_prince", "elite_vampire", "gargoyle", "moon_wing", "vampire_mage", "summoner"],
+		"boss_id": "eclipse_queen",
+		"boss_name": "月蚀女王",
+		"accent": Color(0.55, 0.45, 0.9),
 	},
 ]
 

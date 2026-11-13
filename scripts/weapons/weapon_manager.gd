@@ -189,6 +189,46 @@ const EVOLUTION_CONFIG: Dictionary = {
 		"special_effect": "霜环停留",
 		"behavior": "frost_field",
 	},
+	"repeater": {
+		"evolution_name": "贯穿末弹",
+		"evolution_description": "点射的最后一发变成贯穿重弹",
+		"required_passive_items": ["lucky_clover"],
+		"damage_multiplier": 1.8,
+		"fire_rate_multiplier": 0.7,
+		"size_multiplier": 1.2,
+		"special_effect": "末发贯穿",
+		"behavior": "heavy_last",
+	},
+	"soul_lantern": {
+		"evolution_name": "裂魂灯",
+		"evolution_description": "魂火击杀后分裂一次，数量有上限",
+		"required_passive_items": ["magnet"],
+		"damage_multiplier": 1.7,
+		"fire_rate_multiplier": 0.7,
+		"size_multiplier": 1.3,
+		"special_effect": "击杀分裂",
+		"behavior": "split_kill",
+	},
+	"spike_tome": {
+		"evolution_name": "连刺法典",
+		"evolution_description": "地刺沿着来路再补两下",
+		"required_passive_items": ["frost_bind"],
+		"damage_multiplier": 1.8,
+		"fire_rate_multiplier": 0.6,
+		"size_multiplier": 1.4,
+		"special_effect": "直线追刺",
+		"behavior": "spike_line",
+	},
+	"chain_gun": {
+		"evolution_name": "三连环",
+		"evolution_description": "链带可以再连一个目标，仍然出不了房间",
+		"required_passive_items": ["lightning_shield"],
+		"damage_multiplier": 1.7,
+		"fire_rate_multiplier": 0.65,
+		"size_multiplier": 1.2,
+		"special_effect": "第三目标",
+		"behavior": "chain_three",
+	},
 }
 
 func _enter_tree() -> void:
@@ -534,6 +574,18 @@ func _fire_weapon(weapon) -> void:
 		"frost_bell":
 			_spawn_frost(weapon)
 			return
+		"repeater":
+			_spawn_repeater(weapon)
+			return
+		"soul_lantern":
+			_spawn_souls(weapon)
+			return
+		"spike_tome":
+			_spawn_spikes(weapon)
+			return
+		"chain_gun":
+			_fire_chain_gun(weapon)
+			return
 	
 	var origin: Vector2 = player.global_position
 	var base_direction: Vector2
@@ -864,8 +916,12 @@ func _play_shoot_sound(weapon_id: String) -> void:
 			sound_name = "lightning_chain"
 		"scythe", "thorn_whip":
 			sound_name = "knife_throw"
-		"frost_bell":
+		"frost_bell", "soul_lantern":
 			sound_name = "holy_wand"
+		"repeater", "chain_gun":
+			sound_name = "shoot_pistol"
+		"spike_tome":
+			sound_name = "shoot_magic"
 	var sound := _audio_lib.get_sound(sound_name)
 	AudioManager.play_sfx(sound)
 
@@ -979,7 +1035,76 @@ func _create_weapon_by_id(weapon_id: String):
 			return create_thorn_whip()
 		"frost_bell":
 			return create_frost_bell()
+		"repeater":
+			return create_repeater()
+		"soul_lantern":
+			return create_soul_lantern()
+		"spike_tome":
+			return create_spike_tome()
+		"chain_gun":
+			return create_chain_gun()
 	return null
+
+static func create_repeater() -> Resource:
+	var script = preload("res://scripts/weapons/weapon_data.gd")
+	var w = script.new()
+	w.weapon_name = "连珠火铳"
+	w.weapon_id = "repeater"
+	w.description = "短点射之后有一段明显的停顿"
+	w.base_damage = 3.6
+	w.fire_rate = 0.95
+	w.bullet_speed = 520.0
+	w.bullet_range = 640.0
+	w.projectile_count = 3
+	w.burst_gap = 0.12
+	w.auto_aim = false
+	return w
+
+static func create_soul_lantern() -> Resource:
+	var script = preload("res://scripts/weapons/weapon_data.gd")
+	var w = script.new()
+	w.weapon_name = "魂引灯"
+	w.weapon_id = "soul_lantern"
+	w.description = "魂火自己找敌人，打完再飞回来"
+	w.base_damage = 4.2
+	w.fire_rate = 0.8
+	w.bullet_speed = 240.0
+	w.bullet_range = 220.0
+	w.projectile_count = 1
+	w.return_damage_mult = 0.5
+	w.auto_aim = true
+	return w
+
+static func create_spike_tome() -> Resource:
+	var script = preload("res://scripts/weapons/weapon_data.gd")
+	var w = script.new()
+	w.weapon_name = "地刺法典"
+	w.weapon_id = "spike_tome"
+	w.description = "敌人脚下先亮预警，再长出地刺"
+	w.base_damage = 7.0
+	w.fire_rate = 1.1
+	w.projectile_count = 1
+	w.cloud_size = 1.0
+	w.cloud_duration = 0.55
+	w.auto_aim = true
+	return w
+
+static func create_chain_gun() -> Resource:
+	var script = preload("res://scripts/weapons/weapon_data.gd")
+	var w = script.new()
+	w.weapon_name = "锁链枪"
+	w.weapon_id = "chain_gun"
+	w.description = "命中后用链带扯到附近的第二个目标"
+	w.base_damage = 6.5
+	w.fire_rate = 0.55
+	w.bullet_speed = 480.0
+	w.bullet_range = 560.0
+	w.projectile_count = 1
+	w.whip_reach = 150.0
+	w.return_damage_mult = 0.55
+	w.auto_aim = true
+	w.fusion_kind = "chain"
+	return w
 
 static func create_scythe() -> Resource:
 	var script = preload("res://scripts/weapons/weapon_data.gd")
@@ -1244,6 +1369,11 @@ func on_projectile_event(bullet: Node, reason: String) -> void:
 			if reason != "hit":
 				return
 			_count_burning_hit(bullet.global_position)
+		"chain":
+			if reason != "hit":
+				return
+			bullet.fusion_kind = ""
+			_chain_from(bullet.global_position, float(bullet.get("base_damage")) * float(bullet.get("damage_multiplier")))
 
 func _spawn_thunder_jump(at: Vector2) -> void:
 	var lightning := LightningChainScene.instantiate()
@@ -1406,3 +1536,144 @@ func _get_nearest_enemy_position(from: Vector2) -> Vector2:
 			nearest_dist = dist
 			nearest_pos = enemy.global_position
 	return nearest_pos
+
+func _shot_direction(auto_aim: bool) -> Vector2:
+	var origin := player.global_position
+	var direction: Vector2 = _get_nearest_enemy_direction(origin) if auto_aim else (player.get_global_mouse_position() - origin).normalized()
+	if direction == Vector2.ZERO:
+		direction = Vector2.RIGHT
+	return direction
+
+func _player_mult() -> float:
+	if player != null and player.has_method("get_total_damage_multiplier"):
+		return float(player.get_total_damage_multiplier())
+	return 1.0
+
+func _spawn_repeater(weapon) -> void:
+	var direction := _shot_direction(bool(weapon.auto_aim))
+	var count: int = weapon.get_scaled_projectile_count()
+	var gap: float = weapon.get_scaled_burst_gap()
+	var heavy: bool = _get_behavior(weapon.weapon_id) == "heavy_last"
+	_play_shoot_sound("repeater")
+	for i in range(count):
+		var index := i
+		var delay := gap * float(i)
+		var fire := func() -> void:
+			if not is_instance_valid(player) or not is_instance_valid(weapon):
+				return
+			_spawn_bullet(player.global_position, direction, weapon)
+			if not heavy or index != count - 1:
+				return
+			var scene := _current_scene
+			if scene == null:
+				return
+			var last: Node = scene.get_child(scene.get_child_count() - 1)
+			if last != null and last.has_method("set_pierce_count"):
+				last.set_pierce_count(4)
+				last.base_damage = float(last.base_damage) * 1.6
+		if delay <= 0.0:
+			fire.call()
+		else:
+			get_tree().create_timer(delay).timeout.connect(fire)
+
+func _spawn_souls(weapon) -> void:
+	if _live_count("player_soul") >= 4:
+		return
+	var count: int = mini(weapon.get_scaled_projectile_count(), 4 - _live_count("player_soul"))
+	_play_shoot_sound("soul_lantern")
+	for i in range(count):
+		var wisp = preload("res://scripts/player/soul_wisp.gd").new()
+		wisp.global_position = player.global_position
+		wisp.player = player
+		wisp.base_damage = weapon.get_scaled_damage()
+		wisp.damage_multiplier = _player_mult() * get_weapon_decay(weapon)
+		wisp.return_damage_mult = weapon.get_scaled_return_mult()
+		wisp.speed = maxf(weapon.bullet_speed, 180.0)
+		wisp.can_split = _get_behavior(weapon.weapon_id) == "split_kill"
+		_ensure_current_scene()
+		if _current_scene:
+			_current_scene.add_child(wisp)
+
+func _spawn_spikes(weapon) -> void:
+	var origin := player.global_position
+	var aim := _get_nearest_enemy_position(origin)
+	if aim == Vector2.ZERO:
+		aim = origin + _shot_direction(true) * 120.0
+	var count: int = weapon.get_scaled_projectile_count()
+	var line: bool = _get_behavior(weapon.weapon_id) == "spike_line"
+	if line:
+		count = maxi(count, 3)
+	var dir := (aim - origin).normalized()
+	if dir == Vector2.ZERO:
+		dir = Vector2.RIGHT
+	_play_shoot_sound("spike_tome")
+	for i in range(count):
+		var spike = preload("res://scripts/player/ground_spike.gd").new()
+		spike.global_position = aim + dir * 54.0 * float(i)
+		spike.warn_time = weapon.get_scaled_cloud_duration()
+		spike.radius = 42.0 * weapon.get_scaled_cloud_size()
+		spike.base_damage = weapon.get_scaled_damage()
+		spike.damage_multiplier = _player_mult() * get_weapon_decay(weapon)
+		_ensure_current_scene()
+		if _current_scene:
+			_current_scene.add_child(spike)
+
+func _fire_chain_gun(weapon) -> void:
+	var direction := _shot_direction(bool(weapon.auto_aim))
+	_muzzle_flash(player.global_position, direction, "chain_gun")
+	_play_shoot_sound("chain_gun")
+	_spawn_bullet(player.global_position, direction, weapon)
+
+func _chain_from(from_pos: Vector2, dealt: float) -> void:
+	var weapon = null
+	for owned in weapons:
+		if String(owned.profile()) == "chain_gun":
+			weapon = owned
+			break
+	if weapon == null:
+		return
+	var reach: float = weapon.get_scaled_whip_reach()
+	var ratio: float = weapon.get_scaled_return_mult()
+	var links: int = 2 if _get_behavior(weapon.weapon_id) == "chain_three" else 1
+	var cursor := from_pos
+	var seen: Dictionary = {}
+	for _n in range(links):
+		var next := _chain_target(cursor, reach, seen)
+		if next == null:
+			return
+		seen[next.get_instance_id()] = true
+		if next.has_method("take_damage"):
+			next.take_damage(dealt * ratio)
+		_draw_chain(cursor, next.global_position)
+		cursor = next.global_position
+
+func _chain_target(from_pos: Vector2, reach: float, seen: Dictionary) -> Node2D:
+	var best: Node2D = null
+	var best_dist := reach * reach
+	var room := RoomLookupScript.find_room(player) if player != null else null
+	var bounds := RoomLookupScript.bounds_global(room) if room != null else Rect2()
+	for enemy in get_tree().get_nodes_in_group("enemies"):
+		if not is_instance_valid(enemy) or enemy.get("is_dead") == true or not (enemy is Node2D):
+			continue
+		if seen.has(enemy.get_instance_id()):
+			continue
+		if bounds.size.x > 0.0 and not bounds.has_point((enemy as Node2D).global_position):
+			continue
+		var dist := from_pos.distance_squared_to((enemy as Node2D).global_position)
+		if dist < best_dist:
+			best_dist = dist
+			best = enemy
+	return best
+
+func _draw_chain(a: Vector2, b: Vector2) -> void:
+	var line := Line2D.new()
+	line.width = 3.0
+	line.default_color = Color(0.85, 0.78, 0.45, 0.9)
+	line.add_point(a)
+	line.add_point(b)
+	_ensure_current_scene()
+	if _current_scene:
+		_current_scene.add_child(line)
+	var tween := line.create_tween()
+	tween.tween_property(line, "modulate:a", 0.0, 0.18)
+	tween.tween_callback(line.queue_free)

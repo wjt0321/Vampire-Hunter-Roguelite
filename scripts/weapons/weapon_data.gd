@@ -38,6 +38,7 @@ var knockback_force: float = 90.0
 var swing_count: int = 1
 var ring_radius: float = 120.0
 var slow_duration: float = 1.6
+var burst_gap: float = 0.12
 
 ## 进化或融合叠在「表里已经结算好的满级值」上，不再改写 base_damage。
 ## 这样满级终点和变种表保持同一份数字。
@@ -139,6 +140,30 @@ const LEVEL_STEPS := {
 		4: {"fire_rate": 0.95, "card": "间隔 1.25 → 0.95"},
 		5: {"damage": 3.52, "card": "伤害 2.2 → 3.52"},
 	},
+	"repeater": {
+		2: {"projectile_count": 4, "card": "点射 3 → 4"},
+		3: {"burst_gap": 0.08, "card": "点射间隔 0.12 → 0.08"},
+		4: {"fire_rate": 0.72, "card": "停顿 0.95 → 0.72"},
+		5: {"damage": 5.76, "card": "伤害 3.6 → 5.76"},
+	},
+	"soul_lantern": {
+		2: {"projectile_count": 2, "card": "魂火 1 → 2"},
+		3: {"return_damage_mult": 1.0, "card": "回程伤害 0.5 → 1.0"},
+		4: {"fire_rate": 0.62, "card": "间隔 0.80 → 0.62"},
+		5: {"damage": 6.72, "card": "伤害 4.2 → 6.72"},
+	},
+	"spike_tome": {
+		2: {"cloud_size": 1.45, "card": "地刺范围 1.0 → 1.45"},
+		3: {"projectile_count": 2, "card": "地刺 1 → 2"},
+		4: {"cloud_duration": 0.35, "card": "预警 0.55s → 0.35s"},
+		5: {"damage": 11.2, "card": "伤害 7.0 → 11.2"},
+	},
+	"chain_gun": {
+		2: {"whip_reach": 220.0, "card": "连锁距离 150 → 220"},
+		3: {"return_damage_mult": 0.8, "card": "连锁伤害 0.55 → 0.80"},
+		4: {"fire_rate": 0.42, "card": "间隔 0.55 → 0.42"},
+		5: {"damage": 10.4, "card": "伤害 6.5 → 10.4"},
+	},
 }
 
 func profile() -> String:
@@ -230,6 +255,15 @@ func get_scaled_ring_radius() -> float:
 
 func get_scaled_slow_duration() -> float:
 	return float(_value_at("slow_duration", slow_duration))
+
+func get_scaled_burst_gap() -> float:
+	return float(_value_at("burst_gap", burst_gap))
+
+func get_scaled_bullet_range() -> float:
+	return float(_value_at("bullet_range", bullet_range))
+
+func get_scaled_bullet_speed() -> float:
+	return float(_value_at("bullet_speed", bullet_speed))
 
 func level_up() -> bool:
 	if fused or current_level >= max_level:

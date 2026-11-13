@@ -21,6 +21,10 @@ const WEAPONS: Array = [
 	{"id": "scythe", "name": "回旋镰", "desc": "沿弧线飞出再折返，去程回程都能砍到", "type": "weapon", "price": 32},
 	{"id": "thorn_whip", "name": "荆棘长鞭", "desc": "抽击身前扇形，把冲过来的敌人推开", "type": "weapon", "price": 30},
 	{"id": "frost_bell", "name": "寒霜圣铃", "desc": "周期性霜环，伤害低，但会挂上霜缚", "type": "weapon", "price": 30},
+	{"id": "repeater", "name": "连珠火铳", "desc": "短点射之后有一段明显的停顿", "type": "weapon", "price": 32, "unlock_floor": 3},
+	{"id": "soul_lantern", "name": "魂引灯", "desc": "魂火自己找敌人，打完再飞回来", "type": "weapon", "price": 32, "unlock_floor": 3},
+	{"id": "spike_tome", "name": "地刺法典", "desc": "敌人脚下先亮预警，再长出地刺", "type": "weapon", "price": 34, "unlock_floor": 4},
+	{"id": "chain_gun", "name": "锁链枪", "desc": "命中后用链带扯到附近的第二个目标", "type": "weapon", "price": 34, "unlock_floor": 5},
 ]
 
 const PASSIVES: Array = [
@@ -101,6 +105,10 @@ static func get_icon_texture(item_id: String, item_type: String = "") -> Texture
 				"scythe": key = "knife"
 				"thorn_whip": key = "kunai"
 				"frost_bell": key = "holy_wand"
+				"repeater": key = "shotgun"
+				"soul_lantern": key = "holy_wand"
+				"spike_tome": key = "magic_book"
+				"chain_gun": key = "crossbow"
 				"thunder_bolt": key = "crossbow"
 				"miasma_shot": key = "shotgun"
 				"returning_blade": key = "knife"
@@ -189,6 +197,14 @@ static func create_weapon(id: String):
 			return W.create_thorn_whip()
 		"frost_bell":
 			return W.create_frost_bell()
+		"repeater":
+			return W.create_repeater()
+		"soul_lantern":
+			return W.create_soul_lantern()
+		"spike_tome":
+			return W.create_spike_tome()
+		"chain_gun":
+			return W.create_chain_gun()
 	return null
 
 static func create_passive(id: String):

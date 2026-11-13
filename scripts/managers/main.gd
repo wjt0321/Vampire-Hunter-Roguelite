@@ -503,6 +503,7 @@ func _enter_next_room(autostart: bool = true) -> String:
 			AudioManager.play_bgm(_audio_lib.get_battle_bgm())
 			if autostart:
 				wave_manager.start(player)
+				_apply_floor_rule()
 				# 事件敌人在 start 之后刷（spawn_special_enemy 要挂到当前场景）；
 				# 一间房判定一次，触发与否都由它自己打印
 				if room_events:
@@ -846,12 +847,42 @@ func _apply_daily_rules() -> void:
 		upgrade_ui.rng = upgrade_rng
 	print("☀ 每日挑战 %s · %s" % [GameConfig.daily_date, GameConfig.daily_name_list()])
 
+func _apply_floor_rule() -> void:
+	if dungeon == null or current_room == null or not current_room.has_method("get_center"):
+		return
+	var rule := String(dungeon.get_current_floor_data().get("rule", ""))
+	var pos: Vector2 = current_room.to_global(current_room.get_center())
+	match rule:
+		"nest":
+			var web = preload("res://scripts/enemies/web_patch.gd").new()
+			web.global_position = pos
+			current_room.add_child(web)
+		"tomb":
+			var shell = preload("res://scripts/enemies/coffin_shell.gd").new()
+			shell.revive_delay = 9999.0
+			shell.global_position = pos + Vector2(90, 30)
+			current_room.add_child(shell)
+		"alchemy":
+			var puddle = preload("res://scripts/map/potion_puddle.gd").new()
+			puddle.global_position = pos
+			current_room.add_child(puddle)
+		"eclipse":
+			var well = preload("res://scripts/map/moon_well.gd").new()
+			well.global_position = pos
+			current_room.add_child(well)
+
 func _boss_scene_for(boss_id: String) -> PackedScene:
 	match boss_id:
 		"blood_lord":
 			return preload("res://scenes/enemies/blood_lord.tscn")
 		"blood_matriarch":
 			return preload("res://scenes/enemies/blood_matriarch.tscn")
+		"tomb_warden":
+			return preload("res://scenes/enemies/tomb_warden.tscn")
+		"alchemist_prince":
+			return preload("res://scenes/enemies/alchemist_prince.tscn")
+		"eclipse_queen":
+			return preload("res://scenes/enemies/eclipse_queen.tscn")
 		_:
 			return boss_scene
 
@@ -863,7 +894,7 @@ func _enter_boss_room() -> void:
 	AudioManager.play_bgm(_audio_lib.get_boss_bgm())
 	_boss_defeat_handled = false
 
-	# 生成 Boss。前两层用各自的控制器，第三层仍是旧女王脚本。
+	# 五层各用自己的 Boss 控制器。旧的三形态领主不再负责主线。
 	var boss := _boss_scene_for(dungeon.get_boss_id()).instantiate()
 	var boss_achievements := get_node_or_null("/root/AchievementManager")
 	_boss_damage_baseline = float(boss_achievements.get_run_stats().get("damage_taken", 0.0)) if boss_achievements else 0.0
@@ -1036,6 +1067,9 @@ func _loot_grace_countdown(seconds: int) -> void:
 
 # === 楼层流程 ===
 func _on_floor_started(_floor_index: int, _floor_data: Dictionary) -> void:
+	var saves := get_node_or_null("/root/SaveManager")
+	if saves != null and saves.has_method("unlock_weapons_for_floor"):
+		saves.unlock_weapons_for_floor(_floor_index)
 	_update_dungeon_hud()
 	# 事件"一层一次"的标记按层重置
 	if room_events:

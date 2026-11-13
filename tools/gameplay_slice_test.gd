@@ -60,9 +60,13 @@ func _snapshot(weapon) -> Dictionary:
 		"arc_width": weapon.get_scaled_arc_width(),
 		"cone_angle": weapon.get_scaled_cone(),
 		"knockback_force": weapon.get_scaled_knockback(),
+		"whip_reach": weapon.get_scaled_whip_reach(),
 		"swing_count": weapon.get_scaled_swings(),
 		"ring_radius": weapon.get_scaled_ring_radius(),
 		"slow_duration": weapon.get_scaled_slow_duration(),
+		"burst_gap": weapon.get_scaled_burst_gap(),
+		"bullet_range": weapon.get_scaled_bullet_range(),
+		"bullet_speed": weapon.get_scaled_bullet_speed(),
 	}
 
 
@@ -96,6 +100,14 @@ func _make(id: String):
 			return WeaponManagerScript.create_thorn_whip()
 		"frost_bell":
 			return WeaponManagerScript.create_frost_bell()
+		"repeater":
+			return WeaponManagerScript.create_repeater()
+		"soul_lantern":
+			return WeaponManagerScript.create_soul_lantern()
+		"spike_tome":
+			return WeaponManagerScript.create_spike_tome()
+		"chain_gun":
+			return WeaponManagerScript.create_chain_gun()
 	return null
 
 
@@ -121,7 +133,7 @@ func _run() -> void:
 
 func _test_variant_tables() -> void:
 	var ids: Array = WeaponDataScript.LEVEL_STEPS.keys()
-	_check(ids.size() == 14, "14 把武器都有变种表")
+	_check(ids.size() == 18, "18 把武器都有变种表")
 	var blank = WeaponDataScript.new()
 	blank.weapon_id = "missing"
 	_check(not blank.has_level_table() and not blank.level_up(), "没有变种表的武器不能升级")
@@ -395,18 +407,20 @@ func _test_bosses() -> void:
 
 func _test_blueprint() -> void:
 	var dungeon = DungeonScript.new()
-	_check(dungeon.floors_data.size() == 3, "正在打的仍是三层")
+	_check(dungeon.floors_data.size() == 5, "主线是五层")
 	_check(DungeonScript.FLOOR_BLUEPRINT.size() == 5, "五层蓝图已经列出来")
 	_check(String(dungeon.floors_data[0]["boss_id"]) == "blood_lord", "第一层是血铠领主")
 	_check(String(dungeon.floors_data[1]["boss_id"]) == "blood_matriarch", "第二层是织血母皇")
-	var live: Array = []
-	for floor in dungeon.floors_data:
-		live.append(String(floor["boss_id"]))
-	_check(not live.has("tomb_warden") and not live.has("alchemist_prince") and not live.has("eclipse_queen"),
-		"后三层灰盒 Boss 没有被当成正式关卡推进")
-	var grey := 0
-	for row in DungeonScript.FLOOR_BLUEPRINT:
-		if bool(row["greybox"]):
-			grey += 1
-	_check(grey == 3, "蓝图里后三层标成灰盒")
+	_check(String(dungeon.floors_data[2]["boss_id"]) == "tomb_warden", "第三层是墓穴守望者")
+	_check(String(dungeon.floors_data[3]["boss_id"]) == "alchemist_prince", "第四层是炼金亲王")
+	_check(String(dungeon.floors_data[4]["boss_id"]) == "eclipse_queen", "第五层是月蚀女王")
+	var combat_rooms := 0
+	dungeon.start_dungeon()
+	while true:
+		for room in dungeon.get_room_plan():
+			if room == "combat":
+				combat_rooms += 1
+		if not dungeon.advance_floor():
+			break
+	_check(combat_rooms == 25, "五层一共 25 个普通战斗房（%d）" % combat_rooms)
 	dungeon.free()

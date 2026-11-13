@@ -331,7 +331,7 @@ func draw_options(options: Array, count: int = 3) -> Array:
 		return pool
 	return pool.slice(0, mini(count, pool.size()))
 
-const NEW_WEAPON_IDS: Array = ["scythe", "thorn_whip", "frost_bell"]
+const NEW_WEAPON_IDS: Array = ["scythe", "thorn_whip", "frost_bell", "repeater", "soul_lantern", "spike_tome", "chain_gun"]
 
 func _shape_hand(hand: Array) -> Array:
 	## 一手里最多一张还没拿到的新武器，避免池子变大以后养不满旧武器。
@@ -598,6 +598,8 @@ func _get_available_options() -> Array:
 			continue
 		if slots_full and not owned:
 			continue
+		if not owned and int(weapon_opt.get("unlock_floor", 0)) > 0 and not _is_weapon_unlocked(String(weapon_opt["id"])):
+			continue
 		# 满级武器再出现就是废卡（卡面会写成 Lv.5 → Lv.5），直接过滤
 		var owned_weapon = _find_owned_weapon(weapon_opt["id"])
 		if owned_weapon != null and owned_weapon.is_max_level():
@@ -662,6 +664,12 @@ func _stat_level_text(stat_id: String) -> String:
 		if budget > 0:
 			text += " · 属性点 %d/%d" % [used, budget]
 	return text
+
+func _is_weapon_unlocked(weapon_id: String) -> bool:
+	var saves := get_node_or_null("/root/SaveManager")
+	if saves == null or not saves.has_method("is_weapon_unlocked"):
+		return true
+	return bool(saves.is_weapon_unlocked(weapon_id))
 
 func _is_weapon_evolved(weapon_id: String) -> bool:
 	## 检查武器是否已进化

@@ -23,6 +23,14 @@ var enemy_scenes: Dictionary = {
 	"blood_priest": preload("res://scenes/enemies/blood_priest.tscn"),
 	"web_weaver": preload("res://scenes/enemies/web_weaver.tscn"),
 	"coffin_guard": preload("res://scenes/enemies/coffin_guard.tscn"),
+	"blood_hound": preload("res://scenes/enemies/blood_hound.tscn"),
+	"burrower": preload("res://scenes/enemies/burrower.tscn"),
+	"gem_leech": preload("res://scenes/enemies/gem_leech.tscn"),
+	"lantern_wraith": preload("res://scenes/enemies/lantern_wraith.tscn"),
+	"alchemist_pitcher": preload("res://scenes/enemies/alchemist_pitcher.tscn"),
+	"furnace_golem": preload("res://scenes/enemies/furnace_golem.tscn"),
+	"resonance_mage": preload("res://scenes/enemies/resonance_mage.tscn"),
+	"moon_wing": preload("res://scenes/enemies/moon_wing.tscn"),
 }
 
 # === 波次配置（从 GameConfig 读取） ===
@@ -464,6 +472,14 @@ const ENEMY_WEIGHTS: Dictionary = {
 	"blood_priest": 2.0,
 	"web_weaver": 2.2,
 	"coffin_guard": 1.6,
+	"blood_hound": 3.0,
+	"burrower": 2.0,
+	"gem_leech": 1.4,
+	"lantern_wraith": 1.6,
+	"alchemist_pitcher": 1.8,
+	"furnace_golem": 1.2,
+	"resonance_mage": 1.3,
+	"moon_wing": 2.0,
 }
 
 func _get_wave_based_pool() -> Array:

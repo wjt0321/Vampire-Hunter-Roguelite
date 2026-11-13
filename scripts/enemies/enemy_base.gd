@@ -52,6 +52,9 @@ var using_placeholder: bool = false
 var placeholder_tint: Color = Color.WHITE
 ## 网、棺材、卵这类可攻击物件不算进同屏刷怪上限。
 var counts_as_enemy: bool = true
+## 共振术士连上的同伴。受伤时把一半分给它，术士死后清空。
+var split_partner: Node = null
+var _split_lock: bool = false
 
 # === 精英词缀（在 _ready 之前由 WaveManager / 子类赋值） ===
 ## 主词缀。空字符串 = 普通怪。取值见 EliteAffix.DATA
@@ -548,7 +551,17 @@ func _direct_damage(amount: float) -> float:
 	# Every direct weapon hit rolls once, including subclass damage handlers.
 	if is_instance_valid(player) and player.has_method("roll_crit") and player.roll_crit():
 		amount *= player.crit_damage
-	return maxf(amount, 0.0)
+	amount = maxf(amount, 0.0)
+	if split_partner != null and is_instance_valid(split_partner) and not _split_lock and split_partner.get("is_dead") != true:
+		_split_lock = true
+		split_partner.set("_split_lock", true)
+		if split_partner.has_method("take_damage"):
+			split_partner.take_damage(amount * 0.5)
+		if is_instance_valid(split_partner):
+			split_partner.set("_split_lock", false)
+		_split_lock = false
+		amount *= 0.5
+	return amount
 
 func _subtract_hp(amount: float) -> float:
 	var effective := minf(maxf(amount, 0.0), maxf(current_hp, 0.0))
@@ -608,6 +621,8 @@ func take_damage_with_knockback(amount: float, knockback_dir: Vector2, knockback
 
 func _flash_hit() -> void:
 	## 受击闪白效果
+	if sprite == null:
+		return
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", Color(10.0, 10.0, 10.0, 1.0), 0.03)
 	tween.tween_property(sprite, "modulate", _rest_modulate(), 0.07)
