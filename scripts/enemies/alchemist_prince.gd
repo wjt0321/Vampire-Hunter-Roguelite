@@ -26,6 +26,7 @@ func _spawn_colossus() -> void:
 		return
 	parent.add_child(colossus)
 	colossus.global_position = global_position + Vector2(140, 20)
+	linked_nodes.append(colossus)
 
 func colossus_fell() -> void:
 	colossus = null

@@ -63,6 +63,7 @@ func _setup_button_effects() -> void:
 		# 实际是把这一局（含深渊层数）整局丢掉。
 		_abandon_button.text = "放弃本局"
 	_ensure_settings_button()
+	_ensure_codex_button()
 	for btn in panel.find_children("", "Button", true):
 		# Space 是开火键。面板按钮可聚焦时，Space 会先被按钮吃掉当成"按下"，
 		# 玩家一边点面板一边开火就会误触"返回主菜单"这类不可逆操作。
@@ -88,6 +89,69 @@ func _ensure_settings_button() -> void:
 	var resume_btn := panel.find_child("ResumeButton", true, false)
 	if resume_btn != null:
 		vbox.move_child(_settings_button, resume_btn.get_index() + 1)
+
+func _ensure_codex_button() -> void:
+	var vbox := panel.find_child("VBoxContainer", true, false) as VBoxContainer
+	if vbox == null or vbox.find_child("CodexButton", true, false) != null:
+		return
+	var button := Button.new()
+	button.name = "CodexButton"
+	button.text = "图鉴"
+	button.custom_minimum_size = Vector2(0, 45)
+	button.focus_mode = Control.FOCUS_NONE
+	button.pressed.connect(_show_codex)
+	vbox.add_child(button)
+	if _settings_button != null:
+		vbox.move_child(button, _settings_button.get_index() + 1)
+
+func _show_codex() -> void:
+	var existing := panel.find_child("CodexPanel", true, false)
+	if existing != null:
+		existing.visible = not existing.visible
+		return
+	var box := PanelContainer.new()
+	box.name = "CodexPanel"
+	box.set_anchors_preset(Control.PRESET_FULL_RECT)
+	box.offset_left = 80
+	box.offset_top = 60
+	box.offset_right = -80
+	box.offset_bottom = -60
+	var label := Label.new()
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.text = _codex_text()
+	box.add_child(label)
+	panel.add_child(box)
+
+func _codex_text() -> String:
+	var slots = preload("res://scripts/core/asset_slots.gd")
+	var saves := get_node_or_null("/root/SaveManager")
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append("图鉴。正式图放到 asset_slots 写的路径就会替换染色图。")
+	for enemy_id in slots.ENEMIES.keys():
+		var known: bool = saves != null and saves.has_method("codex_known") and bool(saves.call("codex_known", "enemy", String(enemy_id)))
+		if known:
+			lines.append("敌人 %s：%s" % [enemy_id, slots.blurb("enemy", String(enemy_id))])
+		else:
+			lines.append("敌人 ???")
+	for boss_id in slots.BOSSES.keys():
+		var known_boss: bool = saves != null and saves.has_method("codex_known") and bool(saves.call("codex_known", "boss", String(boss_id)))
+		if known_boss:
+			lines.append("Boss %s：%s" % [boss_id, slots.blurb("boss", String(boss_id))])
+		else:
+			lines.append("Boss ???")
+	for weapon_id in slots.WEAPONS.keys():
+		var known_weapon: bool = saves != null and saves.has_method("codex_known") and bool(saves.call("codex_known", "weapon", String(weapon_id)))
+		if known_weapon:
+			lines.append("武器 %s：%s" % [weapon_id, slots.blurb("weapon", String(weapon_id))])
+		else:
+			lines.append("武器 ???")
+	for passive_id in slots.PASSIVES.keys():
+		var known_passive: bool = saves != null and saves.has_method("codex_known") and bool(saves.call("codex_known", "passive", String(passive_id)))
+		if known_passive:
+			lines.append("被动 %s：%s" % [passive_id, slots.blurb("passive", String(passive_id))])
+		else:
+			lines.append("被动 ???")
+	return "\n".join(lines)
 
 func _style_button(btn: Button) -> void:
 	var normal := TextureManager.instance.get_ui_texture("btn_normal")

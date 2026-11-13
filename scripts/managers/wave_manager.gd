@@ -413,6 +413,10 @@ func _spawn_enemy() -> void:
 		if _current_scene:
 			_current_scene.add_child(enemy)
 		_tag_encounter_member(enemy, planned)
+		var saves := get_node_or_null("/root/SaveManager")
+		if saves != null and saves.has_method("discover_codex") and enemy.has_method("_get_enemy_type"):
+			var kind := "boss" if enemy.is_in_group("boss") else "enemy"
+			saves.discover_codex(kind, String(enemy._get_enemy_type()))
 
 func _spawn_powerup() -> void:
 	## 在玩家四周随机方位刷一个临时增益。
@@ -666,6 +670,10 @@ func _begin_encounter() -> void:
 	for entry in _encounter_queue:
 		if bool(entry.get("core", false)):
 			_core_alive = true
+	var log: Node = get_tree().get_first_node_in_group("run_log") if is_inside_tree() else null
+	var rooms: Array = log.get("rooms") if log != null else []
+	if rooms.size() > 0 and rooms[rooms.size() - 1] is Dictionary:
+		rooms[rooms.size() - 1]["template"] = _encounter_id
 
 func _next_planned_spawn() -> Dictionary:
 	if not _core_alive:

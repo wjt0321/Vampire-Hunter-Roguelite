@@ -153,6 +153,9 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 	var seconds: int = survival_seconds % 60
 	text += "生存时间: %d:%02d\n" % [minutes, seconds]
 	text += "受到伤害: %.0f\n" % stats.get("damage_taken", 0)
+	var review := String(stats.get("review", ""))
+	if review != "":
+		text += "\n" + review + "\n"
 
 	if save_mgr:
 		text += "\n获得血晶: +%d\n" % crystals

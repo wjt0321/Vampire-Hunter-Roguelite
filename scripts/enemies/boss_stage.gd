@@ -10,6 +10,7 @@ signal boss_intro_finished
 var boss_title: String = "Boss"
 ## 正式立绘目录名。文件在 assets/sprites/boss/<asset_id>/ 下，没有就继续用共用表染色。
 var asset_id: String = ""
+var linked_nodes: Array = []
 var boss_tier: int = 1
 var size_mult: float = 1.0
 var skip_intro: bool = false
@@ -19,6 +20,12 @@ var sprite_tint: Color = Color.WHITE
 const INTRO_BAR_DELAY: float = 0.8
 const INTRO_BAR_FILL: float = 0.9
 const INTRO_DURATION: float = 1.9
+
+func _exit_tree() -> void:
+	for node in linked_nodes:
+		if is_instance_valid(node):
+			node.queue_free()
+	linked_nodes.clear()
 
 func _boot_boss() -> void:
 	base_hp = GameConfig.get_boss_hp(boss_tier)

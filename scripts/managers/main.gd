@@ -9,6 +9,7 @@ const FloorBannerScript = preload("res://scripts/ui/floor_banner.gd")
 const CharacterDataScript = preload("res://scripts/player/character_data.gd")
 const RoomEventScript = preload("res://scripts/managers/room_event_manager.gd")
 var boss_scene: PackedScene = preload("res://scenes/enemies/vampire_lord.tscn")
+var run_log: Node = null
 
 # 缓存的 AudioLibrary 实例
 var _audio_lib: AudioLibrary = null
@@ -111,6 +112,12 @@ func _ready() -> void:
 	dungeon = Node.new()
 	dungeon.set_script(DungeonManagerScript)
 	add_child(dungeon)
+	run_log = Node.new()
+	run_log.name = "RunLog"
+	run_log.set_script(preload("res://scripts/managers/run_log.gd"))
+	add_child(run_log)
+	if player != null and player.has_signal("damage_received"):
+		player.damage_received.connect(run_log.note_damage)
 
 	# 局内目标事件（17.14）：必须在 wave_manager/player/hud 都就绪后 setup
 	room_events = Node.new()
@@ -254,6 +261,8 @@ func _connect_signals() -> void:
 	wave_manager.enemy_killed.connect(_on_enemy_killed)
 	wave_manager.wave_completed.connect(_on_wave_completed)
 	weapon_manager.weapon_evolved.connect(_on_weapon_evolved)
+	if weapon_manager.has_signal("weapon_added"):
+		weapon_manager.weapon_added.connect(_on_weapon_added)
 	weapon_manager.weapon_leveled_up.connect(_on_weapon_leveled_up)
 	upgrade_ui.upgrade_selected.connect(_on_upgrade_selected)
 	game_over_ui.restart_requested.connect(_on_restart)
@@ -455,6 +464,8 @@ func _enter_next_room(autostart: bool = true) -> String:
 	# 结果整层一个射手都不刷。DungeonManager 在 consume_room 里记好了这个数。
 	wave_manager.set_floor(dungeon.current_floor, dungeon.get_enemy_pool(),
 		dungeon.combat_rooms_before_current)
+	if run_log != null:
+		run_log.note_room(dungeon.current_floor, room_type, dungeon.current_variant(), wave_manager._encounter_id)
 
 	var template: Dictionary = room_manager.get_random_template()
 	var themed := room_type == "combat" or room_type == "fog" or room_type == "mirror"
@@ -552,7 +563,7 @@ func _enter_shop_room() -> void:
 		return
 
 	# 打开商店；关闭后才开传送门（一次性连接，避免多次进商店重复触发）
-	room_shop.open(player, weapon_manager)
+	room_shop.open(player, weapon_manager, dungeon.current_floor if dungeon else 1)
 	room_shop.shop_closed.connect(func():
 		if is_instance_valid(room) and is_instance_valid(self) and room == current_room:
 			_open_room_exit(room)
@@ -859,7 +870,7 @@ func _apply_daily_rules() -> void:
 func _apply_room_variant() -> void:
 	if dungeon == null or wave_manager == null:
 		return
-	var variant := dungeon.current_variant()
+	var variant: String = String(dungeon.current_variant())
 	match variant:
 		"blood_tide":
 			wave_manager.variant_hp_mult = 0.85
@@ -953,6 +964,9 @@ func _enter_boss_room() -> void:
 	if spawn_parent == null:
 		spawn_parent = self
 	spawn_parent.add_child(boss)
+	var saves := _save_manager_ref()
+	if saves != null and saves.has_method("discover_codex") and boss.has_method("_get_enemy_type"):
+		saves.discover_codex("boss", String(boss._get_enemy_type()))
 	# Boss._ready 设置独立场景的深渊默认值；生成后应用完整的本局倍率。
 	if "loot_mult" in boss:
 		boss.loot_mult = wave_manager.effective_loot_mult()
@@ -1074,6 +1088,7 @@ func _on_boss_defeated() -> void:
 		"kill_categories": run_stats.get("kill_categories", {}).duplicate(true),
 		"survival_time": run_stats.get("survival_time", 0),
 		"damage_taken": run_stats.get("damage_taken", 0),
+		"review": run_log.summary() if run_log != null else "",
 		"abyss_level": GameConfig.abyss_level,
 		"daily": GameConfig.daily_active,
 		"daily_date": GameConfig.daily_date,
@@ -1224,6 +1239,13 @@ func _refresh_evolution_hint() -> void:
 	var status: Dictionary = weapon_manager.get_evolution_status(owned)
 	hud.update_evolution(String(status.get("state", "none")), String(status.get("text", "")))
 
+func _on_weapon_added(weapon) -> void:
+	if run_log != null:
+		run_log.note_build("获得", String(weapon.weapon_name))
+	var saves := _save_manager_ref()
+	if saves != null and saves.has_method("discover_codex"):
+		saves.discover_codex("weapon", String(weapon.weapon_id))
+
 func _on_weapon_leveled_up(weapon) -> void:
 	if weapon.is_max_level():
 		var ach_mgr := get_node_or_null("/root/AchievementManager")
@@ -1238,6 +1260,8 @@ func _on_weapon_evolved(weapon, evolution) -> void:
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
 	if ach_mgr:
 		ach_mgr.record_weapon_evolved(weapon.weapon_id)
+	if run_log != null:
+		run_log.note_build("进化", String(weapon.weapon_name))
 
 func _on_player_died() -> void:
 	if not _begin_terminal_state("death"):
@@ -1258,6 +1282,7 @@ func _on_player_died() -> void:
 		"floor": dungeon.current_floor if dungeon else 1,
 		"survival_time": run_stats.get("survival_time", 0),
 		"damage_taken": run_stats.get("damage_taken", 0),
+		"review": run_log.summary() if run_log != null else "",
 		"kill_categories": run_stats.get("kill_categories", {}).duplicate(true),
 		"daily": GameConfig.daily_active,
 		"daily_date": GameConfig.daily_date,

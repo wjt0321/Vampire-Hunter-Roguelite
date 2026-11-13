@@ -28,6 +28,7 @@ func _spawn_ward() -> void:
 		return
 	parent.add_child(ward)
 	ward.global_position = global_position + Vector2(120, 40)
+	linked_nodes.append(ward)
 
 func ward_broken() -> void:
 	ward = null
