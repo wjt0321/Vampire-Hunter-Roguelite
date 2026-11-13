@@ -342,7 +342,7 @@
 
 - **范围：** 炼金亲王双单位完整玩法垂直切片（掷瓶与药液、巨像砸地、狂暴、巨像先倒后亲王 solo 转换、双单位死亡演出与自回收）；另外一名 Boss 仍按前表待制作。
 - **素材：** `assets/sprites/boss/alchemist_prince/`（idle、move、cast、solo_shift、death）与 `assets/sprites/boss/alchemist_colossus/`（idle、move、slam、enrage、death）下共 10 张透明横条，共 60 帧；每张 768×128 RGBA、单格 128×128、6 帧。生成配方与资源 ID 见各自 `production.json`。
-- **实际房间预览：** `artifacts/alchemist_prince/alchemist_prince_preview.avi`，30 fps、357 帧；脚本动作演示覆盖双单位 10 种状态（`preview_capture.json` 中 `cast_shown=true`、`slam_shown=true`、`solo_shift_shown=true`、`prince_death_shown=true`、`colossus_death_shown=true`、`failures=0`）；状态截图为同目录 `scene_*.png`。
+- **实际房间预览：** `artifacts/alchemist_prince/alchemist_prince_preview.avi`，30 fps、450 帧（15s；preview_capture.json 脚本计帧 357）；脚本动作演示覆盖双单位 10 种状态（`preview_capture.json` 中 `cast_shown=true`、`slam_shown=true`、`solo_shift_shown=true`、`prince_death_shown=true`、`colossus_death_shown=true`、`failures=0`）；状态截图为同目录 `scene_*.png`。
 - **自动回归：** `validation_results.json` 中九组结果均为 exit 0、issues 为空：炼金亲王动画 122、墓穴守望者动画 65、织血母皇动画 55、血铠领主动画 122、楼层扩展 32、玩法切片 293、迭代包 40、精灵表 18、生命周期清理 13；合计 **760 项通过、0 项失败**。回归入口 `python artifacts/alchemist_prince/run_checks.py`（炼金亲王、墓穴守望者、织血母皇、血铠领主四组自动附加 `-- --real-assets`）。
 - **端到端烟测：** `dungeon_smoke_five_floors.log` 完成五层真实流程，`RESULT dungeon_smoke fail=0`。
 - **日志与资源释放：** 回归与烟测日志均落盘备查（每 case 一个 `.log`），未见 Godot `ERROR`、`WARNING`、对象泄漏或资源仍在使用记录。
@@ -354,7 +354,7 @@
 - `da51ea6` 双单位 `_die` 自救：死亡条带演出与 0.8s 内自回收，通过独立审查。
 - `9e2c3d3` 十张专属动作表：色键、切格、去碎片、最近邻归一化、脚底锚点，通过独立审查。
 - `318b0c0` 双单位动画状态机：10 状态映射、帧推进、表现层 0.6s 时钟、死亡 0.6s 自回收、暂停冻结，通过独立审查。
-- `e08b2fe` 预览录像：357 帧 `failures=0`，通过独立审查。
+- `e08b2fe` 预览录像：AVI 450 帧 `failures=0`，通过独立审查。
 - 本收尾批次：全量回归 760 项 0 失败、五层烟测 fail=0、台账与授权登记、交付 ZIP 校验。
 
 ### 复现与交付
