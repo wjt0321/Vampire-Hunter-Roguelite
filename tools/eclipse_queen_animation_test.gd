@@ -158,7 +158,7 @@ func _test_blink_cycle() -> void:
 	_check(absi(res.frames - expected) <= 3, "windup lasts 0.45s (%d physics frames)" % expected)
 	_check(not res.drift, "queen holds position through the windup")
 	_check(queen.global_position.distance_to(_target.global_position) < 0.5, "blink lands on the player position")
-	_check(queen._timer > 0.7 - _tick * 2.0, "post-landing cooldown is 0.7 at moon phase 0")
+	_check(queen._timer > 0.7 - _tick * 2.0 and queen._timer <= 0.7 + _tick, "post-landing cooldown is 0.7 at moon phase 0")
 	_clear_units()
 
 func _test_moon_phase_gates_cooldown_and_radius() -> void:
