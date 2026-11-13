@@ -1,0 +1,122 @@
+[
+  {
+    "test": "eclipse_queen_animation_test",
+    "exit": 0,
+    "issues": [],
+    "tail": [
+      "PASS real strip wired [death]",
+      "PASS strip has 6 columns [death]",
+      "PASS strip starts at frame 0 [death]",
+      "PASS real idle loop advances with time",
+      "ECLIPSE_QUEEN_ANIMATION RESULT passed=113 failed=0"
+    ]
+  },
+  {
+    "test": "alchemist_prince_animation_test",
+    "exit": 0,
+    "issues": [],
+    "tail": [
+      "PASS real assets boot prince without placeholder",
+      "PASS all five prince strips cached at boot",
+      "PASS real assets boot colossus without placeholder",
+      "PASS all five colossus strips cached at boot",
+      "ALCHEMIST_PRINCE_ANIMATION RESULT passed=122 failed=0"
+    ]
+  },
+  {
+    "test": "tomb_warden_animation_test",
+    "exit": 0,
+    "issues": [],
+    "tail": [
+      "PASS tree pause freezes animation clock",
+      "PASS animation clock resumes after unpause",
+      "PASS real assets boot without placeholder",
+      "PASS all six strips cached at boot",
+      "TOMB_WARDEN_ANIMATION RESULT passed=65 failed=0"
+    ]
+  },
+  {
+    "test": "blood_matriarch_animation_test",
+    "exit": 0,
+    "issues": [],
+    "tail": [
+      "PASS tree pause freezes animation clock",
+      "PASS animation clock resumes after unpause",
+      "PASS real assets boot without placeholder",
+      "PASS all eight strips cached at boot",
+      "BLOOD_MATRIARCH_ANIMATION RESULT passed=55 failed=0"
+    ]
+  },
+  {
+    "test": "blood_lord_animation_test",
+    "exit": 0,
+    "issues": [],
+    "tail": [
+      "PASS real main boss finishes intro",
+      "PASS real boss is current_scene child and room sibling",
+      "PASS room replacement also cleans a living non-blood-lord boss",
+      "PASS no boss remains after real room replacements",
+      "BLOOD_LORD_ANIMATION RESULT passed=122 failed=0"
+    ]
+  },
+  {
+    "test": "floor_expansion_test",
+    "exit": 0,
+    "issues": [],
+    "tail": [
+      "✅ 月蚀女王开场带着祭坛",
+      "✅ 毁掉祭坛后月相推进，安全圈变小",
+      "✅ 预警结束地刺才造成伤害",
+      "✅ 猎犬预警结束后沿锁定方向扑击",
+      "通过 32 / 失败 0"
+    ]
+  },
+  {
+    "test": "gameplay_slice_test",
+    "exit": 0,
+    "issues": [],
+    "tail": [
+      "✅ 第四层是炼金亲王",
+      "✅ 第五层是月蚀女王",
+      "✅ 五层一共 25 个普通战斗房（25）",
+      "",
+      "通过 293 / 失败 0"
+    ]
+  },
+  {
+    "test": "iteration_pack_test",
+    "exit": 0,
+    "issues": [],
+    "tail": [
+      "✅ 复盘写得出主要输出和最后一击",
+      "💾 存档已保存 (user://test_iteration_pack_test.json)",
+      "✅ 图鉴记下见过的敌人，没见过的保持未知",
+      "✅ 重抽价格从 8 涨到 14",
+      "通过 40 / 失败 0"
+    ]
+  },
+  {
+    "test": "sprite_sheet_test",
+    "exit": 0,
+    "issues": [],
+    "tail": [
+      "通过 18 / 失败 0",
+      "📂 未找到存档 (user://test_sprite_sheet_test.json)，使用默认数据",
+      "🎵 音量设置已加载: 音乐 10%, 音效 10%",
+      "🎵 AudioManager 已初始化",
+      "🏆 成就管理器已初始化"
+    ]
+  },
+  {
+    "test": "lifecycle_cleanup_test",
+    "exit": 0,
+    "issues": [],
+    "tail": [
+      "✅ 池内节点被真正 free，而非仅脱离场景树",
+      "✅ TextureManager 提供静态视觉缓存退出清理",
+      "✅ 轮廓剪影缓存退出时清空",
+      "✅ 程序化弹丸贴图缓存退出时释放",
+      "通过 13 / 失败 0"
+    ]
+  }
+]

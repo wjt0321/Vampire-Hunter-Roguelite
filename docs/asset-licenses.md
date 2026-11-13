@@ -889,3 +889,14 @@
 - 制作配方：`assets/sprites/boss/alchemist_prince/production.json` 与 `assets/sprites/boss/alchemist_colossus/production.json` 保存提示词、参考关系与资源 ID，不保存短期签名 URL。
 - 后处理：`tools/pack_alchemist_sprites.py` 做绿幕色键、6×5 切格、行边界碎片清理、内容 bbox 最近邻归一化、脚底锚点（y=119）与横条排列；未平移旧图伪造动作。
 - 授权：AI 生成、待核实；商用、修改、署名与源文件分发条件依服务账号条款，本轮未独立核验，不宣称 CC0 或 Apache-2.0。
+
+### 2026-11-14 月蚀女王专属动画（6 张 / 36 帧）
+
+- 状态：已使用，`assets/sprites/boss/eclipse_queen/*.png`，每张 768×128 RGBA，6 帧。
+- 来源：MiniMax Code 已连接的 Matrix 图像生成服务；本轮未调用本机 ComfyUI，不能沿用 Qwen 模型的许可结论。
+- 参考图：血铠领主 `assets/sprites/boss/blood_lord/idle.png` 经 768×512 绿底垫图（`artifacts/eclipse_queen/blood_lord_idle_ref_padded.png`）上传，仅作像素描边密度与明暗层次的风格锚；动作姿势由图像模型生成。
+- 生成日期：2026-11-14。主图集 node_id：`463056637256084`；phase_change 补丁 node_id：`463052812194152`。
+- 原件：`artifacts/eclipse_queen/eclipse_queen_action_atlas_v2.png`、`eclipse_queen_action_atlas_keyed.png`、`eclipse_queen_phase_change_patch_v2.png`；完整交付包保留原件。
+- 制作配方：`assets/sprites/boss/eclipse_queen/production.json` 保存提示词、参考关系、再生记录与资源 ID，不保存短期签名 URL。
+- 后处理：`tools/pack_eclipse_queen_sprites.py` 做绿幕色键、6×6 切格、行边界碎片清理、内容 bbox 最近邻归一化、脚底锚点（y=119）与横条排列；phase_change 第 5–6 帧经补丁图重切更正；未平移旧图伪造动作。
+- 授权：AI 生成、待核实；商用、修改、署名与源文件分发条件依服务账号条款，本轮未独立核验，不宣称 CC0 或 Apache-2.0。
