@@ -1,0 +1,40 @@
+{
+  "created": "2026-11-14",
+  "provider": "MiniMax Code Matrix image connector",
+  "generation_method": "AI-generated poses; deterministic chroma key, cutting and packing only",
+  "license": "AI 生成、待核实",
+  "requests": [
+    {
+      "prompt": "（完整中文 prompt 存于 artifacts/blood_matriarch/gen_args_atlas.json；要点：6列8行48格正方形图集，纯#00FF00绿底，无网格线无文字；角色为绛红甲壳蜘蛛型母皇，臃肿腹部发光卵囊、暗金纹路、多节细长腿，趴伏三分之二侧面朝右；行序 idle/move/lay_egg/summon/web_cast/melee/phase_change/death，每行6帧时序从左到右，逐帧姿态独立变化；图1=血铠领主 idle 动作表仅作像素描边密度与明暗层次风格锚）",
+      "aspect_ratio": "3:4",
+      "area": "4K",
+      "output_format": "png",
+      "output_file": "blood_matriarch_action_atlas",
+      "reference_local": "assets/sprites/boss/blood_lord/idle.png（经 768x512 绿底垫图 blood_lord_idle_ref_padded.png 上传，原条带 6:1 超出 connector 4:1 参考图限制）"
+    }
+  ],
+  "sources": [
+    {
+      "path": "artifacts/blood_matriarch/blood_matriarch_action_atlas.png",
+      "node_id": "462987292037201"
+    }
+  ],
+  "corrections": [],
+  "pack_command": "python tools/pack_blood_matriarch_sprites.py",
+  "cell": [
+    128,
+    128
+  ],
+  "frames": 6,
+  "actions": 8,
+  "post_processing": [
+    "Pillow 校验：图集 3552x4736，6x8 格各 592x592 正方形；每格非绿占比 37.7%~63.9%（阈值 2%~95%），全幅纯绿占比 52.0%",
+    "chroma key（G>R+25 且 G>B+25 置透明）、6x8 切格、行边界碎片清理",
+    "内容 bbox 最近邻归一化（高<=108 宽<=116），脚底锚点 y=119，idle 行定 base_scale 并复用于 death",
+    "Godot 4.7.2 --headless --import 生成 .import sidecar（uid + .godot/imported ctex）"
+  ],
+  "notes": [
+    "Originals are preserved in local artifacts/blood_matriarch; temporary signed URLs are deliberately excluded.",
+    "AI usage rights follow the provider account terms; not independently verified in this task (AI 生成、待核实)."
+  ]
+}
