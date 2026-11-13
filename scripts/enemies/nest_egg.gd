@@ -12,7 +12,6 @@ func _ready() -> void:
 	add_to_group("enemies")
 	collision_layer = GameConfig.LAYER_ENEMY
 	collision_mask = 0
-	var shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
 	circle.radius = 12.0
 	var collision := CollisionShape2D.new()

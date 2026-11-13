@@ -75,3 +75,6 @@ builds/
 /artifacts/game-audio-*/listening_bgm*.json
 /artifacts/game-audio-*/listening_loops*.json
 /artifacts/game-audio-*/listening_sfx*.json
+
+# Local Boss source renders and reproducible preview outputs
+/artifacts/blood_lord/

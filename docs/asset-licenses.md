@@ -845,3 +845,14 @@
   全工程只取 `wall` / `wall_v` / `pillar`。留着只是死文件
 - 恢复：git 历史 `57e7a12` 之前的提交里仍可找回，对应生成脚本 `.workbuddy/comfy/newarts.py`
 - 影响：`verify_placeholders` 校验数 87 → 83
+
+### 2026-11-13 血铠领主专属动画（12 张 / 72 帧）
+
+- 状态：已使用，`assets/sprites/boss/blood_lord/*.png`，每张 768×128 RGBA，6 帧。
+- 来源：MiniMax Code 已连接的 Matrix 图像生成服务；本轮未调用本机 ComfyUI，不能沿用上一批 Qwen 模型的许可结论。
+- 参考图：项目已有 `assets/sprites/boss/boss_idle.png` 提供像素风格；修正版参考本轮生成的完整动作图集。动作姿势由图像模型生成。
+- 生成日期：2026-11-13。原图集 node_id：`462944268018046`；格挡修正版 `462946299060719`；持盾挥剑修正版 `462947187262414`；持盾眩晕 `462946509030047`。
+- 原件：`artifacts/blood_lord/blood_lord_action_atlas.png`、`blood_lord_guard_corrected.png`、`blood_lord_sword_combo_corrected.png`、`blood_lord_guarded_stunned.png`；完整交付包保留原件。
+- 制作配方：`assets/sprites/boss/blood_lord/production.json` 保存提示词、参考关系与资源 ID，不保存短期签名 URL。
+- 后处理：`tools/pack_blood_lord_sprites.py` 做绿幕色键、切格、去边界碎片、最近邻缩放、脚底锚点和横条排列；未平移旧图伪造动作。去背景服务原件仍有绿底，未用作游戏最终素材。
+- 授权：AI 生成素材；商用、修改、署名与源文件分发条件依服务账号条款，本轮未独立核验，登记为待确认，不宣称 CC0 或 Apache-2.0。

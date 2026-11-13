@@ -398,7 +398,9 @@ func _test_bosses() -> void:
 	queen.position = Vector2(800, 4200)
 	_host.add_child(queen)
 	await process_frame
+	var orphans_before := Node.get_orphan_node_ids()
 	var egg: Node = queen.lay_egg()
+	_check(Node.get_orphan_node_ids() == orphans_before, "产卵不会遗留未挂树的孤立节点")
 	_check(egg != null and not queen.exposed, "织血母皇先产卵")
 	egg.take_damage(99.0)
 	_check(queen.exposed, "卵巢清掉后母皇暴露，改为近身阶段")

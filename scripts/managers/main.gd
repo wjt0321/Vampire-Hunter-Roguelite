@@ -992,6 +992,10 @@ func _enter_boss_room() -> void:
 	if spawn_parent == null:
 		spawn_parent = self
 	spawn_parent.add_child(boss)
+	if is_instance_valid(current_room):
+		# Boss 与房间同级；包括已退出 enemies 组、仍在播放死亡的 Boss。
+		# 直接绑定节点方法，Boss 先销毁时信号自动断开，不留下捕获旧实例的闭包。
+		current_room.tree_exiting.connect(boss.queue_free, CONNECT_ONE_SHOT)
 	var saves := _save_manager_ref()
 	if saves != null and saves.has_method("discover_codex") and boss.has_method("_get_enemy_type"):
 		saves.discover_codex("boss", String(boss._get_enemy_type()))

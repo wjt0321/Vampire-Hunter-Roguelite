@@ -1,0 +1,69 @@
+{
+  "created": "2026-11-13",
+  "provider": "MiniMax Code Matrix image connector",
+  "generation_method": "AI-generated poses; deterministic chroma key, cutting and packing only",
+  "requests": [
+    {
+      "prompt": "为现有 Godot 暗黑哥特像素风游戏制作血铠领主的完整可切割动画精灵图集。图1只提供像素画的描边、明暗层次和游戏质感参考，不复制旧吸血鬼的造型。新角色：同一名厚重铁灰铠甲的亡灵领主，窄缝血红眼光、封闭尖顶头盔、宽肩、短暗红披风；右手握宽刃长剑，左手持巨大尖底血纹盾。不是人类肖像。略俯视的三分之二侧面，所有帧始终朝屏幕右侧，不能转身。强轮廓，有限调色板，锐利像素边缘，不要三维光滑渲染。画布严格6列11行，每格正方形且完全等大，66格，均匀网格无外边距。每格只有一个完整角色，脚底锚点固定在格子的(50%,85%)，角色连同剑盾占格子最多80%，包括剑光与碎片都不得越格。无网格线、无文字、无标签、无水印。背景必须是全幅统一纯亮绿色#00FF00，角色、粒子和特效绝不能有绿色，无地面投影、无地板。每行6帧按时间顺序从左到右，独立画出肢体姿态变化，不能简单复制或平移。行顺序必须精确：第1行idle：持盾垂剑警戒呼吸循环，6帧首尾衔接。第2行move：持盾缓慢重甲行走6帧，左右腿交替迈步、披风摆动，位置不平移。第3行guard：抬盾并收紧站姿，6帧从提盾到牢牢架盾，末帧保持。第4行sword_combo：持盾单次横斩6帧，1预备2抬剑3大幅挥动4横斩命中剑光5收刀6回到预备，各格的剑尖不裁切，整个身体随肩臂旋转。第5行charge：盾顶在前的全力冲锋6帧，身体压低，腿快速交替，披风向左飞扬，角色仍在格子中心。第6行shield_break：盾牌破碎6帧，1盾裂开2大裂缝3碎成大块4碎块散开5碎块消失6无盾持剑，身体身份完全一致。第7行stunned：撞墙后无盾眩晕6帧，弯腰低头，膝盖下沉，缓慢摇晃再立起，细小金色星点在头顶，不画墙。第8行enraged：无盾狂暴待机6帧，红眼更亮，身体前倾，双手握剑，披风摆动，首尾衔接。第9行death：无盾死亡6帧，1受致命伤2屈膝3单膝着地4倒向右侧5躺倒铠甲6同姿势的暗色倒地遗骸，不消失不切边，尸体始终在各自格内。第10行broken_move：同角色无盾双手握剑奔跑6帧，左右腿大幅交替，首尾衔接。第11行broken_sword_combo：同角色无盾双手持剑狂暴横斩6帧，1蓄力2举剑3劈落4横斩命中5收刀6预备，姿态变化明显。所有66格的头盔、盔甲、剑、披风颜色和体积保持一致。全身不截断，切割用精确均匀6列11行。",
+      "aspect_ratio": "6:11",
+      "area": "4K",
+      "output_format": "png",
+      "output_file": "blood_lord_action_atlas",
+      "reference_local": "assets/sprites/boss/boss_idle.png"
+    },
+    {
+      "prompt": "为同一个Godot像素风Boss修正动作表。图1是角色设计参考，请严格保留图1第一行的铁灰铠甲、封闭头盔、红眼、暗红短披风、右手单柄宽刃剑、左手红黑尖盾、像素描边和光照。不要照抄图1错误的重复武器。新图是3列2行共6格，每格正方形等大，均匀分割无外边距。只有6个角色，每格一个。每个角色朝画面右侧的三分之二侧面，微俯视，站立高度相同，脚底锚点在格子85%高度。人物和所有武器必须在格子内部，四边至少12%纯背景安全边距。整幅背景纯亮绿色#00FF00，无任何阴影或背景纹理。人物、剑光、粒子不许用绿色；不画文字、不画网格、不画边框。每格只有两条手臂、一个盾和一把剑，严禁腰间第二把剑，剑必须始终连在右手上，不许悬浮。帧顺序按从左到右从上到下。锐利低分辨率像素美术，与参考保持一致。动作：持盾格挡。第1格右手握剑朝右下，左手抬盾；第2格抬盾遮住胸口；第3格盾略倾斜迎击；第4格盾受击小幅内收但仍完整；第5格身体用力顶回；第6格稳定架盾。六格所有剑都只有一柄，一直在右手，剑不抬到肩头。",
+      "aspect_ratio": "3:2",
+      "area": "4K",
+      "output_format": "png",
+      "output_file": "blood_lord_guard_corrected",
+      "reference_local": "artifacts/blood_lord/blood_lord_action_atlas.png"
+    },
+    {
+      "prompt": "为同一个Godot像素风Boss修正动作表。图1是角色设计参考，请严格保留图1第一行的铁灰铠甲、封闭头盔、红眼、暗红短披风、右手单柄宽刃剑、左手红黑尖盾、像素描边和光照。不要照抄图1错误的重复武器。新图是3列2行共6格，每格正方形等大，均匀分割无外边距。只有6个角色，每格一个。每个角色朝画面右侧的三分之二侧面，微俯视，站立高度相同，脚底锚点在格子85%高度。人物和所有武器必须在格子内部，四边至少12%纯背景安全边距。整幅背景纯亮绿色#00FF00，无任何阴影或背景纹理。人物、剑光、粒子不许用绿色；不画文字、不画网格、不画边框。每格只有两条手臂、一个盾和一把剑，严禁腰间第二把剑，剑必须始终连在右手上，不许悬浮。帧顺序按从左到右从上到下。锐利低分辨率像素美术，与参考保持一致。动作：持盾右手单次挥剑。1右手将唯一一把剑向身后收，剑尖朝左；2举剑至右肩上方；3肩膀开始转动准备挥出；4右手剑横斩至身体右侧，只有细小白色弧线；5顺势剑往右下方落；6收回预备姿态。左手一直持盾，右手只有一把剑，尤其第1/2/3格不能同时出现腰间剑和肩上剑。第4格为唯一命中帧。不要重复第1格充数，动作连续。",
+      "aspect_ratio": "3:2",
+      "area": "4K",
+      "output_format": "png",
+      "output_file": "blood_lord_sword_combo_corrected",
+      "reference_local": "artifacts/blood_lord/blood_lord_action_atlas.png"
+    },
+    {
+      "prompt": "为同一个Godot像素风Boss修正动作表。图1是角色设计参考，请严格保留图1第一行的铁灰铠甲、封闭头盔、红眼、暗红短披风、右手单柄宽刃剑、左手红黑尖盾、像素描边和光照。不要照抄图1错误的重复武器。新图是3列2行共6格，每格正方形等大，均匀分割无外边距。只有6个角色，每格一个。每个角色朝画面右侧的三分之二侧面，微俯视，站立高度相同，脚底锚点在格子85%高度。人物和所有武器必须在格子内部，四边至少12%纯背景安全边距。整幅背景纯亮绿色#00FF00，无任何阴影或背景纹理。人物、剑光、粒子不许用绿色；不画文字、不画网格、不画边框。每格只有两条手臂、一个盾和一把剑，严禁腰间第二把剑，剑必须始终连在右手上，不许悬浮。帧顺序按从左到右从上到下。锐利低分辨率像素美术，与参考保持一致。动作：盾未破的撞墙眩晕循环。盾仍在左手，右手唯一一把剑下垂。六格身体下沉、向前弯腰、头部低垂、膝盖弯曲、再轻微摇晃；头顶小金色星点绕行。每格全身仍然完整，每格保留一面完好盾，不掉盾、不碎盾、不挥剑。",
+      "aspect_ratio": "3:2",
+      "area": "4K",
+      "output_format": "png",
+      "output_file": "blood_lord_guarded_stunned",
+      "reference_local": "artifacts/blood_lord/blood_lord_action_atlas.png"
+    }
+  ],
+  "sources": [
+    {
+      "path": "artifacts/blood_lord/blood_lord_action_atlas.png",
+      "node_id": "462944268018046"
+    },
+    {
+      "path": "artifacts/blood_lord/blood_lord_guard_corrected.png",
+      "node_id": "462946299060719"
+    },
+    {
+      "path": "artifacts/blood_lord/blood_lord_sword_combo_corrected.png",
+      "node_id": "462947187262414"
+    },
+    {
+      "path": "artifacts/blood_lord/blood_lord_guarded_stunned.png",
+      "node_id": "462946509030047"
+    }
+  ],
+  "pack_command": "python tools/pack_blood_lord_sprites.py",
+  "cell": [
+    128,
+    128
+  ],
+  "frames": 6,
+  "actions": 12,
+  "notes": [
+    "The remove-background service retained green. Final alpha is produced by pack_blood_lord_sprites.py, not that service output.",
+    "Originals are preserved in local artifacts/blood_lord and the delivery ZIP; temporary signed URLs are deliberately excluded.",
+    "AI usage rights follow the provider account terms; not independently verified in this task."
+  ]
+}

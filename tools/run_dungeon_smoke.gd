@@ -1,5 +1,5 @@
 extends SceneTree
-## 三层流程 smoke：经房间出口回调推进，并通过 Boss 伤害入口完成战斗。
+## 五层流程 smoke：经真实传送门碰撞推进，并通过 Boss 伤害入口完成战斗。
 
 var _fail := 0
 var _save_mgr: Node = null
@@ -132,9 +132,13 @@ func _run() -> void:
 		var boss = bosses[0]
 		_check(await _wait_until(func(): return not boss.intro_invulnerable, 8.0), "Boss intro vulnerability ends")
 		var crystals_before_boss: int = int(_save_mgr.save_data.get("blood_crystals", 0)) if _save_mgr else 0
+		var expected_boss_crystals: int = maxi(roundi(GameConfig.get_floor_clear_crystals(floor_index) * GameConfig.get_abyss_loot_mult()), 1)
 		boss.take_damage(float(boss.current_hp) + 1.0)
+		# 炼金亲王与巨像必须都倒下；仍走实际伤害入口，不直接发送胜利信号。
+		if boss.has_method("colossus_fell") and is_instance_valid(boss.colossus):
+			_check(not game._boss_defeat_handled, "surviving colossus keeps the Boss fight active")
+			boss.colossus.take_damage(float(boss.colossus.current_hp) + 1.0)
 		_check(await _wait_until(func(): return game._boss_defeat_handled, 2.0), "real Boss damage reaches defeat callback")
-		var expected_boss_crystals: int = [30, 60, 120][floor_index - 1]
 		_check(_save_mgr == null or int(_save_mgr.save_data.get("blood_crystals", 0)) - crystals_before_boss == expected_boss_crystals, "floor %d Boss reward is applied once (+%d)" % [floor_index, expected_boss_crystals])
 		if floor_index < GameConfig.DUNGEON_FLOOR_COUNT:
 			_check(await _wait_game_until(game, func(): return game.dungeon.current_floor == floor_index + 1 and game.dungeon.room_in_floor == 1, 28.0), "Boss reward flow enters next floor")

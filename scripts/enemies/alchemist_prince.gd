@@ -19,11 +19,11 @@ func _get_enemy_type() -> String:
 	return "alchemist_prince"
 
 func _spawn_colossus() -> void:
-	colossus = preload("res://scripts/enemies/alchemist_colossus.gd").new()
-	colossus.prince = self
 	var parent := get_parent()
 	if parent == null:
 		return
+	colossus = preload("res://scenes/enemies/alchemist_colossus.tscn").instantiate()
+	colossus.prince = self
 	parent.add_child(colossus)
 	colossus.global_position = global_position + Vector2(140, 20)
 	linked_nodes.append(colossus)

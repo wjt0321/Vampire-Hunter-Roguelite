@@ -125,6 +125,9 @@ func _die() -> void:
 	if collision_shape:
 		collision_shape.set_deferred("disabled", true)
 	set_physics_process(false)
+	_play_death_visual()
+
+func _play_death_visual() -> void:
 	if sprite:
 		var tween := create_tween()
 		tween.tween_property(sprite, "modulate:a", 0.0, 0.4)

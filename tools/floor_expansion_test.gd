@@ -112,9 +112,54 @@ func _test_bosses() -> void:
 	_host.add_child(prince)
 	await process_frame
 	_check(prince.colossus != null, "炼金亲王会带上巨像")
+	var colossus: Node = prince.colossus
+	_check(colossus.sprite is Sprite2D and colossus.sprite.texture != null,
+		"召唤巨像具有已初始化贴图的精灵")
+	_check(colossus.collision_shape is CollisionShape2D and colossus.collision_shape.shape != null,
+		"召唤巨像具有实体碰撞形状")
+	var contact := colossus.get_node_or_null("ContactArea") as Area2D
+	_check(contact != null and contact.get_node_or_null("ContactShape") is CollisionShape2D
+		and contact.body_entered.is_connected(colossus._on_contact_area_body_entered),
+		"召唤巨像具有接触伤害感应区及信号连接")
+	await physics_frame
+	await physics_frame
+	var query := PhysicsPointQueryParameters2D.new()
+	query.position = colossus.global_position
+	query.collision_mask = GameConfig.LAYER_ENEMY
+	var hit_colossus := false
+	for hit in _host.get_world_2d().direct_space_state.intersect_point(query):
+		if hit.collider == colossus:
+			hit_colossus = true
+	_check(hit_colossus, "物理查询可以命中召唤巨像")
 	prince.colossus.current_hp = 5.0
 	prince.colossus.take_damage(20.0)
 	_check(prince._mode == "solo_prince", "巨像先倒，亲王改成贴脸招式")
+	await process_frame
+	_check(not is_instance_valid(colossus), "死亡巨像会释放场景节点")
+
+	var second = load("res://scenes/enemies/alchemist_prince.tscn").instantiate()
+	second.skip_intro = true
+	second.position = Vector2(1100, 400)
+	_host.add_child(second)
+	var survivor: Node = second.colossus
+	var defeats: Array = []
+	second.boss_defeated.connect(func(): defeats.append(true))
+	second.take_damage(second.current_hp + 1.0)
+	_check(survivor.enraged and not survivor.is_dead and defeats.is_empty(),
+		"亲王先倒，巨像狂暴且战斗尚未结束")
+	survivor.take_damage(survivor.current_hp + 1.0)
+	_check(defeats.size() == 1, "两者都倒下才发出一次胜利信号")
+	await process_frame
+	_check(not is_instance_valid(survivor), "狂暴巨像死亡后也释放节点")
+
+	var interrupted = load("res://scenes/enemies/alchemist_prince.tscn").instantiate()
+	interrupted.skip_intro = true
+	_host.add_child(interrupted)
+	var linked: Node = interrupted.colossus
+	interrupted.queue_free()
+	await process_frame
+	await process_frame
+	_check(not is_instance_valid(linked), "提前移除亲王时一并清理存活巨像")
 
 	var queen = load("res://scenes/enemies/eclipse_queen.tscn").instantiate()
 	queen.skip_intro = true
