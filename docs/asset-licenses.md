@@ -867,3 +867,14 @@
 - 制作配方：`assets/sprites/boss/blood_matriarch/production.json` 保存提示词、参考关系与资源 ID，不保存短期签名 URL。
 - 后处理：`tools/pack_blood_matriarch_sprites.py` 做绿幕色键、6×8 切格、行边界碎片清理、内容 bbox 最近邻归一化、脚底锚点（y=119）与横条排列；未平移旧图伪造动作。
 - 授权：AI 生成、待核实；商用、修改、署名与源文件分发条件依服务账号条款，本轮未独立核验，不宣称 CC0 或 Apache-2.0。
+
+### 2026-11-14 墓穴守望者专属动画（6 张 / 36 帧）
+
+- 状态：已使用，`assets/sprites/boss/tomb_warden/*.png`，每张 768×128 RGBA，6 帧。
+- 来源：MiniMax Code 已连接的 Matrix 图像生成服务；本轮未调用本机 ComfyUI，不能沿用 Qwen 模型的许可结论。
+- 参考图：血铠领主 `assets/sprites/boss/blood_lord/idle.png` 经 768×512 绿底垫图（`artifacts/tomb_warden/blood_lord_idle_ref_padded.png`）上传，仅作像素描边密度与明暗层次的风格锚；动作姿势由图像模型生成。
+- 生成日期：2026-11-14。原图集 node_id：`463014719324531`。
+- 原件：`artifacts/tomb_warden/tomb_warden_action_atlas.png`、`tomb_warden_action_atlas_keyed.png`；完整交付包保留原件。
+- 制作配方：`assets/sprites/boss/tomb_warden/production.json` 保存提示词、参考关系与资源 ID，不保存短期签名 URL。
+- 后处理：`tools/pack_tomb_warden_sprites.py` 做绿幕色键、6×6 切格、行边界碎片清理、内容 bbox 最近邻归一化、脚底锚点（y=119）与横条排列；未平移旧图伪造动作。
+- 授权：AI 生成、待核实；商用、修改、署名与源文件分发条件依服务账号条款，本轮未独立核验，不宣称 CC0 或 Apache-2.0。
