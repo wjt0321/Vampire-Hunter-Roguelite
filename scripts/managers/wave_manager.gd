@@ -50,6 +50,16 @@ var player: Node2D = null
 
 # === 地下城楼层 ===
 var floor_index: int = 1
+const EncounterScript = preload("res://scripts/map/encounter_director.gd")
+var _encounter_queue: Array = []
+var _encounter_id: String = ""
+var _encounter_title: String = ""
+var _encounter_reward: String = ""
+var _last_template: String = ""
+var _core_alive: bool = false
+var variant_hp_mult: float = 1.0
+var prefer_ranged: bool = false
+var variant_spawn_bonus: int = 0
 var enemy_pool: Array = []   # 当前层允许出现的敌人类型；空则回退到按波次解锁
 ## 本层已清房间数（从 0 开始）。远程敌人按这个数逐间解禁，见 GameConfig.RANGED_UNLOCK_ROOM_BY_FLOOR
 var floor_rooms_cleared: int = 0
@@ -130,6 +140,10 @@ func start(player_node: Node2D) -> void:
 	enemies_alive = 0
 	_alive_probe_timer = 0.0
 	_alive_probe_cache = 0
+	variant_hp_mult = 1.0
+	prefer_ranged = false
+	variant_spawn_bonus = 0
+	_begin_encounter()
 	_start_next_wave()
 
 func set_floor(index: int, pool: Array = [], rooms_cleared_in_floor: int = 0) -> void:
@@ -290,7 +304,7 @@ func _get_enemies_per_spawn() -> int:
 	# 每波同时生成更多敌人。
 	# 初版是 mini(1 + wave/3, 5)，第 1 波每次只有 1 只，配合 2 秒间隔等于 0.5 只/秒，
 	# 玩家随手就清空全场。现在第 1 波每次 2 只，第 12 波以后每次 5 只。
-	var base := mini(2 + current_wave / 4, GameConfig.WAVE_MAX_SPAWN_COUNT)
+	var base := mini(2 + current_wave / 4, GameConfig.WAVE_MAX_SPAWN_COUNT) + variant_spawn_bonus
 	if is_equal_approx(spawn_count_mult, 1.0):
 		return base
 	# 总量对齐：倍率 1.2 时按 2→3→2→3… 发放，长期严格等于 ×1.2。
@@ -360,7 +374,11 @@ func _spawn_enemy() -> void:
 	var on_field: int = get_tree().get_nodes_in_group("enemies").size()
 	var count := mini(_get_enemies_per_spawn(), maxi(cap - on_field, 0))
 	for i in range(count):
-		var enemy_type := _pick_enemy_type()
+		var planned: Dictionary = _next_planned_spawn()
+		var enemy_type := String(planned.get("type", ""))
+		if enemy_type == "" or not enemy_scenes.has(enemy_type):
+			enemy_type = _pick_enemy_type()
+			planned = {}
 		var enemy_scene: PackedScene = enemy_scenes[enemy_type]
 		var enemy := enemy_scene.instantiate()
 		# 传入当前波次与楼层用于数值缩放
@@ -374,10 +392,16 @@ func _spawn_enemy() -> void:
 		# 必须在 add_child 之前设好（这里正好是 instantiate 之后）
 		if "hp_scale" in enemy and not is_equal_approx(_soft_hp_scale, 1.0):
 			enemy.hp_scale *= _soft_hp_scale
+		if "hp_scale" in enemy and not is_equal_approx(variant_hp_mult, 1.0):
+			enemy.hp_scale *= variant_hp_mult
 		_maybe_assign_affix(enemy)
+		if bool(planned.get("elite", false)) and enemy.get("blocks_random_affix") != true and String(enemy.elite_affix).is_empty():
+			enemy.elite_affix = "haster"
 
-		# 在屏幕外随机位置生成
-		enemy.global_position = _get_spawn_position()
+		if planned.is_empty():
+			enemy.global_position = _get_spawn_position()
+		else:
+			enemy.global_position = _position_for_side(String(planned.get("side", "front")))
 		
 		# 连接死亡信号
 		enemy.enemy_died.connect(_on_enemy_died)
@@ -388,6 +412,11 @@ func _spawn_enemy() -> void:
 		_ensure_current_scene()
 		if _current_scene:
 			_current_scene.add_child(enemy)
+		_tag_encounter_member(enemy, planned)
+		var saves := get_node_or_null("/root/SaveManager")
+		if saves != null and saves.has_method("discover_codex") and enemy.has_method("_get_enemy_type"):
+			var kind := "boss" if enemy.is_in_group("boss") else "enemy"
+			saves.discover_codex(kind, String(enemy._get_enemy_type()))
 
 func _spawn_powerup() -> void:
 	## 在玩家四周随机方位刷一个临时增益。
@@ -520,6 +549,13 @@ func _pick_enemy_type() -> String:
 		if not allow_ranged and type in GameConfig.RANGED_ENEMY_TYPES:
 			continue
 		candidates.append(type)
+	if prefer_ranged:
+		var ranged_only: Array = []
+		for type in candidates:
+			if type in GameConfig.RANGED_ENEMY_TYPES:
+				ranged_only.append(type)
+		if not ranged_only.is_empty():
+			candidates = ranged_only
 	if candidates.is_empty():
 		return "vampire"
 
@@ -619,7 +655,73 @@ func _escape_into_clear_space(pos: Vector2) -> Vector2:
 
 func _on_enemy_died(_enemy: Node2D) -> void:
 	enemies_alive -= 1
+	if _enemy != null and _enemy.has_meta("encounter_core"):
+		_break_encounter()
 	record_external_kill()
+
+func _begin_encounter() -> void:
+	var plan: Dictionary = EncounterScript.plan(floor_index, _last_template, combat_rng)
+	_last_template = String(plan.get("id", ""))
+	_encounter_id = _last_template
+	_encounter_title = String(plan.get("title", ""))
+	_encounter_reward = String(plan.get("reward", ""))
+	_encounter_queue = plan.get("spawns", []).duplicate(true)
+	_core_alive = false
+	for entry in _encounter_queue:
+		if bool(entry.get("core", false)):
+			_core_alive = true
+	var log: Node = get_tree().get_first_node_in_group("run_log") if is_inside_tree() else null
+	var rooms: Array = log.get("rooms") if log != null else []
+	if rooms.size() > 0 and rooms[rooms.size() - 1] is Dictionary:
+		rooms[rooms.size() - 1]["template"] = _encounter_id
+
+func _next_planned_spawn() -> Dictionary:
+	if not _core_alive:
+		_encounter_queue.clear()
+		return {}
+	if _encounter_queue.is_empty():
+		return {}
+	return _encounter_queue.pop_front()
+
+func _position_for_side(side: String) -> Vector2:
+	var fallback := _get_spawn_position()
+	if player == null or not is_instance_valid(player):
+		return fallback
+	var away := (fallback - player.global_position).normalized()
+	if away == Vector2.ZERO:
+		away = Vector2.UP
+	var pos := fallback
+	match side:
+		"front":
+			pos = player.global_position + away * 170.0
+		"back":
+			pos = player.global_position + away * 380.0
+		"left":
+			pos = player.global_position + away.orthogonal() * 260.0
+		"right":
+			pos = player.global_position - away.orthogonal() * 260.0
+	return _clamp_into_room(pos, 80.0)
+
+func _tag_encounter_member(enemy: Node, planned: Dictionary) -> void:
+	if planned.is_empty() or not is_instance_valid(enemy):
+		return
+	if bool(planned.get("core", false)):
+		enemy.set_meta("encounter_core", true)
+	else:
+		enemy.set_meta("encounter_support", true)
+	if _encounter_reward == "银币":
+		enemy.silver_value = int(ceil(float(enemy.silver_value) * 1.4))
+	elif _encounter_reward == "经验":
+		enemy.xp_value = int(ceil(float(enemy.xp_value) * 1.3))
+
+func _break_encounter() -> void:
+	_core_alive = false
+	_encounter_queue.clear()
+	for node in get_tree().get_nodes_in_group("enemies"):
+		if not is_instance_valid(node) or not node.has_meta("encounter_support"):
+			continue
+		if node.has_method("set_base_move_speed"):
+			node.set_base_move_speed(float(node.move_speed) * 0.65)
 
 func record_external_kill(_enemy_type: String = "bat") -> void:
 	## 普通/召唤敌人共用总数入口；分类与成就仅由 EnemyBase 死亡路径记账。

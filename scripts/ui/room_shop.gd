@@ -11,7 +11,8 @@ class_name RoomShop
 signal shop_closed
 
 const SLOT_COUNT: int = 4
-const REROLL_COSTS: Array = [8, 12, 16]
+const REROLL_COSTS: Array = [8, 14, 22, 34]
+const RECAST_COST: int = 30
 
 var player: Node = null
 var weapon_manager: Node = null
@@ -21,6 +22,11 @@ var _locked: Array = []      # 每格是否锁定（重抽时保留）
 var _sold: Array = []        # 每格是否已售出
 
 var _rerolls: int = 0
+## 带到下一间商店的那一件。买掉或换掉就清空，同时只能有一件。
+var carried_offer: Dictionary = {}
+var _floor_index: int = 1
+var _recast_floor: int = -1
+var _recast_btn: Button = null
 
 var _built: bool = false
 var _root: Control = null
@@ -36,9 +42,10 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 
-func open(player_node: Node, weapon_mgr: Node = null) -> void:
+func open(player_node: Node, weapon_mgr: Node = null, floor_index: int = 1) -> void:
 	player = player_node
 	weapon_manager = weapon_mgr
+	_floor_index = floor_index
 	_rerolls = 0
 	_offers.clear()
 	_locked.clear()
@@ -51,6 +58,10 @@ func open(player_node: Node, weapon_mgr: Node = null) -> void:
 	if not _built:
 		_build_ui()
 	_roll_all()
+	if not carried_offer.is_empty():
+		_offers[0] = carried_offer.duplicate(true)
+		_locked[0] = true
+		_sold[0] = false
 	_refresh()
 	visible = true
 	# 暂停世界，玩家可以慢慢挑（和升级界面一致）
@@ -59,6 +70,11 @@ func open(player_node: Node, weapon_mgr: Node = null) -> void:
 func close() -> void:
 	if not visible:
 		return
+	carried_offer = {}
+	for i in SLOT_COUNT:
+		if _locked[i] and not _sold[i] and not _offers[i].is_empty():
+			carried_offer = _offers[i].duplicate(true)
+			break
 	visible = false
 	PauseController.release(self)
 	shop_closed.emit()
@@ -182,7 +198,7 @@ func _build_ui() -> void:
 	_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hint_label.add_theme_font_size_override("font_size", 12)
 	_hint_label.add_theme_color_override("font_color", Color(0.65, 0.62, 0.58))
-	_hint_label.text = "银币只在本次冒险中有效 · 锁定＝重抽时保留这件商品"
+	_hint_label.text = "同一家店里重抽会变贵。锁定的一件会带到下一间商店"
 	vbox.add_child(_hint_label)
 
 	var bottom := HBoxContainer.new()
@@ -193,6 +209,10 @@ func _build_ui() -> void:
 	_reroll_btn = _make_button("重抽")
 	_reroll_btn.pressed.connect(_on_reroll)
 	bottom.add_child(_reroll_btn)
+
+	_recast_btn = _make_button("重铸")
+	_recast_btn.pressed.connect(_on_recast)
+	bottom.add_child(_recast_btn)
 
 	var leave_btn := _make_button("离开商店")
 	leave_btn.pressed.connect(close)
@@ -240,6 +260,10 @@ func _refresh() -> void:
 	var cost := _current_reroll_cost()
 	_reroll_btn.text = "重抽 (%d 银)" % cost
 	_reroll_btn.disabled = _get_silver() < cost
+	if _recast_btn != null:
+		var used := _recast_floor == _floor_index
+		_recast_btn.text = "本层已重铸" if used else "重铸 (%d 银)" % RECAST_COST
+		_recast_btn.disabled = used or _get_silver() < RECAST_COST or weapon_manager == null
 
 func _make_card(index: int) -> Control:
 	var slot: Dictionary = _offers[index]
@@ -332,7 +356,11 @@ func _kind_text(kind: String) -> String:
 # ---------------------------------------------------------------- 交互
 
 func _on_toggle_lock(index: int) -> void:
-	_locked[index] = not _locked[index]
+	var turn_on: bool = not bool(_locked[index])
+	for i in SLOT_COUNT:
+		_locked[i] = false
+	if turn_on:
+		_locked[index] = true
 	_refresh()
 
 func _on_reroll() -> void:
@@ -342,8 +370,50 @@ func _on_reroll() -> void:
 	if not player.spend_silver(cost):
 		return
 	_rerolls += 1
+	_note_shop("reroll", cost)
 	_roll_all()
 	_refresh()
+
+func _on_recast() -> void:
+	if _recast_floor == _floor_index or weapon_manager == null or not weapon_manager.has_method("recast_choices"):
+		return
+	var choices: Array = weapon_manager.recast_choices()
+	if choices.is_empty():
+		return
+	for child in _slots_box.get_children():
+		if String(child.name).begins_with("RecastChoice"):
+			child.queue_free()
+	for i in choices.size():
+		var picked: Dictionary = choices[i]
+		var btn := _make_button("%s→%s" % [picked.get("from_name", ""), picked.get("to_name", "")])
+		btn.name = "RecastChoice%d" % i
+		btn.custom_minimum_size = Vector2(120, 64)
+		var choice_index := i
+		btn.pressed.connect(func(): _confirm_recast(choice_index))
+		_slots_box.add_child(btn)
+
+func _confirm_recast(index: int) -> void:
+	if player == null or not player.has_method("spend_silver") or weapon_manager == null:
+		return
+	var choices: Array = weapon_manager.recast_choices()
+	if index < 0 or index >= choices.size() or not player.spend_silver(RECAST_COST):
+		return
+	var picked: Dictionary = choices[index]
+	if not weapon_manager.apply_recast(String(picked.get("from", "")), String(picked.get("to", ""))):
+		player.add_silver(RECAST_COST)
+		return
+	_recast_floor = _floor_index
+	_note_shop("recast", RECAST_COST)
+	_refresh()
+
+func _note_shop(kind: String, amount: int) -> void:
+	var log: Node = get_tree().get_first_node_in_group("run_log") if is_inside_tree() else null
+	if log != null and log.has_method("note_shop"):
+		log.note_shop(kind, amount)
+	if kind == "buy" and player != null:
+		var left := get_tree().get_first_node_in_group("run_log")
+		if left != null and left.has_method("note_silver_left") and "silver" in player:
+			left.note_silver_left(int(player.silver))
 
 func _on_buy(index: int) -> void:
 	if index < 0 or index >= _offers.size():
@@ -362,6 +432,9 @@ func _on_buy(index: int) -> void:
 		_refresh()
 		return
 	player.spend_silver(price)
+	_note_shop("buy", price)
+	if _locked[index]:
+		carried_offer = {}
 	_sold[index] = true
 	_locked[index] = false
 	_offers[index] = {}

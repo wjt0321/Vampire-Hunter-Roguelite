@@ -7,6 +7,7 @@ var _timer: float = 1.2
 
 func _ready() -> void:
 	boss_title = "炼金亲王"
+	asset_id = "alchemist_prince"
 	boss_tier = 4
 	move_speed = 78.0
 	base_contact_damage = 12.0
@@ -25,6 +26,7 @@ func _spawn_colossus() -> void:
 		return
 	parent.add_child(colossus)
 	colossus.global_position = global_position + Vector2(140, 20)
+	linked_nodes.append(colossus)
 
 func colossus_fell() -> void:
 	colossus = null

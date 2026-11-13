@@ -8,6 +8,9 @@ signal boss_phase_changed(phase: int)
 signal boss_intro_finished
 
 var boss_title: String = "Boss"
+## 正式立绘目录名。文件在 assets/sprites/boss/<asset_id>/ 下，没有就继续用共用表染色。
+var asset_id: String = ""
+var linked_nodes: Array = []
 var boss_tier: int = 1
 var size_mult: float = 1.0
 var skip_intro: bool = false
@@ -17,6 +20,12 @@ var sprite_tint: Color = Color.WHITE
 const INTRO_BAR_DELAY: float = 0.8
 const INTRO_BAR_FILL: float = 0.9
 const INTRO_DURATION: float = 1.9
+
+func _exit_tree() -> void:
+	for node in linked_nodes:
+		if is_instance_valid(node):
+			node.queue_free()
+	linked_nodes.clear()
 
 func _boot_boss() -> void:
 	base_hp = GameConfig.get_boss_hp(boss_tier)
@@ -41,15 +50,23 @@ func _load_sprite_texture() -> void:
 	if sprite == null:
 		return
 	var texture: Texture2D = null
-	if TextureManager.instance != null:
+	var slots = preload("res://scripts/core/asset_slots.gd")
+	if asset_id != "":
+		texture = slots.boss_texture(asset_id, "idle")
+	var using_dedicated := texture != null
+	if texture == null and TextureManager.instance != null:
 		texture = TextureManager.instance.get_boss_texture("idle")
 	if texture != null:
 		sprite.texture = texture
 	else:
 		_ensure_default_texture()
-	sprite.modulate = sprite_tint
-	using_placeholder = true
-	placeholder_tint = sprite_tint
+	if using_dedicated:
+		sprite.modulate = Color.WHITE
+		using_placeholder = false
+	else:
+		sprite.modulate = sprite_tint
+		using_placeholder = true
+		placeholder_tint = sprite_tint
 	_present_sprite(128.0 * size_mult)
 
 func _begin_intro() -> void:

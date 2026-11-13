@@ -55,6 +55,7 @@ var counts_as_enemy: bool = true
 ## 共振术士连上的同伴。受伤时把一半分给它，术士死后清空。
 var split_partner: Node = null
 var _split_lock: bool = false
+var _cold_blood_cd: float = 0.0
 
 # === 精英词缀（在 _ready 之前由 WaveManager / 子类赋值） ===
 ## 主词缀。空字符串 = 普通怪。取值见 EliteAffix.DATA
@@ -241,6 +242,8 @@ func _process(delta: float) -> void:
 	_tick_sprite(delta)
 	if _status_vfx_cd > 0.0:
 		_status_vfx_cd -= delta
+	if _cold_blood_cd > 0.0:
+		_cold_blood_cd -= delta
 	if is_frozen:
 		freeze_timer -= delta
 		if freeze_timer <= 0.0:
@@ -561,6 +564,8 @@ func _direct_damage(amount: float) -> float:
 			split_partner.set("_split_lock", false)
 		_split_lock = false
 		amount *= 0.5
+	if is_instance_valid(player) and player.has_method("execution_multiplier"):
+		amount *= float(player.execution_multiplier(self))
 	return amount
 
 func _subtract_hp(amount: float) -> float:
@@ -600,6 +605,11 @@ func _after_damage_taken(amount: float) -> void:
 		# 高攻速下每发都判定的话，这两个状态会一直是满覆盖率，
 		# 既是数值失控也是屏幕负担 —— 同一敌人 0.3 秒内只判一次
 		_status_vfx_cd = GameConfig.STATUS_VFX_COOLDOWN
+	if p.get("has_cold_blood") == true and bleed_remaining > 0.0 and _slow_remaining > 0.0 and _cold_blood_cd <= 0.0:
+		_cold_blood_cd = 1.4
+		var rupture := float(p.get("cold_blood_damage"))
+		_subtract_hp(rupture)
+		_report_dealt_damage(rupture)
 
 func _apply_hit_freeze() -> void:
 	## 命中冻帧：让受击者停 0.05 秒，给"打中了"一个物理层面的确认。

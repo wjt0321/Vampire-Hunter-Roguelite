@@ -47,6 +47,7 @@ func _default_save_data() -> Dictionary:
 		"unlocked_characters": ["hunter"],
 		# 到达对应楼层后解锁的新武器。旧武器和首批三把不进这张表。
 		"unlocked_weapons": [],
+		"codex": {"enemies": [], "weapons": [], "passives": [], "bosses": []},
 		"selected_character": "hunter",
 		# 深渊阶梯：历史最高通关深渊层
 		"best_abyss": 0,
@@ -281,6 +282,8 @@ func _sanitize_save() -> void:
 	save_data["unlocked_characters"] = unlocked
 	if not (save_data.get("unlocked_weapons", []) is Array):
 		save_data["unlocked_weapons"] = []
+	if not (save_data.get("codex", {}) is Dictionary):
+		save_data["codex"] = {"enemies": [], "weapons": [], "passives": [], "bosses": []}
 	if not (save_data.get("selected_character", "") in unlocked):
 		save_data["selected_character"] = "hunter"
 	_sanitize_daily_board()
@@ -493,6 +496,22 @@ func is_weapon_unlocked(weapon_id: String) -> bool:
 	if int(info.get("unlock_floor", 0)) <= 0:
 		return true
 	return weapon_id in save_data.get("unlocked_weapons", [])
+
+func discover_codex(kind: String, entry_id: String) -> void:
+	if entry_id == "":
+		return
+	var book: Dictionary = save_data.get("codex", {})
+	if not book.has(kind) or not (book[kind] is Array):
+		book[kind] = []
+	if entry_id in book[kind]:
+		return
+	book[kind].append(entry_id)
+	save_data["codex"] = book
+	save_game()
+
+func codex_known(kind: String, entry_id: String) -> bool:
+	var book: Dictionary = save_data.get("codex", {})
+	return entry_id in book.get(kind, [])
 
 func unlock_weapons_for_floor(floor_index: int) -> void:
 	var catalog = load("res://scripts/core/item_catalog.gd")

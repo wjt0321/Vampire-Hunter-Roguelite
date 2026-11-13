@@ -9,6 +9,7 @@ var _timer: float = 1.4
 
 func _ready() -> void:
 	boss_title = "月蚀女王"
+	asset_id = "eclipse_queen"
 	boss_tier = 5
 	move_speed = 80.0
 	base_contact_damage = 14.0
@@ -27,6 +28,7 @@ func _spawn_altar() -> void:
 		return
 	parent.add_child(altar)
 	altar.global_position = global_position + Vector2(-130, 50)
+	linked_nodes.append(altar)
 
 func altar_destroyed() -> void:
 	altar = null

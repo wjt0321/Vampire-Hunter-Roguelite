@@ -8,7 +8,7 @@ class_name PassiveItemData
 @export var description: String = ""
 
 # 效果类型
-enum EffectType { MAGNET, SHIELD, REGENERATION, GREED, BERSERKER, FROZEN, LIGHTNING_SHIELD, SHADOW, VAMPIRIC, SWIFT, CLOVER, BLEED, SLOW, DRAIN }
+enum EffectType { MAGNET, SHIELD, REGENERATION, GREED, BERSERKER, FROZEN, LIGHTNING_SHIELD, SHADOW, VAMPIRIC, SWIFT, CLOVER, BLEED, SLOW, DRAIN, EXECUTION, TIME_GEAR, COLD_BLOOD }
 @export var effect_type: EffectType = EffectType.MAGNET
 
 # 基础数值
@@ -212,4 +212,34 @@ static func create_blood_drain() -> Resource:
 	item.effect_type = EffectType.DRAIN
 	item.base_value = 0.02  # 基础 2% 伤害转治疗
 	item.value_per_level = 0.008
+	return item
+
+static func create_execution_mark() -> Resource:
+	var item := PassiveItemData.new()
+	item.item_id = "execution_mark"
+	item.item_name = "处刑印记"
+	item.description = "连续命中同一精英或 Boss 会叠伤害，换目标清空"
+	item.effect_type = EffectType.EXECUTION
+	item.base_value = 0.08
+	item.value_per_level = 0.02
+	return item
+
+static func create_time_gear() -> Resource:
+	var item := PassiveItemData.new()
+	item.item_id = "time_gear"
+	item.item_name = "时滞齿轮"
+	item.description = "弹丸变大并多穿透 1，飞行变慢"
+	item.effect_type = EffectType.TIME_GEAR
+	item.base_value = 1.25
+	item.value_per_level = 0.05
+	return item
+
+static func create_cold_blood() -> Resource:
+	var item := PassiveItemData.new()
+	item.item_id = "cold_blood"
+	item.item_name = "寒血反应"
+	item.description = "流血且被霜缚的目标会额外崩开一次"
+	item.effect_type = EffectType.COLD_BLOOD
+	item.base_value = 6.0
+	item.value_per_level = 2.0
 	return item

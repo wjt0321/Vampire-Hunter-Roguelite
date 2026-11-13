@@ -431,10 +431,19 @@ func get_player_texture(state: String, char_id: String = "") -> Texture2D:
 	return player_textures.get(state, null)
 
 func get_enemy_texture(enemy_type: String, state: String) -> Texture2D:
+	var slots = preload("res://scripts/core/asset_slots.gd")
+	var dedicated: Texture2D = slots.enemy_texture(enemy_type, state)
+	if dedicated != null:
+		return dedicated
 	var enemy_data = enemy_textures.get(enemy_type, {})
 	return enemy_data.get(state, null)
 
-func get_boss_texture(state: String) -> Texture2D:
+func get_boss_texture(state: String, boss_id: String = "") -> Texture2D:
+	if boss_id != "":
+		var slots = preload("res://scripts/core/asset_slots.gd")
+		var dedicated: Texture2D = slots.boss_texture(boss_id, state)
+		if dedicated != null:
+			return dedicated
 	return boss_textures.get(state, null)
 
 func get_ui_texture(texture_name: String) -> Texture2D:
