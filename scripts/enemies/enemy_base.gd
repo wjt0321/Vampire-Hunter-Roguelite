@@ -87,6 +87,8 @@ var _contact_cd: float = 0.0
 # 冻结状态
 var is_frozen: bool = false
 var freeze_timer: float = 0.0
+## Boss 被冰冻之心命中后的再触发冷却。冷却内不再刷新减速。
+var _boss_freeze_cd: float = 0.0
 
 # 受击硬直与击退
 var hit_stun_timer: float = 0.0
@@ -235,6 +237,8 @@ func _process(delta: float) -> void:
 		freeze_timer -= delta
 		if freeze_timer <= 0.0:
 			_unfreeze()
+	if _boss_freeze_cd > 0.0:
+		_boss_freeze_cd -= delta
 	_tick_speed_decay(delta)
 	_tick_bleed(delta)
 	_tick_contact_damage(delta)
@@ -632,7 +636,11 @@ func _get_enemy_type() -> String:
 	return "unknown"
 
 func freeze(duration: float) -> void:
-	## 冻结敌人
+	## 冻结敌人。Boss 不进入硬控：领主的物理帧一看到 is_frozen 就整段返回，
+	## 移动和出招一起停。高攻速再把 2 秒冻结刷新回去，Boss 会一直站着。
+	if is_in_group("boss"):
+		_chill_boss()
+		return
 	if is_frozen:
 		# 如果已经在冻结中，延长冻结时间
 		freeze_timer = maxf(freeze_timer, duration)
@@ -648,6 +656,16 @@ func freeze(duration: float) -> void:
 		var vfx := get_node_or_null("/root/VFXManager")
 		if vfx:
 			vfx.spawn_freeze_particles(global_position)
+
+func _chill_boss() -> void:
+	## 冰冻之心对 Boss 只剩一次短减速。冷却比减速更长，避免每发都续上。
+	if is_dead or _boss_freeze_cd > 0.0:
+		return
+	apply_slow(GameConfig.BOSS_FREEZE_SLOW_MULT, GameConfig.BOSS_FREEZE_DURATION)
+	_boss_freeze_cd = GameConfig.BOSS_FREEZE_COOLDOWN
+	var vfx := get_node_or_null("/root/VFXManager")
+	if vfx and vfx.has_method("spawn_freeze_particles"):
+		vfx.spawn_freeze_particles(global_position)
 
 func _unfreeze() -> void:
 	## 解除冻结

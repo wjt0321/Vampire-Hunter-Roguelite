@@ -75,6 +75,12 @@ const MAX_DAMAGE_REDUCTION: float = 0.75     # 75% 减伤上限
 const WEAPON_DAMAGE_PER_LEVEL: float = 0.15   # 每级 +15% 伤害
 const WEAPON_FIRE_RATE_PER_LEVEL: float = 0.06 # 每级 -6% 间隔
 const WEAPON_MAX_LEVEL: int = 5
+## 闪电链第一跳的索敌半径，以及后续跳跃半径。
+## 进化只加长这两段，不再拿房间对角线当射程——对角线会从墙边跳到房间外。
+const LIGHTNING_ACQUIRE_RANGE: float = 420.0
+const LIGHTNING_JUMP_RANGE: float = 200.0
+const LIGHTNING_EVOLVED_ACQUIRE_RANGE: float = 560.0
+const LIGHTNING_EVOLVED_JUMP_RANGE: float = 340.0
 
 # 武器槽上限（含初始手枪）。
 # 没有上限时玩家能同时持有全部 10 把武器，每把独立开火、DPS 线性叠加，
@@ -439,6 +445,11 @@ const SLOW_MULT: float = 0.70
 const SLOW_DURATION: float = 2.0
 ## Boss 对减速的抗性（0 = 和普通怪一样，1 = 完全免疫）
 const SLOW_BOSS_RESIST: float = 0.6
+## 冰冻之心打在 Boss 上时不硬控。改成一次短减速，并进入冷却，
+## 否则 25% 触发率配上高攻速会把 2 秒冻结无限刷新，Boss 全程站桩。
+const BOSS_FREEZE_SLOW_MULT: float = 0.55
+const BOSS_FREEZE_DURATION: float = 1.2
+const BOSS_FREEZE_COOLDOWN: float = 4.0
 
 ## 同一敌人两次状态判定之间的最小间隔。
 ## 高攻速武器每发都命中，不设冷却的话流血/减速会永久满覆盖。
@@ -600,6 +611,8 @@ const POWERUP_FRENZY_MULT: float = 1.5
 const POWERUP_FRENZY_DURATION: float = 8.0
 ## 类型权重表：回血最常见（最容易形成决策），狂暴次之
 const POWERUP_KINDS: Array = ["heal", "heal", "frenzy", "magnet"]
+## 磁力道具把屏幕上的经验/银币拉过来时的速度。要明显快过玩家跑速。
+const MAGNET_PULL_SPEED: float = 1600.0
 
 # ==================== 局内目标事件（17.14） ====================
 # 设计取舍：战斗房里只有"杀与被杀"，30 秒里没有第二个目标。

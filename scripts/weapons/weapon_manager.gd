@@ -98,12 +98,12 @@ const EVOLUTION_CONFIG: Dictionary = {
 	},
 	"lightning_chain": {
 		"evolution_name": "雷神之怒",
-		"evolution_description": "全屏闪电链",
+		"evolution_description": "连锁更远，仍停在房间内",
 		"required_passive_items": ["lightning_shield"],
 		"damage_multiplier": 3.0,
 		"fire_rate_multiplier": 0.4,
 		"size_multiplier": 1.5,
-		"special_effect": "全屏连锁",
+		"special_effect": "加长连锁",
 		"behavior": "",
 	},
 	"crossbow": {
@@ -1022,9 +1022,15 @@ func _spawn_lightning_chain(weapon) -> void:
 	lightning.base_damage = weapon.get_scaled_damage()
 	lightning.damage_multiplier = (player.get_total_damage_multiplier() if player else 1.0) * get_weapon_decay(weapon)
 	lightning.max_jumps = int(ceil(weapon.get_scaled_lightning_jumps() * _evolved_size(weapon.weapon_id)))
+	lightning.acquire_range = GameConfig.LIGHTNING_ACQUIRE_RANGE
+	lightning.jump_range = GameConfig.LIGHTNING_JUMP_RANGE
 	if is_weapon_evolved(weapon.weapon_id):
-		var room := RoomLookupScript.find_room(player)
-		lightning.jump_range = room.get_room_size() if room and room.has_method("get_room_size") else 800.0
+		lightning.acquire_range = GameConfig.LIGHTNING_EVOLVED_ACQUIRE_RANGE
+		lightning.jump_range = GameConfig.LIGHTNING_EVOLVED_JUMP_RANGE
+	lightning.ranges_overridden = true
+	var room := RoomLookupScript.find_room(player)
+	if room != null:
+		lightning.play_bounds = RoomLookupScript.bounds_global(room)
 	lightning._current_damage = lightning.base_damage
 	_ensure_current_scene()
 	if _current_scene:

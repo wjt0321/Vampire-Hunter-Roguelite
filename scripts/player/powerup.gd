@@ -135,18 +135,39 @@ func _apply_frenzy() -> void:
 		AudioManager.play_sfx(AudioLib.get_sound("pickup_frenzy"))
 
 func _apply_magnet() -> void:
-	## 直接把全场经验/银币拉向玩家一次，而不是原地收走：
-	## 让玩家看到"钱被吸过来"的动画，比数字突然跳一下更有反馈
+	## 吸走当前画面里的经验与银币，而不是玩家身边一个 900px 圆。
+	## 镜头贴墙时，画面另一侧可以离玩家超过 900px，旧半径会把它们留在地上。
+	## 也不再瞬移到脚边：掉落弹跳还在写坐标，瞬移会被弹回原地。
+	var view := visible_world_rect()
 	var pulled := 0
-	var origin: Vector2 = _player.global_position
 	for group in ["xp_gems", "silver_coins"]:
 		for node in get_tree().get_nodes_in_group(group):
-			if not is_instance_valid(node):
+			if not is_instance_valid(node) or not node is Node2D:
 				continue
-			var d: float = node.global_position.distance_to(origin)
-			# 只吸 900px 内的，屏幕上看得见的那些
-			if d > 900.0:
+			if node.has_meta("_in_pool") and bool(node.get_meta("_in_pool")):
 				continue
-			node.global_position = origin + (node.global_position - origin).normalized() * randf_range(6.0, 24.0)
+			if not view.grow(2.0).has_point((node as Node2D).global_position):
+				continue
+			if not node.has_method("magnetize"):
+				continue
+			node.call("magnetize")
 			pulled += 1
 	print("🧲 磁力脉冲：吸取 %d 个掉落物" % pulled)
+
+func visible_world_rect() -> Rect2:
+	## 当前镜头看到的世界矩形。没有镜头时，用玩家为中心的视口大小。
+	var visible := Vector2(1280.0, 720.0)
+	var center := _player.global_position if _player != null and is_instance_valid(_player) else global_position
+	var zoom := Vector2.ONE
+	var vp := get_viewport()
+	if vp != null:
+		var vr := vp.get_visible_rect().size
+		if vr.x > 1.0 and vr.y > 1.0:
+			visible = vr
+		var cam := vp.get_camera_2d()
+		if cam != null and is_instance_valid(cam):
+			center = cam.get_screen_center_position()
+			if cam.zoom.x > 0.0 and cam.zoom.y > 0.0:
+				zoom = cam.zoom
+	var world := Vector2(visible.x / zoom.x, visible.y / zoom.y)
+	return Rect2(center - world * 0.5, world)

@@ -12,6 +12,7 @@
 - [素材授权登记](asset-licenses.md) — 第三方素材来源、授权、风险登记
 - [素材来源清单](asset-source-list.md) — 可用素材站、包、作者链接汇总
 - [开发路线图](ROADMAP.md) — 后续开发阶段与建议顺序
+- [武器变种与融合方案](superpowers/specs/2026-11-13-weapon-variant-fusion-design.md) — 下一轮玩法的唯一方案。未确认前不实现，也不要在根目录或 GDD 里再写一份
 
 ## 历史报告
 

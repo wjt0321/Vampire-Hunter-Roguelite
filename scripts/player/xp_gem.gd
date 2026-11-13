@@ -30,6 +30,7 @@ var is_attracted: bool = false
 var player: Node2D = null
 
 var _pulse: Tween = null
+var _drop_tween: Tween = null
 var _base_scale: Vector2 = Vector2.ONE
 
 func _enter_tree() -> void:
@@ -58,6 +59,7 @@ func _setup_gem() -> void:
 func reset_for_pool() -> void:
 	## 归还对象池前重置状态
 	_kill_pulse()
+	_kill_drop_tween()
 	is_attracted = false
 	player = null
 	scale = Vector2.ONE
@@ -116,6 +118,12 @@ func _start_pulse(spr: Sprite2D, amount: float) -> void:
 	_pulse.tween_property(spr, "scale", _base_scale, 0.55) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
+func _kill_drop_tween() -> void:
+	## 掉落弹跳每帧都在写 position。磁力如果不先停掉它，宝石会被弹回原地。
+	if _drop_tween != null and _drop_tween.is_valid():
+		_drop_tween.kill()
+	_drop_tween = null
+
 func _kill_pulse() -> void:
 	if _pulse != null and _pulse.is_valid():
 		_pulse.kill()
@@ -129,8 +137,9 @@ func _play_drop_animation() -> void:
 	if not is_inside_tree():
 		return
 	var random_offset := Vector2(randf_range(-20.0, 20.0), randf_range(-20.0, 20.0))
-	var tween := create_tween()
-	tween.tween_property(self, "position", position + random_offset, 0.3) \
+	_kill_drop_tween()
+	_drop_tween = create_tween()
+	_drop_tween.tween_property(self, "position", position + random_offset, 0.3) \
 		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BOUNCE)
 
 # ==================== 合并 ====================
@@ -224,8 +233,11 @@ func magnetize() -> void:
 	## 而不是打完一波地上东西凭空消失。
 	if xp_value <= 0:
 		return
+	if has_meta("_in_pool") and bool(get_meta("_in_pool")):
+		return
+	_kill_drop_tween()
 	is_attracted = true
-	attraction_speed = maxf(attraction_speed, FORCED_ATTRACT_SPEED)
+	attraction_speed = maxf(attraction_speed, GameConfig.MAGNET_PULL_SPEED)
 	set_physics_process(true)
 
 ## 房间结束时的自动结算：把没捡的宝石直接算进经验。

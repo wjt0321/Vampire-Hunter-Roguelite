@@ -12,6 +12,7 @@ extends Node2D
 var _player: Node2D = null
 var _age: float = 0.0
 var _attracted: bool = false
+var _drop_tween: Tween = null
 
 func _ready() -> void:
 	add_to_group("silver_coins")
@@ -36,8 +37,8 @@ func _ready() -> void:
 	if dir == Vector2.ZERO:
 		dir = Vector2.RIGHT
 	var pop_target := position + dir * randf_range(14.0, 30.0)
-	var tw := create_tween()
-	tw.tween_property(self, "position", pop_target, 0.22).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	_drop_tween = create_tween()
+	_drop_tween.tween_property(self, "position", pop_target, 0.22).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 
 func _process(delta: float) -> void:
 	_age += delta
@@ -64,6 +65,16 @@ func _process(delta: float) -> void:
 		_attracted = true
 	if _attracted:
 		global_position = global_position.move_toward(_player.global_position, attraction_speed * delta)
+
+func magnetize() -> void:
+	## 和经验宝石同一条拉力：停掉出场弹跳，再高速飞向玩家。
+	if value <= 0 or is_queued_for_deletion():
+		return
+	if _drop_tween != null and _drop_tween.is_valid():
+		_drop_tween.kill()
+	_drop_tween = null
+	_attracted = true
+	attraction_speed = maxf(attraction_speed, GameConfig.MAGNET_PULL_SPEED)
 
 func _collect() -> void:
 	if is_queued_for_deletion():
