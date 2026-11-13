@@ -1,0 +1,286 @@
+{
+  "node_id": "463014719324531",
+  "generated_at": "2026-11-14T02:26:00+08:00",
+  "tool": "connector__matrix__generate_image",
+  "output_file": "tomb_warden_action_atlas.png",
+  "prompt": "为现有 Godot 暗黑哥特像素风游戏制作墓穴守望者的完整可切割动画精灵图集。图1是上一只 Boss 血铠领主的成品动作表，只提供像素画的描边密度、明暗层次和游戏质感参考，不复制人形铠甲造型。新角色：墓穴守望者——一具高大的人形亡灵守灵人，披着腐朽破旧、边缘褴褛的灰蓝色罩袍，兜帽深处亮着两点幽蓝魂火，提着一盏锈蚀铁灯笼，笼内燃着幽蓝火苗，袍下露出白骨指尖；主题元素为墓穴、棺木与幽蓝魂火。不是蜘蛛等其他生物。略俯视的三分之二侧面，所有帧始终朝屏幕右侧，不能转身。【铁律：提灯永远提在角色身前那一侧（画面右侧），全部 36 格绝对同一侧，绝不允许换到另一只手或另一侧】。强轮廓，有限调色板（灰蓝、青灰、骨白，少量幽蓝火光，点缀色饱和度保持中等），锐利像素边缘，不要三维光滑渲染。画布严格6列6行，每格正方形且完全等大，36格，均匀网格无外边距。每格只有一个完整角色，脚底锚点固定在格子的(50%,85%)，角色占格子最多80%，包括魂火、结界碎片和特效都不得越格。无网格线、无文字、无标签、无水印。背景必须是全幅统一纯亮绿色#00FF00，角色、粒子、魂火、结界光罩和特效绝不能含绿色（幽火用蓝青色），无地面投影、无地板。每行6帧按时间顺序从左到右，独立画出姿态变化，不能简单复制或平移。行顺序必须精确：第1行idle：提灯伫立的呼吸循环，罩袍下摆与兜帽边缘轻微起伏、笼内幽光摇曳，6帧首尾衔接，提灯在身前画面右侧。第2行move：缓慢逼近的步态6帧，袍摆随步伐摆动、身体小幅起伏，脚底锚点固定、位置不平移，提灯位置不变。第3行lantern_sweep：提灯横扫挥击6帧，1收灯蓄力2向前挥出3灯笼甩出弧形幽蓝火舌4火舌延展至最远端5开始收回6收势回位；灯笼始终沿画面右侧挥击方向延展，提灯一直在角色身前同一侧。第4行revive：复苏6帧，1单膝跪地垂首2缓缓抬头3提灯高举4身周升起幽蓝魂火与细碎光点5魂火汇向身体6完全站起、幽火环绕，提灯位置不变。第5行ward_break：结界破碎6帧，1身前浮现的结界光罩出现裂纹2裂纹蔓延3光罩崩碎成碎片4碎片四散飞溅5光屑飘落6余烬散尽；守望者举灯护在身前，全程提灯同侧。第6行death：死亡6帧，1受创踉跄2跪倒3俯身撑地4罩袍逐渐塌陷干瘪5不再动弹6同姿势的灰暗干瘪遗骸，不消失不切边，尸体始终在格内。所有36格的罩袍颜色、兜帽造型、提灯造型与提灯位置（角色身前画面右侧）保持一致。",
+  "reference_padded": {
+    "source": "assets/sprites/boss/blood_lord/idle.png",
+    "source_size": [
+      768,
+      128
+    ],
+    "padded_size": [
+      768,
+      512
+    ],
+    "padded_ratio": "1.5:1 (<= 4:1 connector cap)",
+    "background": "#00FF00",
+    "note": "strip centered on pure-green canvas, same trick as blood_matriarch batch"
+  },
+  "request": {
+    "aspect_ratio": "1:1",
+    "area": "4K",
+    "output_format": "png"
+  },
+  "atlas_actual": {
+    "size": [
+      4096,
+      4096
+    ],
+    "grid": [
+      6,
+      6
+    ]
+  },
+  "cell_validation": {
+    "idle": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.365,
+          "pure_green": 0.6077
+        },
+        {
+          "col": 2,
+          "non_green": 0.3634,
+          "pure_green": 0.609
+        },
+        {
+          "col": 3,
+          "non_green": 0.3646,
+          "pure_green": 0.608
+        },
+        {
+          "col": 4,
+          "non_green": 0.3638,
+          "pure_green": 0.6085
+        },
+        {
+          "col": 5,
+          "non_green": 0.3637,
+          "pure_green": 0.6085
+        },
+        {
+          "col": 6,
+          "non_green": 0.3644,
+          "pure_green": 0.5973
+        }
+      ],
+      "non_green_range": [
+        0.3634,
+        0.365
+      ]
+    },
+    "move": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.35,
+          "pure_green": 0.6185
+        },
+        {
+          "col": 2,
+          "non_green": 0.3481,
+          "pure_green": 0.6217
+        },
+        {
+          "col": 3,
+          "non_green": 0.349,
+          "pure_green": 0.6202
+        },
+        {
+          "col": 4,
+          "non_green": 0.3492,
+          "pure_green": 0.6192
+        },
+        {
+          "col": 5,
+          "non_green": 0.349,
+          "pure_green": 0.6209
+        },
+        {
+          "col": 6,
+          "non_green": 0.3498,
+          "pure_green": 0.6141
+        }
+      ],
+      "non_green_range": [
+        0.3481,
+        0.35
+      ]
+    },
+    "lantern_sweep": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.3654,
+          "pure_green": 0.6041
+        },
+        {
+          "col": 2,
+          "non_green": 0.3672,
+          "pure_green": 0.6009
+        },
+        {
+          "col": 3,
+          "non_green": 0.3853,
+          "pure_green": 0.5813
+        },
+        {
+          "col": 4,
+          "non_green": 0.3866,
+          "pure_green": 0.5784
+        },
+        {
+          "col": 5,
+          "non_green": 0.3844,
+          "pure_green": 0.5836
+        },
+        {
+          "col": 6,
+          "non_green": 0.3653,
+          "pure_green": 0.6019
+        }
+      ],
+      "non_green_range": [
+        0.3653,
+        0.3866
+      ]
+    },
+    "revive": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.2662,
+          "pure_green": 0.7171
+        },
+        {
+          "col": 2,
+          "non_green": 0.2826,
+          "pure_green": 0.7005
+        },
+        {
+          "col": 3,
+          "non_green": 0.3355,
+          "pure_green": 0.6169
+        },
+        {
+          "col": 4,
+          "non_green": 0.4932,
+          "pure_green": 0.4591
+        },
+        {
+          "col": 5,
+          "non_green": 0.4335,
+          "pure_green": 0.5245
+        },
+        {
+          "col": 6,
+          "non_green": 0.4924,
+          "pure_green": 0.436
+        }
+      ],
+      "non_green_range": [
+        0.2662,
+        0.4932
+      ]
+    },
+    "ward_break": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.4763,
+          "pure_green": 0.4359
+        },
+        {
+          "col": 2,
+          "non_green": 0.476,
+          "pure_green": 0.4306
+        },
+        {
+          "col": 3,
+          "non_green": 0.4422,
+          "pure_green": 0.4804
+        },
+        {
+          "col": 4,
+          "non_green": 0.3953,
+          "pure_green": 0.5546
+        },
+        {
+          "col": 5,
+          "non_green": 0.3777,
+          "pure_green": 0.5843
+        },
+        {
+          "col": 6,
+          "non_green": 0.3711,
+          "pure_green": 0.5819
+        }
+      ],
+      "non_green_range": [
+        0.3711,
+        0.4763
+      ]
+    },
+    "death": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.3776,
+          "pure_green": 0.5896
+        },
+        {
+          "col": 2,
+          "non_green": 0.323,
+          "pure_green": 0.6545
+        },
+        {
+          "col": 3,
+          "non_green": 0.2681,
+          "pure_green": 0.7115
+        },
+        {
+          "col": 4,
+          "non_green": 0.3004,
+          "pure_green": 0.674
+        },
+        {
+          "col": 5,
+          "non_green": 0.1804,
+          "pure_green": 0.8044
+        },
+        {
+          "col": 6,
+          "non_green": 0.177,
+          "pure_green": 0.805
+        }
+      ],
+      "non_green_range": [
+        0.177,
+        0.3776
+      ]
+    }
+  },
+  "cell_validation_ok": true,
+  "strips": {
+    "size": [
+      768,
+      128
+    ],
+    "mode": "RGBA",
+    "frames_per_strip": 6,
+    "feet_anchor_y": 119,
+    "content_bottom_y_observed": 118,
+    "min_nonzero_alpha_px": {
+      "idle": 4939,
+      "move": 4998,
+      "lantern_sweep": 5043,
+      "revive": 3322,
+      "ward_break": 4976,
+      "death": 2392
+    }
+  },
+  "source_sha256": "8bab4878155c5c3671fc319378663a542cd1eeddde09d78f79c5399bc138696d"
+}
