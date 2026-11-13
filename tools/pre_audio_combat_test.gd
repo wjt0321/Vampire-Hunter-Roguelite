@@ -82,6 +82,17 @@ func _run() -> void:
 		var frozen = spawn(kind)
 		if kind == "vampire_lord":
 			frozen.intro_invulnerable = false
+			var speed_before: float = frozen.move_speed
+			frozen.freeze(0.12)
+			var boss_origin: Vector2 = frozen.position
+			frozen._physics_process(0.05)
+			check(not frozen.is_frozen and not frozen.position.is_equal_approx(boss_origin), "16 chilled vampire_lord keeps moving")
+			check(frozen.move_speed < speed_before - 1.0, "16 chilled vampire_lord is slowed instead of rooted")
+			frozen.set_process(true)
+			await create_timer(0.18).timeout
+			check(not frozen.is_frozen and frozen._slow_remaining > 0.5, "16 boss chill outlasts the old 0.12s root")
+			frozen.queue_free()
+			continue
 		frozen.freeze(0.12)
 		var origin: Vector2 = frozen.position
 		frozen._physics_process(0.05)
@@ -323,7 +334,8 @@ func _test_evolution_and_chain() -> void:
 			"lightning_chain":
 				var chains: Array = spawned.filter(func(n): return "max_jumps" in n)
 				check(chains.size() == 1 and chains[0].max_jumps == int(ceil(weapon.get_scaled_lightning_jumps() * size_mult)), "25 lightning jump count follows configured multiplier")
-				check(chains.size() == 1 and chains[0].jump_range >= 800.0, "25 evolved lightning spans fallback room")
+				check(chains.size() == 1 and is_equal_approx(chains[0].jump_range, GC.LIGHTNING_EVOLVED_JUMP_RANGE), "25 evolved lightning uses the capped jump range")
+				check(chains.size() == 1 and is_equal_approx(chains[0].acquire_range, GC.LIGHTNING_EVOLVED_ACQUIRE_RANGE), "25 evolved lightning uses the capped acquire range")
 			"throwing_knife":
 				var blade = manager._orbit_blades[0]
 				for orbit in manager._orbit_blades:
