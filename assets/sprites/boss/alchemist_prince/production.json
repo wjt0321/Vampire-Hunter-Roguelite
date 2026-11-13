@@ -1,0 +1,248 @@
+{
+  "node_id": "463027860746427",
+  "generated_at": "2026-11-14T03:47:59+08:00",
+  "tool": "connector__matrix__generate_image",
+  "output_file": "alchemist_prince_action_atlas.png",
+  "prompt": "为现有 Godot 暗黑哥特像素风游戏制作炼金亲王的完整可切割动画精灵图集。图1是上一只 Boss 血铠领主的成品动作表，只提供像素画的描边密度、明暗层次和游戏质感参考，不复制人形铠甲造型。新角色：炼金亲王——一位高傲的贵族炼金术师，身披及地长袍，主色为暗金与深琥珀色锦缎，镶边与内衬为深墨绿偏青色（极暗、接近黑色，绝不是鲜绿），头戴尖顶炼金高帽（同一造型贯穿全图），一只手始终提着一只玻璃药水瓶，瓶内是发光的琥珀色药液，腰间挂着几只小药瓶。是人类体型。略俯视的三分之二侧面，所有帧始终朝屏幕右侧，不能转身。【铁律一：药水瓶永远提在角色身前那一侧（画面右侧），全部30格绝对同一侧，绝不允许换到另一只手或另一侧。铁律二：除炼金亲王外，任何一格都不得出现第二角色】。强轮廓，有限调色板（暗金、琥珀、深铜、墨绿近黑、骨白，点缀色饱和度中等），锐利像素边缘，不要三维光滑渲染。画布严格6列5行，每格正方形且完全等大，30格，均匀网格无外边距。每格只有一个完整角色，脚底锚点固定在格子的(50%,85%)，角色占格子最多80%，包括药水瓶、药液飞溅和特效都不得越格。无网格线、无文字、无标签、无水印。背景必须是全幅统一纯亮绿色#00FF00，角色、长袍、药水瓶、药液、粒子和特效绝不能含绿色（绿色只允许出现在背景里；药液用琥珀色，镶边的绿必须深到接近黑色），无地面投影、无地板。每行6帧按时间顺序从左到右，独立画出姿态变化，不能简单复制或平移。行顺序必须精确：第1行idle：提瓶伫立的呼吸循环，长袍下摆与帽檐轻微起伏、瓶内琥珀药液微光摇曳，6帧首尾衔接。第2行move：飘移逼近的步态6帧，长袍随步伐摆动、身体小幅起伏，脚底锚点固定、位置不平移，提瓶位置不变。第3行cast：掷瓶6帧，1举瓶至肩后2后仰蓄力3向前掷出、一只小药瓶脱手向画面右前方飞出4空手随挥5收势回位6新手中的药瓶已在腰侧，提瓶手始终在同一侧。第4行solo_shift：换招强化6帧，1挺直身躯2长袍下摆张开3琥珀色炼金光雾从脚下升起4腰侧小药瓶环绕身周漂浮5握拳收势、光雾汇入身体6战斗姿态定型、药液微光大盛。第5行death：死亡6帧，1受创踉跄捂胸2跪倒3俯身撑地4长袍逐渐塌陷5不再动弹6同姿势的灰暗干瘪遗骸，不消失不切边，尸体始终在格内。所有30格的长袍颜色、帽型、药水瓶造型与提瓶位置（角色身前画面右侧）保持一致。",
+  "reference_padded": {
+    "source": "assets/sprites/boss/blood_lord/idle.png",
+    "source_size": [
+      768,
+      128
+    ],
+    "padded_size": [
+      768,
+      512
+    ],
+    "padded_ratio": "1.5:1 (<= 4:1 connector cap)",
+    "background": "#00FF00",
+    "note": "strip centered on pure-green canvas, same trick as previous batches"
+  },
+  "request": {
+    "aspect_ratio": "6:5",
+    "area": "4K",
+    "output_format": "png"
+  },
+  "atlas_actual": {
+    "size": [
+      4480,
+      3744
+    ],
+    "grid": [
+      6,
+      5
+    ]
+  },
+  "cell_validation": {
+    "idle": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.365,
+          "pure_green": 0.605
+        },
+        {
+          "col": 2,
+          "non_green": 0.3645,
+          "pure_green": 0.6054
+        },
+        {
+          "col": 3,
+          "non_green": 0.3645,
+          "pure_green": 0.6054
+        },
+        {
+          "col": 4,
+          "non_green": 0.3673,
+          "pure_green": 0.604
+        },
+        {
+          "col": 5,
+          "non_green": 0.3672,
+          "pure_green": 0.6049
+        },
+        {
+          "col": 6,
+          "non_green": 0.3678,
+          "pure_green": 0.5026
+        }
+      ],
+      "non_green_range": [
+        0.3645,
+        0.3678
+      ]
+    },
+    "move": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.4175,
+          "pure_green": 0.5547
+        },
+        {
+          "col": 2,
+          "non_green": 0.4153,
+          "pure_green": 0.5553
+        },
+        {
+          "col": 3,
+          "non_green": 0.4164,
+          "pure_green": 0.5544
+        },
+        {
+          "col": 4,
+          "non_green": 0.4161,
+          "pure_green": 0.5541
+        },
+        {
+          "col": 5,
+          "non_green": 0.4168,
+          "pure_green": 0.5546
+        },
+        {
+          "col": 6,
+          "non_green": 0.4172,
+          "pure_green": 0.4636
+        }
+      ],
+      "non_green_range": [
+        0.4153,
+        0.4175
+      ]
+    },
+    "cast": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.3703,
+          "pure_green": 0.5978
+        },
+        {
+          "col": 2,
+          "non_green": 0.3901,
+          "pure_green": 0.5718
+        },
+        {
+          "col": 3,
+          "non_green": 0.3973,
+          "pure_green": 0.5552
+        },
+        {
+          "col": 4,
+          "non_green": 0.3768,
+          "pure_green": 0.5905
+        },
+        {
+          "col": 5,
+          "non_green": 0.3667,
+          "pure_green": 0.6049
+        },
+        {
+          "col": 6,
+          "non_green": 0.3833,
+          "pure_green": 0.494
+        }
+      ],
+      "non_green_range": [
+        0.3667,
+        0.3973
+      ]
+    },
+    "solo_shift": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.3659,
+          "pure_green": 0.6074
+        },
+        {
+          "col": 2,
+          "non_green": 0.424,
+          "pure_green": 0.55
+        },
+        {
+          "col": 3,
+          "non_green": 0.5371,
+          "pure_green": 0.4275
+        },
+        {
+          "col": 4,
+          "non_green": 0.578,
+          "pure_green": 0.3653
+        },
+        {
+          "col": 5,
+          "non_green": 0.5453,
+          "pure_green": 0.4021
+        },
+        {
+          "col": 6,
+          "non_green": 0.4377,
+          "pure_green": 0.4657
+        }
+      ],
+      "non_green_range": [
+        0.3659,
+        0.578
+      ]
+    },
+    "death": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.3988,
+          "pure_green": 0.5156
+        },
+        {
+          "col": 2,
+          "non_green": 0.319,
+          "pure_green": 0.5988
+        },
+        {
+          "col": 3,
+          "non_green": 0.3329,
+          "pure_green": 0.5897
+        },
+        {
+          "col": 4,
+          "non_green": 0.2028,
+          "pure_green": 0.7346
+        },
+        {
+          "col": 5,
+          "non_green": 0.1996,
+          "pure_green": 0.7098
+        },
+        {
+          "col": 6,
+          "non_green": 0.2,
+          "pure_green": 0.6354
+        }
+      ],
+      "non_green_range": [
+        0.1996,
+        0.3988
+      ]
+    }
+  },
+  "cell_validation_ok": true,
+  "strips": {
+    "size": [
+      768,
+      128
+    ],
+    "mode": "RGBA",
+    "frames_per_strip": 6,
+    "feet_anchor_y": 119,
+    "content_bottom_y_observed": 118,
+    "min_nonzero_alpha_px": {
+      "idle": 4413,
+      "move": 5337,
+      "cast": 4503,
+      "solo_shift": 4472,
+      "death": 2425
+    }
+  },
+  "regenerations": 0,
+  "source_sha256": "5eb0b63cdfb075d67272e44a821de542bfc701fe00992f6d811d03bc84bfab0c"
+}

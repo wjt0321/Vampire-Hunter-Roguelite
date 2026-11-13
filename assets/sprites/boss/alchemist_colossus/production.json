@@ -1,0 +1,248 @@
+{
+  "node_id": "463035364217417",
+  "generated_at": "2026-11-14T03:47:59+08:00",
+  "tool": "connector__matrix__generate_image",
+  "output_file": "alchemist_colossus_action_atlas.png",
+  "prompt": "为现有 Godot 暗黑哥特像素风游戏制作炼金巨像的完整可切割动画精灵图集。图1是上一只 Boss 血铠领主的成品动作表，只提供像素画的描边密度、明暗层次和游戏质感参考，不复制人形铠甲造型。新角色：炼金巨像——一尊由青铜与黄铜铆接而成的巨型熔炉魔像，肩背驮着一座小型炼金熔炉，胸口开有炉口，炉膛内燃烧着橙黄色火焰，关节处渗出暗红光晕，躯体厚重、四肢粗壮，表面布满铆钉、铜管与排气阀。不是人类。略俯视的三分之二侧面，所有帧始终朝屏幕右侧，不能转身。【铁律一：除炼金巨像外，任何一格都不得出现第二角色。铁律二：炉膛火焰永远是橙黄色，绝不发绿】。强轮廓，有限调色板（青铜、黄铜、暗铜、铁灰、橙黄炉火，点缀色饱和度中等），锐利像素边缘，不要三维光滑渲染。画布严格6列5行，每格正方形且完全等大，30格，均匀网格无外边距。每格只有一个完整角色，脚底锚点固定在格子的(50%,85%)，角色占格子最多80%，包括炉火、蒸汽和特效都不得越格。无网格线、无文字、无标签、无水印。背景必须是全幅统一纯亮绿色#00FF00，角色、铆钉、铜管、炉火、蒸汽和特效绝不能含绿色，无地面投影、无地板。每行6帧按时间顺序从左到右，独立画出姿态变化，不能简单复制或平移。行顺序必须精确：第1行idle：熔炉伫立的待机循环，炉膛火光轻微起伏、肩背烟囱冒出细小蒸汽，6帧首尾衔接。第2行move：沉重迈步6帧，交替抬腿砸步、上身随之起伏、蒸汽随步伐喷出，脚底锚点固定、位置不平移。第3行slam：双拳砸地6帧，1双臂高举过顶2重心下沉3双拳猛力砸下4冲击尘土与裂纹从拳下迸出5双臂回抬6收势回位。第4行enrage：狂暴化6帧，1俯身低吼2胸口炉口张开、火光转亮白3排气阀喷出大量橙白蒸汽4双拳紧握5仰身咆哮6狂暴姿态定型、全身缝隙透出亮橙光。第5行death：死亡6帧，1受创后仰2单膝砸地3胸口火光忽明忽暗4向前倾倒5伏地不再动弹、余烬飘散6同姿势的灰暗冷却残骸，不消失不切边，残骸始终在格内。所有30格的青铜色泽、熔炉造型、炉火颜色（橙黄）保持一致。",
+  "reference_padded": {
+    "source": "assets/sprites/boss/blood_lord/idle.png",
+    "source_size": [
+      768,
+      128
+    ],
+    "padded_size": [
+      768,
+      512
+    ],
+    "padded_ratio": "1.5:1 (<= 4:1 connector cap)",
+    "background": "#00FF00",
+    "note": "strip centered on pure-green canvas, same trick as previous batches"
+  },
+  "request": {
+    "aspect_ratio": "6:5",
+    "area": "4K",
+    "output_format": "png"
+  },
+  "atlas_actual": {
+    "size": [
+      4480,
+      3744
+    ],
+    "grid": [
+      6,
+      5
+    ]
+  },
+  "cell_validation": {
+    "idle": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.4796,
+          "pure_green": 0.4838
+        },
+        {
+          "col": 2,
+          "non_green": 0.4778,
+          "pure_green": 0.4751
+        },
+        {
+          "col": 3,
+          "non_green": 0.4788,
+          "pure_green": 0.4562
+        },
+        {
+          "col": 4,
+          "non_green": 0.4792,
+          "pure_green": 0.4633
+        },
+        {
+          "col": 5,
+          "non_green": 0.4781,
+          "pure_green": 0.4659
+        },
+        {
+          "col": 6,
+          "non_green": 0.4775,
+          "pure_green": 0.4081
+        }
+      ],
+      "non_green_range": [
+        0.4775,
+        0.4796
+      ]
+    },
+    "move": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.4775,
+          "pure_green": 0.4843
+        },
+        {
+          "col": 2,
+          "non_green": 0.4757,
+          "pure_green": 0.4759
+        },
+        {
+          "col": 3,
+          "non_green": 0.4761,
+          "pure_green": 0.4699
+        },
+        {
+          "col": 4,
+          "non_green": 0.4767,
+          "pure_green": 0.4622
+        },
+        {
+          "col": 5,
+          "non_green": 0.4755,
+          "pure_green": 0.482
+        },
+        {
+          "col": 6,
+          "non_green": 0.479,
+          "pure_green": 0.4005
+        }
+      ],
+      "non_green_range": [
+        0.4755,
+        0.479
+      ]
+    },
+    "slam": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.4223,
+          "pure_green": 0.5502
+        },
+        {
+          "col": 2,
+          "non_green": 0.4073,
+          "pure_green": 0.5708
+        },
+        {
+          "col": 3,
+          "non_green": 0.5236,
+          "pure_green": 0.4389
+        },
+        {
+          "col": 4,
+          "non_green": 0.5263,
+          "pure_green": 0.4281
+        },
+        {
+          "col": 5,
+          "non_green": 0.4221,
+          "pure_green": 0.5502
+        },
+        {
+          "col": 6,
+          "non_green": 0.462,
+          "pure_green": 0.4241
+        }
+      ],
+      "non_green_range": [
+        0.4073,
+        0.5263
+      ]
+    },
+    "enrage": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.4547,
+          "pure_green": 0.5184
+        },
+        {
+          "col": 2,
+          "non_green": 0.5641,
+          "pure_green": 0.4017
+        },
+        {
+          "col": 3,
+          "non_green": 0.6262,
+          "pure_green": 0.3359
+        },
+        {
+          "col": 4,
+          "non_green": 0.4965,
+          "pure_green": 0.4685
+        },
+        {
+          "col": 5,
+          "non_green": 0.4468,
+          "pure_green": 0.5241
+        },
+        {
+          "col": 6,
+          "non_green": 0.4676,
+          "pure_green": 0.4726
+        }
+      ],
+      "non_green_range": [
+        0.4468,
+        0.6262
+      ]
+    },
+    "death": {
+      "cells": [
+        {
+          "col": 1,
+          "non_green": 0.4371,
+          "pure_green": 0.5326
+        },
+        {
+          "col": 2,
+          "non_green": 0.4498,
+          "pure_green": 0.5188
+        },
+        {
+          "col": 3,
+          "non_green": 0.4589,
+          "pure_green": 0.4899
+        },
+        {
+          "col": 4,
+          "non_green": 0.3492,
+          "pure_green": 0.6149
+        },
+        {
+          "col": 5,
+          "non_green": 0.2552,
+          "pure_green": 0.7167
+        },
+        {
+          "col": 6,
+          "non_green": 0.2548,
+          "pure_green": 0.7037
+        }
+      ],
+      "non_green_range": [
+        0.2548,
+        0.4589
+      ]
+    }
+  },
+  "cell_validation_ok": true,
+  "strips": {
+    "size": [
+      768,
+      128
+    ],
+    "mode": "RGBA",
+    "frames_per_strip": 6,
+    "feet_anchor_y": 119,
+    "content_bottom_y_observed": 118,
+    "min_nonzero_alpha_px": {
+      "idle": 5896,
+      "move": 6068,
+      "slam": 5277,
+      "enrage": 5632,
+      "death": 3133
+    }
+  },
+  "regenerations": 0,
+  "source_sha256": "28d443cf8b60104a3b57076a4d3a471ce589f3f3ffeac95d670788abc65820a6"
+}
