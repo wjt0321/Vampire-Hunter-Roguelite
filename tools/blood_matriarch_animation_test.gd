@@ -30,6 +30,7 @@ func _run() -> void:
 	root.add_child(_host)
 	current_scene = _host
 	_test_interfaces_exist()
+	await _test_larva_isolation()
 	await _test_summon_and_cap()
 	await _test_expose_stops_summon()
 	await _test_death_frees_larvae()
@@ -81,6 +82,40 @@ func _test_death_frees_larvae() -> void:
 	await create_timer(0.8).timeout
 	_check(not is_instance_valid(queen), "queen frees after death strip")
 	_check(not is_instance_valid(larva), "larva freed with queen via linked_nodes")
+
+func _test_larva_isolation() -> void:
+	## Task 2 隔离验证（不触碰上方三个 Task 1 行为测试体）：
+	## 幼虫场景可实例化、初始为 ORBIT、玩家靠近进入 WINDUP、计时耗尽推进 POUNCE、再回 ORBIT。
+	## 放在母皇侧测试之前：summon_larva 是 Task 3 的职责，这里不依赖它。
+	var queen := Node2D.new()
+	queen.global_position = Vector2(600, 300)
+	var fake_player := CharacterBody2D.new()
+	fake_player.add_to_group("player")
+	fake_player.global_position = Vector2(900, 300)  # 警戒半径 160 之外
+	_host.add_child(queen)
+	_host.add_child(fake_player)
+	var larva = load("res://scenes/enemies/blood_larva.tscn").instantiate()
+	larva.queen = queen
+	larva.player = fake_player
+	larva.global_position = queen.global_position + Vector2(90, 0)
+	_host.add_child(larva)
+	await process_frame
+	await physics_frame
+	_check(larva.motion == larva.Motion.ORBIT, "larva starts in ORBIT")
+	# 玩家贴进警戒半径 → 预警
+	fake_player.global_position = larva.global_position + Vector2(50, 0)
+	await physics_frame
+	_check(larva.motion == larva.Motion.WINDUP, "larva enters WINDUP on proximity")
+	# 预警计时耗尽 → 扑咬（手动推帧，不等 WINDUP_TIME 自然跑完）
+	larva._move_towards_player(0.4)
+	_check(larva.motion == larva.Motion.POUNCE, "larva transitions WINDUP to POUNCE")
+	# 扑咬计时耗尽 → 回到巡逻
+	larva._move_towards_player(0.35)
+	_check(larva.motion == larva.Motion.ORBIT, "larva returns to ORBIT after pounce")
+	larva.queue_free()
+	queen.queue_free()
+	fake_player.queue_free()
+	await process_frame
 
 func _finish() -> void:
 	print("BLOOD_MATRIARCH_ANIMATION RESULT passed=%d failed=%d" % [_pass, _fail])

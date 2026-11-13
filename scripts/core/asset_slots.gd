@@ -23,6 +23,7 @@ const ENEMIES := {
 	"resonance_mage": {"states": ["idle"], "blurb": "把同伴连起来分摊伤害，先杀术士"},
 	"moon_wing": {"states": ["idle"], "blurb": "弧线换位后俯冲，并留下短风刃"},
 	"bat": {"states": ["idle"], "blurb": "飞得快，优先清掉以免被缠住"},
+	"blood_larva": {"states": ["idle"], "blurb": "绕母皇巡逻，靠近就扑咬"},
 	"vampire": {"states": ["idle"], "blurb": "近身追击，别让它贴住"},
 	"zombie": {"states": ["idle"], "blurb": "慢，血厚，用来挡路"},
 	"skeleton_archer": {"states": ["idle"], "blurb": "远处点射，用墙或近身打断"},
