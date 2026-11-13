@@ -4,6 +4,7 @@ class_name WeaponManager
 
 const WeaponDataScript = preload("res://scripts/weapons/weapon_data.gd")
 const WeaponEvolutionScript = preload("res://scripts/weapons/weapon_evolution.gd")
+const WeaponFusionScript = preload("res://scripts/weapons/weapon_fusion.gd")
 const OrbitBladeScript = preload("res://scripts/weapons/orbit_blade.gd")
 const RoomLookupScript = preload("res://scripts/core/room_lookup.gd")
 
@@ -16,6 +17,8 @@ const HolyBoltScene = preload("res://scenes/player/holy_bolt.tscn")
 
 var weapons: Array = []
 var weapon_evolutions: Dictionary = {}  # weapon_id -> WeaponEvolution
+## 本局是否已经融合过。融合只有一次。
+var run_fused: bool = false
 var shoot_timers: Dictionary = {}
 var player: CharacterBody2D = null
 var bullet_scene: PackedScene = preload("res://scenes/player/bullet.tscn")
@@ -156,7 +159,40 @@ const EVOLUTION_CONFIG: Dictionary = {
 		"special_effect": "血腥爆发",
 		"behavior": "",
 	},
+	"scythe": {
+		"evolution_name": "环镰",
+		"evolution_description": "三把镰刀错开弧线往返",
+		"required_passive_items": ["swift_boots"],
+		"damage_multiplier": 1.8,
+		"fire_rate_multiplier": 0.7,
+		"size_multiplier": 1.3,
+		"special_effect": "错峰往返",
+		"behavior": "scythe_fan",
+	},
+	"thorn_whip": {
+		"evolution_name": "荆棘回环",
+		"evolution_description": "身前抽完，身后再抽一下",
+		"required_passive_items": ["berserker_blood"],
+		"damage_multiplier": 1.8,
+		"fire_rate_multiplier": 0.6,
+		"size_multiplier": 1.4,
+		"special_effect": "前后抽击",
+		"behavior": "both_sides",
+	},
+	"frost_bell": {
+		"evolution_name": "霜返圣铃",
+		"evolution_description": "霜环扩到尽头后留下一小段寒冷",
+		"required_passive_items": ["frost_bind"],
+		"damage_multiplier": 1.6,
+		"fire_rate_multiplier": 0.7,
+		"size_multiplier": 1.5,
+		"special_effect": "霜环停留",
+		"behavior": "frost_field",
+	},
 }
+
+func _enter_tree() -> void:
+	add_to_group("weapon_manager")
 
 func setup(player_node: CharacterBody2D, initial_weapon_id: String = "pistol") -> void:
 	player = player_node
@@ -351,10 +387,13 @@ func _evolve_weapon(weapon_id: String, evolution: WeaponEvolution) -> void:
 	# 找到对应的武器
 	for weapon in weapons:
 		if weapon.weapon_id == weapon_id:
-			# 更新武器属性
+			# 变种表在满级给出绝对数值，进化倍率叠在表上，不能改表里的数字。
+			# base_damage / fire_rate 仍按旧接口写一份，给还在读基础字段的界面和测试。
+			# 满级表已经盖过这两个字段，所以不会和 bonus_* 乘两次。
+			weapon.bonus_damage_mult = evolution.damage_multiplier
+			weapon.bonus_interval_mult = evolution.fire_rate_multiplier
 			weapon.base_damage = evolution.get_evolved_damage(weapon.base_damage)
 			weapon.fire_rate = evolution.get_evolved_fire_rate(weapon.fire_rate)
-			# 更新武器显示名称
 			weapon.weapon_name = evolution.evolution_name
 			weapon.description = evolution.evolution_description
 
@@ -474,8 +513,9 @@ func _fire_weapon(weapon) -> void:
 		_ensure_orbit_blades(weapon.weapon_id)
 		return
 	
-	# 特殊武器类型处理
-	match weapon.weapon_id:
+	var kind := String(weapon.profile())
+	# 特殊武器类型处理。融合后 weapon_id 换成融合名，开火仍走原来的形态。
+	match kind:
 		"poison_cloud":
 			_spawn_poison_cloud(weapon)
 			return
@@ -484,6 +524,15 @@ func _fire_weapon(weapon) -> void:
 			return
 		"blood_burst":
 			_spawn_blood_burst(weapon)
+			return
+		"scythe":
+			_spawn_scythes(weapon)
+			return
+		"thorn_whip":
+			_spawn_whip(weapon)
+			return
+		"frost_bell":
+			_spawn_frost(weapon)
 			return
 	
 	var origin: Vector2 = player.global_position
@@ -496,10 +545,10 @@ func _fire_weapon(weapon) -> void:
 		return
 
 	# 打击感：枪口闪光 + 轻微后坐（每"次"开火一次，不是每颗子弹一次）
-	_muzzle_flash(origin, base_direction, weapon.weapon_id)
+	_muzzle_flash(origin, base_direction, kind)
 	_apply_recoil(base_direction)
 	# 一次开火只播放一次，散弹/双管/环形弹幕共享这一声。
-	_play_shoot_sound(weapon.weapon_id)
+	_play_shoot_sound(kind)
 
 	# 进化行为：环形弹幕（放弃瞄准，向四周均匀喷射）
 	if _get_behavior(weapon.weapon_id) == "radial":
@@ -517,8 +566,8 @@ func _fire_weapon(weapon) -> void:
 		return
 
 	var count: int = weapon.get_scaled_projectile_count()
-	var total_spread: float = weapon.spread_angle
-	if weapon.weapon_id == "shotgun":
+	var total_spread: float = weapon.get_scaled_spread()
+	if kind == "shotgun":
 		var size_mult := _evolved_size(weapon.weapon_id)
 		count = int(ceil(count * size_mult))
 		total_spread *= size_mult
@@ -620,22 +669,27 @@ func get_weapon_decay(weapon) -> float:
 
 func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 	# 根据武器类型创建不同的子弹
+	var kind := String(weapon.profile())
 	var bullet: Area2D
-	if weapon.weapon_id == "throwing_knife" or weapon.weapon_id == "kunai":
+	if kind == "throwing_knife" or kind == "kunai":
 		bullet = ObjectPool.acquire(KnifeBulletScene)
 		# 设置穿透数
 		if bullet.has_method("set_pierce_count"):
 			bullet.set_pierce_count(weapon.get_scaled_pierce_count())
-	elif weapon.weapon_id == "crossbow":
+	elif kind == "crossbow":
 		bullet = ObjectPool.acquire(CrossbowBoltScene)
 		if bullet.has_method("set_pierce_count"):
 			bullet.set_pierce_count(int(ceil(weapon.get_scaled_pierce_count() * _evolved_size(weapon.weapon_id))))
-	elif weapon.weapon_id == "holy_wand":
+	elif kind == "holy_wand":
 		bullet = ObjectPool.acquire(HolyBoltScene)
 		bullet.homing = true
 		bullet.homing_strength = 6.0
 	else:
 		bullet = ObjectPool.acquire(bullet_scene)
+	if "bounces_left" in bullet:
+		bullet.bounces_left = weapon.get_scaled_bounce_count()
+	if "fusion_kind" in bullet:
+		bullet.fusion_kind = String(weapon.fusion_kind)
 
 	bullet.global_position = origin + direction * 16.0
 	bullet.direction = direction
@@ -660,7 +714,7 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 
 	# 弹道外观：每把武器一个颜色/粗细，混战时也能一眼分出是谁在打
 	# 注意：对象池复用的子弹不会重跑 _ready，所以必须在这里每次重新上色
-	var vis: Dictionary = get_projectile_visual(weapon.weapon_id)
+	var vis: Dictionary = get_projectile_visual(kind)
 	if bullet.has_method("apply_visual_style"):
 		bullet.apply_visual_style(vis["color"], vis["length"], vis["thickness"], vis["round"])
 
@@ -680,7 +734,7 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 	# 火焰喷射器：给子弹挂一条火焰粒子流。
 	# 弹幕感的根源是"一颗颗点"，粒子流糊住间隙后读起来才是"持续喷火"。
 	# 注意对象池复用：reset_for_pool 里会摘掉这个节点。
-	if weapon.weapon_id == "flame_thrower" and bullet.get_node_or_null("FlameTrail") == null:
+	if kind == "flame_thrower" and bullet.get_node_or_null("FlameTrail") == null:
 		var fire := CPUParticles2D.new()
 		fire.name = "FlameTrail"
 		fire.amount = 26
@@ -808,6 +862,10 @@ func _play_shoot_sound(weapon_id: String) -> void:
 			sound_name = "poison_cloud"
 		"lightning_chain":
 			sound_name = "lightning_chain"
+		"scythe", "thorn_whip":
+			sound_name = "knife_throw"
+		"frost_bell":
+			sound_name = "holy_wand"
 	var sound := _audio_lib.get_sound(sound_name)
 	AudioManager.play_sfx(sound)
 
@@ -915,7 +973,63 @@ func _create_weapon_by_id(weapon_id: String):
 			return create_flame_thrower()
 		"blood_burst":
 			return create_blood_burst()
+		"scythe":
+			return create_scythe()
+		"thorn_whip":
+			return create_thorn_whip()
+		"frost_bell":
+			return create_frost_bell()
 	return null
+
+static func create_scythe() -> Resource:
+	var script = preload("res://scripts/weapons/weapon_data.gd")
+	var w = script.new()
+	w.weapon_name = "回旋镰"
+	w.weapon_id = "scythe"
+	w.description = "沿弧线飞出再折返，去程回程都能砍到"
+	w.base_damage = 5.5
+	w.fire_rate = 0.72
+	w.bullet_speed = 280.0
+	w.bullet_range = 240.0
+	w.projectile_count = 1
+	w.auto_aim = true
+	w.arc_width = 64.0
+	w.return_damage_mult = 0.6
+	return w
+
+static func create_thorn_whip() -> Resource:
+	var script = preload("res://scripts/weapons/weapon_data.gd")
+	var w = script.new()
+	w.weapon_name = "荆棘长鞭"
+	w.weapon_id = "thorn_whip"
+	w.description = "抽击身前扇形，把冲过来的敌人推开"
+	w.base_damage = 3.4
+	w.fire_rate = 0.42
+	w.bullet_speed = 0.0
+	w.bullet_range = 130.0
+	w.projectile_count = 1
+	w.auto_aim = false
+	w.cone_angle = 0.9
+	w.whip_reach = 130.0
+	w.knockback_force = 90.0
+	w.swing_count = 1
+	return w
+
+static func create_frost_bell() -> Resource:
+	var script = preload("res://scripts/weapons/weapon_data.gd")
+	var w = script.new()
+	w.weapon_name = "寒霜圣铃"
+	w.weapon_id = "frost_bell"
+	w.description = "周期性发出霜环，伤害低，但会挂上霜缚"
+	w.base_damage = 2.2
+	w.fire_rate = 1.25
+	w.bullet_speed = 0.0
+	w.bullet_range = 120.0
+	w.projectile_count = 1
+	w.auto_aim = true
+	w.ring_radius = 120.0
+	w.slow_duration = 1.6
+	return w
 
 static func create_kunai() -> Resource:
 	var script = preload("res://scripts/weapons/weapon_data.gd")
@@ -1020,7 +1134,8 @@ func _spawn_lightning_chain(weapon) -> void:
 	var lightning := LightningChainScene.instantiate()
 	lightning.global_position = player.global_position
 	lightning.base_damage = weapon.get_scaled_damage()
-	lightning.damage_multiplier = (player.get_total_damage_multiplier() if player else 1.0) * get_weapon_decay(weapon)
+	var player_mult: float = player.get_total_damage_multiplier() if player != null and player.has_method("get_total_damage_multiplier") else 1.0
+	lightning.damage_multiplier = player_mult * get_weapon_decay(weapon)
 	lightning.max_jumps = int(ceil(weapon.get_scaled_lightning_jumps() * _evolved_size(weapon.weapon_id)))
 	lightning.acquire_range = GameConfig.LIGHTNING_ACQUIRE_RANGE
 	lightning.jump_range = GameConfig.LIGHTNING_JUMP_RANGE
@@ -1041,6 +1156,241 @@ func _spawn_lightning_chain(weapon) -> void:
 		if vfx and player and is_instance_valid(player):
 			vfx.spawn_thunder_strike(player.global_position)
 	# 闪电节点找到首个目标时播放一次，空场不发声。
+
+func get_fusion_offer() -> Dictionary:
+	if run_fused:
+		return {}
+	var evolved: Array = []
+	for weapon_id in weapon_evolutions.keys():
+		var evolution: WeaponEvolution = weapon_evolutions[weapon_id]
+		if evolution != null and evolution.is_evolved:
+			evolved.append(String(weapon_id))
+	return WeaponFusionScript.offer(weapons, evolved, run_fused)
+
+func apply_fusion(recipe_id: String) -> bool:
+	var recipe := WeaponFusionScript.recipe(recipe_id)
+	if recipe.is_empty() or run_fused:
+		return false
+	var offer := get_fusion_offer()
+	if offer.is_empty() or String(offer.get("id", "")) != recipe_id:
+		return false
+	var primary_id := String(recipe["primary"])
+	var secondary_id := String(recipe["secondary"])
+	var primary = null
+	var secondary = null
+	for weapon in weapons:
+		if String(weapon.weapon_id) == primary_id:
+			primary = weapon
+		elif String(weapon.weapon_id) == secondary_id:
+			secondary = weapon
+	if primary == null or secondary == null:
+		return false
+	primary.stat_id = primary_id
+	primary.attack_profile = primary_id
+	primary.weapon_id = recipe_id
+	primary.weapon_name = String(recipe["name"])
+	primary.description = String(recipe["card"])
+	primary.fusion_kind = String(recipe["kind"])
+	primary.fused = true
+	primary.bonus_damage_mult = float(recipe.get("damage_mult", 1.0))
+	if recipe.has("interval"):
+		primary.interval_override = float(recipe["interval"])
+	weapons.erase(secondary)
+	_drop_weapon_timer(secondary_id)
+	_rekey_weapon_timer(primary_id, recipe_id, primary)
+	weapon_evolutions.erase(primary_id)
+	weapon_evolutions.erase(secondary_id)
+	run_fused = true
+	if shoot_timers.has(recipe_id):
+		shoot_timers[recipe_id].wait_time = get_fire_interval(primary)
+	print("融合：%s 吃掉了 %s" % [recipe["name"], secondary_id])
+	return true
+
+func _drop_weapon_timer(weapon_id: String) -> void:
+	if not shoot_timers.has(weapon_id):
+		return
+	var timer: Timer = shoot_timers[weapon_id]
+	shoot_timers.erase(weapon_id)
+	if is_instance_valid(timer):
+		timer.queue_free()
+
+func _rekey_weapon_timer(old_id: String, new_id: String, weapon) -> void:
+	if not shoot_timers.has(old_id):
+		return
+	var timer: Timer = shoot_timers[old_id]
+	shoot_timers.erase(old_id)
+	shoot_timers[new_id] = timer
+	timer.wait_time = get_fire_interval(weapon)
+
+func on_projectile_event(bullet: Node, reason: String) -> void:
+	var kind := String(bullet.get("fusion_kind"))
+	if kind == "":
+		return
+	match kind:
+		"thunder":
+			if reason != "hit":
+				return
+			bullet.fusion_kind = ""
+			_spawn_thunder_jump(bullet.global_position)
+		"miasma":
+			bullet.fusion_kind = ""
+			_spawn_fusion_cloud(bullet.global_position, WeaponFusionScript.POISON_MAX_DAMAGE, WeaponFusionScript.MIASMA_CLOUD_SCALE, WeaponFusionScript.MIASMA_CLOUD_DURATION, Color(0.25, 0.85, 0.3, 0.45), 0.5)
+		"split":
+			if reason != "range":
+				return
+			bullet.fusion_kind = ""
+			_spawn_split_bolts(bullet)
+		"burning":
+			if reason != "hit":
+				return
+			_count_burning_hit(bullet.global_position)
+
+func _spawn_thunder_jump(at: Vector2) -> void:
+	var lightning := LightningChainScene.instantiate()
+	lightning.global_position = at
+	lightning.base_damage = WeaponFusionScript.thunder_jump_damage()
+	lightning.damage_multiplier = 1.0
+	lightning.max_jumps = 1
+	lightning.acquire_range = WeaponFusionScript.THUNDER_JUMP_RANGE
+	lightning.jump_range = WeaponFusionScript.THUNDER_JUMP_RANGE
+	lightning.ranges_overridden = true
+	var room := RoomLookupScript.find_room(player) if player else null
+	if room == null:
+		room = RoomLookupScript.find_room(self)
+	if room != null:
+		lightning.play_bounds = RoomLookupScript.bounds_global(room)
+	_ensure_current_scene()
+	if _current_scene:
+		_current_scene.add_child(lightning)
+
+func _spawn_fusion_cloud(at: Vector2, damage: float, cloud_scale: float, duration: float, tint: Color, tick: float) -> void:
+	var cloud := PoisonCloudScene.instantiate()
+	cloud.global_position = at
+	cloud.base_damage = damage
+	cloud.damage_multiplier = 1.0
+	cloud.duration = duration
+	cloud.tick_interval = tick
+	cloud.tint = tint
+	cloud.set_size(cloud_scale)
+	_ensure_current_scene()
+	if _current_scene:
+		_current_scene.add_child(cloud)
+
+func _spawn_split_bolts(bullet: Node) -> void:
+	var direction: Vector2 = bullet.get("direction")
+	if direction == Vector2.ZERO:
+		direction = Vector2.RIGHT
+	var half := float(bullet.get("base_damage")) * 0.5
+	var mult := float(bullet.get("damage_multiplier"))
+	for side in [-1.0, 1.0]:
+		var dir := direction.rotated(side * 0.6)
+		var child := ObjectPool.acquire(HolyBoltScene)
+		child.global_position = bullet.global_position
+		child.direction = dir
+		child.rotation = dir.angle()
+		child.speed = float(bullet.get("speed"))
+		child.base_damage = half
+		child.damage_multiplier = mult
+		child.max_range = 160.0
+		child.homing = true
+		child.homing_strength = 4.0
+		child.fusion_kind = ""
+		var vis := get_projectile_visual("holy_wand")
+		if child.has_method("apply_visual_style"):
+			child.apply_visual_style(vis["color"], vis["length"], vis["thickness"], vis["round"])
+		_ensure_current_scene()
+		if _current_scene:
+			_current_scene.add_child(child)
+
+func _count_burning_hit(at: Vector2) -> void:
+	for weapon in weapons:
+		if String(weapon.fusion_kind) != "burning":
+			continue
+		weapon.fusion_hits += 1
+		if weapon.fusion_hits < WeaponFusionScript.BURNING_HITS:
+			return
+		weapon.fusion_hits = 0
+		_spawn_fusion_cloud(at, WeaponFusionScript.burning_damage(), WeaponFusionScript.BURNING_SCALE, 0.45, Color(0.86, 0.12, 0.2, 0.4), 0.12)
+		return
+
+func _live_count(group_name: String) -> int:
+	var count := 0
+	for node in get_tree().get_nodes_in_group(group_name):
+		if is_instance_valid(node):
+			count += 1
+	return count
+
+func _spawn_scythes(weapon) -> void:
+	if _live_count("player_scythe") >= 6:
+		return
+	var origin := player.global_position
+	var base_dir := _get_nearest_enemy_direction(origin)
+	if base_dir == Vector2.ZERO:
+		base_dir = Vector2.RIGHT
+	var count: int = weapon.get_scaled_projectile_count()
+	if _get_behavior(weapon.weapon_id) == "scythe_fan":
+		count = maxi(count, 3)
+	_play_shoot_sound("scythe")
+	var player_mult: float = player.get_total_damage_multiplier() if player.has_method("get_total_damage_multiplier") else 1.0
+	for i in range(count):
+		if _live_count("player_scythe") >= 6:
+			return
+		var blade = preload("res://scripts/player/boomerang_scythe.gd").new()
+		var spread: float = 0.0 if count == 1 else lerp(-0.35, 0.35, float(i) / float(count - 1))
+		blade.direction = base_dir.rotated(spread)
+		blade.origin = origin
+		blade.origin_set = true
+		blade.global_position = origin
+		blade.travel = weapon.bullet_range
+		blade.speed = maxf(weapon.bullet_speed, 220.0)
+		blade.arc_width = weapon.get_scaled_arc_width()
+		blade.base_damage = weapon.get_scaled_damage()
+		blade.damage_multiplier = player_mult * get_weapon_decay(weapon)
+		blade.return_damage_mult = weapon.get_scaled_return_mult()
+		blade.lateral_sign = -1.0 if i % 2 == 1 else 1.0
+		_ensure_current_scene()
+		if _current_scene:
+			_current_scene.add_child(blade)
+
+func _spawn_whip(weapon) -> void:
+	if _live_count("player_whip") >= 4:
+		return
+	var origin := player.global_position
+	var direction := (player.get_global_mouse_position() - origin).normalized()
+	if direction == Vector2.ZERO:
+		direction = Vector2.RIGHT
+	var swings: int = weapon.get_scaled_swings()
+	_play_shoot_sound("thorn_whip")
+	var player_mult: float = player.get_total_damage_multiplier() if player.has_method("get_total_damage_multiplier") else 1.0
+	for i in range(swings):
+		var lash = preload("res://scripts/player/thorn_lash.gd").new()
+		lash.origin = origin
+		lash.direction = direction.rotated(0.18 if i == 1 else 0.0)
+		lash.reach = weapon.get_scaled_whip_reach()
+		lash.cone = weapon.get_scaled_cone()
+		lash.base_damage = weapon.get_scaled_damage()
+		lash.damage_multiplier = player_mult * get_weapon_decay(weapon)
+		lash.knockback = weapon.get_scaled_knockback()
+		lash.also_behind = _get_behavior(weapon.weapon_id) == "both_sides" and i == 0
+		_ensure_current_scene()
+		if _current_scene:
+			_current_scene.add_child(lash)
+
+func _spawn_frost(weapon) -> void:
+	if _live_count("player_frost") >= 3:
+		return
+	var ring = preload("res://scripts/player/frost_ring.gd").new()
+	ring.global_position = player.global_position
+	ring.radius = weapon.get_scaled_ring_radius()
+	ring.base_damage = weapon.get_scaled_damage()
+	var player_mult: float = player.get_total_damage_multiplier() if player.has_method("get_total_damage_multiplier") else 1.0
+	ring.damage_multiplier = player_mult * get_weapon_decay(weapon)
+	ring.slow_duration = weapon.get_scaled_slow_duration()
+	ring.linger = _get_behavior(weapon.weapon_id) == "frost_field"
+	_ensure_current_scene()
+	if _current_scene:
+		_current_scene.add_child(ring)
+	_play_shoot_sound("frost_bell")
 
 func _get_nearest_enemy_position(from: Vector2) -> Vector2:
 	# Recheck living targets before placing an attack.

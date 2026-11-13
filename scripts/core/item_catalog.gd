@@ -18,6 +18,9 @@ const WEAPONS: Array = [
 	{"id": "kunai", "name": "苦无", "desc": "极高速连投暗器", "type": "weapon", "price": 28},
 	{"id": "flame_thrower", "name": "火焰喷射器", "desc": "近距离持续灼烧", "type": "weapon", "price": 26},
 	{"id": "blood_burst", "name": "血爆", "desc": "自动在最近的敌群中引爆血海（无敌人不发射）", "type": "weapon", "price": 34},
+	{"id": "scythe", "name": "回旋镰", "desc": "沿弧线飞出再折返，去程回程都能砍到", "type": "weapon", "price": 32},
+	{"id": "thorn_whip", "name": "荆棘长鞭", "desc": "抽击身前扇形，把冲过来的敌人推开", "type": "weapon", "price": 30},
+	{"id": "frost_bell", "name": "寒霜圣铃", "desc": "周期性霜环，伤害低，但会挂上霜缚", "type": "weapon", "price": 30},
 ]
 
 const PASSIVES: Array = [
@@ -94,6 +97,15 @@ static func get_icon_texture(item_id: String, item_type: String = "") -> Texture
 				"kunai": key = "kunai"
 				"flame_thrower": key = "flame_thrower"
 				"blood_burst": key = "blood_burst"
+				# 新武器的正式图标还没到，先借用相近的旧图标。
+				"scythe": key = "knife"
+				"thorn_whip": key = "kunai"
+				"frost_bell": key = "holy_wand"
+				"thunder_bolt": key = "crossbow"
+				"miasma_shot": key = "shotgun"
+				"returning_blade": key = "knife"
+				"twin_chant": key = "holy_wand"
+				"burning_blood": key = "flame_thrower"
 		"passive":
 			match item_id:
 				"magnet": key = "magnet"
@@ -171,6 +183,12 @@ static func create_weapon(id: String):
 			return W.create_flame_thrower()
 		"blood_burst":
 			return W.create_blood_burst()
+		"scythe":
+			return W.create_scythe()
+		"thorn_whip":
+			return W.create_thorn_whip()
+		"frost_bell":
+			return W.create_frost_bell()
 	return null
 
 static func create_passive(id: String):

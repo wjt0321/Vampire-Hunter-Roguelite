@@ -137,7 +137,20 @@ func _load_enemy_textures():
 		},
 		"elite_vampire": {
 			"idle": _load_texture("res://assets/sprites/enemies/elite_vampire_idle.png")
-		}
+		},
+		# 新敌人的专属序列帧还没到。先登记旧图，脚本里再染色，换图时只改这里。
+		"shield_guard": {
+			"idle": _load_texture("res://assets/sprites/enemies/zombie_walk.png"),
+		},
+		"blood_priest": {
+			"idle": _load_texture("res://assets/sprites/enemies/mage_cast.png"),
+		},
+		"web_weaver": {
+			"idle": _load_texture("res://assets/sprites/enemies/bat_fly.png"),
+		},
+		"coffin_guard": {
+			"idle": _load_texture("res://assets/sprites/enemies/gargoyle_idle.png"),
+		},
 	}
 
 func _load_boss_textures():

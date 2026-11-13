@@ -846,6 +846,15 @@ func _apply_daily_rules() -> void:
 		upgrade_ui.rng = upgrade_rng
 	print("☀ 每日挑战 %s · %s" % [GameConfig.daily_date, GameConfig.daily_name_list()])
 
+func _boss_scene_for(boss_id: String) -> PackedScene:
+	match boss_id:
+		"blood_lord":
+			return preload("res://scenes/enemies/blood_lord.tscn")
+		"blood_matriarch":
+			return preload("res://scenes/enemies/blood_matriarch.tscn")
+		_:
+			return boss_scene
+
 func _enter_boss_room() -> void:
 	var boss_name: String = dungeon.get_boss_name()
 	print("💀 第 %d 层 Boss 房间! %s 降临!" % [dungeon.current_floor, boss_name])
@@ -854,12 +863,12 @@ func _enter_boss_room() -> void:
 	AudioManager.play_bgm(_audio_lib.get_boss_bgm())
 	_boss_defeat_handled = false
 
-	# 生成 Boss
-	var boss := boss_scene.instantiate()
+	# 生成 Boss。前两层用各自的控制器，第三层仍是旧女王脚本。
+	var boss := _boss_scene_for(dungeon.get_boss_id()).instantiate()
 	var boss_achievements := get_node_or_null("/root/AchievementManager")
 	_boss_damage_baseline = float(boss_achievements.get_run_stats().get("damage_taken", 0.0)) if boss_achievements else 0.0
-	# 形态决定血量档位、攻击参数与光效
-	boss.boss_variant = dungeon.get_boss_variant()
+	if "boss_variant" in boss:
+		boss.boss_variant = dungeon.get_boss_variant()
 	boss.spawn_wave = maxi(wave_manager.current_wave, 1)
 	boss.floor_index = dungeon.current_floor
 	if current_room:

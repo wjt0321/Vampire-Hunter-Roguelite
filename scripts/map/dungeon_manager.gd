@@ -3,53 +3,61 @@ class_name DungeonManager
 ## 地下城管理器
 ## 负责楼层推进、层内房间节奏（战斗/商店/宝箱/休息/Boss）、每层敌人池与 Boss 形态
 ##
-## 结构：3 层 × 5 房间 = 15 房间，每层最后一间为 Boss 房
+## 结构：当前可玩 3 层，每层最后一间为 Boss 房。五层蓝图见 FLOOR_BLUEPRINT，后三层还是灰盒。
 ## 波次计数全局累加（不随楼层重置），层倍率叠加在波次缩放之上
 
 # === 层配置表 ===
-# themes      : 该层战斗房间轮流使用的视觉主题
-# enemies     : 该层的敌人池（波次仍会按 wave 做一次解锁过滤）
-# boss_variant: 传给 vampire_lord 的形态编号（0 领主 / 1 亲王 / 2 女王）
-# accent      : 楼层横幅的主题色
+# 正在打的只有前三层。后两层在 FLOOR_BLUEPRINT 里，Boss 还没做成，不进这一局。
+# boss_id 决定场景。boss_variant 只留给仍走旧脚本的血族女王。
+# 五层蓝图：后三层是灰盒，不能把没做完的 Boss 当成正式内容推进。
+const FLOOR_BLUEPRINT: Array = [
+	{"index": 1, "boss_id": "blood_lord", "playable": true, "greybox": false},
+	{"index": 2, "boss_id": "blood_matriarch", "playable": true, "greybox": false},
+	{"index": 3, "boss_id": "tomb_warden", "playable": false, "greybox": true},
+	{"index": 4, "boss_id": "alchemist_prince", "playable": false, "greybox": true},
+	{"index": 5, "boss_id": "eclipse_queen", "playable": false, "greybox": true},
+]
+
 var floors_data: Array = [
 	{
 		"index": 1,
 		"name": "血月回廊",
 		"subtitle": "THE CRIMSON HALLS",
-		"hint": "腐朽的大厅里，血的味道还很新鲜",
+		"hint": "盾卫挡在正面，绕开再打",
 		"rooms": 6,
 		"special_rooms": 1,
 		"themes": ["dungeon", "castle"],
-		"enemies": ["vampire", "bat", "zombie", "skeleton_archer", "werewolf"],
-		"boss_variant": 0,
-		"boss_name": "吸血鬼领主",
+		"enemies": ["vampire", "bat", "zombie", "skeleton_archer", "werewolf", "shield_guard"],
+		"boss_id": "blood_lord",
+		"boss_name": "血铠领主",
 		"accent": Color(0.78, 0.13, 0.18),
 	},
 	{
 		"index": 2,
-		"name": "骸骨墓穴",
-		"subtitle": "THE BONE CRYPT",
-		"hint": "亡者在此长眠，直到有人打扰",
+		"name": "织血巢穴",
+		"subtitle": "THE BLOOD NEST",
+		"hint": "祭司会治疗同伴，网要先清掉",
 		"rooms": 7,
 		"special_rooms": 2,
 		"themes": ["cave", "dungeon"],
 		"enemies": ["vampire", "bat", "zombie", "skeleton_archer", "werewolf",
-				"exploder", "elite_vampire", "vampire_mage"],
-		"boss_variant": 1,
-		"boss_name": "血族亲王",
-		"accent": Color(0.55, 0.28, 0.85),
+				"exploder", "elite_vampire", "vampire_mage", "blood_priest", "web_weaver"],
+		"boss_id": "blood_matriarch",
+		"boss_name": "织血母皇",
+		"accent": Color(0.72, 0.16, 0.32),
 	},
 	{
 		"index": 3,
 		"name": "血之王座",
 		"subtitle": "THE THRONE OF BLOOD",
-		"hint": "一切的源头，就在这扇门后",
+		"hint": "棺卫倒下后还会爬起来一次",
 		"rooms": 7,
 		"special_rooms": 2,
 		"themes": ["castle", "boss"],
 		"enemies": ["vampire", "bat", "zombie", "skeleton_archer", "werewolf",
 				"exploder", "elite_vampire", "vampire_mage", "summoner",
-				"gargoyle", "vampire_prince"],
+				"gargoyle", "vampire_prince", "coffin_guard"],
+		"boss_id": "vampire_queen",
 		"boss_variant": 2,
 		"boss_name": "血族女王 · 塞拉菲娜",
 		"accent": Color(0.95, 0.72, 0.25),
@@ -268,6 +276,9 @@ func get_floor_name() -> String:
 
 func get_boss_variant() -> int:
 	return int(get_current_floor_data().get("boss_variant", 0))
+
+func get_boss_id() -> String:
+	return String(get_current_floor_data().get("boss_id", "vampire_queen"))
 
 func get_boss_name() -> String:
 	return String(get_current_floor_data().get("boss_name", "吸血鬼领主"))

@@ -19,6 +19,10 @@ var enemy_scenes: Dictionary = {
 	"vampire_mage": preload("res://scenes/enemies/vampire_mage.tscn"),
 	"gargoyle": preload("res://scenes/enemies/gargoyle.tscn"),
 	"vampire_prince": preload("res://scenes/enemies/vampire_prince.tscn"),
+	"shield_guard": preload("res://scenes/enemies/shield_guard.tscn"),
+	"blood_priest": preload("res://scenes/enemies/blood_priest.tscn"),
+	"web_weaver": preload("res://scenes/enemies/web_weaver.tscn"),
+	"coffin_guard": preload("res://scenes/enemies/coffin_guard.tscn"),
 }
 
 # === 波次配置（从 GameConfig 读取） ===
@@ -80,7 +84,12 @@ func _alive_enemies() -> int:
 	_alive_probe_timer -= get_process_delta_time()
 	if _alive_probe_timer <= 0.0:
 		_alive_probe_timer = 0.5
-		_alive_probe_cache = get_tree().get_nodes_in_group("enemies").size()
+		var alive := 0
+		for enemy in get_tree().get_nodes_in_group("enemies"):
+			if enemy.get("counts_as_enemy") == false:
+				continue
+			alive += 1
+		_alive_probe_cache = alive
 	return _alive_probe_cache
 
 func _can_spawn_more() -> bool:
@@ -405,7 +414,7 @@ func _maybe_assign_affix(enemy: Node) -> void:
 	if not String(enemy.elite_affix).is_empty():
 		apply_abyss_dual(enemy)
 		return
-	if bool(enemy.get("suppress_affix")):
+	if enemy.get("suppress_affix") == true or enemy.get("blocks_random_affix") == true:
 		return
 	if _roll01() >= GameConfig.get_elite_affix_chance(floor_index):
 		return
@@ -426,7 +435,7 @@ func apply_abyss_dual(enemy: Node) -> void:
 		return
 	if enemy == null or not ("secondary_affix" in enemy):
 		return
-	if bool(enemy.get("suppress_affix")):
+	if enemy.get("suppress_affix") == true or enemy.get("blocks_random_affix") == true:
 		return
 	if not String(enemy.secondary_affix).is_empty():
 		return
@@ -451,6 +460,10 @@ const ENEMY_WEIGHTS: Dictionary = {
 	"vampire_mage": 1.2,
 	"gargoyle": 0.8,
 	"vampire_prince": 0.3,
+	"shield_guard": 4.0,
+	"blood_priest": 2.0,
+	"web_weaver": 2.2,
+	"coffin_guard": 1.6,
 }
 
 func _get_wave_based_pool() -> Array:
