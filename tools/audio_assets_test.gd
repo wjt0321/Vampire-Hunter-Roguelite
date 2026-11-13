@@ -41,6 +41,13 @@ func _run() -> void:
 	if not save.is_tool_run or not save.save_path.begins_with("user://test_"):
 		quit(1)
 		return
+	# The editor omits default-valued settings from project.godot; verify runtime routing.
+	check(ProjectSettings.get_setting("audio/buses/default_bus_layout") == "res://default_bus_layout.tres", "effective default audio bus layout")
+	for bus_name in ["Music", "SFX"]:
+		var bus_index := AudioServer.get_bus_index(bus_name)
+		check(bus_index > 0, "audio bus exists " + bus_name)
+		if bus_index > 0:
+			check(AudioServer.get_bus_send(bus_index) == &"Master", "audio bus routes to Master " + bus_name)
 	var lib = root.get_node("AudioLib")
 	var audio = root.get_node("AudioManager")
 	check(lib.SFX_PATHS.size() == 29 and lib.BGM_PATHS.size() == 6, "complete 29 SFX and 6 BGM catalog")

@@ -50,6 +50,9 @@ builds/
 # Local agent workspace
 .workbuddy/
 
+# Website-only Godot import sidecars (site/.gdignore prevents regeneration)
+/site/**/*.import
+
 # Screenshot debris
 /gem_shot.png.import
 /gem_crop_*.png.import
