@@ -43,7 +43,7 @@ const BOSSES := {
 	"tomb_warden": {"states": ["idle", "move", "lantern_sweep", "revive", "ward_break", "death"], "blurb": "结界在就能复苏，打掉结界就停"},
 	"alchemist_prince": {"states": ["idle", "move", "cast", "solo_shift", "death"], "blurb": "和巨像互改招式，药液敌我都伤"},
 	"alchemist_colossus": {"states": ["idle", "move", "slam", "enrage", "death"], "blurb": "炼金巨像，亲王倒下后改砸地"},
-	"eclipse_queen": {"states": ["idle", "move", "blink", "death"], "blurb": "换位前标落点，毁掉祭坛会缩小安全圈"},
+	"eclipse_queen": {"states": ["idle", "move", "blink", "appear", "phase_change", "death"], "blurb": "换位前标落点，毁掉祭坛会缩小安全圈"},
 }
 
 const WEAPONS := {
