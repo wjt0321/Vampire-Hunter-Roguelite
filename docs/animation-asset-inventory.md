@@ -369,7 +369,7 @@
 
 - **范围：** 月蚀女王完整玩法垂直切片（blink 换位、原地消散与凝聚、月相推进转段、死亡演出与自救回收）；五名 Boss 专属动作至此全部完成。
 - **素材：** `assets/sprites/boss/eclipse_queen/` 下 6 张透明横条（idle、move、blink、appear、phase_change、death），共 36 帧；每张 768×128 RGBA、单格 128×128、6 帧。生成配方、再生与补丁记录见 `production.json`。
-- **实际房间预览：** `artifacts/eclipse_queen/eclipse_queen_preview.avi`，30 fps、280 帧；脚本动作演示覆盖 6 种状态并确认二阶段月相转段（`preview_capture.json` 中 `appear_shown=true`、`blink_shown=true`、`phase_change_shown=true`、`death_shown=true`、`phase_two_reached=true`、`failures=0`）；状态截图为同目录 `scene_*.png`。
+- **实际房间预览：** `artifacts/eclipse_queen/eclipse_queen_preview.avi`，30 fps、373 帧（12.4s；脚本计帧 280）脚本动作演示覆盖 6 种状态并确认二阶段月相转段（`preview_capture.json` 中 `appear_shown=true`、`blink_shown=true`、`phase_change_shown=true`、`death_shown=true`、`phase_two_reached=true`、`failures=0`）；状态截图为同目录 `scene_*.png`。
 - **自动回归：** `validation_results.json` 中十组结果均为 exit 0、issues 为空：月蚀女王动画 113、炼金亲王动画 122、墓穴守望者动画 65、织血母皇动画 55、血铠领主动画 122、楼层扩展 32、玩法切片 293、迭代包 40、精灵表 18、生命周期清理 13；合计 **873 项通过、0 项失败**。回归入口 `python artifacts/eclipse_queen/run_checks.py`（五组动画测试自动附加 `-- --real-assets`）。
 - **端到端烟测：** `dungeon_smoke_five_floors.log` 完成五层真实流程，`RESULT dungeon_smoke fail=0`。
 - **日志与资源释放：** 回归与烟测日志均落盘备查（每 case 一个 `.log`），未见 Godot `ERROR`、`WARNING`、对象泄漏或资源仍在使用记录。
