@@ -134,8 +134,9 @@ func _test_bosses() -> void:
 	prince.colossus.current_hp = 5.0
 	prince.colossus.take_damage(20.0)
 	_check(prince._mode == "solo_prince", "巨像先倒，亲王改成贴脸招式")
-	await process_frame
-	_check(not is_instance_valid(colossus), "死亡巨像会释放场景节点")
+	# 死亡演出契约（本批次 Task 2）：巨像 0.4s 淡出后自回收，<0.8s；旧断言按 1 帧即释放已失效
+	await create_timer(0.8).timeout
+	_check(not is_instance_valid(colossus), "死亡巨像 0.8s 内自回收场景节点")
 
 	var second = load("res://scenes/enemies/alchemist_prince.tscn").instantiate()
 	second.skip_intro = true
@@ -149,8 +150,8 @@ func _test_bosses() -> void:
 		"亲王先倒，巨像狂暴且战斗尚未结束")
 	survivor.take_damage(survivor.current_hp + 1.0)
 	_check(defeats.size() == 1, "两者都倒下才发出一次胜利信号")
-	await process_frame
-	_check(not is_instance_valid(survivor), "狂暴巨像死亡后也释放节点")
+	await create_timer(0.8).timeout
+	_check(not is_instance_valid(survivor), "狂暴巨像死亡后 0.8s 内自回收节点")
 
 	var interrupted = load("res://scenes/enemies/alchemist_prince.tscn").instantiate()
 	interrupted.skip_intro = true
