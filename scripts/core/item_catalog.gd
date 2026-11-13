@@ -43,6 +43,9 @@ const PASSIVES: Array = [
 	{"id": "blood_edge", "name": "血刃", "desc": "命中 25% 几率使敌人流血", "type": "passive", "price": 26},
 	{"id": "frost_bind", "name": "霜缚", "desc": "命中 30% 几率使敌人减速", "type": "passive", "price": 24},
 	{"id": "blood_drain", "name": "汲取", "desc": "造成伤害的 2% 转为生命", "type": "passive", "price": 28},
+	{"id": "execution_mark", "name": "处刑印记", "desc": "连续命中同一精英或 Boss 会叠伤害，换目标清空", "type": "passive", "price": 28},
+	{"id": "time_gear", "name": "时滞齿轮", "desc": "弹丸变大并多穿透 1，飞行变慢", "type": "passive", "price": 26},
+	{"id": "cold_blood", "name": "寒血反应", "desc": "流血且被霜缚的目标会额外崩开一次", "type": "passive", "price": 26},
 ]
 
 const STATS: Array = [
@@ -139,6 +142,9 @@ static func get_icon_texture(item_id: String, item_type: String = "") -> Texture
 				"blood_edge": key = "blood_edge"
 				"frost_bind": key = "frost_bind"
 				"blood_drain": key = "blood_drain"
+				"execution_mark": key = "mightstone"
+				"time_gear": key = "kunai"
+				"cold_blood": key = "frozen"
 		_:
 			# stat / consumable / basic 共用一套语义图标
 			match item_id:
@@ -247,4 +253,10 @@ static func create_passive(id: String):
 			return P.create_frost_bind()
 		"blood_drain":
 			return P.create_blood_drain()
+		"execution_mark":
+			return P.create_execution_mark()
+		"time_gear":
+			return P.create_time_gear()
+		"cold_blood":
+			return P.create_cold_blood()
 	return null

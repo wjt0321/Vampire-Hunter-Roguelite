@@ -319,6 +319,59 @@ func add_weapon(weapon_data) -> bool:
 	print("获得武器: %s" % weapon_data.weapon_name)
 	return true
 
+func recast_choices() -> Array:
+	## 还没进化、也没融合的武器，各给最多 3 个可见替换。
+	var result: Array = []
+	for weapon in weapons:
+		if bool(weapon.get("fused")) or is_weapon_evolved(String(weapon.weapon_id)):
+			continue
+		var shown := 0
+		for opt in ItemCatalog.WEAPONS:
+			var next_id := String(opt.get("id", ""))
+			if next_id == String(weapon.weapon_id) or bool(opt.get("upgrade_only", false)):
+				continue
+			result.append({
+				"from": weapon.weapon_id,
+				"to": next_id,
+				"from_name": weapon.weapon_name,
+				"to_name": opt.get("name", next_id),
+				"level": maxi(1, int(weapon.current_level) - 1),
+			})
+			shown += 1
+			if shown >= 3:
+				break
+	return result
+
+func apply_recast(from_id: String, to_id: String) -> bool:
+	var index := -1
+	var old = null
+	for i in range(weapons.size()):
+		if String(weapons[i].weapon_id) == from_id:
+			index = i
+			old = weapons[i]
+			break
+	if old == null or bool(old.get("fused")) or is_weapon_evolved(from_id):
+		return false
+	var fresh = _create_weapon_by_id(to_id)
+	if fresh == null:
+		return false
+	var target_level := maxi(1, int(old.current_level) - 1)
+	while int(fresh.current_level) < target_level:
+		if not fresh.level_up():
+			break
+	weapons[index] = fresh
+	_drop_weapon_timer(from_id)
+	var timer := Timer.new()
+	timer.wait_time = get_fire_interval(fresh)
+	timer.one_shot = true
+	add_child(timer)
+	shoot_timers[fresh.weapon_id] = timer
+	if weapon_evolutions.has(from_id) and not weapon_evolutions[from_id].is_evolved:
+		weapon_evolutions.erase(from_id)
+	if fresh.is_max_level():
+		_create_weapon_evolution(fresh)
+	return true
+
 func _create_weapon_evolution(weapon) -> void:
 	## 为满级武器创建进化数据
 	if weapon_evolutions.has(weapon.weapon_id):
@@ -746,7 +799,13 @@ func _spawn_bullet(origin: Vector2, direction: Vector2, weapon) -> void:
 	bullet.global_position = origin + direction * 16.0
 	bullet.direction = direction
 	bullet.rotation = direction.angle()
-	bullet.speed = weapon.bullet_speed
+	bullet.speed = weapon.get_scaled_bullet_speed()
+	if player != null and player.get("has_time_gear") == true:
+		bullet.speed *= 0.72
+		bullet.scale *= float(player.get("time_gear_scale"))
+		if bullet.has_method("set_pierce_count"):
+			var current_pierce := int(bullet.get("max_pierce"))
+			bullet.set_pierce_count(current_pierce + 1)
 	bullet.base_damage = weapon.get_scaled_damage()
 	# 根据房间大小限制子弹射程，避免穿越房间
 	# 旧写法 player.get_parent() 拿到的是 Main 不是房间 → 房间大小永远取不到，

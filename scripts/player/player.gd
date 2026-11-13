@@ -112,6 +112,13 @@ var crit_damage: float = 2.0  # 暴击伤害倍率
 var bleed_chance: float = 0.0  # 血刃：命中时流血几率
 var slow_chance: float = 0.0  # 霜缚：命中时减速几率
 var drain_ratio: float = 0.0  # 汲取：伤害转治疗比例
+var execution_bonus_per_stack: float = 0.0
+var execution_target: int = 0
+var execution_stacks: int = 0
+var has_time_gear: bool = false
+var time_gear_scale: float = 1.0
+var has_cold_blood: bool = false
+var cold_blood_damage: float = 0.0
 ## 汲取的零头水池：攒够 DRAIN_HEAL_THRESHOLD 才回一次血
 var _drain_pool: float = 0.0
 
@@ -820,6 +827,13 @@ func add_passive_item(item) -> void:
 	passive_items.append(item)
 	_apply_passive_effect(item)
 	print("获得被动道具: %s" % item.item_name)
+	if is_inside_tree():
+		var log: Node = get_tree().get_first_node_in_group("run_log")
+		if log != null and log.has_method("note_build"):
+			log.call("note_build", "被动", String(item.item_name))
+		var saves := get_node_or_null("/root/SaveManager")
+		if saves != null and saves.has_method("discover_codex"):
+			saves.discover_codex("passive", String(item.item_id))
 
 func _apply_passive_effect(item) -> void:
 	match item.effect_type:
@@ -864,6 +878,14 @@ func _apply_passive_effect(item) -> void:
 			slow_chance = _passive_capped(item)
 		13: # DRAIN
 			drain_ratio = _passive_capped(item)
+		14:
+			execution_bonus_per_stack = item.get_scaled_value()
+		15:
+			has_time_gear = true
+			time_gear_scale = item.get_scaled_value()
+		16:
+			has_cold_blood = true
+			cold_blood_damage = item.get_scaled_value()
 
 func _passive_capped(item) -> float:
 	## 生效值一律经 GameConfig.cap_passive_value()。
@@ -879,6 +901,20 @@ func _passive_capped(item) -> float:
 	if item.has_method("effective_value"):
 		return float(item.effective_value())
 	return GameConfig.cap_passive_value(String(item.item_id), item.get_scaled_value())
+
+func execution_multiplier(enemy: Node) -> float:
+	if execution_bonus_per_stack <= 0.0 or enemy == null:
+		return 1.0
+	var marked := enemy.is_in_group("boss") or String(enemy.get("elite_affix")) != ""
+	if not marked:
+		return 1.0
+	var target_id := enemy.get_instance_id()
+	if target_id != execution_target:
+		execution_target = target_id
+		execution_stacks = 1
+	else:
+		execution_stacks = mini(execution_stacks + 1, 4)
+	return 1.0 + execution_bonus_per_stack * float(execution_stacks)
 
 func on_dealt_damage(amount: float) -> void:
 	## 汲取的入账口。由敌人基类在每次受伤时回调。

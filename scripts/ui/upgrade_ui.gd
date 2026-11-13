@@ -212,6 +212,12 @@ func _passive_value_current(passive_id: String, value: float) -> String:
 			return "命中时 %.0f%% 几率使敌人减速" % (value * 100.0)
 		"blood_drain":
 			return "造成伤害的 %.1f%% 转为生命" % (value * 100.0)
+		"execution_mark":
+			return "同一精英或 Boss 每层伤害 +%.0f%%" % (value * 100.0)
+		"time_gear":
+			return "弹丸放大到 %.0f%%，穿透 +1，飞行变慢" % (value * 100.0)
+		"cold_blood":
+			return "流血且霜缚时崩开 %.0f 伤害" % value
 		"regeneration":
 			return "每 5 秒恢复 %.0f%% 最大生命" % (value * 100.0)
 		"greed_ring":
@@ -250,6 +256,12 @@ func _passive_value_text(passive_id: String, cur_value: float, next_value: float
 			return "减速几率 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
 		"blood_drain":
 			return "伤害转治疗 %.1f%% → %.1f%%" % [cur_value * 100.0, next_value * 100.0]
+		"execution_mark":
+			return "每层伤害 +%.0f%% → +%.0f%%" % [cur_value * 100.0, next_value * 100.0]
+		"time_gear":
+			return "弹丸 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
+		"cold_blood":
+			return "崩开 %.0f → %.0f" % [cur_value, next_value]
 		"regeneration":
 			return "每 5 秒回复 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
 		"greed_ring":
