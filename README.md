@@ -116,8 +116,8 @@ GODOT=/path/to/Godot_v4.x-stable_win64_console.exe
 "$GODOT" --path . --script res://tools/readme_shots.gd
 ```
 
-设计文档：`docs/GDD.md`（含各系统的取舍说明）、`docs/ROADMAP.md`（进度）、
-`docs/reference-deconstruction.md`（开源竞品拆解）。
+设计文档：当前玩法见 [`docs/CURRENT.md`](docs/CURRENT.md)。
+`docs/GDD.md` 和 `docs/ROADMAP.md` 是更早的记录，不拿来排下一轮。
 
 ## 许可
 
