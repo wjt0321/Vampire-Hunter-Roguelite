@@ -648,7 +648,8 @@ const ROOM_EVENT_GUARD_XP: int = 60
 const ROOM_EVENT_GUARD_COLOR: Color = Color(1.0, 0.78, 0.25)
 
 # ==================== 深渊阶梯（17.14） ====================
-# 通关后可选"继续深入"：+1 深渊等级重开三层，敌人更强、掉落更多。
+# 通关后可选"继续深入"：+1 深渊等级，从第 2 层重开。数值仍按级变厚，
+# 另外轮换一条誓约，让下一轮的问题不一样。
 # GameConfig 不是 autoload（纯静态类），运行时状态必须用 static var：
 # 静态变量挂在脚本资源本身上，reload_current_scene() 重建 main 后依然在。
 # 等级在"普通重开 / 返回主菜单（结算界面与暂停菜单两条路径）"时归零；
@@ -707,6 +708,9 @@ static func abyss_rule_tags() -> PackedStringArray:
 		out.append("弹+1")
 	if abyss_level >= ABYSS_DUAL_AFFIX_LEVEL:
 		out.append("双缀")
+	var oath := abyss_oath()
+	if not oath.is_empty():
+		out.append(String(oath.get("name", "")))
 	return out
 
 static func abyss_rule_text() -> String:
@@ -715,14 +719,53 @@ static func abyss_rule_text() -> String:
 		parts.append("远程敌人额外 1 发")
 	if abyss_level >= ABYSS_DUAL_AFFIX_LEVEL:
 		parts.append("精英必带双词缀")
+	var oath := abyss_oath()
+	if not oath.is_empty():
+		parts.append("%s：%s" % [String(oath.get("name", "")), String(oath.get("detail", ""))])
+	if abyss_level > 0:
+		parts.append("从第 %d 层开局" % abyss_start_floor())
 	return "、".join(parts)
+
+## 鼠标瞄准的武器。其余武器自动索敌。誓约按这个名单禁新武器，已拿在手里的不收走。
+const AIMED_WEAPON_IDS: Array = ["pistol", "shotgun", "repeater", "thorn_whip", "flame_thrower"]
+
+## 深渊誓约按等级轮换。等级 1 起就换问题，不再只是加血。
+const ABYSS_OATHS: Array = [
+	{"id": "ban_auto", "name": "禁自动", "detail": "不能新拿自动索敌的武器，手里已有的留着"},
+	{"id": "ban_aimed", "name": "禁瞄准", "detail": "不能新拿鼠标瞄准的武器，手里已有的留着"},
+	{"id": "puddle", "name": "药潮", "detail": "每间战斗房多一滩药液，敌我都会伤"},
+]
+
+static func abyss_start_floor() -> int:
+	return 2 if abyss_level > 0 else 1
+
+static func abyss_oath_for_level(level: int) -> Dictionary:
+	if level <= 0:
+		return {}
+	return ABYSS_OATHS[(level - 1) % ABYSS_OATHS.size()]
+
+static func abyss_oath() -> Dictionary:
+	return abyss_oath_for_level(abyss_level)
+
+static func abyss_blocks_new_weapon(weapon_id: String) -> bool:
+	var oath_id := String(abyss_oath().get("id", ""))
+	var aimed: bool = weapon_id in AIMED_WEAPON_IDS
+	if oath_id == "ban_auto":
+		return not aimed
+	if oath_id == "ban_aimed":
+		return aimed
+	return false
+
+static func abyss_spills_puddle() -> bool:
+	return String(abyss_oath().get("id", "")) == "puddle"
 
 # ==================== 地图事件房（17.15） ====================
 # 岔路挂在“下一间本来是战斗房”的门口，不增加层内房间数，也不改商店/宝箱/休息的配额。
 # 不选就还是原来的战斗房，所以旧的房间序列测试不用改。
 
 const MAP_EVENT_TYPES: Array = ["mutation", "fog", "mirror"]
-const MAP_EVENT_FORKS_BY_FLOOR: Array = [1, 1, 2, 2, 2]
+## 第 2–4 层只有 5 间房，扣掉特殊房和修饰房之后只剩一个岔路位。第 5 层仍是两个。
+const MAP_EVENT_FORKS_BY_FLOOR: Array = [1, 1, 1, 1, 2]
 const MUTATION_HP_RATIO: float = 0.25
 const MUTATION_WIN_CHANCE: float = 0.55
 const MUTATION_WIN_SILVER: int = 55

@@ -418,6 +418,9 @@ func _floor_debut_card() -> Dictionary:
 		var weapon_id := String(weapon_opt.get("id", ""))
 		if saves != null and saves.has_method("is_weapon_unlocked") and not bool(saves.is_weapon_unlocked(weapon_id)):
 			continue
+		var owned_now = _find_owned_weapon(weapon_id)
+		if owned_now == null and GameConfig.abyss_blocks_new_weapon(weapon_id):
+			continue
 		if is_banished(weapon_opt):
 			continue
 		if _is_weapon_evolved(weapon_id):
@@ -693,6 +696,8 @@ func _get_available_options() -> Array:
 		if slots_full and not owned:
 			continue
 		if not owned and int(weapon_opt.get("unlock_floor", 0)) > 0 and not _is_weapon_unlocked(String(weapon_opt["id"])):
+			continue
+		if not owned and GameConfig.abyss_blocks_new_weapon(String(weapon_opt["id"])):
 			continue
 		# 满级武器再出现就是废卡（卡面会写成 Lv.5 → Lv.5），直接过滤
 		var owned_weapon = _find_owned_weapon(weapon_opt["id"])

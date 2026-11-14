@@ -349,6 +349,45 @@ func replace_lowest_with(weapon_id: String) -> bool:
 	return false
 
 
+func next_build_hint() -> String:
+	## 结算用。只在已经接近满级时说话，避免第 1 间房就催人养手枪。
+	if player == null or not is_instance_valid(player):
+		return ""
+	var owned_passives := {}
+	if "passive_items" in player:
+		for item in player.passive_items:
+			owned_passives[String(item.item_id)] = true
+	var closest = null
+	for weapon in weapons:
+		var weapon_id := String(weapon.weapon_id)
+		if bool(weapon.get("fused")) or is_weapon_evolved(weapon_id):
+			continue
+		var config: Dictionary = EVOLUTION_CONFIG.get(weapon_id, {})
+		if config.is_empty():
+			continue
+		if int(weapon.current_level) < int(weapon.max_level) - 1:
+			continue
+		var missing := PackedStringArray()
+		for passive_id in config.get("required_passive_items", []):
+			if not owned_passives.has(String(passive_id)):
+				missing.append(ItemCatalog.get_display_name(String(passive_id)))
+		if weapon.is_max_level():
+			if missing.is_empty():
+				return "去开箱，%s可以变成%s" % [String(weapon.weapon_name), String(config.get("evolution_name", ""))]
+			return "还差%s，开箱就能把%s变成%s" % [
+				"、".join(missing), String(weapon.weapon_name), String(config.get("evolution_name", ""))]
+		if closest == null or int(weapon.current_level) > int(closest.current_level):
+			closest = weapon
+	if closest == null:
+		return ""
+	var near: Dictionary = EVOLUTION_CONFIG.get(String(closest.weapon_id), {})
+	var need := PackedStringArray()
+	for passive_id in near.get("required_passive_items", []):
+		need.append(ItemCatalog.get_display_name(String(passive_id)))
+	return "把%s再升一级，配上%s，开箱变为%s" % [
+		String(closest.weapon_name), "、".join(need), String(near.get("evolution_name", ""))]
+
+
 func can_add_weapon(weapon_id: String) -> bool:
 	if weapon_id.is_empty() or is_weapon_evolved(weapon_id):
 		return false

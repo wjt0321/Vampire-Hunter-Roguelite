@@ -103,6 +103,8 @@ func _build_pool() -> Array:
 			continue
 		if w.get("upgrade_only", false) and not (w["id"] in owned_ids):
 			continue
+		if not (w["id"] in owned_ids) and GameConfig.abyss_blocks_new_weapon(String(w["id"])):
+			continue
 		if not _can_apply_offer(w):
 			continue
 		pool.append(w.duplicate())

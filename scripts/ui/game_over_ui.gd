@@ -117,7 +117,7 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 		achievement_mgr.record_crystals_earned(crystals)
 	
 	if is_victory:
-		title_label.text = "胜利！吸血鬼领主已被终结"
+		title_label.text = "胜利！月蚀女王已被终结"
 		stats_label.label_settings = null
 		title_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4, 1.0))
 		stats_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4, 1.0))
@@ -293,9 +293,11 @@ func _setup_abyss_button(victory: bool) -> void:
 	var next_level: int = GameConfig.abyss_level + 1
 	# 百分比是"下一轮的总倍率"（等级 × 每级步进），不是这一次继续的增量。
 	# 不写明口径的话，"血 +45%" 会被读成"在现有基础上再加 45%"。
-	abyss_button.text = "深入深渊 %d（下一轮总计：血 +%d%% · 伤 +%d%% · 掉落 +%d%%）" % [
+	var next_oath := GameConfig.abyss_oath_for_level(next_level)
+	abyss_button.text = "深入深渊 %d（下一轮总计：血 +%d%% · 伤 +%d%% · 掉落 +%d%%）· %s · 从第 2 层起" % [
 		next_level,
 		int(GameConfig.ABYSS_STEP_HP * 100.0 * next_level),
 		int(GameConfig.ABYSS_STEP_DAMAGE * 100.0 * next_level),
-		int(GameConfig.ABYSS_STEP_LOOT * 100.0 * next_level)]
+		int(GameConfig.ABYSS_STEP_LOOT * 100.0 * next_level),
+		String(next_oath.get("name", ""))]
 	abyss_button.visible = victory
