@@ -2,7 +2,7 @@ extends SceneTree
 ## 敌人受击（hurt）动态帧的回归：2026-11-14 补齐这一轮。
 ##
 ## 覆盖：
-##   ① 13 个敌人（12 个迭代新增 + 血铠幼虫）都有专属受击条，6 帧且相邻帧真的不同
+##   ① 24 个普通敌人（13 个迭代新增 + 11 个旧 MVP 补齐）都有专属受击条，6 帧且相邻帧真的不同
 ##   ② asset_slots 的 ENEMIES 登记表里 13 个敌人都有 hurt 状态
 ##   ③ enemy_base 真的在受击路径上请求受击条（take_damage → _trigger_hurt_reaction）
 ##   ④ 运行时：挨打一下会切到受击条，播完自动回待机条
@@ -24,8 +24,8 @@ const HURT_ENEMIES: Array = [
 	"furnace_golem", "resonance_mage", "moon_wing", "blood_larva",
 ]
 
-## 没有受击条的敌人（旧 MVP 敌人，只做了待机/死亡），用来验「缺文件不崩」
-const NO_HURT_ENEMY := "vampire"
+## 没有受击条的敌人：Boss 走 AssetSlots.boss_texture 独立通道（不受 enemy_base 受击条影响），用来验「缺文件不崩」
+const NO_HURT_ENEMY := "blood_lord"  # 2026-11-14：普通敌人受击条已 24/24 补齐，旧 MVP fixture（vampire/skeleton_archer）均已失效
 
 var _fail: int = 0
 var _pass: int = 0
