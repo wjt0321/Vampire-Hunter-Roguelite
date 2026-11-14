@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>吸血鬼猎人 Vampire Hunter Roguelite — 2D 哥特风 Roguelite 射击</title>
-<meta name="description" content="吸血鬼猎人：2D 哥特风 Roguelite 射击游戏。三层地下城、11 把武器、11 类敌人与 3 名 Boss，自动开火、局内构筑，每一局都不一样。Godot 4.7 打造，MIT 开源。">
+<meta name="description" content="吸血鬼猎人：2D 哥特风 Roguelite 射击。五层地下城、18 把武器、5 名 Boss，自动开火、局内构筑。Godot 4.7，MIT 开源。">
 <meta property="og:title" content="吸血鬼猎人 Vampire Hunter Roguelite">
-<meta property="og:description" content="三层地下城，一路杀到血族女王。2D 哥特风 Roguelite 射击。">
+<meta property="og:description" content="五层地下城，一路杀到月蚀女王。2D 哥特风 Roguelite 射击。">
 <meta property="og:image" content="https://wjt0321.github.io/Vampire-Hunter-Roguelite/assets/img/shots/gameplay.png">
 <link rel="canonical" href="https://wjt0321.github.io/Vampire-Hunter-Roguelite/">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -44,18 +44,18 @@
     <p class="eyebrow">2D 哥特风 Roguelite 射击 · Godot 4.7 · MIT 开源</p>
     <h1 class="hero-title">吸血鬼猎人</h1>
     <p class="hero-sub">VAMPIRE&nbsp;HUNTER&nbsp;ROGUELITE</p>
-    <p class="hero-lead">三层地下城，一路杀到血族女王。<br>武器自动开火，你只管走位与取舍。</p>
+    <p class="hero-lead">五层地下城，一路杀到月蚀女王。<br>武器自动开火，你只管走位与取舍。</p>
     <div class="hero-cta">
       <a class="btn btn-primary" href="#get">开始狩猎</a>
       <a class="btn btn-ghost" href="#shots">看实机画面</a>
       <a class="btn btn-text" href="https://github.com/wjt0321/Vampire-Hunter-Roguelite" target="_blank" rel="noopener">GitHub 源码 →</a>
     </div>
     <ul class="hero-stats">
-      <li><b data-count="3">0</b><span>层地下城</span></li>
-      <li><b data-count="20">0</b><span>间房间</span></li>
-      <li><b data-count="11">0</b><span>把武器</span></li>
-      <li><b data-count="11">0</b><span>类敌人</span></li>
-      <li><b data-count="3">0</b><span>名 Boss</span></li>
+      <li><b data-count="5">0</b><span>层地下城</span></li>
+      <li><b data-count="29">0</b><span>间房间</span></li>
+      <li><b data-count="18">0</b><span>把武器</span></li>
+      <li><b data-count="5">0</b><span>名 Boss</span></li>
+      <li><b data-count="3">0</b><span>名角色</span></li>
       <li><b data-count="25">0</b><span>枚成就</span></li>
     </ul>
   </div>
@@ -88,7 +88,7 @@
       <article class="loop-card reveal">
         <span class="loop-num">04</span>
         <h3>下潜</h3>
-        <p>每层最后一间是 Boss。通关拿血晶，在元进度界面买永久升级、解锁角色。</p>
+        <p>每层最后一间是 Boss。五层打完可以深入深渊：从第 2 层重开，并带一条会换打法的誓约。</p>
       </article>
     </div>
   </div>
@@ -115,8 +115,8 @@
         <p><kbd>R</kbd> 重抽三张卡，<kbd>Tab</kbd> 直接跳过换银币——手黑也有出路。</p>
       </article>
       <article class="feature reveal">
-        <h3>武器进化</h3>
-        <p>同一把武器叠到满级触发进化。最多同时携带 4 把，构筑空间有限。</p>
+        <h3>武器进化与融合</h3>
+        <p>满级再配一件被动，开宝箱会换玩法。五对武器还能融成一把新的，副武器离槽。猎人和牧师最多带 4 把，刺客只有 3 把。</p>
       </article>
       <article class="feature reveal">
         <h3>精英词缀</h3>
@@ -124,7 +124,7 @@
       </article>
       <article class="feature reveal">
         <h3>元进度</h3>
-        <p>6 项永久升级各 5 级：伤害、生命、移速、护甲、经验与血晶加成。死了也不白死。</p>
+        <p>六项百分比还能买。另外三条规则买一次就一直在：武器提前一层、多一次放逐、每局融合两次。</p>
       </article>
     </div>
   </div>
@@ -152,15 +152,15 @@
       </figure>
       <figure class="shot reveal" data-full="assets/img/shots/characters.png" data-cap="角色选择：猎人阿尔忒弥斯与牧师塞西莉亚">
         <img src="assets/img/shots/characters.png" alt="角色选择界面" loading="lazy">
-        <figcaption><span>角色选择</span><small>两名猎人 · 独立技能</small></figcaption>
+        <figcaption><span>角色选择</span><small>三名角色 · 刺客改的是槽位</small></figcaption>
       </figure>
       <figure class="shot reveal" data-full="assets/img/shots/shop.png" data-cap="房间商店：用局内银币买武器、被动与消耗品">
         <img src="assets/img/shots/shop.png" alt="房间商店界面" loading="lazy">
         <figcaption><span>房间商店</span><small>银币是本局唯一的硬通货</small></figcaption>
       </figure>
-      <figure class="shot reveal" data-full="assets/img/shots/boss.png" data-cap="Boss 战：血族领主的多阶段弹幕">
+      <figure class="shot reveal" data-full="assets/img/shots/boss.png" data-cap="Boss 战：每层一位，攻击前有地面预警">
         <img src="assets/img/shots/boss.png" alt="Boss 战画面" loading="lazy">
-        <figcaption><span>Boss 战</span><small>血族领主 · 多阶段</small></figcaption>
+        <figcaption><span>Boss 战</span><small>五名 Boss · 每层一位</small></figcaption>
       </figure>
     </div>
   </div>
@@ -170,8 +170,8 @@
   <div class="container">
     <header class="section-head reveal">
       <p class="kicker">武器库</p>
-      <h2>11 把武器，各有脾气</h2>
-      <p class="section-lead">手枪、散弹枪、魔法书、飞刀、苦无、毒雾瓶、闪电法杖、十字弩、圣光魔杖、火焰喷射器、血爆——满级可进化。</p>
+      <h2>18 把武器，各有脾气</h2>
+      <p class="section-lead">下面 11 把有独立图标。另外还有回旋镰、荆棘长鞭、寒霜圣铃、连珠火铳、魂引灯、地刺法典、锁链枪。后四把要打到对应楼层才进池。</p>
     </header>
     <div class="weapon-grid">
       <article class="weapon reveal"><img src="assets/img/weapons/pistol.png" alt="手枪图标"><h3>手枪</h3><p>可靠的基础武器</p></article>
@@ -194,7 +194,7 @@
     <header class="section-head reveal">
       <p class="kicker">被动与词缀</p>
       <h2>小加成叠起来就是流派</h2>
-      <p class="section-lead">11 种被动 + 3 类状态修饰词条，对任意武器生效，不用逐把接线。</p>
+      <p class="section-lead">17 种被动。下面是有图标的 14 种。处刑印记、时滞齿轮、寒血反应靠组合生效。</p>
     </header>
     <div class="passive-grid">
       <div class="passive reveal"><img src="assets/img/passives/magnet.png" alt="经验磁铁"><b>经验磁铁</b><span>经验吸附范围 +30%</span></div>
@@ -231,17 +231,23 @@
       <article class="hero-card reveal">
         <div class="sprite-frame"><span class="sprite player" data-frames="4"></span></div>
         <h3>猎人 · 阿尔忒弥斯</h3>
-        <p>平衡型。手枪与投掷武器兼顾伤害与机动，容错高，适合第一次下潜。</p>
+        <p>拾取范围更大。开局手枪，适合第一次下潜。</p>
         <span class="tag">平衡</span>
       </article>
       <article class="hero-card reveal">
         <div class="sprite-frame"><span class="sprite priestess" data-frames="4"></span></div>
         <h3>牧师 · 塞西莉亚</h3>
-        <p>防御型。护盾与治疗撑住前线，靠圣光与持续伤害磨掉血线。</p>
+        <p>高血、低速。每 10 秒回复 5% 生命，开局是魔法书。500 血晶解锁。</p>
         <span class="tag">防御</span>
       </article>
+      <article class="hero-card reveal">
+        <div class="sprite-frame"><span class="sprite assassin" data-frames="4"></span></div>
+        <h3>刺客 · 莉薇娅</h3>
+        <p>只有 3 个武器槽。两把武器 4 级就能融合，融合后停在这一级。1500 血晶解锁。</p>
+        <span class="tag">取舍</span>
+      </article>
     </div>
-    <h3 class="sub-head reveal">11 类敌人 · 随机附带词缀</h3>
+    <h3 class="sub-head reveal">敌人按层换池</h3>
     <div class="enemy-strip reveal">
       <div class="enemy"><span class="sprite e4" data-enemy="bat_fly"></span><b>血蝠</b></div>
       <div class="enemy"><span class="sprite e4" data-enemy="zombie_walk"></span><b>行尸</b></div>
@@ -259,8 +265,8 @@
       <div class="sprite-frame boss"><span class="sprite boss-sprite" data-frames="4"></span></div>
       <div class="boss-text">
         <p class="kicker">每层终局</p>
-        <h3>3 名 Boss</h3>
-        <p>血族领主拥有三个战斗阶段，25% 血量时进入「绝望模式」，并释放新星爆发双环弹幕。攻击前有明确的预警特效——看准了再躲。</p>
+        <h3>5 名 Boss</h3>
+        <p>血铠领主、织血母皇、墓穴守望者、炼金亲王、月蚀女王。每层最后一间才见得到，攻击前有地面预警。</p>
       </div>
     </div>
   </div>
@@ -273,18 +279,18 @@
       <h2>这一局有多少东西可以玩</h2>
     </header>
     <div class="spec-grid reveal">
-      <div class="spec"><b>3 × 6–7</b><span>地下城（层 × 房间）</span></div>
-      <div class="spec"><b>20</b><span>间房 · 12 个战斗波次</span></div>
-      <div class="spec"><b>4</b><span>套主题环境</span></div>
-      <div class="spec"><b>11</b><span>把武器（满级可进化）</span></div>
-      <div class="spec"><b>14</b><span>种被动与状态词条</span></div>
+      <div class="spec"><b>5 层</b><span>第 1、5 层 7 间，中间三层 5 间</span></div>
+      <div class="spec"><b>29</b><span>间房</span></div>
+      <div class="spec"><b>5</b><span>名 Boss，每层一位</span></div>
+      <div class="spec"><b>18</b><span>把武器，满级可进化</span></div>
+      <div class="spec"><b>17</b><span>种被动</span></div>
       <div class="spec"><b>6</b><span>种属性卡</span></div>
-      <div class="spec"><b>11 + 3</b><span>类敌人 + Boss</span></div>
+      <div class="spec"><b>5</b><span>条融合</span></div>
       <div class="spec"><b>4</b><span>类精英词缀</span></div>
-      <div class="spec"><b>6 × 5</b><span>元进度项目 × 等级</span></div>
-      <div class="spec"><b>2</b><span>名可解锁角色</span></div>
+      <div class="spec"><b>6 + 3</b><span>百分比升级 + 一次性规则</span></div>
+      <div class="spec"><b>3</b><span>名角色</span></div>
       <div class="spec"><b>25</b><span>枚成就徽章</span></div>
-      <div class="spec"><b>4</b><span>把武器同时携带上限</span></div>
+      <div class="spec"><b>4 / 3</b><span>武器槽：猎人牧师 / 刺客</span></div>
     </div>
     <div class="ach-row reveal" aria-label="成就徽章墙">
       <div class="ach-track" id="achTrack"></div>
@@ -327,14 +333,14 @@
 # 打印 TTK 曲线与房间结构
 godot --headless --path . --script res://tools/balance_report.gd
 
-# 三层全流程冒烟
+# 五层全流程冒烟
 godot --headless --path . --script res://tools/run_dungeon_smoke.gd</div>
         <ul class="plain">
           <li>200+ 张贴图为 AI 生成 + 程序化后处理的原创资产</li>
           <li>生成与替换管线保留在仓库 .workbuddy/comfy/</li>
           <li>每张素材的来源与许可登记在 docs/asset-licenses.md</li>
         </ul>
-        <p class="run-punch">血族女王在第三层等你。</p>
+        <p class="run-punch">月蚀女王在第五层等你。</p>
       </article>
       <article class="run-card run-cta reveal">
         <h3>把这一局打完</h3>
