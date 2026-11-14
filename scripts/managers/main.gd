@@ -57,6 +57,8 @@ var _room_transitioning: bool = false
 var _terminal_state: String = ""
 var _boss_damage_baseline: float = 0.0
 var debug_loot_grace_seconds: int = -1
+## 首局上下文提示（onboarding.gd）：结算时落标记，之后不再触发。
+var onboarding: Node = null
 
 func _begin_terminal_state(state: String) -> bool:
 	if state == "death":
@@ -75,6 +77,10 @@ func _begin_terminal_state(state: String) -> bool:
 	_upgrade_open = false
 	if upgrade_ui != null and upgrade_ui.has_method("dismiss_for_game_over"):
 		upgrade_ui.dismiss_for_game_over()
+	if onboarding != null:
+		var ob_save := _save_manager_ref()
+		if ob_save != null:
+			onboarding.finish(ob_save)
 	return true
 
 func _lifecycle_token_valid(run_token: int, room_token: int = -1, room: Node = null) -> bool:
@@ -125,6 +131,14 @@ func _ready() -> void:
 	room_events.set_script(RoomEventScript)
 	add_child(room_events)
 	room_events.setup(wave_manager, player, hud)
+
+	onboarding = Node.new()
+	onboarding.set_script(preload("res://scripts/ui/onboarding.gd"))
+	add_child(onboarding)
+	onboarding.hud = hud
+	var onboarding_save := _save_manager_ref()
+	if onboarding_save != null:
+		onboarding.setup(onboarding_save)
 
 	# 创建过渡遮罩与楼层横幅
 	_create_transition_overlay()
@@ -402,6 +416,8 @@ func _on_wave_completed(wave_number: int) -> void:
 	# 波次标签别继续挂着波次号让人以为还有活怪——写明已清
 	if hud and hud.has_method("set_wave_status"):
 		hud.set_wave_status("出口已开启 · 走传送门", true)
+	if onboarding != null:
+		onboarding.hint("portal", "房间已清 · 走进传送门进入下一间")
 
 func _on_portal_chosen(room_type: String) -> void:
 	if dungeon:
@@ -574,6 +590,8 @@ func _combat_bgm() -> AudioStream:
 func _enter_shop_room() -> void:
 	print("🏪 商店房间!")
 	AudioManager.play_bgm(_audio_lib.get_shop_bgm())
+	if onboarding != null:
+		onboarding.hint("shop", "银币只在本局商店消费 · 血晶才是局外永久货币")
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
 	if ach_mgr:
 		ach_mgr.record_room_visit("shop")
@@ -1256,6 +1274,8 @@ func _on_player_level_up(new_level: int) -> void:
 
 	if _terminal_state != "":
 		return
+	if onboarding != null:
+		onboarding.hint("upgrade", "升级三选一：选一张强化本局 · R 重抽 · B 放逐 · Tab 跳过换银币")
 	_pending_upgrades += 1
 	_try_open_upgrade()
 
@@ -1291,11 +1311,15 @@ func _on_wave_started(wave: int) -> void:
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
 	if ach_mgr:
 		ach_mgr.update_wave(wave)
+	if wave == 1 and onboarding != null:
+		onboarding.hint("move", "WASD 走位 · 武器自动开火 · 手枪类武器朝鼠标方向射击")
 
 func _on_enemy_killed(_kill_count: int = 0) -> void:
 	# 敌人掉血/死亡不影响进化条件（条件已改为 满级 + 被动 + 宝箱），
 	# 但杀怪会掉银币和可能升级，顺手把 HUD 的三态提示刷新一下
 	_refresh_evolution_hint()
+	if onboarding != null:
+		onboarding.hint("gems", "敌人死亡掉经验宝石 · 走过去拾取即可升级")
 
 func _refresh_evolution_hint() -> void:
 	## 把"进化准备度"画到 HUD 上。三态：无 / 还差被动 / 可开宝箱进化
