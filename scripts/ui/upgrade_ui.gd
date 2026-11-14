@@ -21,6 +21,8 @@ var banished_keys: Array = []
 var banish_mode: bool = false
 ## 当前展示的 3 个选项（重抽/测试需要读它）
 var current_options: Array = []
+## 同一层有两把新解锁武器时轮流塞进手牌，避免永远只看见目录里的前一把。
+var _debut_spin: int = 0
 ## 局内固定随机源。每日挑战由 main 注入（同一种子 → 同一手牌）；
 ## 普通局为空，继续走全局随机，行为不变。
 var rng: RandomNumberGenerator = null
@@ -357,6 +359,7 @@ func _shape_hand(hand: Array) -> Array:
 					continue
 				fresh_new = true
 		shaped.append(opt)
+	shaped = _inject_floor_debut(shaped)
 	if weapon_manager != null and weapon_manager.has_method("get_fusion_offer"):
 		var offer: Dictionary = weapon_manager.get_fusion_offer()
 		if not offer.is_empty() and not is_banished(offer):
@@ -370,6 +373,85 @@ func _shape_hand(hand: Array) -> Array:
 				else:
 					shaped[shaped.size() - 1] = offer
 	return shaped
+
+func _current_floor() -> int:
+	var tree := get_tree()
+	if tree == null:
+		return 0
+	var dungeon := tree.get_first_node_in_group("dungeon_manager")
+	if dungeon != null and "current_floor" in dungeon:
+		return int(dungeon.current_floor)
+	return 0
+
+func _inject_floor_debut(hand: Array) -> Array:
+	## 第 4、5 层才解锁的武器，进层时槽位通常已满，随机池里根本没有它。
+	## 在它的解锁层，每手升级都留一张给它，直到满级。玩家可以不选，也可以放逐。
+	var card := _floor_debut_card()
+	if card.is_empty():
+		return hand
+	var weapon_id := String(card.get("id", ""))
+	for opt in hand:
+		if String(opt.get("type", "")) == "weapon" and String(opt.get("id", "")) == weapon_id:
+			return hand
+	if hand.is_empty():
+		hand.append(card)
+		return hand
+	if String(hand[0].get("type", "")) == "fusion":
+		if hand.size() == 1:
+			hand.append(card)
+		else:
+			hand[1] = card
+	else:
+		hand[0] = card
+	return hand
+
+func _floor_debut_card() -> Dictionary:
+	var floor := _current_floor()
+	if floor <= 0 or weapon_manager == null:
+		return {}
+	var saves := get_node_or_null("/root/SaveManager")
+	var owned_ones: Array = []
+	var fresh: Array = []
+	for weapon_opt in ItemCatalog.WEAPONS:
+		if int(weapon_opt.get("unlock_floor", 0)) != floor:
+			continue
+		var weapon_id := String(weapon_opt.get("id", ""))
+		if saves != null and saves.has_method("is_weapon_unlocked") and not bool(saves.is_weapon_unlocked(weapon_id)):
+			continue
+		if is_banished(weapon_opt):
+			continue
+		if _is_weapon_evolved(weapon_id):
+			continue
+		var owned = _find_owned_weapon(weapon_id)
+		if owned != null and (owned.is_max_level() or (owned.has_method("has_level_table") and not owned.has_level_table())):
+			continue
+		if owned != null:
+			owned_ones.append(weapon_opt)
+		else:
+			fresh.append(weapon_opt)
+	var pool: Array = owned_ones if not owned_ones.is_empty() else fresh
+	if pool.is_empty():
+		return {}
+	var pick: Dictionary = (pool[_debut_spin % pool.size()] as Dictionary).duplicate(true)
+	_debut_spin += 1
+	if _find_owned_weapon(String(pick.get("id", ""))) != null:
+		return pick
+	var slots_full := false
+	var held: Variant = weapon_manager.get("weapons")
+	if held is Array:
+		slots_full = (held as Array).size() >= GameConfig.MAX_WEAPON_SLOTS
+	if not slots_full:
+		return pick
+	if not weapon_manager.has_method("lowest_replaceable_weapon"):
+		return {}
+	var victim = weapon_manager.lowest_replaceable_weapon()
+	if victim == null:
+		return {}
+	var start_level := maxi(1, int(victim.current_level) - 1)
+	pick["replace_lowest"] = true
+	pick["desc"] = "栏位已满，换下%s Lv.%d。新武器从 Lv.%d 起，这一层还会继续给它升级。" % [
+		String(victim.weapon_name), int(victim.current_level), start_level]
+	return pick
 
 func _shuffle_with_rng(items: Array) -> void:
 	## 与 Array.shuffle 同样的 Fisher-Yates，只是随机数来自注入的 rng
@@ -927,10 +1009,17 @@ func _on_option_selected(option: Dictionary) -> void:
 		if player != null and player.has_method("apply_upgrade"):
 			player.apply_upgrade(option["id"])
 	elif option_type == "weapon":
-		if weapon_manager != null and weapon_manager.has_method("add_weapon"):
-			var weapon_data = ItemCatalog.create_weapon(option["id"])
-			if weapon_data:
-				weapon_manager.add_weapon(weapon_data)
+		if weapon_manager != null:
+			var weapon_id := String(option.get("id", ""))
+			if bool(option.get("replace_lowest", false)) and weapon_manager.has_method("replace_lowest_with"):
+				if not weapon_manager.replace_lowest_with(weapon_id) and weapon_manager.has_method("add_weapon"):
+					var replaced = ItemCatalog.create_weapon(weapon_id)
+					if replaced:
+						weapon_manager.add_weapon(replaced)
+			elif weapon_manager.has_method("add_weapon"):
+				var weapon_data = ItemCatalog.create_weapon(weapon_id)
+				if weapon_data:
+					weapon_manager.add_weapon(weapon_data)
 	elif option_type == "fusion":
 		if weapon_manager != null and weapon_manager.has_method("apply_fusion"):
 			weapon_manager.apply_fusion(String(option.get("id", "")))

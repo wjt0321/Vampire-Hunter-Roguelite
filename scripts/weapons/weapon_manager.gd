@@ -283,6 +283,72 @@ func get_fire_interval(weapon) -> float:
 	var interval: float = weapon.get_scaled_fire_rate()
 	return maxf(interval / _get_shoot_speed_multiplier(), 0.02)
 
+static func codex_endings(weapon_id: String) -> String:
+	## 图鉴用。一把武器在图鉴里要能看完两条结局：宝箱进化，以及融合（没有配方也写明）。
+	var lines := PackedStringArray()
+	var evo: Dictionary = EVOLUTION_CONFIG.get(weapon_id, {})
+	if evo.is_empty():
+		lines.append("这把武器没有宝箱进化。")
+	else:
+		lines.append("宝箱进化：满级，并拥有%s，开箱变为%s。%s" % [
+			_codex_passive_names(evo.get("required_passive_items", [])),
+			String(evo.get("evolution_name", "")),
+			String(evo.get("evolution_description", "")),
+		])
+	lines.append(_codex_fusion_line(weapon_id))
+	return "\n".join(lines)
+
+
+static func _codex_passive_names(ids: Array) -> String:
+	var names := PackedStringArray()
+	for id in ids:
+		names.append(ItemCatalog.get_display_name(String(id)))
+	return "、".join(names) if not names.is_empty() else "指定被动"
+
+
+static func _codex_fusion_line(weapon_id: String) -> String:
+	for recipe in WeaponFusionScript.RECIPES.values():
+		var primary := String(recipe.get("primary", ""))
+		var secondary := String(recipe.get("secondary", ""))
+		var fusion_name := String(recipe.get("name", ""))
+		var card := String(recipe.get("card", ""))
+		if weapon_id == primary:
+			return "融合：与%s都满级，且都还没进化时，可融成%s。%s" % [
+				ItemCatalog.get_display_name(secondary), fusion_name, card]
+		if weapon_id == secondary:
+			return "融合：满级且还没进化时，可被%s吃掉，变成%s。%s" % [
+				ItemCatalog.get_display_name(primary), fusion_name, card]
+	return "没有融合配方。结局只有宝箱进化。"
+
+
+func lowest_replaceable_weapon():
+	## 栏位满了、又必须塞进解锁层的新武器时，换下还没进化、也没融合的最低级那把。
+	var best = null
+	for weapon in weapons:
+		if bool(weapon.get("fused")) or is_weapon_evolved(String(weapon.weapon_id)):
+			continue
+		if best == null or int(weapon.current_level) < int(best.current_level):
+			best = weapon
+	return best
+
+
+func replace_lowest_with(weapon_id: String) -> bool:
+	for existing in weapons:
+		if String(existing.weapon_id) == weapon_id:
+			return add_weapon(_create_weapon_by_id(weapon_id))
+	var victim = lowest_replaceable_weapon()
+	if victim == null:
+		return false
+	var from_id := String(victim.weapon_id)
+	if not apply_recast(from_id, weapon_id):
+		return false
+	for weapon in weapons:
+		if String(weapon.weapon_id) == weapon_id:
+			weapon_added.emit(weapon)
+			return true
+	return false
+
+
 func can_add_weapon(weapon_id: String) -> bool:
 	if weapon_id.is_empty() or is_weapon_evolved(weapon_id):
 		return false
