@@ -1,0 +1,137 @@
+[
+  {
+    "asset": "icon_scythe",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/scythe.png",
+    "prompt": "A single game inventory icon of a curved war scythe with a long dark steel crescent blade on a worn wooden haft, dried blood along the inner edge, gold filigree at the collar. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast with dramatic rim light, crisp 2px black outline, single object centered and filling most of the frame. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "icon_thorn_whip",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/thorn_whip.png",
+    "prompt": "A single game inventory icon of a barbed thorn whip, braided dark leather strands studded with iron thorns, a crimson tassel at the tip. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast with dramatic rim light, crisp 2px black outline, single object centered and filling most of the frame. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "icon_frost_bell",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/frost_bell.png",
+    "prompt": "A single game inventory icon of a holy bell of dark bronze with frost crystals clinging to it, a pale blue glow inside the mouth. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast with dramatic rim light, crisp 2px black outline, single object centered and filling most of the frame. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "icon_repeater",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/repeater.png",
+    "prompt": "A single game inventory icon of a lever action repeater pistol with a cluster of multiple barrels, dark steel and worn walnut grip, gold trim. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast with dramatic rim light, crisp 2px black outline, single object centered and filling most of the frame. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "icon_soul_lantern",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/soul_lantern.png",
+    "prompt": "A single game inventory icon of a gothic iron lantern with a cold blue soul flame burning inside, tarnished filigree, a hooked handle. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast with dramatic rim light, crisp 2px black outline, single object centered and filling most of the frame. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "icon_spike_tome",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/spike_tome.png",
+    "prompt": "A single game inventory icon of a spell tome with a cracked open book of dark pages and iron spikes bursting up out of the spine. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast with dramatic rim light, crisp 2px black outline, single object centered and filling most of the frame. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "icon_chain_gun",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/chain_gun.png",
+    "prompt": "A single game inventory icon of a chain gun, a heavy iron pistol with a hook and a length of chain attached, chain links dripping dark blood. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast with dramatic rim light, crisp 2px black outline, single object centered and filling most of the frame. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "icon_execution_mark",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/ui/passives/execution_mark.png",
+    "prompt": "A single game inventory icon of an executioner's crimson brand mark, a black iron executioner axe head stamped into a blood red rune circle. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast with dramatic rim light, crisp 2px black outline, single object centered and filling most of the frame. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "icon_time_gear",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/ui/passives/time_gear.png",
+    "prompt": "A single game inventory icon of a brass clockwork gear with sand pouring out of it, a cracked clock face at the center. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast with dramatic rim light, crisp 2px black outline, single object centered and filling most of the frame. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "icon_cold_blood",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/ui/passives/cold_blood.png",
+    "prompt": "A single game inventory icon of a frozen blood droplet shattering into ice shards, a deep crimson core inside clear ice. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast with dramatic rim light, crisp 2px black outline, single object centered and filling most of the frame. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "icon_thunder_bolt",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/thunder_bolt.png",
+    "prompt": "A single game inventory icon of a crossbow bolt wrapped in crackling blue lightning. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast with dramatic rim light, crisp 2px black outline, single object centered and filling most of the frame. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "icon_miasma_shot",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/miasma_shot.png",
+    "prompt": "A single game inventory icon of a shotgun shell bursting open with sickly green toxic mist. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast with dramatic rim light, crisp 2px black outline, single object centered and filling most of the frame. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "icon_returning_blade",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/returning_blade.png",
+    "prompt": "A single game inventory icon of a spinning throwing knife leaving a crimson arc trail. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast with dramatic rim light, crisp 2px black outline, single object centered and filling most of the frame. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "icon_twin_chant",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/twin_chant.png",
+    "prompt": "A single game inventory icon of a holy wand splitting into two glowing golden light bolts. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast with dramatic rim light, crisp 2px black outline, single object centered and filling most of the frame. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "icon_burning_blood",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/burning_blood.png",
+    "prompt": "A single game inventory icon of a flamethrower nozzle erupting with dark red blood fire. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast with dramatic rim light, crisp 2px black outline, single object centered and filling most of the frame. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  }
+]

@@ -14,7 +14,7 @@ func _ready() -> void:
 	super._ready()
 
 func _load_sprite_texture() -> void:
-	use_placeholder_sprite("lantern_wraith", "idle", Color(0.95, 0.72, 0.35))
+	use_dedicated_sprite("lantern_wraith", "idle", Color(0.95, 0.72, 0.35))
 
 func _get_enemy_type() -> String:
 	return "lantern_wraith"

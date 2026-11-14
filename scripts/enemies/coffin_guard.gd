@@ -16,7 +16,7 @@ func _ready() -> void:
 	super._ready()
 
 func _load_sprite_texture() -> void:
-	use_placeholder_sprite("coffin_guard", "idle", Color(0.55, 0.4, 0.28))
+	use_dedicated_sprite("coffin_guard", "idle", Color(0.55, 0.4, 0.28))
 
 func _get_enemy_type() -> String:
 	return "coffin_guard"

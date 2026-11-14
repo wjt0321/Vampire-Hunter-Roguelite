@@ -14,7 +14,7 @@ func _ready() -> void:
 	super._ready()
 
 func _load_sprite_texture() -> void:
-	use_placeholder_sprite("burrower", "idle", Color(0.45, 0.32, 0.22))
+	use_dedicated_sprite("burrower", "idle", Color(0.45, 0.32, 0.22))
 
 func _get_enemy_type() -> String:
 	return "burrower"

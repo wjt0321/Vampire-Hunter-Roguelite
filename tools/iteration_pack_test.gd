@@ -3,6 +3,7 @@ extends SceneTree
 ## godot --headless --path . --script res://tools/iteration_pack_test.gd
 
 const Slots = preload("res://scripts/core/asset_slots.gd")
+const ItemCatalog = preload("res://scripts/core/item_catalog.gd")
 const Director = preload("res://scripts/map/encounter_director.gd")
 const DungeonScript = preload("res://scripts/map/dungeon_manager.gd")
 
@@ -38,7 +39,33 @@ func _test_slots() -> void:
 	_check(Slots.boss_path("blood_lord", "charge") == "res://assets/sprites/boss/blood_lord/charge.png",
 		"血铠领主冲锋图路径固定")
 	_check(Slots.weapon_icon_path("scythe") == "res://assets/weapons/icons/scythe.png", "回旋镰图标路径固定")
-	var missing_tex: Texture2D = Slots.texture_at(Slots.enemy_path("shield_guard"))
+	# 15 张新图标必须真的能被 UI 读到（ItemCatalog.get_icon_texture 是所有 UI 的统一入口）。
+	# 少了任何一张，升级三选一 / 商店 / HUD 就会退回旧图标或留白。
+	var missing_icons: Array = []
+	for weapon_id in ["scythe", "thorn_whip", "frost_bell", "repeater", "soul_lantern", "spike_tome", "chain_gun",
+			"thunder_bolt", "miasma_shot", "returning_blade", "twin_chant", "burning_blood"]:
+		if Slots.texture_at(Slots.weapon_icon_path(weapon_id)) == null:
+			missing_icons.append(weapon_id)
+	for passive_id in ["execution_mark", "time_gear", "cold_blood"]:
+		if Slots.texture_at(Slots.passive_icon_path(passive_id)) == null:
+			missing_icons.append(passive_id)
+	_check(missing_icons.is_empty(), "十五张新图标都就位（缺：%s）" % str(missing_icons))
+	var catalog_icons: Array = []
+	for weapon_id in ["scythe", "thorn_whip", "frost_bell", "repeater", "soul_lantern", "spike_tome", "chain_gun",
+			"thunder_bolt", "miasma_shot", "returning_blade", "twin_chant", "burning_blood"]:
+		var tex: Texture2D = ItemCatalog.get_icon_texture(weapon_id, "weapon")
+		if tex == null:
+			catalog_icons.append(weapon_id)
+	for passive_id in ["execution_mark", "time_gear", "cold_blood"]:
+		var tex2: Texture2D = ItemCatalog.get_icon_texture(passive_id, "passive")
+		if tex2 == null:
+			catalog_icons.append(passive_id)
+	_check(catalog_icons.is_empty(), "UI 统一入口能取到十五张图标（缺：%s）" % str(catalog_icons))
+	# 2026-11-14：12 种新敌人的专属图已落盘，槽位必须真的读得到；
+	# 仍然没有落盘的 id 必须读不到（不能用占位假装有）。
+	_check(Slots.texture_at(Slots.enemy_path("shield_guard")) != null, "盾卫专属图已经就位")
+	_check(Slots.texture_at(Slots.enemy_path("shield_guard", "death")) != null, "盾卫死亡图已经就位")
+	var missing_tex: Texture2D = Slots.texture_at(Slots.enemy_path("blood_larva"))
 	_check(missing_tex == null, "还没放进去的图不会假装已经有了")
 	var missing: Array = []
 	for enemy_id in ["shield_guard", "blood_hound", "blood_priest", "web_weaver", "burrower", "gem_leech", "coffin_guard", "lantern_wraith", "alchemist_pitcher", "furnace_golem", "resonance_mage", "moon_wing"]:

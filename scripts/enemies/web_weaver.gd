@@ -16,7 +16,7 @@ func _ready() -> void:
 	super._ready()
 
 func _load_sprite_texture() -> void:
-	use_placeholder_sprite("web_weaver", "idle", Color(0.32, 0.62, 0.4))
+	use_dedicated_sprite("web_weaver", "idle", Color(0.32, 0.62, 0.4))
 
 func _get_enemy_type() -> String:
 	return "web_weaver"

@@ -13,7 +13,7 @@ func _ready() -> void:
 	super._ready()
 
 func _load_sprite_texture() -> void:
-	use_placeholder_sprite("shield_guard", "idle", Color(0.62, 0.7, 0.82))
+	use_dedicated_sprite("shield_guard", "idle", Color(0.62, 0.7, 0.82))
 
 func _get_enemy_type() -> String:
 	return "shield_guard"

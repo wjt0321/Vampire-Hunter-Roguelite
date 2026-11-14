@@ -17,7 +17,7 @@ func _ready() -> void:
 	super._ready()
 
 func _load_sprite_texture() -> void:
-	use_placeholder_sprite("blood_priest", "idle", Color(0.85, 0.28, 0.38))
+	use_dedicated_sprite("blood_priest", "idle", Color(0.85, 0.28, 0.38))
 
 func _get_enemy_type() -> String:
 	return "blood_priest"

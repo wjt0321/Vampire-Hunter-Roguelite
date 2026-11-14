@@ -76,6 +76,11 @@ builds/
 /artifacts/game-audio-*/listening_loops*.json
 /artifacts/game-audio-*/listening_sfx*.json
 
+# 本轮迭代资产制作：原图与审阅拼版是本地工作文件（52MB），
+# 进仓库的是计划 JSON、工作流副本与台账；原图另外留在 E:\AI\ComfyUI\output\vhr_iter\
+/artifacts/iteration_assets/*.png
+/artifacts/comfy_gen/
+
 # Local Boss source renders and reproducible preview outputs
 /artifacts/blood_lord/
 /artifacts/blood_matriarch/

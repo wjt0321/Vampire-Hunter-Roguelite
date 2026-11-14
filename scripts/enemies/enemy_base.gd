@@ -408,6 +408,22 @@ func _get_vfx() -> Node:
 		_vfx_manager = get_node_or_null("/root/VFXManager")
 	return _vfx_manager
 
+func use_dedicated_sprite(enemy_id: String, state: String = "idle", fallback_tint: Color = Color.WHITE) -> void:
+	## 专属动作表优先：assets/sprites/enemies/<enemy_id>/<state>.png 存在就用它，不再染色。
+	## 没有专属图时才退回借用旧图（并保留染色标记，让占位一眼能看出来）。
+	var slots := preload("res://scripts/core/asset_slots.gd")
+	var dedicated: Texture2D = slots.enemy_texture(enemy_id, state)
+	if dedicated != null:
+		using_placeholder = false
+		placeholder_tint = Color.WHITE
+		if sprite != null:
+			sprite.texture = dedicated
+			sprite.modulate = Color.WHITE
+			_adjust_sprite_scale()
+		return
+	use_placeholder_sprite(enemy_id, state, fallback_tint)
+
+
 func use_placeholder_sprite(source_type: String, state: String, tint: Color) -> void:
 	## 正式动作表补上之后，删掉调用处，改回该敌人自己的精灵。
 	using_placeholder = true
@@ -685,7 +701,41 @@ func _die() -> void:
 	set_physics_process(false)
 	# 状态 tick 也一起停：死后还在扣流血会重复走 _die 的判定链
 	set_process(false)
-	# 死亡动画
+	# 死亡动画：专属死亡条优先，播完再淡出回收；没有专属表才沿用原来的直接淡出
+	var death_tex: Texture2D = null
+	if TextureManager.instance != null:
+		death_tex = TextureManager.instance.get_enemy_texture(_get_enemy_type(), "death")
+	if death_tex != null and sprite != null and SpriteSheetLib.frame_count(death_tex) > 1:
+		_play_death_strip(death_tex)
+		return
+	var tween := create_tween()
+	tween.tween_property(sprite, "modulate:a", 0.0, 0.2)
+	tween.tween_property(sprite, "scale", Vector2.ZERO, 0.2)
+	tween.tween_callback(queue_free)
+
+
+func _play_death_strip(texture: Texture2D) -> void:
+	## 专属死亡横条：逐帧播完再淡出回收。
+	## _die 里已经 set_process(false)，帧推进不能靠 _tick_sprite，这里用补间显式步进。
+	if sprite == null or not is_instance_valid(sprite):
+		queue_free()
+		return
+	sprite.texture = texture
+	SpriteSheetLib.apply(sprite, texture, _sprite_target if _sprite_target > 0.0 else 56.0, sprite_scale_mult)
+	var frames := SpriteSheetLib.frame_count(texture)
+	var tween := create_tween()
+	for i in range(frames):
+		tween.tween_callback(func() -> void:
+			if is_instance_valid(sprite):
+				sprite.frame = i)
+		tween.tween_interval(1.0 / SpriteSheetLib.LOOP_FPS)
+	tween.tween_callback(_finish_death_fade)
+
+
+func _finish_death_fade() -> void:
+	if not is_instance_valid(sprite):
+		queue_free()
+		return
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate:a", 0.0, 0.2)
 	tween.tween_property(sprite, "scale", Vector2.ZERO, 0.2)

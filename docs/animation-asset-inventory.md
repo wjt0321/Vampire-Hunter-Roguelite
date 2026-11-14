@@ -253,20 +253,23 @@
 
 这一轮先把行为做进游戏。下面这些还没有专属序列帧，代码借用现有精灵并染色，或者直接用色块和线条。正式图补上之后，替换对应调用，不要把占位当成完成。
 
+> 2026-11-14 更新：下表中 12 种敌人的 idle/death 与 12 张武器/融合卡图标已经换成专属资产，详见第十七节；
+> 各敌主的攻击动作表、地面危险贴图仍未做。
+
 | 内容 | 现在用的替代 | 以后要换的正式资产 |
 |------|----------------|--------------------|
-| 盾卫 | `zombie_walk` 染成铁灰 | 盾卫待机 / 推进 |
-| 血祭司 | `mage_cast` 染成暗红 | 祭司待机 / 治疗 |
-| 织网者 | `bat_fly` 染成暗绿 | 织网者移动 / 吐网 |
-| 棺卫 | `gargoyle_idle` 染成棕 | 棺卫移动 / 倒地 / 复活 |
+| 盾卫 | 已换专属 idle + death（2026-11-14） | 盾卫推进动作 |
+| 血祭司 | 已换专属 idle + death（2026-11-14） | 祭司治疗动作 |
+| 织网者 | 已换专属 idle + death（2026-11-14） | 织网者移动 / 吐网 |
+| 棺卫 | 已换专属 idle + death（2026-11-14） | 棺卫移动 / 复活 |
 | 减速网、棺材、卵巢 | 纯色多边形 | 可破坏物件的单帧或短循环 |
 | 血铠领主 | 已换专属 12 张动作表；缺图时才显式降级到旧图占位 | 正式文件与复现工具见第十二节 |
 | 织血母皇 | 已换专属 8 张动作表；缺图时才显式降级到旧图占位 | 正式文件与复现工具见第十三节 |
 | 墓穴守望者 | 已换专属 6 张动作表；缺图时才显式降级到旧图占位 | 正式文件与复现工具见第十四节 |
 | 回旋镰、长鞭、霜环 | 三角色块、线段、圆环 | 弹道与挥击，不要求新的全身攻击 |
-| 三把新武器和五张融合卡的图标 | 借用飞刀、苦无、圣光、弩、散弹、火焰图标 | 各自的 48×48 图标 |
+| 新武器 7 把与融合卡 5 张的图标 | 已换专属 48×48 图标（2026-11-14，共 12 张） | 无 |
 | 连珠火铳、魂引灯、地刺、锁链枪 | 借用散弹、圣光、魔法书、弩的图标；弹道用现成子弹、三角色块和预警条 | 各自图标和弹道 |
-| 血猎犬、潜伏者、吞晶虫、灯鬼、投手、傀儡、术士、月翼兽 | 借用狼人、僵尸、蝙蝠、法师、骷髅、石像鬼、召唤师并染色 | 各自的动作表 |
+| 血猎犬、潜伏者、吞晶虫、灯鬼、炼金投手、炉心巨像、共鸣术士、月翼兽 | 已换专属 idle + death（2026-11-14） | 各自的攻击动作表 |
 | 炼金亲王 | 已换专属 10 张动作表（亲王 5 张 + 巨像 5 张）；缺图时才显式降级到旧图占位 | 正式文件与复现工具见第十五节 |
 | 月蚀女王 | 已换专属 6 张动作表；缺图时才显式降级到旧图占位 | 正式文件与复现工具见第十六节 |
 | 药液和月蚀安全圈 | 半透明多边形和圆环 | 地面危险的正式贴图 |
@@ -391,4 +394,122 @@
 - 回归入口：`python artifacts/eclipse_queen/run_checks.py`。
 - 五层烟测入口：Godot 4.7.2 执行 `--headless --verbose --path . --script res://tools/run_dungeon_smoke.gd`。
 - 完整交付 ZIP：`artifacts/eclipse_queen/eclipse_queen_delivery.zip`，49 条目（本轮源码改动、6 张游戏内动作表与 `.import`、采用版图集与色键版及转段补丁、制作/授权记录、回归结果与全部日志、状态截图与 `preview_capture.json`、最终 AVI），生成后经 `testzip()` 与关键路径断言校验。
+## 十七、2026-11-14 迭代新增敌人与新武器图标专属资产
 
+### 为什么做这一轮
+
+新玩法切片（2026-11-13 玩法迭代）加了 12 种敌人、7 把新武器、5 张融合卡、3 个新被动，
+但当时是「先做行为、图后面补」：这 12 种敌人在游戏里全部**借用 MVP 旧图再染色**
+（texture_manager.gd 里注释写明「新敌人的专属序列帧还没到」），新武器图标也是借用
+散弹/圣光/魔法书/弩的图。本轮把这些占位全部换成专属资产。
+
+### 风格锚：MVP 已验收的那一套
+
+风格基准不是新发明的，而是用户在 MVP 阶段明确认可过的那批源图：
+E:\AI\ComfyUI\output\vhr_reskin\（36 张 1024×1024）。它的特征是
+**正面前视、粗颗粒像素画、暗钢+旧金描边+深红宝石、品红抠底**。
+本轮沿用同一套 ComfyUI 工作流、同一套抠底/量化/错帧脚本，只换画什么。
+
+### 制作管线（复用 MVP 认可的管线，没有另起炉灶）
+
+| 环节 | 做法 | 出处 |
+|---|---|---|
+| 出图 | 本机 ComfyUI + 图片_Qwen-Image2.1_文生图.json（立绘）/ 图片_Qwen-Image2.1_图像编辑.json（死亡姿态） | .workbuddy/comfy/reskin_pipeline.py |
+| 死亡姿态 | 用立绘原图拼成 3×2 **品红底**网格当编辑源图，Edit 会把 6 格画成 6 个不同的倒地阶段；提示词逐格点名 | tools/gen_enemy_death_grid.py |
+| 死亡帧序质检 | 量每格主体的"站高比"（本体连通域高/格高），必须大致单调下降，否则换种子重跑（最多 3 次） | tools/gen_enemy_death_grid.py judge() |
+| 抠底 | 品红键控（阈值放宽到偏品红色相，保护角色自带的紫罗兰）+ 抗锯齿过渡带清理（紫边） | tools/death_repack.py / reskin_pipeline.purge_purple_edge |
+| 缩格 | NEAREST 整数倍缩到 56×56 单格，脚底锚点固定 | reskin_pipeline.to_cell |
+| 错帧 | 待机：下摆 1px 摆动；死亡：下沉 + 变暗 + 渐隐 | tools/build_pose_strips.py |
+| 调色板 | 固定 32 色哥特色板（不按频次取色，避免一张偏暖一张偏冷） | .workbuddy/comfy/postprocess.py |
+
+出图落盘统一在 E:\AI\ComfyUI\output\vhr_iter\，与 vhr_reskin / vhr_new / vhr_edit 同级。
+
+### 交付物
+
+**敌人精灵（12 种 × 2 张 = 24 张横条）**
+
+- 立绘 idle：224×56（4 帧），单格 56×56。
+- 死亡 death：336×56（6 帧），单格 56×56，六帧是真的倒地过程，不是同一张尸体复制。
+- 路径：assets/sprites/enemies/<enemy_id>/idle.png 与 .../death.png
+  （走 asset_slots.gd 早就预留好的专属目录机制，文件一放进去就会被读到）。
+
+| 敌人 | 中文名 | 状态 |
+|---|---|---|
+| shield_guard | 盾卫 | idle + death 已完成 |
+| blood_priest | 血祭司 | idle + death 已完成 |
+| web_weaver | 织网者 | idle + death 已完成 |
+| coffin_guard | 棺卫 | idle + death 已完成 |
+| blood_hound | 血猎犬 | idle + death 已完成 |
+| furnace_golem | 炉心巨像 | idle + death 已完成 |
+| burrower | 潜伏者 | idle + death 已完成 |
+| gem_leech | 吞晶虫 | idle + death 已完成 |
+| lantern_wraith | 灯鬼 | idle + death 已完成 |
+| alchemist_pitcher | 炼金投手 | idle + death 已完成 |
+| resonance_mage | 共鸣术士 | idle + death 已完成 |
+| moon_wing | 月翼兽 | idle + death 已完成 |
+
+**图标（15 张 48×48）**
+
+- 新武器 7 张：assets/weapons/icons/{scythe,thorn_whip,frost_bell,repeater,soul_lantern,spike_tome,chain_gun}.png
+- 融合卡 5 张：assets/weapons/icons/{thunder_bolt,miasma_shot,returning_blade,twin_chant,burning_blood}.png
+- 新被动 3 张：assets/ui/passives/{execution_mark,time_gear,cold_blood}.png
+
+图标走 ItemCatalog.get_icon_texture() 的专属目录优先分支，升级三选一 / 房间商店 /
+元进度商店 / HUD 全部自动换成新图，不再借用别的武器的图标。
+
+### 接线改动
+
+| 文件 | 改动 |
+|---|---|
+| scripts/enemies/enemy_base.gd | 新增 use_dedicated_sprite()：专属目录有图就用它且不染色，没有才退回借用旧图并保留染色标记 |
+| scripts/enemies/enemy_base.gd | _die() 优先播放专属死亡条（6 帧逐帧播完再淡出回收），没有死亡条才沿用原来的直接淡出 |
+| scripts/enemies/<12 个敌人>.gd | use_placeholder_sprite(...) 改成 use_dedicated_sprite(...) |
+| scripts/core/asset_slots.gd | 12 个敌人的状态表补上 death |
+
+### 自动回归
+
+| 组 | 断言 | 结果 |
+|---|---|---|
+| tools/enemy_death_strip_test.gd（新增） | 12 种敌人的死亡条都是 336×56 的 6 帧横条；死亡时切到专属条；帧会推进；播完才回收 | 60 / 60 通过 |
+| tools/iteration_pack_test.gd | 12 种敌人专属图与死亡图已就位；没放进去的读不到；15 张新图标在 UI 统一入口都能取到 | 44 / 44 通过 |
+| tools/sprite_sheet_test.gd | 精灵表播放口径 | 18 / 18 通过 |
+| tools/verify_round4.gd | 既有玩法回归 | 全部通过 |
+
+死亡演出截图（开发用工具 tools/enemy_death_shot.gd）：artifacts/iteration_assets/death_shot.png。
+
+### 仍然没做的（边界）
+
+1. **行走/攻击动作没有做**：这批只出了 idle 与 death。新敌人移动时播的是待机条
+   （下摆 1px 摆动），近战扑击、施法、吐网、钻地这些专属动作仍是借用或程序表现。
+2. **地面危险贴图没有做**：减速网、棺材、卵巢、药液、月蚀安全圈仍是半透明多边形和圆环。
+3. **旧敌人的动作缺口没有动**：吸血鬼/狼人/僵尸等的 death、run、hurt 仍在第四节清单里待补。
+4. 特效序列帧（P1-B）没有动。
+5. 授权边界：全部为 AI 生成素材，登记为「AI 生成、待核实」，见 docs/asset-licenses.md。
+
+### 复现
+
+- 出图计划：artifacts/iteration_assets/plan_enemies.json、plan_icons.json
+- 生成入口：python tools/gen_iteration_sprites.py --plan <plan>（立绘 + 图标）
+- 死亡网格：python tools/gen_enemy_death_grid.py（后处理独立在 tools/death_repack.py，可只重跑后处理）
+- 死亡演出回归：godot --headless --path . --script res://tools/enemy_death_strip_test.gd
+- 死亡演出截图：godot --path . --script res://tools/enemy_death_shot.gd
+- 审阅拼版：python tools/iteration_contact_sheet.py
+### 踩坑记录：吞晶虫的死亡条三次都不合格（2026-11-14）
+
+gem_leech 连续三次出图都被帧序质检判不合格，但目视那张图其实是**对的**：
+宝石爆闪 → 倒地 → 碎裂 → 残骸，姿态完全对。
+
+根因不在判据，也不在模型画得差，而在**提示词让模型画了地面**：
+死亡语义里写着 "twisting flat and the crystal shell scraping the floor"、
+"the rolled-out violet gem lying on the floor"，模型据此在**每一格**都铺了一片贴地的泥土。
+泥土与角色连成一个连通域，"站高比"量到的永远是整个泥土+角色的总高，塌陷被完全抵消。
+
+试过三种几何度量都无效（换连通域选取策略、忽略贴底行、只取密集像素行），
+结果与原判据完全一致——因为泥地和角色在像素上就是连着的，纯几何分不开。
+
+**修法在提示词，不在判据**：给该角色加专属约束 `EXTRA_RULES`，明令不许画地面泥土，
+并把死亡语义从"在地上爬行"改写成"弓起 → 腿软前扑 → 砸落 → 壳碎 → 塌陷 → 残骸"。
+换种子重出后一次通过（站高比 0.94 → 0.72 → 0.55 → 0.65 → 0.35 → 0.41，末格明显塌陷）。
+
+教训：**质检指标测不出问题的时候，先怀疑被测量的东西是不是提示词自己引入的**。
+几何判据没错，错在提示词让模型画了不该画的东西。

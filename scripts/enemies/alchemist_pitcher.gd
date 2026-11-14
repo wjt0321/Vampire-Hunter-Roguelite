@@ -11,7 +11,7 @@ func _ready() -> void:
 	super._ready()
 
 func _load_sprite_texture() -> void:
-	use_placeholder_sprite("alchemist_pitcher", "idle", Color(0.3, 0.7, 0.35))
+	use_dedicated_sprite("alchemist_pitcher", "idle", Color(0.3, 0.7, 0.35))
 
 func _get_enemy_type() -> String:
 	return "alchemist_pitcher"

@@ -1,0 +1,21 @@
+[
+  {
+    "asset": "pilot_sg_t2i",
+    "mode": "t2i",
+    "cell": 56,
+    "frames": 4,
+    "motion": "idle",
+    "steps": 25,
+    "prompt": "A heavily armored shield guard: a tall humanoid knight encased in thick dark steel plate armor with riveted pauldrons and a crested closed helm, carrying an enormous kite shield emblazoned with a crimson blood sigil in the left hand and a short-handled battle axe in the right hand, dark red rune glow seeping from the armor joints, heavy iron boots planted on the ground. Full body, head to toe, front view, centered, symmetrical stance, standing still, arms slightly away from the body so the shield and axe read clearly. dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents. Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "pilot_sg_edit",
+    "mode": "edit",
+    "char_ref": "zombie_walk.png",
+    "cell": 56,
+    "frames": 4,
+    "motion": "idle",
+    "steps": 25,
+    "prompt": "Do NOT keep the identity or the body of the creature in image 2. Replace it completely with a brand new creature: A heavily armored shield guard: a tall humanoid knight encased in thick dark steel plate armor with riveted pauldrons and a crested closed helm, carrying an enormous kite shield emblazoned with a crimson blood sigil in the left hand and a short-handled battle axe in the right hand, dark red rune glow seeping from the armor joints, heavy iron boots planted on the ground. Keep only the pixel-art rendering language of image 1: dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents. Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Full body, head to toe, front view, centered, symmetrical stance, standing still. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  }
+]

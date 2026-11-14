@@ -13,7 +13,7 @@ func _ready() -> void:
 	super._ready()
 
 func _load_sprite_texture() -> void:
-	use_placeholder_sprite("moon_wing", "idle", Color(0.62, 0.58, 0.95))
+	use_dedicated_sprite("moon_wing", "idle", Color(0.62, 0.58, 0.95))
 
 func _get_enemy_type() -> String:
 	return "moon_wing"

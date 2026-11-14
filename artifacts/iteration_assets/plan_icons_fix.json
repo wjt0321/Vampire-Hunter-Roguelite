@@ -1,0 +1,47 @@
+[
+  {
+    "asset": "icon_miasma_shot",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/miasma_shot.png",
+    "prompt": "A single game inventory icon of a single shotgun shell split open at the top, thick sickly green toxic mist pouring out of the split and around the brass shell. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast, crisp 2px black outline. The object is completely isolated: no frame, no border, no plaque, no card, no medallion, no background scenery, no ground, no shadow, no text, no extra objects. It floats alone on a flat solid pure magenta #FF00FF background with no gradient, and it fills almost the entire canvas edge to edge."
+  },
+  {
+    "asset": "icon_spike_tome",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/spike_tome.png",
+    "prompt": "A single game inventory icon of a closed leather spell tome with an iron clasp, three sharp iron spikes bursting up out of the top of the book, torn parchment pages sticking out. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast, crisp 2px black outline. The object is completely isolated: no frame, no border, no plaque, no card, no medallion, no background scenery, no ground, no shadow, no text, no extra objects. It floats alone on a flat solid pure magenta #FF00FF background with no gradient, and it fills almost the entire canvas edge to edge."
+  },
+  {
+    "asset": "icon_thunder_bolt",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/thunder_bolt.png",
+    "prompt": "A single game inventory icon of a single iron crossbow bolt with bright blue lightning crackling around its tip. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast, crisp 2px black outline. The object is completely isolated: no frame, no border, no plaque, no card, no medallion, no background scenery, no ground, no shadow, no text, no extra objects. It floats alone on a flat solid pure magenta #FF00FF background with no gradient, and it fills almost the entire canvas edge to edge."
+  },
+  {
+    "asset": "icon_returning_blade",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/returning_blade.png",
+    "prompt": "A single game inventory icon of a single curved throwing knife with a crimson blood streak along the blade. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast, crisp 2px black outline. The object is completely isolated: no frame, no border, no plaque, no card, no medallion, no background scenery, no ground, no shadow, no text, no extra objects. It floats alone on a flat solid pure magenta #FF00FF background with no gradient, and it fills almost the entire canvas edge to edge."
+  },
+  {
+    "asset": "icon_thorn_whip",
+    "mode": "t2i",
+    "kind": "icon",
+    "cell": 48,
+    "steps": 25,
+    "dest": "assets/weapons/icons/thorn_whip.png",
+    "prompt": "A single game inventory icon of a single coiled thorn whip, braided dark leather strands covered in iron spikes, a crimson tassel at the tip. chunky visible pixels, limited 32-color palette, dark gothic fantasy pixel art icon, brushed dark steel and worn leather, antique gold filigree trim, deep crimson accents, high contrast, crisp 2px black outline. The object is completely isolated: no frame, no border, no plaque, no card, no medallion, no background scenery, no ground, no shadow, no text, no extra objects. It floats alone on a flat solid pure magenta #FF00FF background with no gradient, and it fills almost the entire canvas edge to edge."
+  }
+]

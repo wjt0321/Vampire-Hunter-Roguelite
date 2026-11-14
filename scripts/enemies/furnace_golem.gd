@@ -11,7 +11,7 @@ func _ready() -> void:
 	super._ready()
 
 func _load_sprite_texture() -> void:
-	use_placeholder_sprite("furnace_golem", "idle", Color(0.55, 0.42, 0.32))
+	use_dedicated_sprite("furnace_golem", "idle", Color(0.55, 0.42, 0.32))
 
 func _get_enemy_type() -> String:
 	return "furnace_golem"

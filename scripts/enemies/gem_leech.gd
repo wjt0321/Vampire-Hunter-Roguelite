@@ -12,7 +12,7 @@ func _ready() -> void:
 	super._ready()
 
 func _load_sprite_texture() -> void:
-	use_placeholder_sprite("gem_leech", "idle", Color(0.85, 0.75, 0.25))
+	use_dedicated_sprite("gem_leech", "idle", Color(0.85, 0.75, 0.25))
 
 func _get_enemy_type() -> String:
 	return "gem_leech"

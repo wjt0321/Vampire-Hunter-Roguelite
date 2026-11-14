@@ -13,7 +13,7 @@ func _ready() -> void:
 	super._ready()
 
 func _load_sprite_texture() -> void:
-	use_placeholder_sprite("resonance_mage", "idle", Color(0.62, 0.4, 0.9))
+	use_dedicated_sprite("resonance_mage", "idle", Color(0.62, 0.4, 0.9))
 
 func _get_enemy_type() -> String:
 	return "resonance_mage"
