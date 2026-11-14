@@ -241,10 +241,14 @@ func _refresh_codex() -> void:
 		var text := slots.blurb("weapon", wid)
 		if text == "":
 			text = String(weapon.get("desc", ""))
+		var known := _codex_known(saves, "weapon", wid)
+		var meta := ""
+		if known:
+			meta = String(load("res://scripts/weapons/weapon_manager.gd").codex_endings(wid))
 		_codex_entry(codex_list, String(weapon.get("name", wid)), text,
 			catalog.get_icon_texture(wid, "weapon"),
-			_codex_known(saves, "weapon", wid),
-			"获得：升级三选一 / 两把武器融合")
+			known,
+			meta)
 
 	_codex_section(codex_list, "被动")
 	for passive in catalog.PASSIVES:
