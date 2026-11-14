@@ -1,0 +1,38 @@
+{
+  "assets": [
+    {
+      "kind": "bgm",
+      "key": "abyss",
+      "label": "深渊镜像",
+      "file": "assets/audio/generated/bgm/abyss.ogg",
+      "seconds": 56.75,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -6.302513073404913,
+      "rms_dbfs": -23.815696265065416,
+      "sha256": "766456cc9fa3309767888421ea90704da37f04d937ceddcdda0481f01d79ff1f",
+      "edit": {
+        "source_start_seconds": 1,
+        "source_end_seconds": 59.0,
+        "wrap_crossfade_seconds": 1.25,
+        "gain_db": -4.899999999999999,
+        "method": "tail/head linear overlap; cyclic rotation preserves sample continuity"
+      },
+      "loudness": {
+        "input_i": "-21.16",
+        "input_tp": "-6.30",
+        "input_lra": "4.30",
+        "input_thresh": "-31.16",
+        "output_i": "-20.55",
+        "output_tp": "-5.86",
+        "output_lra": "3.10",
+        "output_thresh": "-30.55",
+        "normalization_type": "dynamic",
+        "target_offset": "-0.45"
+      },
+      "loop": true,
+      "seam_jump": 0.007250578608363867
+    }
+  ],
+  "reels": []
+}

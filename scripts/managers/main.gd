@@ -166,7 +166,7 @@ func _ready() -> void:
 	await _show_current_floor_intro()
 
 	# 提示结束后才正式开战
-	AudioManager.play_bgm(_audio_lib.get_floor_bgm(dungeon.current_floor))
+	AudioManager.play_bgm(_combat_bgm())
 	wave_manager.start(player)
 	# 首房走 autostart=false，但仍要计入本层战斗房数；否则“第 2 间起”会错成第 3 间。
 	if room_events:
@@ -522,7 +522,7 @@ func _enter_next_room(autostart: bool = true) -> String:
 		_:
 			# 普通战斗房间：切到本层的战斗曲并启动波次。
 			# 每层一首，一整局下来音乐是往下换的，不是从头到尾一首。
-			AudioManager.play_bgm(_audio_lib.get_floor_bgm(dungeon.current_floor))
+			AudioManager.play_bgm(_combat_bgm())
 			if autostart:
 				wave_manager.start(player)
 				_apply_room_variant()
@@ -548,6 +548,14 @@ func _update_dungeon_hud() -> void:
 			dungeon.get_room_count(),
 			dungeon.get_floor_name()
 		)
+
+func _combat_bgm() -> AudioStream:
+	## 普通战斗房（含雾房/镜像房）的战斗曲：
+	## 深渊轮整轮用专属曲（敌人更硬更痛，音乐先把"这一局不一样"说出口），
+	## 正常局按层换。Boss 房和商店/变异房不走这里。
+	if GameConfig.abyss_level > 0:
+		return _audio_lib.get_abyss_bgm()
+	return _audio_lib.get_floor_bgm(dungeon.current_floor)
 
 # === 特殊房间 ===
 func _enter_shop_room() -> void:
@@ -787,7 +795,7 @@ func _enter_fog_room(autostart: bool) -> void:
 	var pct := roundi((GameConfig.FOG_LOOT_MULT - 1.0) * 100.0)
 	if hud and hud.has_method("set_event_status"):
 		hud.set_event_status("视野受限 · 掉落与经验 +%d%%" % pct)
-	AudioManager.play_bgm(_audio_lib.get_floor_bgm(dungeon.current_floor))
+	AudioManager.play_bgm(_combat_bgm())
 	if autostart:
 		wave_manager.start(player)
 
@@ -796,7 +804,7 @@ func _enter_mirror_room(autostart: bool) -> void:
 	wave_manager.mirror_spawns = true
 	if hud and hud.has_method("set_event_status"):
 		hud.set_event_status("敌人与障碍已左右对调")
-	AudioManager.play_bgm(_audio_lib.get_floor_bgm(dungeon.current_floor))
+	AudioManager.play_bgm(_combat_bgm())
 	if autostart:
 		wave_manager.start(player)
 

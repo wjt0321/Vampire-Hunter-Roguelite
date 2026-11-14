@@ -97,10 +97,13 @@ const BGM_PATHS: Dictionary = {
 	"floor_3": "res://assets/audio/generated/bgm/floor_3.ogg",
 	"floor_4": "res://assets/audio/generated/bgm/floor_4.ogg",
 	"floor_5": "res://assets/audio/generated/bgm/floor_5.ogg",
+	# 深渊轮专属：进入深渊后所有战斗房切这首，和正常楼层区分开
+	# （深渊敌人更硬更痛，音乐先告诉玩家"这一局不一样了"）。
+	"abyss": "res://assets/audio/generated/bgm/abyss.ogg",
 }
 
 const LOOPING_BGMS: Array[String] = ["menu", "battle", "boss", "shop",
-	"floor_1", "floor_2", "floor_3", "floor_4", "floor_5"]
+	"floor_1", "floor_2", "floor_3", "floor_4", "floor_5", "abyss"]
 
 ## 地下城一共几层。楼层 BGM 的键名按这个数循环。
 const FLOOR_COUNT: int = 5
@@ -260,6 +263,15 @@ func get_floor_bgm(floor_index: int) -> AudioStream:
 	if not ResourceLoader.exists(BGM_PATHS[key]):
 		return get_battle_bgm()
 	var stream := _get_cached_bgm(key)
+	if stream == null:
+		return get_battle_bgm()
+	return stream
+
+func get_abyss_bgm() -> AudioStream:
+	## 深渊轮的战斗曲。文件缺失时退回通用战斗曲，同楼层的兜底口径。
+	if not ResourceLoader.exists(BGM_PATHS["abyss"]):
+		return get_battle_bgm()
+	var stream := _get_cached_bgm("abyss")
 	if stream == null:
 		return get_battle_bgm()
 	return stream
