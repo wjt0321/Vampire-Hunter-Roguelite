@@ -62,10 +62,14 @@ func _run() -> void:
 			enemy.queue_free()
 			continue
 		var tex_size: Vector2 = sprite.texture.get_size() if sprite.texture != null else Vector2.ZERO
-		var frame_a: int = sprite.frame
-		await create_timer(0.6).timeout
-		var frame_b: int = sprite.frame
-		var animating: bool = sprite.hframes > 1 and frame_b != frame_a
+		# 0.6 秒单点对比对 4 格短条不可靠：循环周期 0.4s 时，+0.6s 的帧号有
+		# 概率恰好落回起点（vampire 实测 frame_a=frame_b=2 但动画其实在播）。
+		# 改成 12 次采样，只要帧号变过就算在动。
+		var frames_seen := {}
+		for _i in 12:
+			frames_seen[sprite.frame] = true
+			await create_timer(0.1).timeout
+		var animating: bool = sprite.hframes > 1 and frames_seen.size() > 1
 		total += 1
 		if animating:
 			moving += 1

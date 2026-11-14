@@ -47,7 +47,14 @@ func _run() -> void:
 	var explosion := _find_named(main, "Fx_explosion")
 	_check(explosion != null, "血爆爆炸贴图已生成")
 	if explosion != null:
-		var size: Vector2 = explosion.texture.get_size() * explosion.scale
+		var tex_size := Vector2.ZERO
+		if explosion is AnimatedSprite2D:
+			var anim := explosion as AnimatedSprite2D
+			if anim.sprite_frames != null and anim.sprite_frames.get_frame_count(anim.animation) > 0:
+				tex_size = anim.sprite_frames.get_frame_texture(anim.animation, anim.frame).get_size()
+		elif explosion is Sprite2D and (explosion as Sprite2D).texture != null:
+			tex_size = (explosion as Sprite2D).texture.get_size()
+		var size: Vector2 = tex_size * explosion.scale
 		_check(maxf(size.x, size.y) <= 220.0,
 			"血爆最大视觉边长不超过 220px（实际 %s）" % str(size))
 		var mat := explosion.material as CanvasItemMaterial
@@ -65,10 +72,13 @@ func _run() -> void:
 	await create_timer(0.15).timeout
 	main.floor_banner.force_hide()
 	await process_frame
-	var img := root.get_texture().get_image()
-	var out := "res://tools/evidence/iteration/vfx_blood_poison.png"
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out.get_base_dir()))
-	_check(img != null and img.save_png(out) == OK, "保存血爆与毒雾验收截图")
+	if DisplayServer.get_name() == "headless":
+		print("（headless 无渲染服务端，跳过截图保存，截图项不计入）")
+	else:
+		var img := root.get_texture().get_image()
+		var out := "res://tools/evidence/iteration/vfx_blood_poison.png"
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out.get_base_dir()))
+		_check(img != null and img.save_png(out) == OK, "保存血爆与毒雾验收截图")
 
 	await create_timer(6.0).timeout
 	_check(_find_named(main, "PoisonCloud") == null, "毒雾/血爆到期后无贴图残留")
