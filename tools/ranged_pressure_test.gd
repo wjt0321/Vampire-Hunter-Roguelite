@@ -161,7 +161,7 @@ func _run() -> void:
 	archer._attack()
 	await process_frame
 	var t1: float = archer.attack_timer
-	_check(t1 > 2.0, "第 1 层射手冷却被放长到 %.2f 秒（基础 2.0s）" % t1)
+	_check(t1 > 2.0, "第 1 层射手冷却被放长到 %.2f 秒（基础 2.6s）" % t1)
 	for pj in get_nodes_in_group("enemy_projectiles"):
 		if is_instance_valid(pj):
 			pj.queue_free()

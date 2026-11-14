@@ -74,3 +74,14 @@ static func advance_once(sprite: Sprite2D, wait: float, delta: float, fps: float
 
 static func bob_offset(time: float) -> float:
 	return sin(time * TAU / BOB_PERIOD) * BOB_PIXELS
+
+## 有动态帧的精灵用的呼吸位移。
+## 单张贴图的浮动只有 1 像素 / 1.2 秒，本来只是"没图时的过渡"；
+## 横条（4~6 帧、AI 生成的原地小起伏）以前完全不位移，
+## 结果帧一换就回到原位，看上去就是"贴图卡住不动"（试玩反馈："动态帧特别僵硬"）。
+## 这里给一条幅度更大、周期更慢的呼吸，让"在动"这件事看得见。
+const STRIP_BOB_PIXELS: float = 1.8
+const STRIP_BOB_PERIOD: float = 1.7
+
+static func strip_bob_offset(time: float) -> float:
+	return sin(time * TAU / STRIP_BOB_PERIOD) * STRIP_BOB_PIXELS

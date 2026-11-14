@@ -473,8 +473,8 @@ func _start_seals() -> void:
 	var bounds := _room_bounds()
 	var center := bounds.get_center()
 	_seals = [
-		_make_marker(center + Vector2(-140, 40), Color(0.45, 0.75, 0.95, 0.85)),
-		_make_marker(center + Vector2(140, -20), Color(0.45, 0.75, 0.95, 0.85)),
+		_make_marker(center + Vector2(-140, 40), Color(0.45, 0.75, 0.95, 0.85), true),
+		_make_marker(center + Vector2(140, -20), Color(0.45, 0.75, 0.95, 0.85), true),
 	]
 
 func _process_seals(delta: float, hud_dirty: bool) -> void:
@@ -487,7 +487,7 @@ func _process_seals(delta: float, hud_dirty: bool) -> void:
 		if player.global_position.distance_to(seal.global_position) <= 48.0:
 			_seal_time[i] = float(_seal_time[i]) + delta
 		var filled: float = clampf(float(_seal_time[i]) / 1.2, 0.0, 1.0)
-		seal.modulate = Color(0.45, 0.75, 0.95).lerp(Color(0.45, 0.95, 0.55), filled)
+		_update_seal_marker(seal, filled)
 	if hud_dirty:
 		_set_hud("封印 %.0f%% / %.0f%%" % [
 			clampf(float(_seal_time[0]) / 1.2, 0.0, 1.0) * 100.0,
@@ -511,7 +511,7 @@ func _start_bounty() -> void:
 		_end(false, "悬赏未现身")
 		return
 	_bounty_mark = pos + Vector2(70, 0)
-	_make_marker(_bounty_mark, Color(0.95, 0.75, 0.25, 0.9))
+	_make_marker(_bounty_mark, Color(0.95, 0.75, 0.25, 0.9), false)
 	_bounty_enemy.enemy_died.connect(_on_bounty_killed)
 	_tag_enemy(_bounty_enemy, "可 拒 绝", Color(0.95, 0.8, 0.35))
 
@@ -555,22 +555,76 @@ func _edge_direction(from: Vector2) -> Vector2:
 		away = Vector2.RIGHT
 	return away.normalized()
 
-func _make_marker(pos: Vector2, color: Color) -> Node2D:
+## 事件地面标记的直径（像素）。判定半径用 MARKER_RADIUS，两者不要再分叉。
+const MARKER_DIAMETER: float = 72.0
+const MARKER_RADIUS: float = 36.0
+
+## 柔边圆盘贴图（一次性烘好缓存）。中心接近实心、到 0.72 之外快速收尾。
+## 早期这里是 Polygon2D 画的 16 边形纯色块：硬边、实心、颜色一压就成
+## 一坨"贴图错误的蓝色圆饼"盖在地板上（实机截图里玩家脚下就是一团实心蓝），
+## 和"地面圈"这种读法完全对不上号。改成柔边贴图 + 加色光环才是地面投影。
+static var _marker_fill_tex: Texture2D = null
+
+func _get_marker_fill_texture() -> Texture2D:
+	if _marker_fill_tex != null:
+		return _marker_fill_tex
+	const S := 96
+	var img := Image.create(S, S, false, Image.FORMAT_RGBA8)
+	var c := float(S) * 0.5
+	for y in S:
+		for x in S:
+			var d := Vector2(float(x) + 0.5 - c, float(y) + 0.5 - c).length() / c
+			var a := 0.0
+			if d < 1.0:
+				a = 1.0 - smoothstep(0.70, 1.0, d)
+			img.set_pixel(x, y, Color(1.0, 1.0, 1.0, a))
+	_marker_fill_tex = ImageTexture.create_from_image(img)
+	return _marker_fill_tex
+
+## 事件地面标记：柔边光环 + 可选填充。
+## 结构固定成 Fill / Ring 两个子节点，_process_seals 按名字取用并分别改色与改透明度。
+func _make_marker(pos: Vector2, color: Color, show_fill: bool = false) -> Node2D:
 	var marker := Node2D.new()
-	var ring := Polygon2D.new()
-	var points := PackedVector2Array()
-	for i in 16:
-		var a := TAU * float(i) / 16.0
-		points.append(Vector2(cos(a), sin(a)) * 36.0)
-	ring.polygon = points
-	ring.color = color
+	marker.name = "EventMarker"
+	# 地面层：压在地板之上、角色之下。标记是"圈在哪"，不是"圈盖住谁"。
+	marker.z_index = ReadabilityVisuals.Z_GROUND
+
+	var fill := Sprite2D.new()
+	fill.name = "Fill"
+	fill.texture = _get_marker_fill_texture()
+	fill.scale = Vector2.ONE * (MARKER_DIAMETER / float(fill.texture.get_width()))
+	fill.modulate = Color(color.r, color.g, color.b, 0.0 if not show_fill else 0.22)
+	marker.add_child(fill)
+
+	var ring := Sprite2D.new()
+	ring.name = "Ring"
+	ring.texture = ProjectileVisuals.get_ring_texture()
+	ring.material = ProjectileVisuals.get_additive_material()
+	ring.scale = Vector2.ONE * (MARKER_DIAMETER / float(ring.texture.get_width()))
+	ring.modulate = color
 	marker.add_child(ring)
+
 	var scene := get_tree().current_scene if is_inside_tree() else null
 	if scene:
 		scene.add_child(marker)
 	marker.global_position = pos
 	_event_nodes.append(marker)
 	return marker
+
+## 封印圈的进度表现：光环由冷蓝转绿并呼吸，填充由中心向外涨。
+func _update_seal_marker(seal: Node2D, filled: float) -> void:
+	if seal == null or not is_instance_valid(seal):
+		return
+	var tint := Color(0.45, 0.75, 0.95).lerp(Color(0.45, 0.95, 0.55), filled)
+	var breathe := 0.82 + 0.18 * sin(float(Time.get_ticks_msec()) * 0.004)
+	var ring := seal.get_node_or_null("Ring") as Sprite2D
+	if ring != null:
+		ring.modulate = Color(tint.r, tint.g, tint.b, breathe)
+	var fill := seal.get_node_or_null("Fill") as Sprite2D
+	if fill != null and fill.texture != null:
+		var base := MARKER_DIAMETER / float(fill.texture.get_width())
+		fill.scale = Vector2.ONE * base * lerpf(0.45, 1.0, filled)
+		fill.modulate = Color(tint.r, tint.g, tint.b, lerpf(0.08, 0.40, filled))
 
 func _free_event_nodes() -> void:
 	for node in _event_nodes:

@@ -94,8 +94,8 @@ const EVOLUTION_CONFIG: Dictionary = {
 		"evolution_description": "更大范围的致命毒雾",
 		"required_passive_items": ["regeneration"],
 		"damage_multiplier": 2.5,
-		"fire_rate_multiplier": 0.5,
-		"size_multiplier": 2.0,
+		"fire_rate_multiplier": 0.75,
+		"size_multiplier": 1.4,
 		"special_effect": "范围扩大",
 		"behavior": "",
 	},
@@ -1291,6 +1291,23 @@ static func create_blood_burst() -> Resource:
 	w.cloud_size = 1.5
 	return w
 
+## 同屏最多几团毒雾。超了就把最老的那团清掉。
+## 以前没有上限：间隔 1.14s、持续 9s、范围 ×1.8，
+## 场上能同时压着 8 团直径 230px 的深绿雾，整张画面糊死（试玩反馈）。
+const MAX_ACTIVE_POISON_CLOUDS: int = 4
+
+func _enforce_cloud_cap() -> void:
+	var clouds := get_tree().get_nodes_in_group("poison_cloud")
+	if clouds.size() <= MAX_ACTIVE_POISON_CLOUDS:
+		return
+	# 最老的先走：排序后前面几个 queue_free。
+	clouds.sort_custom(func(a: Node, b: Node) -> bool:
+		return float(a.call("get_life")) < float(b.call("get_life")))
+	var excess := clouds.size() - MAX_ACTIVE_POISON_CLOUDS
+	for i in excess:
+		if is_instance_valid(clouds[i]):
+			clouds[i].queue_free()
+
 func _spawn_poison_cloud(weapon) -> void:
 	var cloud := PoisonCloudScene.instantiate()
 	# 自动瞄准最近的敌人位置投掷
@@ -1305,6 +1322,7 @@ func _spawn_poison_cloud(weapon) -> void:
 	_ensure_current_scene()
 	if _current_scene:
 		_current_scene.add_child(cloud)
+	_enforce_cloud_cap()
 	# 落点先炸开一团毒雾贴图，玩家才看得出"扔到哪了"
 	var vfx := get_node_or_null("/root/VFXManager")
 	if vfx:
@@ -1326,7 +1344,8 @@ func _spawn_blood_burst(weapon) -> void:
 	cloud.duration = weapon.get_scaled_cloud_duration()
 	cloud.tick_interval = 0.12
 	# 持续区域只保留淡红色范围提示，爆发瞬间由短时贴图承担。
-	cloud.tint = Color(0.86, 0.12, 0.2, 0.28)
+	cloud.tint = Color(0.95, 0.35, 0.42, 0.24)
+	cloud.cloud_kind = "blood"
 	cloud.set_size(weapon.get_scaled_cloud_size() * _evolved_size(weapon.weapon_id))
 	_ensure_current_scene()
 	if _current_scene:
@@ -1490,6 +1509,7 @@ func _spawn_fusion_cloud(at: Vector2, damage: float, cloud_scale: float, duratio
 	_ensure_current_scene()
 	if _current_scene:
 		_current_scene.add_child(cloud)
+	_enforce_cloud_cap()
 
 func _spawn_split_bolts(bullet: Node) -> void:
 	var direction: Vector2 = bullet.get("direction")

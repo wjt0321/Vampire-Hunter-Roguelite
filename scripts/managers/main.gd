@@ -8,6 +8,7 @@ const DungeonManagerScript = preload("res://scripts/map/dungeon_manager.gd")
 const FloorBannerScript = preload("res://scripts/ui/floor_banner.gd")
 const CharacterDataScript = preload("res://scripts/player/character_data.gd")
 const RoomEventScript = preload("res://scripts/managers/room_event_manager.gd")
+const AssetSlotsScript = preload("res://scripts/core/asset_slots.gd")
 var boss_scene: PackedScene = preload("res://scenes/enemies/vampire_lord.tscn")
 var run_log: Node = null
 
@@ -165,7 +166,7 @@ func _ready() -> void:
 	await _show_current_floor_intro()
 
 	# 提示结束后才正式开战
-	AudioManager.play_bgm(_audio_lib.get_battle_bgm())
+	AudioManager.play_bgm(_audio_lib.get_floor_bgm(dungeon.current_floor))
 	wave_manager.start(player)
 	# 首房走 autostart=false，但仍要计入本层战斗房数；否则“第 2 间起”会错成第 3 间。
 	if room_events:
@@ -416,6 +417,11 @@ func _transition_to_next_room() -> void:
 		enemy.queue_free()
 	for powerup in get_tree().get_nodes_in_group("powerups"):
 		powerup.queue_free()
+	# 地面持续效果（毒雾/炼金药液）也必须清。
+	# 它们挂在主场景下而不是房间下，不清的话上一间房的雾会跟着玩家飘进下一间房，
+	# 而且药液还在持续掉血（试玩反馈："效果会带到下一场景"）。
+	for effect in get_tree().get_nodes_in_group("ground_effects"):
+		effect.queue_free()
 	_clear_enemy_projectiles()
 
 	# 淡出
@@ -514,8 +520,9 @@ func _enter_next_room(autostart: bool = true) -> String:
 		"boss":
 			_enter_boss_room()
 		_:
-			# 普通战斗房间，切换回战斗 BGM 并启动波次
-			AudioManager.play_bgm(_audio_lib.get_battle_bgm())
+			# 普通战斗房间：切到本层的战斗曲并启动波次。
+			# 每层一首，一整局下来音乐是往下换的，不是从头到尾一首。
+			AudioManager.play_bgm(_audio_lib.get_floor_bgm(dungeon.current_floor))
 			if autostart:
 				wave_manager.start(player)
 				_apply_room_variant()
@@ -780,7 +787,7 @@ func _enter_fog_room(autostart: bool) -> void:
 	var pct := roundi((GameConfig.FOG_LOOT_MULT - 1.0) * 100.0)
 	if hud and hud.has_method("set_event_status"):
 		hud.set_event_status("视野受限 · 掉落与经验 +%d%%" % pct)
-	AudioManager.play_bgm(_audio_lib.get_battle_bgm())
+	AudioManager.play_bgm(_audio_lib.get_floor_bgm(dungeon.current_floor))
 	if autostart:
 		wave_manager.start(player)
 
@@ -789,7 +796,7 @@ func _enter_mirror_room(autostart: bool) -> void:
 	wave_manager.mirror_spawns = true
 	if hud and hud.has_method("set_event_status"):
 		hud.set_event_status("敌人与障碍已左右对调")
-	AudioManager.play_bgm(_audio_lib.get_battle_bgm())
+	AudioManager.play_bgm(_audio_lib.get_floor_bgm(dungeon.current_floor))
 	if autostart:
 		wave_manager.start(player)
 
@@ -998,7 +1005,7 @@ func _enter_boss_room() -> void:
 		current_room.tree_exiting.connect(boss.queue_free, CONNECT_ONE_SHOT)
 	var saves := _save_manager_ref()
 	if saves != null and saves.has_method("discover_codex") and boss.has_method("_get_enemy_type"):
-		saves.discover_codex("boss", String(boss._get_enemy_type()))
+		saves.discover_codex("boss", AssetSlotsScript.codex_enemy_id(String(boss._get_enemy_type())))
 	# Boss._ready 设置独立场景的深渊默认值；生成后应用完整的本局倍率。
 	if "loot_mult" in boss:
 		boss.loot_mult = wave_manager.effective_loot_mult()

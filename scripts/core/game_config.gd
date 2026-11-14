@@ -149,13 +149,13 @@ const FAST_ENEMY_TYPES: Array = ["bat", "werewolf", "blood_hound", "moon_wing"]
 const RANGED_UNLOCK_ROOM_BY_FLOOR: Array = [2, 2, 1, 1, 0]
 
 ## 敌人开火冷却倍率（下标 = floor - 1）。第 1 层射手 2.0s → 3.4s，几乎是原来的两倍
-const ENEMY_FIRE_COOLDOWN_MULT_BY_FLOOR: Array = [1.7, 1.25, 1.1, 1.0, 0.95]
+const ENEMY_FIRE_COOLDOWN_MULT_BY_FLOOR: Array = [1.7, 1.3, 1.0, 0.9, 0.8]
 
 ## 同屏敌人投射物数量上限（下标 = floor - 1）
 const ENEMY_PROJECTILE_CAP_BY_FLOOR: Array = [3, 6, 8, 10, 12]
 
 ## 三连发概率（下标 = floor - 1）。第 1 层永远单发
-const RANGED_TRIPLE_SHOT_CHANCE_BY_FLOOR: Array = [0.0, 0.15, 0.22, 0.28, 0.32]
+const RANGED_TRIPLE_SHOT_CHANCE_BY_FLOOR: Array = [0.0, 0.12, 0.18, 0.22, 0.26]
 
 static func get_ranged_unlock_room(floor_index: int) -> int:
 	var idx: int = clampi(floor_index - 1, 0, RANGED_UNLOCK_ROOM_BY_FLOOR.size() - 1)

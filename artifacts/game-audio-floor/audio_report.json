@@ -1,0 +1,170 @@
+{
+  "assets": [
+    {
+      "kind": "bgm",
+      "key": "floor_1",
+      "label": "血月回廊",
+      "file": "assets/audio/generated/bgm/floor_1.ogg",
+      "seconds": 56.75,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -7.014561620436032,
+      "rms_dbfs": -22.456642724002187,
+      "sha256": "dbe8fe1fa30a2c1792a77aef8b5755af3f5301675a52546227ee5ac157680e69",
+      "edit": {
+        "source_start_seconds": 1,
+        "source_end_seconds": 59.0,
+        "wrap_crossfade_seconds": 1.25,
+        "gain_db": -7.26,
+        "method": "tail/head linear overlap; cyclic rotation preserves sample continuity"
+      },
+      "loudness": {
+        "input_i": "-20.92",
+        "input_tp": "-7.00",
+        "input_lra": "4.00",
+        "input_thresh": "-30.94",
+        "output_i": "-19.59",
+        "output_tp": "-6.52",
+        "output_lra": "3.30",
+        "output_thresh": "-29.60",
+        "normalization_type": "dynamic",
+        "target_offset": "-1.41"
+      },
+      "loop": true,
+      "seam_jump": 0.00115261971950531
+    },
+    {
+      "kind": "bgm",
+      "key": "floor_2",
+      "label": "织血巢穴",
+      "file": "assets/audio/generated/bgm/floor_2.ogg",
+      "seconds": 56.75,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -7.772920929258319,
+      "rms_dbfs": -22.911017062028765,
+      "sha256": "0ad019a082ecaff664ad9cc6eba179d8c599f217c21e991a539b2f4b0f78ef4c",
+      "edit": {
+        "source_start_seconds": 1,
+        "source_end_seconds": 59.0,
+        "wrap_crossfade_seconds": 1.25,
+        "gain_db": -6.24,
+        "method": "tail/head linear overlap; cyclic rotation preserves sample continuity"
+      },
+      "loudness": {
+        "input_i": "-21.17",
+        "input_tp": "-7.77",
+        "input_lra": "4.40",
+        "input_thresh": "-31.17",
+        "output_i": "-19.80",
+        "output_tp": "-6.94",
+        "output_lra": "2.30",
+        "output_thresh": "-29.80",
+        "normalization_type": "dynamic",
+        "target_offset": "-1.20"
+      },
+      "loop": true,
+      "seam_jump": 0.0026031211018562317
+    },
+    {
+      "kind": "bgm",
+      "key": "floor_3",
+      "label": "骸骨墓穴",
+      "file": "assets/audio/generated/bgm/floor_3.ogg",
+      "seconds": 56.75,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -5.29236803769102,
+      "rms_dbfs": -22.9997035607767,
+      "sha256": "6ac5ce299cdd9ca0602361828657ada6de5f1a42c228272ee5e5811325e35a78",
+      "edit": {
+        "source_start_seconds": 1,
+        "source_end_seconds": 59.0,
+        "wrap_crossfade_seconds": 1.25,
+        "gain_db": 0.8000000000000007,
+        "method": "tail/head linear overlap; cyclic rotation preserves sample continuity"
+      },
+      "loudness": {
+        "input_i": "-20.85",
+        "input_tp": "-5.29",
+        "input_lra": "4.20",
+        "input_thresh": "-30.87",
+        "output_i": "-20.13",
+        "output_tp": "-4.92",
+        "output_lra": "3.00",
+        "output_thresh": "-30.14",
+        "normalization_type": "dynamic",
+        "target_offset": "-0.87"
+      },
+      "loop": true,
+      "seam_jump": 0.0008048294112086296
+    },
+    {
+      "kind": "bgm",
+      "key": "floor_4",
+      "label": "炼金工坊",
+      "file": "assets/audio/generated/bgm/floor_4.ogg",
+      "seconds": 56.75,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -7.875090847294049,
+      "rms_dbfs": -21.896301378219608,
+      "sha256": "292ea337bc447aae4733d66abe513ed7b3662e3105a091f9273577be1c4ed272",
+      "edit": {
+        "source_start_seconds": 1,
+        "source_end_seconds": 59.0,
+        "wrap_crossfade_seconds": 1.25,
+        "gain_db": -6.85,
+        "method": "tail/head linear overlap; cyclic rotation preserves sample continuity"
+      },
+      "loudness": {
+        "input_i": "-21.11",
+        "input_tp": "-7.79",
+        "input_lra": "3.80",
+        "input_thresh": "-31.11",
+        "output_i": "-19.96",
+        "output_tp": "-6.06",
+        "output_lra": "2.20",
+        "output_thresh": "-29.96",
+        "normalization_type": "dynamic",
+        "target_offset": "-1.04"
+      },
+      "loop": true,
+      "seam_jump": 0.013036683201789856
+    },
+    {
+      "kind": "bgm",
+      "key": "floor_5",
+      "label": "月蚀王座",
+      "file": "assets/audio/generated/bgm/floor_5.ogg",
+      "seconds": 56.75,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -8.372456380722761,
+      "rms_dbfs": -22.61480728428296,
+      "sha256": "9695dd8b37f8fa32c948a8fe31f2f9cd3e6cfd0452ff5bfc25bb072624e285d3",
+      "edit": {
+        "source_start_seconds": 1,
+        "source_end_seconds": 59.0,
+        "wrap_crossfade_seconds": 1.25,
+        "gain_db": -4.460000000000001,
+        "method": "tail/head linear overlap; cyclic rotation preserves sample continuity"
+      },
+      "loudness": {
+        "input_i": "-21.06",
+        "input_tp": "-8.37",
+        "input_lra": "8.40",
+        "input_thresh": "-31.06",
+        "output_i": "-18.83",
+        "output_tp": "-5.09",
+        "output_lra": "5.60",
+        "output_thresh": "-28.83",
+        "normalization_type": "dynamic",
+        "target_offset": "-2.17"
+      },
+      "loop": true,
+      "seam_jump": 0.0021958118304610252
+    }
+  ],
+  "reels": []
+}

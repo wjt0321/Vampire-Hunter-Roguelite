@@ -262,6 +262,11 @@ func _update_boss_hp_bar(value: float) -> void:
 	## 更新血条
 	boss_hp_changed.emit(value, max_hp)
 
+func _get_enemy_type() -> String:
+	## Boss 的类型标识。图鉴按这个 id 解锁，
+	## 缺了它，血铠领主在图鉴里永远是 ???（它也没实现 get_boss_type）。
+	return "blood_lord"
+
 func _load_sprite_texture() -> void:
 	if sprite:
 		var texture := TextureManager.instance.get_boss_texture("idle")

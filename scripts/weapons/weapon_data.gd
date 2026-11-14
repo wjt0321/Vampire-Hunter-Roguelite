@@ -81,10 +81,10 @@ const LEVEL_STEPS := {
 		5: {"damage": 9.6, "fire_rate": 0.38, "card": "伤害 6.0 → 9.6，间隔 0.50 → 0.38"},
 	},
 	"poison_cloud": {
-		2: {"cloud_size": 1.8, "card": "范围 1.0 → 1.8"},
-		3: {"cloud_duration": 9.0, "card": "持续 5s → 9s"},
-		4: {"fire_rate": 1.14, "card": "间隔 1.5 → 1.14"},
-		5: {"damage": 4.0, "card": "伤害 2.5 → 4.0"},
+		2: {"cloud_size": 1.3, "card": "范围 1.0 → 1.3"},
+		3: {"cloud_duration": 6.0, "card": "持续 5s → 6s"},
+		4: {"fire_rate": 1.35, "card": "间隔 1.5 → 1.35"},
+		5: {"damage": 4.6, "card": "伤害 2.5 → 4.6"},
 	},
 	"lightning_chain": {
 		2: {"lightning_jumps": 5, "card": "跳跃 3 → 5"},

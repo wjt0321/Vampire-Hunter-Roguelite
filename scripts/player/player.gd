@@ -363,15 +363,16 @@ func _sync_player_pose() -> void:
 func _tick_player_sprite(delta: float) -> void:
 	if sprite == null or sprite.texture == null:
 		return
+	_sprite_anim_time += delta
 	if sprite.hframes > 1:
-		sprite.position = _sprite_rest_pos
+		# 呼吸位移：横条也要上下浮一点，否则帧一换就钉死在原位，看着像卡帧。
+		sprite.position = _sprite_rest_pos + Vector2(0.0, SpriteSheetLib.strip_bob_offset(_sprite_anim_time))
 		_sprite_frame_wait = SpriteSheetLib.advance(sprite, _sprite_frame_wait, delta)
 		if _one_shot_pose != "":
 			_one_shot_left -= delta
 			if _one_shot_left <= 0.0:
 				_end_one_shot()
 		return
-	_sprite_anim_time += delta
 	sprite.position = _sprite_rest_pos + Vector2(0.0, SpriteSheetLib.bob_offset(_sprite_anim_time))
 
 

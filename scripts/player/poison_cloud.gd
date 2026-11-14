@@ -9,8 +9,14 @@ const SpriteFramesLib = preload("res://scripts/core/sprite_frames_lib.gd")
 @export var tick_interval: float = 0.5
 @export var duration: float = 5.0
 var damage_multiplier: float = 1.0
+## 云团种类："poison" 计入同屏上限，"blood"（血爆）不计入。
+var cloud_kind: String = "poison"
 ## 颜色（毒雾=绿，血爆=红），在生成后、入树前设置
-var tint: Color = Color(0.2, 0.8, 0.2, 0.5)
+## 旧值 Color(0.2, 0.8, 0.2, 0.5) 会把贴图里本就不亮的中绿压成墨绿：
+## modulate 是乘算，r=96×0.2≈19、b=44×0.2≈8，整团雾是发黑的深绿，
+## 压在地板上等于把画面糊死（试玩反馈："颜色太深导致画面被污染都看不清"）。
+## 现在是高亮黄绿 + 低不透明度：雾是"飘在场景上的一层"，不是"盖住场景的一块"。
+var tint: Color = Color(0.9, 1.0, 0.6, 0.34)
 
 var _expired: bool = false
 var _timer: float = 0.0
@@ -21,6 +27,11 @@ var _enemies_in_cloud: Array = []
 @onready var sprite: Sprite2D = $Sprite2D
 
 func _ready() -> void:
+	# 地面持续效果统一登记到 ground_effects：换房时由 main 一次性清掉。
+	# 以前毒雾挂在主场景下而不是房间下，换房不清，雾会跟着玩家飘进下一间房。
+	add_to_group("ground_effects")
+	if cloud_kind == "poison":
+		add_to_group("poison_cloud")
 	# 正式雾团贴图统一按 128px 基准尺寸显示，与碰撞半径 64px 对齐。
 	# 有序列帧就用序列帧（毒雾在翻滚），原来的单张精灵隐藏掉。
 	var sheet_slot: Dictionary = AssetSlots.effect_sheet("poison_spread")
@@ -102,3 +113,7 @@ func _fade_out() -> void:
 
 func set_size(scale_factor: float) -> void:
 	scale = Vector2(scale_factor, scale_factor)
+
+func get_life() -> float:
+	## 已经存在了多久。同屏上限要清掉"最老的那一团"时用。
+	return _timer

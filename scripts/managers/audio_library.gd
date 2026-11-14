@@ -90,9 +90,20 @@ const BGM_PATHS: Dictionary = {
 	"victory": "res://assets/audio/generated/bgm/victory.ogg",
 	"defeat": "res://assets/audio/generated/bgm/defeat.ogg",
 	"shop": "res://assets/audio/generated/bgm/shop.ogg",
+	# 每层一首：以前一整局只有一首战斗曲，玩家从头到尾听不出变化
+	# （试玩反馈："背景音乐我有好几首的怎么我从头到尾只听到一首？"）。
+	"floor_1": "res://assets/audio/generated/bgm/floor_1.ogg",
+	"floor_2": "res://assets/audio/generated/bgm/floor_2.ogg",
+	"floor_3": "res://assets/audio/generated/bgm/floor_3.ogg",
+	"floor_4": "res://assets/audio/generated/bgm/floor_4.ogg",
+	"floor_5": "res://assets/audio/generated/bgm/floor_5.ogg",
 }
 
-const LOOPING_BGMS: Array[String] = ["menu", "battle", "boss", "shop"]
+const LOOPING_BGMS: Array[String] = ["menu", "battle", "boss", "shop",
+	"floor_1", "floor_2", "floor_3", "floor_4", "floor_5"]
+
+## 地下城一共几层。楼层 BGM 的键名按这个数循环。
+const FLOOR_COUNT: int = 5
 
 # ========== 缓存 ==========
 var _cached_sounds: Dictionary = {}
@@ -238,6 +249,20 @@ func get_defeat_bgm() -> AudioStream:
 
 func get_shop_bgm() -> AudioStream:
 	return _get_cached_bgm("shop")
+
+## 某一层的战斗曲。楼层文件缺失时退回通用战斗曲，
+## 不能因为一首歌没生成出来就让整局静音。
+func get_floor_bgm(floor_index: int) -> AudioStream:
+	var idx: int = clampi(floor_index, 1, FLOOR_COUNT)
+	var key := "floor_%d" % idx
+	if not BGM_PATHS.has(key):
+		return get_battle_bgm()
+	if not ResourceLoader.exists(BGM_PATHS[key]):
+		return get_battle_bgm()
+	var stream := _get_cached_bgm(key)
+	if stream == null:
+		return get_battle_bgm()
+	return stream
 
 func _generate_ambient_loop(duration: float, base_freqs: Array, volume: float) -> AudioStreamWAV:
 	var samples := int(SAMPLE_RATE * duration)

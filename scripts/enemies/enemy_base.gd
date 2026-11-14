@@ -553,8 +553,11 @@ func _tick_sprite(delta: float) -> void:
 	if not _sprite_rest_ready:
 		_sprite_rest_pos = sprite.position
 		_sprite_rest_ready = true
+	_sprite_anim_time += delta
 	if sprite.hframes > 1 and not _sprite_hold:
-		sprite.position = _sprite_rest_pos
+		# 横条也在呼吸。以前动画帧一换精灵就回到原位，
+		# 只有单张贴图才上下浮动 —— 有动态帧的敌人反而看着是死的。
+		sprite.position = _sprite_rest_pos + Vector2(0.0, SpriteSheetLib.strip_bob_offset(_sprite_anim_time))
 		if _sprite_play == "loop":
 			_sprite_frame_wait = SpriteSheetLib.advance(sprite, _sprite_frame_wait, delta, _sprite_fps)
 		else:
@@ -574,7 +577,6 @@ func _tick_sprite(delta: float) -> void:
 						_sprite_fps = 0.0
 		return
 	# 单张没有循环可播。1 像素、1.2 秒的浮动只是过渡，横条换上之后这条不再走。
-	_sprite_anim_time += delta
 	sprite.position = _sprite_rest_pos + Vector2(0.0, SpriteSheetLib.bob_offset(_sprite_anim_time))
 
 func _ensure_default_texture() -> void:

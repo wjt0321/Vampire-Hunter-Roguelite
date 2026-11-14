@@ -11,11 +11,12 @@ Also writes audition reels (every sound in a fixed 3s slot) so each sound can
 be identified by ear, and an audio_report.json with hashes and measurements.
 """
 from pathlib import Path
-import argparse, hashlib, json, subprocess
+import argparse, hashlib, json, os, subprocess
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / 'artifacts/game-audio-iteration'
+# 同 render：批次目录可覆盖，落地目录固定在 assets/audio/generated。
+OUT = Path(os.environ.get('VHR_AUDIO_OUT', ROOT / 'artifacts/game-audio-iteration'))
 DEST = ROOT / 'assets/audio/generated'
 FF = 'E:/AI/ffmpeg/current/bin/ffmpeg.exe'
 SR = 48000

@@ -5,7 +5,18 @@ class_name SkeletonArcher
 const PREFERRED_DISTANCE: float = 250.0  # 理想距离
 const RETREAT_DISTANCE: float = 150.0    # 小于此距离后退
 const ATTACK_RANGE: float = 400.0        # 攻击范围
-const ATTACK_COOLDOWN: float = 2.0       # 攻击冷却
+const ATTACK_COOLDOWN: float = 2.6       # 攻击冷却
+## 拉弓预告时长。开枪前先给玩家一个"它要射了"的提示，
+## 玩家才有机会横向挪一步，而不是只能靠反应速度硬吃。
+const WINDUP_TIME: float = 0.35
+## 提前量系数。以前是 1.0（完全预判）：射手永远打在你"将会到"的位置，
+## 横移根本躲不开，只能先停再变向——同屏三四个射手时基本无解。
+## 现在只打 30% 的提前量，横移有效，瞄准仍然有一点威胁。
+const PREDICTION_FACTOR: float = 0.3
+
+## 蓄力（拉弓）状态。true 时站定不动，等 _windup_left 走完才真的射。
+var _pending_shot: bool = false
+var _windup_left: float = 0.0
 
 var attack_timer: float = 0.0
 var projectile_scene: PackedScene = preload("res://scenes/enemies/enemy_projectile.tscn")
@@ -41,6 +52,17 @@ func _physics_process(delta: float) -> void:
 	if attack_timer > 0:
 		attack_timer -= delta
 	
+	# 蓄力中：站定、转向、倒数。给玩家的反应窗口就是这段。
+	if _pending_shot:
+		velocity = Vector2.ZERO
+		move_and_slide()
+		_windup_left -= delta
+		_update_facing(direction_to_player)
+		if _windup_left <= 0.0:
+			_pending_shot = false
+			_attack()
+		return
+
 	# 行为逻辑
 	if distance_to_player < RETREAT_DISTANCE:
 		# 太近，后退
@@ -54,19 +76,36 @@ func _physics_process(delta: float) -> void:
 		# 理想距离，停止移动并尝试攻击
 		velocity = Vector2.ZERO
 		if attack_timer <= 0 and distance_to_player <= ATTACK_RANGE:
-			_attack()
+			_begin_windup()
 	
-	# 翻转朝向
+	_update_facing(direction_to_player)
+
+func _update_facing(direction_to_player: Vector2) -> void:
 	if direction_to_player.x < 0:
 		sprite.flip_h = true
 	else:
 		sprite.flip_h = false
 
-func _attack() -> void:
-	# 冷却按层放长：第 1 层 ×1.7（2.0s → 3.4s），第 3 层才是原始节奏。
+func _begin_windup() -> void:
+	# 冷却按层放长：第 1 层 ×1.7（2.6s → 4.4s），第 3 层才是原始节奏。
 	# 同屏弹道上限也一样——上限不是"减伤害"，是给玩家留出走位缝隙。
 	attack_timer = ATTACK_COOLDOWN * GameConfig.get_enemy_fire_cooldown_mult(floor_index)
+	_pending_shot = true
+	_windup_left = WINDUP_TIME
 
+	# 预告：先摆出射击姿势（射击动作条），再亮一下。
+	# 玩家看到的是"它在拉弓"，而不是凭空飞来一支箭。
+	var shoot_tex := TextureManager.instance.get_enemy_texture("skeleton", "shoot") if TextureManager.instance else null
+	if shoot_tex:
+		use_sprite(shoot_tex, "once")
+	var tween := create_tween()
+	tween.tween_property(sprite, "modulate", Color(1.7, 1.15, 0.85, 1.0), WINDUP_TIME * 0.7)
+
+func _attack() -> void:
+	## 真正吐弹。名字保持 _attack：外部脚本与回归测试都按这个入口调用。
+	# 冷却在这里也结算一次：蓄力阶段已经扣过一次，
+	# 这里是兜底（直接调 _attack 时没有蓄力）。
+	attack_timer = ATTACK_COOLDOWN * GameConfig.get_enemy_fire_cooldown_mult(floor_index)
 	if projectile_scene == null or player == null:
 		return
 
@@ -103,10 +142,7 @@ func _attack() -> void:
 
 		get_tree().current_scene.add_child(projectile)
 
-	var shoot_tex := TextureManager.instance.get_enemy_texture("skeleton", "shoot") if TextureManager.instance else null
-	if shoot_tex:
-		use_sprite(shoot_tex, "once")
-	# 播放射击动画（闪烁）
+	# 射击瞬间闪一下（亮度回到常态）
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", Color(1.5, 1.5, 1.5, 1.0), 0.1)
 	tween.tween_property(sprite, "modulate", Color.WHITE, 0.1)
@@ -122,7 +158,7 @@ func _get_predicted_aim_direction() -> Vector2:
 	var to_player := player.global_position - global_position
 	var projectile_speed: float = 300.0  # 与 enemy_projectile.gd 默认速度一致
 	var time_to_hit: float = to_player.length() / maxf(projectile_speed, 1.0)
-	var predicted_pos: Vector2 = player.global_position + player_vel * time_to_hit
+	var predicted_pos: Vector2 = player.global_position + player_vel * time_to_hit * PREDICTION_FACTOR
 	return (predicted_pos - global_position).normalized()
 
 func _get_enemy_type() -> String:

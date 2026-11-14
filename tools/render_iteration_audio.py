@@ -8,10 +8,12 @@ Saves raw FLAC under artifacts/game-audio-iteration/raw/ and one receipt per
 job so an interrupted run resumes instead of resubmitting.
 """
 from pathlib import Path
-import argparse, copy, hashlib, json, subprocess, time, urllib.request, urllib.error
+import argparse, copy, hashlib, json, os, subprocess, time, urllib.request, urllib.error
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / 'artifacts/game-audio-iteration'
+# 输出目录可用 VHR_AUDIO_OUT 覆盖：同一套管线要给不同批次用
+# （每层 BGM 是独立批次，产物不能混在迭代批次里）。
+OUT = Path(os.environ.get('VHR_AUDIO_OUT', ROOT / 'artifacts/game-audio-iteration'))
 BASE = 'http://127.0.0.1:8188'
 FFMPEG = 'E:/AI/ffmpeg/current/bin/ffmpeg.exe'
 

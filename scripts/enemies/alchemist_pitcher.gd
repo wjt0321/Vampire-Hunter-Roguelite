@@ -25,7 +25,8 @@ func _move_towards_player(delta: float) -> void:
 		move_and_slide()
 	_throw_cd -= delta
 	if _throw_cd <= 0.0:
-		_throw_cd = 2.6
+		# 2.6s 一瓶太密：同屏三四个投手时地上全是药液，玩家连落脚点都看不清。
+		_throw_cd = 3.6
 		toss(player.global_position)
 		# 投掷药瓶：播投掷动作条
 		play_action_strip("alchemist_pitcher", "throw", "once")

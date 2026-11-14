@@ -1,0 +1,202 @@
+{
+  "version": "floor-20261116",
+  "bgm_template": {
+    "1": {
+      "class_type": "CheckpointLoaderSimple",
+      "inputs": {
+        "ckpt_name": "yue2_3b_int8_convrot.safetensors"
+      }
+    },
+    "2": {
+      "class_type": "LoraLoader",
+      "inputs": {
+        "model": [
+          "1",
+          0
+        ],
+        "clip": [
+          "1",
+          1
+        ],
+        "lora_name": "ar_lora_inst_v3abc_comfyui.safetensors",
+        "strength_model": 1,
+        "strength_clip": 1
+      }
+    },
+    "3": {
+      "class_type": "LoraLoader",
+      "inputs": {
+        "model": [
+          "2",
+          0
+        ],
+        "clip": [
+          "2",
+          1
+        ],
+        "lora_name": "nar_lora_joint_v4_comfyui.safetensors",
+        "strength_model": 1,
+        "strength_clip": 1
+      }
+    },
+    "6": {
+      "class_type": "YuE2GenerateABC",
+      "inputs": {
+        "clip": [
+          "3",
+          1
+        ],
+        "style": "Gothic action roguelite battle soundtrack, instrumental only, no vocals, no choir, no speech. 128 BPM, 4/4, D minor. A memorable short harpsichord hook, tight staccato string ostinato, restrained pipe organ bass, punchy compact electronic drums. Dark, determined vampire hunter energy with a steady driving groove. The beat starts immediately, no long intro. Clear instrument separation, restrained cymbals and sub-bass, leave space for game sound effects. Consistent energy, repeating eight-bar phrases with subtle variation, no dramatic breakdown, no fade-out.",
+        "lyrics": "[instrumental]",
+        "seed": 2026111302,
+        "mode": "full",
+        "max_abc_tokens": 8192,
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "top_k": 30,
+        "repetition_penalty": 1.005,
+        "penalty_window": 100
+      }
+    },
+    "7": {
+      "class_type": "YuE2GenerateMusic",
+      "inputs": {
+        "clip": [
+          "3",
+          1
+        ],
+        "style": "Gothic action roguelite battle soundtrack, instrumental only, no vocals, no choir, no speech. 128 BPM, 4/4, D minor. A memorable short harpsichord hook, tight staccato string ostinato, restrained pipe organ bass, punchy compact electronic drums. Dark, determined vampire hunter energy with a steady driving groove. The beat starts immediately, no long intro. Clear instrument separation, restrained cymbals and sub-bass, leave space for game sound effects. Consistent energy, repeating eight-bar phrases with subtle variation, no dramatic breakdown, no fade-out.",
+        "lyrics": "[instrumental]",
+        "abc": [
+          "6",
+          0
+        ],
+        "seed": 2026111302,
+        "mode": "full",
+        "max_duration": 60,
+        "temperature": 1,
+        "top_p": 0.95,
+        "top_k": 100,
+        "repetition_penalty": 1.2,
+        "cfg_scale": 1
+      }
+    },
+    "8": {
+      "class_type": "ConditioningZeroOut",
+      "inputs": {
+        "conditioning": [
+          "7",
+          0
+        ]
+      }
+    },
+    "9": {
+      "class_type": "EmptyYuE2LatentAudio",
+      "inputs": {
+        "seconds": [
+          "7",
+          1
+        ],
+        "batch_size": 1
+      }
+    },
+    "10": {
+      "class_type": "KSampler",
+      "inputs": {
+        "model": [
+          "3",
+          0
+        ],
+        "positive": [
+          "7",
+          0
+        ],
+        "negative": [
+          "8",
+          0
+        ],
+        "latent_image": [
+          "9",
+          0
+        ],
+        "seed": 2026111302,
+        "steps": 32,
+        "cfg": 1,
+        "sampler_name": "dpm_2",
+        "scheduler": "sgm_uniform",
+        "denoise": 1
+      }
+    },
+    "11": {
+      "class_type": "VAEDecodeAudio",
+      "inputs": {
+        "samples": [
+          "10",
+          0
+        ],
+        "vae": [
+          "1",
+          2
+        ]
+      }
+    },
+    "12": {
+      "class_type": "SaveAudioAdvanced",
+      "inputs": {
+        "audio": [
+          "11",
+          0
+        ],
+        "filename_prefix": "audio/VampireHunter/audition_20261113/yue2_battle_02",
+        "format": "flac"
+      }
+    }
+  },
+  "jobs": [
+    {
+      "kind": "bgm",
+      "key": "floor_1",
+      "label": "血月回廊",
+      "duration": 60,
+      "loop": true,
+      "seed": 2026111601,
+      "prompt": "Chunky-pixel gothic dark fantasy, instrumental only, no vocals, no choir, no speech, no lyrics. Dark steel, antique gold filigree and deep crimson colour. Floor 1 corridor battle loop, 124 BPM, 4/4, D minor. Harpsichord staccato melody, pizzicato string ostinato, restrained pipe organ bass and a dry frame drum pulse, like chunky 16-bit gothic game music. Steady forward hunting rhythm, repeating eight-bar phrases, clear instrument separation and room for game sound effects. The beat starts immediately, no long intro, no breakdown, no fade out."
+    },
+    {
+      "kind": "bgm",
+      "key": "floor_2",
+      "label": "织血巢穴",
+      "duration": 60,
+      "loop": true,
+      "seed": 2026111602,
+      "prompt": "Chunky-pixel gothic dark fantasy, instrumental only, no vocals, no choir, no speech, no lyrics. Dark steel, antique gold filigree and deep crimson colour. Floor 2 blood nest battle loop, 132 BPM, 4/4, F sharp minor. Muted low strings, a detuned harpsichord answering a plucked lute, pipe organ pedal notes and irregular wet dripping percussion over a slow heartbeat kick, like chunky 16-bit gothic game music. Claustrophobic but steady, repeating eight-bar phrases, clear instrument separation and room for game sound effects. The beat starts immediately, no long intro, no breakdown, no fade out."
+    },
+    {
+      "kind": "bgm",
+      "key": "floor_3",
+      "label": "骸骨墓穴",
+      "duration": 60,
+      "loop": true,
+      "seed": 2026111603,
+      "prompt": "Chunky-pixel gothic dark fantasy, instrumental only, no vocals, no choir, no speech, no lyrics. Dark steel, antique gold filigree and deep crimson colour. Floor 3 bone crypt battle loop, 108 BPM, 4/4, A minor. Hollow low bells, sparse pizzicato cello, a lonely harpsichord pulse and dry bone-shaker percussion, like chunky 16-bit gothic game music. Slow ominous funeral march that keeps moving, repeating eight-bar phrases, lots of space and room for game sound effects. The beat starts immediately, no long intro, no breakdown, no fade out."
+    },
+    {
+      "kind": "bgm",
+      "key": "floor_4",
+      "label": "炼金工坊",
+      "duration": 60,
+      "loop": true,
+      "seed": 2026111604,
+      "prompt": "Chunky-pixel gothic dark fantasy, instrumental only, no vocals, no choir, no speech, no lyrics. Dark steel, antique gold filigree and deep crimson colour. Floor 4 alchemy workshop battle loop, 138 BPM, 4/4, C minor. Mechanical gear-and-pipe percussion, clanging muted metal hits, a quirky pizzicato bass ostinato and a bright harpsichord hook over a pipe organ drone, like chunky 16-bit gothic game music. Brisk and industrious with an uneasy edge, repeating eight-bar phrases, clear instrument separation and room for game sound effects. The beat starts immediately, no long intro, no breakdown, no fade out."
+    },
+    {
+      "kind": "bgm",
+      "key": "floor_5",
+      "label": "月蚀王座",
+      "duration": 60,
+      "loop": true,
+      "seed": 2026111605,
+      "prompt": "Chunky-pixel gothic dark fantasy, instrumental only, no vocals, no choir, no speech, no lyrics. Dark steel, antique gold filigree and deep crimson colour. Floor 5 eclipse throne battle loop, 146 BPM, 4/4, E minor. Wide tremolo strings, a deep pipe organ drone, sharp harpsichord stabs and relentless tight electronic drums, like chunky 16-bit gothic game music. The heaviest and most driving floor, oppressive without a break, repeating eight-bar phrases, leave space for game sound effects. The beat starts immediately, no long intro, no breakdown, no fade out."
+    }
+  ]
+}

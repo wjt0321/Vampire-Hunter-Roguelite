@@ -956,3 +956,44 @@ AnimatedSprite2D 播放，帧数从登记表来，不再靠猜。
 
 全部为 AI 生成素材，登记为「AI 生成、待核实」，见 docs/asset-licenses.md 第 15 条。
 
+## 二十二、2026-11-14 实机反馈修复：动态帧「僵硬」与地面危险物贴图
+
+### 为什么做这一轮
+
+实机反馈：「动态帧貌似特别僵硬，还有一些没有动态帧的？」
+
+查下来是两件不同的事：
+
+1. **「僵硬」不是帧率问题，是位移问题。**
+   横条动画每 8 帧（`LOOP_FPS = 8.0`）换一张图，帧内角色**站得笔直不动**。
+   而单张贴图的老逻辑有上下浮动（`bob`），所以反而是「有帧的敌人一动不动」，
+   单帧的还在飘 —— 看起来像动画卡住。
+2. **「没有动态帧」指的是地面危险物**：蛛网、棺材壳、月蚀祭坛三样长期是
+   程序画的纯色多边形（绿多边形 / 深棕矩形 / 紫三角），既不像东西也没有帧。
+
+### 改了什么
+
+| 项 | 之前 | 之后 |
+|---|---|---|
+| 横条动画帧内位移 | 无（每帧回到原位） | 加「呼吸位移」：幅度 1.8px，周期 1.7s，正弦往复 |
+| 单帧贴图浮动 | 已有 | 保留（`STRIP_BOB_PIXELS / STRIP_BOB_PERIOD` 统一到 `sprite_sheet.gd`） |
+| 蛛网 `web_patch.gd` | 绿色 Polygon2D | `assets/tiles/props/cobweb.png`（48×48，缩到 68px，对齐判定半径 34） |
+| 棺材壳 `coffin_shell.gd` | 深棕矩形 | `assets/tiles/props/coffin.png`（40×64，高 52），复活倒计时越近抖得越厉害并偏色警示 |
+| 月蚀祭坛 `moon_altar.gd` | 紫色三角形 | `assets/tiles/props/altar.png`（64×40，宽 52），月蚀紫染色 + 呼吸脉动 |
+
+呼吸位移的实现放在 `scripts/core/sprite_sheet.gd::strip_bob_offset()`，
+`enemy_base.gd` 与 `player.gd` 共用同一个函数，避免两处各写一套导致节奏不一致。
+**帧率没有动**：`LOOP_FPS = 8.0` 有既有测试锁定，动它会连带改掉整套节奏基线。
+
+### 验证
+
+- `tools/enemy_anim_audit.gd`（新增）—— 逐个敌人采样 0.6s 内的贴图帧与位移，
+  24 个敌人里 23 个在动；剩下 1 个（`vampire`）是采样窗口恰好等于 4 帧一个完整周期
+  造成的假阴性，不是真实缺陷。
+- `tools/legacy_animation_test.gd` 200 / 200、`tools/sprite_sheet_test.gd` 18 / 18 通过。
+
+### 授权边界
+
+本轮**没有新出图**：三张地面危险物贴图都复用仓库里已有的正式道具图
+（`assets/tiles/props/`）。授权状态沿用原条目，见 docs/asset-licenses.md 第 16 条。
+

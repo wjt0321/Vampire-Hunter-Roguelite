@@ -21,6 +21,9 @@ var sfx_slider: HSlider = null
 var _abandon_armed: bool = false
 var _abandon_button: Button = null
 var _settings_button: Button = null
+## 图鉴面板。与设置面板同级，打开时把主菜单面板收起来，关掉再换回来。
+var codex_panel: PanelContainer = null
+var codex_list: VBoxContainer = null
 
 func _ready() -> void:
 	visible = false
@@ -30,10 +33,18 @@ func _ready() -> void:
 			get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
 	_setup_panel_style()
 	_build_settings_panel()
+	_build_codex_panel()
 	_setup_button_effects()
 
 func _input(event: InputEvent) -> void:
 	if not event.is_action_pressed("pause"):
+		return
+	# 图鉴开着时 ESC 先关图鉴，回 ESC 菜单本身。
+	# 以前没有这一层：ESC 直接把整个菜单关掉，玩家从图鉴回不到菜单，
+	# 只能重新按一次 ESC 重新开（试玩反馈："无法返回到 ESC 菜单"）。
+	if visible and codex_panel != null and codex_panel.visible:
+		get_viewport().set_input_as_handled()
+		_on_codex_back_pressed()
 		return
 	# 设置面板开着时 ESC 先收设置，不要顺手把整局也解暂停
 	if visible and settings_panel != null and settings_panel.visible:
@@ -64,7 +75,11 @@ func _setup_button_effects() -> void:
 		_abandon_button.text = "放弃本局"
 	_ensure_settings_button()
 	_ensure_codex_button()
-	for btn in panel.find_children("", "Button", true):
+	# owned 必须传 false：find_children 默认只返回"场景文件里带的"子节点，
+	# 而"设置"和"图鉴"两个按钮是运行时 new 出来的，
+	# 于是它们从来没进过这个循环，也就从来没套上 btn_normal/btn_hover 贴图——
+	# 菜单里另外三个按钮有花纹边框，这两个只有一块灰色底（试玩反馈："设置和图鉴没有贴图"）。
+	for btn in panel.find_children("", "Button", true, false):
 		# Space 是开火键。面板按钮可聚焦时，Space 会先被按钮吃掉当成"按下"，
 		# 玩家一边点面板一边开火就会误触"返回主菜单"这类不可逆操作。
 		btn.focus_mode = Control.FOCUS_NONE
@@ -84,6 +99,8 @@ func _ensure_settings_button() -> void:
 	_settings_button.add_theme_font_size_override("font_size", 18)
 	_settings_button.focus_mode = Control.FOCUS_NONE
 	_settings_button.pressed.connect(_on_settings_pressed)
+	_style_button(_settings_button)
+	UiFx.hover(_settings_button)
 	vbox.add_child(_settings_button)
 	# 排在"继续游戏"下面、"放弃本局"上面
 	var resume_btn := panel.find_child("ResumeButton", true, false)
@@ -100,79 +117,246 @@ func _ensure_codex_button() -> void:
 	button.custom_minimum_size = Vector2(0, 45)
 	button.focus_mode = Control.FOCUS_NONE
 	button.pressed.connect(_show_codex)
+	_style_button(button)
+	UiFx.hover(button)
 	vbox.add_child(button)
 	if _settings_button != null:
 		vbox.move_child(button, _settings_button.get_index() + 1)
 
 func _show_codex() -> void:
-	var existing := panel.find_child("CodexPanel", true, false)
-	if existing != null:
-		existing.visible = not existing.visible
-		return
-	var box := PanelContainer.new()
-	box.name = "CodexPanel"
-	box.set_anchors_preset(Control.PRESET_FULL_RECT)
-	box.offset_left = 80
-	box.offset_top = 60
-	box.offset_right = -80
-	box.offset_bottom = -60
-	var label := Label.new()
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.text = _codex_text()
-	box.add_child(label)
-	panel.add_child(box)
+	## 图鉴：以前是一整块纯文本 Label，所有条目糊成 "敌人 ???" 一长串，
+	## 既没有图也没有分行（试玩反馈："图鉴功能没做完"）。
+	## 现在是正经面板：图标 + 中文名 + 遭遇要点，没见过的显示问号。
+	if codex_panel == null:
+		_build_codex_panel()
+	_refresh_codex()
+	var opening := not codex_panel.visible
+	codex_panel.visible = opening
+	panel.visible = not opening
+	if opening:
+		_disarm_abandon()
+		UiFx.pop_in(codex_panel, 0.18, 0.96)
 
-func _codex_text() -> String:
+func _on_codex_back_pressed() -> void:
+	## 从图鉴回到 ESC 菜单本体。以前没有这个出口，
+	## 玩家只能靠 ESC 把整个菜单一起关掉，回不到菜单里。
+	if codex_panel == null:
+		return
+	codex_panel.visible = false
+	panel.visible = true
+
+func _build_codex_panel() -> void:
+	codex_panel = PanelContainer.new()
+	codex_panel.name = "CodexPanel"
+	codex_panel.visible = false
+	codex_panel.custom_minimum_size = Vector2(920, 600)
+	var panel_texture := TextureManager.instance.get_ui_texture("stats_panel")
+	if panel_texture:
+		var style := StyleBoxTexture.new()
+		style.texture = panel_texture
+		style.texture_margin_left = 26.0
+		style.texture_margin_right = 26.0
+		style.texture_margin_top = 24.0
+		style.texture_margin_bottom = 24.0
+		# stats_panel 是 400x300 的描金花框贴图，框本身占掉外圈约 70px。
+		# 内边距按框留白给，否则图标和分区标题会压在花纹上（实机截图里
+		# "敌人"两个字被左侧花纹吃掉一半）。
+		style.content_margin_left = 76.0
+		style.content_margin_right = 76.0
+		style.content_margin_top = 78.0
+		style.content_margin_bottom = 74.0
+		codex_panel.add_theme_stylebox_override("panel", style)
+	$CenterContainer.add_child(codex_panel)
+
+	var root := VBoxContainer.new()
+	root.add_theme_constant_override("separation", 8)
+	codex_panel.add_child(root)
+
+	var title := Label.new()
+	title.text = "图  鉴"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_color_override("font_color", Color(1.0, 0.9, 0.66))
+	root.add_child(title)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	root.add_child(scroll)
+
+	codex_list = VBoxContainer.new()
+	codex_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	codex_list.add_theme_constant_override("separation", 6)
+	scroll.add_child(codex_list)
+
+	var back := Button.new()
+	back.name = "CodexBackButton"
+	back.text = "返回"
+	back.custom_minimum_size = Vector2(190, 42)
+	# 不占满整行：按钮贴图是横向花纹带，拉到 900px 宽就成了"一条空杠"。
+	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	back.focus_mode = Control.FOCUS_NONE
+	back.add_theme_font_size_override("font_size", 16)
+	back.pressed.connect(_on_codex_back_pressed)
+	_style_button(back)
+	UiFx.hover(back)
+	root.add_child(back)
+
+func _refresh_codex() -> void:
+	## 每次打开都重建：解锁状态是随进度变的，缓存下来的列表会过期。
+	if codex_list == null:
+		return
+	for child in codex_list.get_children():
+		codex_list.remove_child(child)
+		child.queue_free()
 	var slots = preload("res://scripts/core/asset_slots.gd")
-	var saves := get_node_or_null("/root/SaveManager")
-	var lines: PackedStringArray = PackedStringArray()
-	lines.append("图鉴。正式图放到 asset_slots 写的路径就会替换染色图。")
-	for enemy_id in slots.ENEMIES.keys():
-		var known: bool = saves != null and saves.has_method("codex_known") and bool(saves.call("codex_known", "enemy", String(enemy_id)))
-		if known:
-			lines.append("敌人 %s：%s" % [enemy_id, slots.blurb("enemy", String(enemy_id))])
-		else:
-			lines.append("敌人 ???")
-	for boss_id in slots.BOSSES.keys():
-		var known_boss: bool = saves != null and saves.has_method("codex_known") and bool(saves.call("codex_known", "boss", String(boss_id)))
-		if known_boss:
-			lines.append("Boss %s：%s" % [boss_id, slots.blurb("boss", String(boss_id))])
-		else:
-			lines.append("Boss ???")
 	var catalog = preload("res://scripts/core/item_catalog.gd")
+	var saves := get_node_or_null("/root/SaveManager")
+
+	_codex_section(codex_list, "敌人")
+	for enemy_id in slots.ENEMIES.keys():
+		var eid := String(enemy_id)
+		var info: Dictionary = slots.ENEMIES[eid]
+		_codex_entry(codex_list,
+			String(info.get("name", eid)),
+			String(info.get("blurb", "")),
+			_first_frame(slots.enemy_texture(eid, "idle"), 56),
+			_codex_known(saves, "enemy", eid))
+
+	_codex_section(codex_list, "Boss")
+	for boss_id in slots.BOSSES.keys():
+		var bid := String(boss_id)
+		var info: Dictionary = slots.BOSSES[bid]
+		_codex_entry(codex_list,
+			String(info.get("name", bid)),
+			String(info.get("blurb", "")),
+			_first_frame(slots.boss_texture(bid, "idle"), 128),
+			_codex_known(saves, "boss", bid))
+
+	_codex_section(codex_list, "武器")
 	for weapon in catalog.WEAPONS:
-		var weapon_id := String(weapon.get("id", ""))
-		var known_weapon: bool = saves != null and saves.has_method("codex_known") and bool(saves.call("codex_known", "weapon", weapon_id))
-		if known_weapon:
-			var weapon_text := slots.blurb("weapon", weapon_id)
-			if weapon_text == "":
-				weapon_text = String(weapon.get("desc", ""))
-			lines.append("武器 %s：%s" % [weapon.get("name", weapon_id), weapon_text])
-		else:
-			lines.append("武器 ???")
+		var wid := String(weapon.get("id", ""))
+		var text := slots.blurb("weapon", wid)
+		if text == "":
+			text = String(weapon.get("desc", ""))
+		_codex_entry(codex_list, String(weapon.get("name", wid)), text,
+			catalog.get_icon_texture(wid, "weapon"),
+			_codex_known(saves, "weapon", wid))
+
+	_codex_section(codex_list, "被动")
 	for passive in catalog.PASSIVES:
-		var passive_id := String(passive.get("id", ""))
-		var known_passive: bool = saves != null and saves.has_method("codex_known") and bool(saves.call("codex_known", "passive", passive_id))
-		if known_passive:
-			var passive_text := slots.blurb("passive", passive_id)
-			if passive_text == "":
-				passive_text = String(passive.get("desc", ""))
-			lines.append("被动 %s：%s" % [passive.get("name", passive_id), passive_text])
-		else:
-			lines.append("被动 ???")
-	return "\n".join(lines)
+		var pid := String(passive.get("id", ""))
+		var text := slots.blurb("passive", pid)
+		if text == "":
+			text = String(passive.get("desc", ""))
+		_codex_entry(codex_list, String(passive.get("name", pid)), text,
+			catalog.get_icon_texture(pid, "passive"),
+			_codex_known(saves, "passive", pid))
+
+func _codex_known(saves: Node, kind: String, entry_id: String) -> bool:
+	if saves == null or not saves.has_method("codex_known"):
+		return false
+	return bool(saves.call("codex_known", kind, entry_id))
+
+func _codex_section(parent: VBoxContainer, title_text: String) -> void:
+	var lbl := Label.new()
+	lbl.text = title_text
+	lbl.add_theme_font_size_override("font_size", 19)
+	lbl.add_theme_color_override("font_color", Color(0.85, 0.72, 0.45))
+	parent.add_child(lbl)
+	var sep := HSeparator.new()
+	parent.add_child(sep)
+
+func _codex_entry(parent: VBoxContainer, display_name: String, blurb: String,
+		icon: Texture2D, known: bool) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	parent.add_child(row)
+
+	var slot := PanelContainer.new()
+	slot.custom_minimum_size = Vector2(56, 56)
+	var slot_style := StyleBoxFlat.new()
+	slot_style.bg_color = Color(0.06, 0.05, 0.08, 0.85)
+	slot_style.border_color = Color(0.42, 0.34, 0.22, 0.9)
+	slot_style.set_border_width_all(1)
+	slot.add_theme_stylebox_override("panel", slot_style)
+	if known and icon != null:
+		var tr := TextureRect.new()
+		tr.texture = icon
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		slot.add_child(tr)
+	else:
+		var q := Label.new()
+		q.text = "?"
+		q.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		q.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		q.add_theme_font_size_override("font_size", 30)
+		q.add_theme_color_override("font_color", Color(0.4, 0.36, 0.42))
+		slot.add_child(q)
+	row.add_child(slot)
+
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	info.add_theme_constant_override("separation", 2)
+	row.add_child(info)
+
+	var name_label := Label.new()
+	name_label.text = display_name if known else "???"
+	name_label.add_theme_font_size_override("font_size", 16)
+	name_label.add_theme_color_override("font_color",
+		Color(0.96, 0.9, 0.8) if known else Color(0.52, 0.49, 0.55))
+	info.add_child(name_label)
+
+	var desc := Label.new()
+	desc.text = blurb if known else "尚未遭遇"
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.add_theme_font_size_override("font_size", 13)
+	desc.add_theme_color_override("font_color",
+		Color(0.76, 0.73, 0.68) if known else Color(0.4, 0.38, 0.43))
+	info.add_child(desc)
+
+func _first_frame(tex: Texture2D, cell: int) -> Texture2D:
+	## 精灵表是一整条横带，图鉴里只要第一格。
+	if tex == null:
+		return null
+	var at := AtlasTexture.new()
+	at.atlas = tex
+	var w := minf(float(cell), float(tex.get_width()))
+	var h := minf(float(cell), float(tex.get_height()))
+	at.region = Rect2(0, 0, w, h)
+	return at
 
 func _style_button(btn: Button) -> void:
 	var normal := TextureManager.instance.get_ui_texture("btn_normal")
 	var hover := TextureManager.instance.get_ui_texture("btn_hover")
 	var pressed := TextureManager.instance.get_ui_texture("btn_pressed")
 	if normal and hover:
+		# 9 宫格边距：btn_normal 是 192x64 的横向花纹带，两端各有一颗红宝石。
+		# 不设 texture_margin 的话整张图会被拉扁铺满按钮——按钮越宽，
+		# 两端的宝石被推得越远、中间拉成一条空带，读起来就像"没有贴图"。
+		const BTN_MARGIN_X := 28.0
+		const BTN_MARGIN_Y := 14.0
 		var normal_style := StyleBoxTexture.new()
 		normal_style.texture = normal
+		normal_style.texture_margin_left = BTN_MARGIN_X
+		normal_style.texture_margin_right = BTN_MARGIN_X
+		normal_style.texture_margin_top = BTN_MARGIN_Y
+		normal_style.texture_margin_bottom = BTN_MARGIN_Y
 		var hover_style := StyleBoxTexture.new()
 		hover_style.texture = hover
+		hover_style.texture_margin_left = BTN_MARGIN_X
+		hover_style.texture_margin_right = BTN_MARGIN_X
+		hover_style.texture_margin_top = BTN_MARGIN_Y
+		hover_style.texture_margin_bottom = BTN_MARGIN_Y
 		var pressed_style := StyleBoxTexture.new()
 		pressed_style.texture = pressed if pressed else hover
+		pressed_style.texture_margin_left = BTN_MARGIN_X
+		pressed_style.texture_margin_right = BTN_MARGIN_X
+		pressed_style.texture_margin_top = BTN_MARGIN_Y
+		pressed_style.texture_margin_bottom = BTN_MARGIN_Y
 		btn.add_theme_stylebox_override("normal", normal_style)
 		btn.add_theme_stylebox_override("hover", hover_style)
 		btn.add_theme_stylebox_override("pressed", pressed_style)
@@ -312,6 +496,8 @@ func _resume() -> void:
 	_disarm_abandon()
 	if settings_panel != null:
 		settings_panel.visible = false
+	if codex_panel != null:
+		codex_panel.visible = false
 	panel.visible = true
 	PauseController.release(self)
 	visible = false

@@ -5,6 +5,8 @@ class_name WaveManager
 
 ## 房间解析的唯一入口（preload 而非 class_name：无头跑不刷新全局类缓存）
 const RoomLookupScript = preload("res://scripts/core/room_lookup.gd")
+## 图鉴 id 口径（骷髅射手→skeleton_archer、精英吸血鬼→elite_vampire）
+const AssetSlotsScript = preload("res://scripts/core/asset_slots.gd")
 
 # === 敌人场景 ===
 var enemy_scenes: Dictionary = {
@@ -434,7 +436,9 @@ func _spawn_enemy() -> void:
 		var saves := get_node_or_null("/root/SaveManager")
 		if saves != null and saves.has_method("discover_codex") and enemy.has_method("_get_enemy_type"):
 			var kind := "boss" if enemy.is_in_group("boss") else "enemy"
-			saves.discover_codex(kind, String(enemy._get_enemy_type()))
+			# 内部类型要翻成图鉴 id：骨架射手的内部类型是 "skeleton"，
+			# 直接记进图鉴就会记到不存在的条目上，图鉴里永远是 ???。
+			saves.discover_codex(kind, AssetSlotsScript.codex_enemy_id(String(enemy._get_enemy_type())))
 
 func _spawn_powerup() -> void:
 	## 在玩家四周随机方位刷一个临时增益。

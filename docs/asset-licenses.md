@@ -1036,4 +1036,39 @@
 - 修改记录：复用各敌人已有的 1024 原始立绘 → 3×2 网格图生图出多姿态 →
   切格 → 统一缩放 → 拼 56px 横条；血铠幼虫走 t2i 立绘后同上。
 - 备注：本次本地交付不代表已获发布授权；若要商用或分发，需按所用生成服务账号条款核实。
+### 16. 2026-11-14 楼层专属 BGM（floor_1~5）+ 毒雾/房间事件表现修正
+
+- 状态：已使用
+- 风险：高（AI 生成，商用与分发条件待核实）
+- 类型：音乐 / 精灵图修正
+- 来源 URL：不适用（本机生成）
+- 来源平台：AI（本机 ComfyUI 0.45.2 + YuE2 int8 乐器 LoRA 工作流，沿用第 12 条同一套模板）
+- 作者 / 版权方：项目作者（AI 生成）
+- 授权名称：待确认
+- 是否允许商用：待确认
+- 是否允许修改：是（项目内已裁剪、母带、循环接缝、编码）
+- 是否需要署名：待确认
+- 下载 / 生成日期：2026-11-14
+- 原始文件保存位置：
+  - artifacts/game-audio-floor/raw/（原始 FLAC，5 首）
+  - artifacts/game-audio-floor/manifest.json（提示词、种子、BPM、调式）
+  - artifacts/game-audio-floor/workflows/（实际 API 图，bgm_floor_1~5.api.json）
+  - artifacts/game-audio-floor/audio_report.json（剪辑参数、波形指标与哈希）
+  - tools/make_floor_audio_manifest.py（清单生成脚本）
+- 项目内使用路径：
+  - assets/audio/generated/bgm/floor_1.ogg ~ floor_5.ogg（第 1~5 层战斗曲，各 1:00，循环）
+- 用途说明：实机反馈「背景音乐有好几首的，怎么从头到尾只听到一首」。
+  诊断结论是切换机制本身正常（battle→shop→boss 实测都能换流），
+  真正的原因是所有战斗房共用同一首 battle.ogg。
+  改成每层一首主题曲，战斗房进入时按 `dungeon.current_floor` 取曲。
+- 修改记录：FLAC → 裁剪 → 响度归一（-21 LUFS）→ 尾首交叠循环 → 48kHz 立体声 OGG；
+  文件缺失时 `AudioLib.get_floor_bgm()` 回退 battle.ogg，不静音。
+- 同一轮的画面修正（不涉及新增素材，只是清理与替换）：
+  - assets/effects/poison_spread_sheet.png、assets/effects/poison_spread.png、
+    assets/weapons/poison_cloud.png：清掉生成阶段残留的暗酒红底板与品红像素
+    （半透明品红一并清，静帧看不见但缩放后会渗成紫线）。
+  - 蛛网 / 棺材壳 / 月蚀祭坛改用仓库内已有的正式道具图
+    （assets/tiles/props/cobweb.png、coffin.png、altar.png），授权沿用原条目，未新出图。
+- 备注：本次本地交付不代表已获发布授权；若要商用或分发，需按所用生成服务账号条款核实。
+
 
