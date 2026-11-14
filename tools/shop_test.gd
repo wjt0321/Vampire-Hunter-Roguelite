@@ -18,6 +18,8 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await process_frame
+	# 货架走全局随机流：固定种子让"买到什么"可复现，断言不再看运气。
+	seed(20261115)
 	print("")
 	print("====== 局内商店 / 银币 回归测试 ======")
 
@@ -102,16 +104,24 @@ func _run() -> void:
 		var hp_before: float = player.current_hp
 		var weapon_count_before: int = main_scene.weapon_manager.weapons.size()
 		var passive_before: int = player.passive_items.size()
+		var level_sum_before: int = 0
+		for w in main_scene.weapon_manager.weapons:
+			level_sum_before += w.current_level
 		shop._on_buy(buy_index)
 		_check(player.silver == silver_before_buy - price,
 			"购买扣款 %d（%d → %d）" % [price, silver_before_buy, player.silver])
 		_check(shop._sold[buy_index], "该格标记已售出")
-		# 效果落地检查：三选一里至少有一项（武器/被动/血量/伤害/速度）发生变化
+		# 效果落地检查：武器数/被动数/血量/伤害/速度/武器等级和 至少一项变化。
+		# 变种轨道下低等级只改弹道等轴，伤害倍率不动，必须看等级和。
+		var level_sum_after: int = 0
+		for w in main_scene.weapon_manager.weapons:
+			level_sum_after += w.current_level
 		var effect_applied: bool = weapon_count_before != main_scene.weapon_manager.weapons.size() \
 			or passive_before != player.passive_items.size() \
 			or not is_equal_approx(hp_before, player.current_hp) \
 			or player.damage_multiplier > 1.0 \
-			or player.move_speed > 200.0
+			or player.move_speed > 200.0 \
+			or level_sum_after != level_sum_before
 		_check(effect_applied, "效果已应用（%s）" % String(offer.get("name", "?")))
 
 	# ---------- 关闭 ----------

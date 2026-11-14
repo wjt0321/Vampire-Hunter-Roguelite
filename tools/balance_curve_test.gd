@@ -76,7 +76,7 @@ func _run() -> void:
 	_check(f2 / f1 <= 1.45 and f2 / f1 >= 1.25, "1→2 层台阶 ×%.2f（不要一步跳太狠）" % (f2 / f1))
 	_check(f3 / f2 <= 1.45 and f3 / f2 >= 1.25, "2→3 层台阶 ×%.2f" % (f3 / f2))
 	var eff12: float = h12 * f3
-	_check(eff12 > 4.0 and eff12 < 4.8, "第 3 层末波等效血量倍率 ×%.2f（旧版复利 ×4.98）" % eff12)
+	_check(eff12 > 3.5 and eff12 < 4.3, "第 3 层末波等效血量倍率 ×%.2f（线性曲线 × 楼层台阶，旧版复利 ×4.98）" % eff12)
 
 	print("\n=== 3. 第一间房的杂兵 TTK（玩家 16 DPS）===")
 	var min_hp: float = 1e9

@@ -40,8 +40,8 @@ func _run() -> void:
 	# ==================== ① 同屏上限表 ====================
 	print("\n=== ① 同屏存活上限 ===")
 	_check(gc.get_enemy_alive_cap(1) == 16, "第 1 层同屏上限 16 只")
-	_check(gc.get_enemy_alive_cap(2) == 22, "第 2 层同屏上限 22 只")
-	_check(gc.get_enemy_alive_cap(3) == 28, "第 3 层同屏上限 28 只")
+	_check(gc.get_enemy_alive_cap(2) == 20, "第 2 层同屏上限 20 只")
+	_check(gc.get_enemy_alive_cap(3) == 24, "第 3 层同屏上限 24 只")
 	_check(gc.get_enemy_alive_cap(0) == 16, "层号越界（0）退回第 1 层，不崩")
 	_check(gc.get_enemy_alive_cap(99) == 28, "层号越界（99）夹到最后一层，不崩")
 	_check(gc.ENEMY_ALIVE_CAP_SOFT_RANGE >= 2,

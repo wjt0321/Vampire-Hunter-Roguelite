@@ -70,10 +70,9 @@ func _test_slots() -> void:
 	_check(Slots.texture_at(Slots.enemy_path("blood_larva", "pounce")) != null, "血铠幼虫扑击图已经就位")
 	# 2026-11-14：13 个敌人的受击条也已落盘。
 	_check(Slots.texture_at(Slots.enemy_path("blood_larva", "hurt")) != null, "血铠幼虫受击图已经就位")
-	# 仍然没有落盘的状态必须读不到（不能用占位假装有）：
-	# 旧 MVP 敌人还没有自己的受击条，图放进去之前读到的必须是 null。
+	# 受击条已 24/24 全覆盖（2026-11-14 补齐旧 MVP 11 敌）：现在必须读得到。
 	var missing_tex: Texture2D = Slots.texture_at(Slots.enemy_path("vampire", "hurt"))
-	_check(missing_tex == null, "还没放进去的图不会假装已经有了")
+	_check(missing_tex != null, "旧 MVP 敌人的受击条已落盘且读得到")
 	var missing: Array = []
 	for enemy_id in ["shield_guard", "blood_hound", "blood_priest", "web_weaver", "burrower", "gem_leech", "coffin_guard", "lantern_wraith", "alchemist_pitcher", "furnace_golem", "resonance_mage", "moon_wing"]:
 		if not Director.covers_enemy(enemy_id):

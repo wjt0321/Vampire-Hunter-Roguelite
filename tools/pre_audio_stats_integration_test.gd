@@ -129,10 +129,14 @@ func _damage_boss_income_and_clock() -> void:
 	var boss = get_first_node_in_group("boss")
 	boss.set_physics_process(false)
 	_check(await _wait(func(): return not boss.intro_invulnerable), "real Boss intro finishes")
-	_spawn_projectiles(game, boss)
+	var archer = load("res://scenes/enemies/skeleton_archer.tscn").instantiate()
+	game.add_child(archer)
+	archer.set_physics_process(false)
+	archer.position = game.current_room.get_center() + Vector2(150, 0)
+	_spawn_projectiles(game, archer)
 	boss.take_damage(float(boss.current_hp) + 1.0)
 	_check(ach.run_stats.flawless_boss_kill and ach.is_achievement_unlocked("flawless_victory"), "ordinary-room damage does not spoil real flawless Boss kill")
-	_check(ach.run_stats.damage_taken == 20.0 and ach.run_stats.crystals_earned == 460 and save.get_blood_crystals() == balance_before + 60, "Boss income adds once while prior damage remains")
+	_check(ach.run_stats.damage_taken == 20.0 and ach.run_stats.crystals_earned == 450 and save.get_blood_crystals() == balance_before + 50, "Boss income adds once while prior damage remains")
 	await process_frame
 	_check(get_nodes_in_group("enemy_projectiles").is_empty(), "real Boss victory clears normal and dynamic projectiles")
 	# Hold the pending inter-floor continuation; freeze the common clock during pause.
@@ -185,13 +189,20 @@ func _normal_settlement() -> void:
 	_check(state == [save.get_blood_crystals(), save.save_data.total_runs, ach.run_stats.crystals_earned, ach.get_unlocked_count()], "normal duplicate show is idempotent")
 	await _dispose(ui)
 
-func _spawn_projectiles(game, boss) -> void:
+func _spawn_projectiles(game, source) -> void:
 	var normal = load("res://scenes/enemies/enemy_projectile.tscn").instantiate()
 	normal.position = game.current_room.get_center() + Vector2(-150, 0)
 	normal.speed = 0.0
 	game.add_child(normal)
-	boss._spawn_boss_projectile(Vector2.RIGHT)
-	_check(get_nodes_in_group("enemy_projectiles").size() == 2, "real normal projectile plus Boss dynamic barrage spawned")
+	# 新主线 Boss 的攻击是近战/召唤/场地，不再产 enemy_projectile；
+	# 动态弹幕夹具优先用旧领主接口，没有就用现役骷髅射手的开火入口。
+	if source.has_method("_spawn_boss_projectile"):
+		source._spawn_boss_projectile(Vector2.RIGHT)
+	else:
+		source.player = game.player
+		source.floor_index = 1
+		source._attack()
+	_check(get_nodes_in_group("enemy_projectiles").size() == 2, "real normal projectile plus dynamic barrage spawned")
 
 func _projectile_transition_and_death() -> void:
 	var game = await _game()
@@ -231,10 +242,20 @@ func _boss_loot() -> void:
 	for mult in [1.0, 1.5, 2.0]:
 		game.wave_manager.loot_mult = mult
 		game._enter_boss_room()
-		var boss = get_first_node_in_group("boss")
+		# 新 Boss 死亡时退 enemies 组保死亡演出，旧尸体会留在 boss 组里：
+		# 必须挑活着的，否则拿到上一轮已断连的尸体。
+		var boss: Node = null
+		for b in get_nodes_in_group("boss"):
+			if not b.is_dead:
+				boss = b
+				break
+		_check(boss != null, "drop fixture finds a live Boss")
+		if boss == null:
+			continue
 		boss.set_physics_process(false)
 		# Suppress only floor progression to inspect the real assets before pickup.
-		boss.boss_defeated.disconnect(game._on_boss_defeated)
+		if boss.boss_defeated.is_connected(game._on_boss_defeated):
+			boss.boss_defeated.disconnect(game._on_boss_defeated)
 		_check(await _wait(func(): return not boss.intro_invulnerable), "drop fixture real Boss intro finishes")
 		_check(is_equal_approx(boss.loot_mult, mult), "main effective loot multiplier survives Boss ready %.1f" % mult)
 		boss.take_damage(float(boss.current_hp) + 1.0)
@@ -246,7 +267,7 @@ func _boss_loot() -> void:
 		var total_xp := 0
 		for value in values:
 			total_xp += value
-		_check(total_xp == int(200 * mult), "Boss base and five extra XP assets (including merged gems) scale %.1f" % mult)
+		_check(total_xp == int(100 * mult), "Boss single merged XP gem scales %.1f" % mult)
 		var silver := 0
 		for coin in get_nodes_in_group("silver_coins"):
 			silver += coin.value
@@ -254,6 +275,9 @@ func _boss_loot() -> void:
 		for group in ["xp_gems", "silver_coins", "enemies"]:
 			for node in get_nodes_in_group(group):
 				node.queue_free()
+		for b in get_nodes_in_group("boss"):
+			if b.is_dead:
+				b.queue_free()
 		await process_frame
 	await _dispose(game)
 

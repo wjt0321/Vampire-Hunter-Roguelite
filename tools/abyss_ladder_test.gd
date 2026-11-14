@@ -200,15 +200,15 @@ func _run() -> void:
 	await process_frame
 
 	# 自爆者：爆炸固定 30，规格上必须吃楼层与深渊伤害倍率
-	# 2 层（×1.18）× 深渊 2 级（×1.20）→ 30 × 1.18 × 1.20 = 42.48
+	# 期望值从 GameConfig 楼层伤害表取，不再手算字面量（改表不用改测试）
 	GameConfig.abyss_level = 2
 	var boom_hi: Node = _spawn("exploder", Vector2(600, 360), 2, 1)
 	await process_frame
 	await process_frame
 	boom_hi._explode()
 	await process_frame
-	_check(absf(dmg_player.last_amount - 30.0 * 1.18 * 1.20) < 0.05,
-		"爆炸伤害吃楼层与深渊倍率（%.2f ≈ 42.48）" % dmg_player.last_amount)
+	_check(absf(dmg_player.last_amount - 30.0 * GameConfig.get_floor_damage_multiplier(2) * 1.20) < 0.05,
+		"爆炸伤害吃楼层与深渊倍率（%.2f ≈ %.2f）" % [dmg_player.last_amount, 30.0 * GameConfig.get_floor_damage_multiplier(2) * 1.20])
 	await process_frame
 
 	GameConfig.abyss_level = 0
@@ -234,9 +234,9 @@ func _run() -> void:
 	if spells.size() == 1 + extra_shots:
 		var spell_ok := true
 		for spell in spells:
-			if absf(float(spell.damage) - 15.0 * 1.18 * 1.20) >= 0.05:
+			if absf(float(spell.damage) - 15.0 * GameConfig.get_floor_damage_multiplier(2) * 1.20) >= 0.05:
 				spell_ok = false
-		_check(spell_ok, "法术伤害吃楼层与深渊倍率（每发 ≈ 21.24）")
+		_check(spell_ok, "法术伤害吃楼层与深渊倍率（每发 ≈ %.2f）" % (15.0 * GameConfig.get_floor_damage_multiplier(2) * 1.20))
 	for s in spells:
 		s.queue_free()
 	mage.queue_free()
@@ -247,8 +247,7 @@ func _run() -> void:
 	# ---------- 血族亲王二阶段 ----------
 	print("\n--- 血族亲王二阶段 ---")
 	# 二阶段把 contact_damage 重算成 base × 波次时，曾丢掉楼层与深渊倍率。
-	# 用真实场景走到 50% 血以下，期望值按 GDD 手算：
-	# 二阶段 base 30 × 波次 1（×1.0）× 2 层（×1.18）× 深渊 2 级（×1.20）= 42.48
+	# 用真实场景走到 50% 血以下，期望值从 GameConfig 楼层伤害表取。
 	var prince_player := DamageProbe.new()
 	prince_player.position = Vector2(200, 200)
 	prince_player.add_to_group("player")
@@ -261,9 +260,9 @@ func _run() -> void:
 	prince_hi._physics_process(0.016)
 	await process_frame
 	_check(prince_hi.is_second_phase, "亲王在 50% 血以下进入二阶段")
-	_check(absf(float(prince_hi.contact_damage) - 30.0 * 1.18 * 1.20) < 0.05,
-		"二阶段接触伤害保留楼层与深渊倍率（%.2f ≈ 42.48）"
-		% float(prince_hi.contact_damage))
+	_check(absf(float(prince_hi.contact_damage) - 30.0 * GameConfig.get_floor_damage_multiplier(2) * 1.20) < 0.05,
+		"二阶段接触伤害保留楼层与深渊倍率（%.2f ≈ %.2f）"
+		% [float(prince_hi.contact_damage), 30.0 * GameConfig.get_floor_damage_multiplier(2) * 1.20])
 	prince_hi.queue_free()
 	await process_frame
 
@@ -275,8 +274,8 @@ func _run() -> void:
 	prince_lo.current_hp = float(prince_lo.max_hp) * 0.45
 	prince_lo._physics_process(0.016)
 	await process_frame
-	_check(absf(float(prince_lo.contact_damage) - 30.0 * 1.18) < 0.05,
-		"深渊 0 的二阶段仍含楼层倍率（%.2f ≈ 35.40）" % float(prince_lo.contact_damage))
+	_check(absf(float(prince_lo.contact_damage) - 30.0 * GameConfig.get_floor_damage_multiplier(2)) < 0.05,
+		"深渊 0 的二阶段仍含楼层倍率（%.2f ≈ %.2f）" % [float(prince_lo.contact_damage), 30.0 * GameConfig.get_floor_damage_multiplier(2)])
 	prince_lo.queue_free()
 	prince_player.queue_free()
 	await process_frame
@@ -328,7 +327,7 @@ func _run() -> void:
 	# ---------- Boss 弹幕伤害 ----------
 	print("\n--- Boss 弹幕伤害 ---")
 	# 弹幕是 Boss 主要的"非接触伤害源"，与爆炸/法术同一契约（波次 × 楼层 × 深渊）。
-	# 期望值按 GDD 手算：基础 15 × 波次 1（×1.0）× 2 层（×1.18）× 深渊 2 级（×1.20）= 21.24
+	# 期望值从 GameConfig 楼层伤害表取。
 	var barrage_player := DamageProbe.new()
 	barrage_player.position = Vector2(500, 500)
 	barrage_player.add_to_group("player")
@@ -348,8 +347,8 @@ func _run() -> void:
 		# 不走物理帧：直接发 body_entered，验证命中结算用的数值
 		bullet.body_entered.emit(barrage_player)
 		await process_frame
-		_check(absf(barrage_player.last_amount - 15.0 * 1.18 * 1.20) < 0.05,
-			"弹幕伤害吃楼层与深渊倍率（%.2f ≈ 21.24）" % barrage_player.last_amount)
+		_check(absf(barrage_player.last_amount - 15.0 * GameConfig.get_floor_damage_multiplier(2) * 1.20) < 0.05,
+			"弹幕伤害吃楼层与深渊倍率（%.2f ≈ %.2f）" % [barrage_player.last_amount, 15.0 * GameConfig.get_floor_damage_multiplier(2) * 1.20])
 	barrage_boss.queue_free()
 	await process_frame
 

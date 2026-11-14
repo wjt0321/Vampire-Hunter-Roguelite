@@ -49,11 +49,13 @@ func _test_structure() -> void:
 	dungeon.start_dungeon()
 	var combat := 0
 	var floors := 0
+	# 当前结构以 docs/CURRENT.md 为准：第 1、5 层 7 间，第 2–4 层 5 间，共 29 间 19 战斗房。
+	var rooms_by_floor: Array = [7, 5, 5, 5, 7]
 	while true:
 		floors += 1
 		var plan: Array = dungeon.get_room_plan()
-		_check(plan.size() == 7 and plan[0] == "combat" and plan[plan.size() - 1] == "boss",
-			"第 %d 层是 7 节点且首战尾 Boss" % floors)
+		_check(plan.size() == rooms_by_floor[floors - 1] and plan[0] == "combat" and plan[plan.size() - 1] == "boss",
+			"第 %d 层是 %d 节点且首战尾 Boss" % [floors, rooms_by_floor[floors - 1]])
 		var special := 0
 		for room in plan:
 			if room == "combat":
@@ -63,7 +65,7 @@ func _test_structure() -> void:
 		_check(special == 1, "第 %d 层只有 1 间特殊房" % floors)
 		if not dungeon.advance_floor():
 			break
-	_check(floors == 5 and combat == 25, "完整流程 5 层、25 个战斗房")
+	_check(floors == 5 and combat == 19, "完整流程 5 层、19 个战斗房")
 	dungeon.free()
 
 

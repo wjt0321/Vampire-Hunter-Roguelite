@@ -61,7 +61,7 @@ func _run() -> void:
 			check(AudioServer.get_bus_send(bus_index) == &"Master", "audio bus routes to Master " + bus_name)
 	var lib = root.get_node("AudioLib")
 	var audio = root.get_node("AudioManager")
-	check(lib.SFX_PATHS.size() == 68 and lib.BGM_PATHS.size() == 6, "complete 68 SFX and 6 BGM catalog")
+	check(lib.SFX_PATHS.size() == 68 and lib.BGM_PATHS.size() == 12, "complete 68 SFX and 12 BGM catalog")
 	for key in SFX_KEYS:
 		var stream: AudioStream = lib.get_sound(key)
 		check_asset(stream, "res://assets/audio/generated/sfx/%s.ogg" % key, false)

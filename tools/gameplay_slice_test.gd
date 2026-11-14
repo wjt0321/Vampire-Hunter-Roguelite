@@ -429,5 +429,5 @@ func _test_blueprint() -> void:
 				combat_rooms += 1
 		if not dungeon.advance_floor():
 			break
-	_check(combat_rooms == 25, "五层一共 25 个普通战斗房（%d）" % combat_rooms)
+	_check(combat_rooms == 19, "五层一共 19 个普通战斗房（%d）" % combat_rooms)
 	dungeon.free()

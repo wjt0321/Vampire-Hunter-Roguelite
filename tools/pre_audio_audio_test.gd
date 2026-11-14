@@ -383,19 +383,22 @@ func check_pickup_audio(player) -> void:
 		pickup._player = player
 		host.add_child(pickup)
 		pickup.set_process(false)
-		var gem := Node2D.new()
+		var gem = load("res://scenes/player/xp_gem.tscn").instantiate()
 		host.add_child(gem)
 		gem.global_position = player.global_position + Vector2(200, 0)
-		gem.add_to_group("xp_gems")
+		var far_gem = load("res://scenes/player/xp_gem.tscn").instantiate()
+		host.add_child(far_gem)
+		far_gem.global_position = player.global_position + Vector2(2000, 0)
 		check(sound_count(cue) == 0, kind + " spawn is silent")
 		pickup._collect()
-		var applied: bool = gem.global_position.distance_to(player.global_position) <= 24.1 if kind == "magnet" else player.is_powerup_active()
+		# 磁力新契约：画面内的掉落被 magnetize（飞过来），画面外的不动；不再瞬移。
+		var applied: bool = (gem.is_attracted and not far_gem.is_attracted) if kind == "magnet" else player.is_powerup_active()
 		check(applied and sound_count(cue) == 1, kind + " pickup applies effect and plays its cue")
 		stop_sfx()
 		pickup._collect()
 		check(sound_count(cue) == 0, kind + " queued pickup cannot sound twice")
-		gem.remove_from_group("xp_gems")
 		gem.queue_free()
+		far_gem.queue_free()
 		var expired = load("res://scripts/player/powerup.gd").new()
 		expired.kind = kind
 		expired._player = player

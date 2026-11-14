@@ -1,0 +1,36 @@
+name: Regression tests
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  suites:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install xvfb
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends xvfb
+
+      - name: Download Godot 4.7.2
+        run: |
+          set -euo pipefail
+          curl -fsSL -o godot.zip https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          unzip -q godot.zip
+          chmod +x Godot_v4.7.2-stable_linux.x86_64
+
+      - name: Import project assets
+        run: ./Godot_v4.7.2-stable_linux.x86_64 --headless --path . --import
+
+      - name: Run all regression suites
+        run: xvfb-run -a python3 tools/run_pre_audio_regression.py --godot ./Godot_v4.7.2-stable_linux.x86_64 --label ci
+
+      - name: Upload suite logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: suite-logs
+          path: .tools/qa/ci/

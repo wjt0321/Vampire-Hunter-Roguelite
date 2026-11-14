@@ -126,14 +126,20 @@ func _summon_and_final_boss() -> void:
 	var boss = get_first_node_in_group("boss")
 	boss.set_physics_process(false)
 	_check(await _wait(func(): return not boss.intro_invulnerable), "real final Boss intro completes")
-	boss.summon_count = 2
-	boss._attack_summon()
+	# 新主线 Boss 不再走旧领主的召唤接口：召唤物记账契约改用现役召唤者做夹具，
+	# 它召出的蝙蝠同样接 record_external_kill，语义与旧 Boss 召唤一致。
+	var summoner = load("res://scenes/enemies/summoner.tscn").instantiate()
+	game.add_child(summoner)
+	summoner.set_physics_process(false)
+	summoner.position = game.current_room.get_center() + Vector2(120, 0)
+	summoner.summon_count = 2
+	summoner._summon()
 	var bats: Array = []
 	for enemy in get_nodes_in_group("enemies"):
-		if enemy != boss and enemy._get_enemy_type() == "bat":
+		if enemy != boss and enemy.has_method("_get_enemy_type") and enemy._get_enemy_type() == "bat":
 			bats.append(enemy)
 			enemy.set_physics_process(false)
-	_check(bats.size() == 2, "real Boss attack summons two wired bats")
+	_check(bats.size() == 2, "real summoner spawns two wired bats")
 	if bats.size() != 2:
 		await _dispose(game)
 		return
@@ -149,17 +155,17 @@ func _summon_and_final_boss() -> void:
 	var balance_before: int = save.get_blood_crystals()
 	boss.take_damage(float(boss.current_hp) + 1.0)
 	_check(events == ["enemy_died", "boss_defeated"] and game._terminal_state == "victory", "real final lethal hit emits enemy death then claims victory")
-	_check(ach.run_stats.boss_killed and ach.run_stats.floors_cleared == 3 and ach.is_achievement_unlocked("boss_killer"), "terminal cutoff preserves legitimate final Boss achievement event")
-	_check(ach.run_stats.crystals_earned == 120 and save.get_blood_crystals() == balance_before + 120, "terminal cutoff preserves final Boss reward income once")
+	_check(ach.run_stats.boss_killed and ach.run_stats.floors_cleared == 5 and ach.is_achievement_unlocked("boss_killer"), "terminal cutoff preserves legitimate final Boss achievement event")
+	_check(ach.run_stats.crystals_earned == 140 and save.get_blood_crystals() == balance_before + 140, "terminal cutoff preserves final Boss reward income once")
 	_check(game.wave_manager.total_kills == 1, "Boss retains separate accounting from ordinary kill total")
 	boss.take_damage(1000000.0)
-	_check(events.size() == 2 and save.get_blood_crystals() == balance_before + 120, "repeat Boss damage cannot duplicate events or rewards")
+	_check(events.size() == 2 and save.get_blood_crystals() == balance_before + 140, "repeat Boss damage cannot duplicate events or rewards")
 	# Boss cleanup is deferred. A real pending bat death before it frees still must be excluded.
 	bats[1].take_damage(1000000.0)
 	_check(bats[1].is_dead and game.wave_manager.total_kills == 1 and ach.run_stats.kills == 1 and _category("bat") == 1, "victory cutoff excludes late summoned death from both ledgers")
 	_check(await _wait(func(): return game.game_over_ui.visible, 9.0), "real final Boss victory completes settlement")
 	_check(ach.run_stats.dungeon_cleared == 1 and ach.is_achievement_unlocked("throne_breaker"), "final dungeon achievement remains valid after cutoff")
-	_check(int(ach.run_stats.crystals_earned) > 120 and int(ach.run_stats.crystals_earned) == save.get_blood_crystals() - balance_before, "postterminal settlement income still enters run achievements")
+	_check(int(ach.run_stats.crystals_earned) > 140 and int(ach.run_stats.crystals_earned) == save.get_blood_crystals() - balance_before, "postterminal settlement income still enters run achievements")
 	var fresh = _fresh_save()
 	_check(int(fresh.save_data.total_runs) == 1 and int(fresh.save_data.total_kills) == 1 and int(fresh.save_data.kill_categories.get("bat", 0)) == 1, "new SaveManager reloads one bat from real victory settlement")
 	_check("boss_killer" in fresh.save_data.achievements and "throne_breaker" in fresh.save_data.achievements, "new SaveManager retains final Boss and dungeon achievements")

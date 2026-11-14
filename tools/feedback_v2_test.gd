@@ -167,8 +167,8 @@ func _run() -> void:
 	_check(String(owned_weapon_opt.get("badge", "")) == "升级", "老武器角标 = 升级")
 	_check(String(owned_weapon_opt.get("level_text", "")) == "Lv.2 → Lv.3",
 		"老武器等级文案：%s" % String(owned_weapon_opt.get("level_text", "")))
-	_check(String(owned_weapon_opt.get("desc", "")).contains("伤害"),
-		"老武器描述换成数值：%s" % String(owned_weapon_opt.get("desc", "")))
+	_check(String(owned_weapon_opt.get("desc", "")).contains("→"),
+		"老武器描述写本级真正变化的轴（数值前→后）：%s" % String(owned_weapon_opt.get("desc", "")))
 
 	var new_weapon_opt: Dictionary = ui._decorate_option(
 		{"id": "crossbow", "name": "十字弩", "desc": "高伤害穿透弩箭", "icon": "🏹", "type": "weapon"})

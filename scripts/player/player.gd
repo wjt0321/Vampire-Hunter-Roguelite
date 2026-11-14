@@ -623,7 +623,11 @@ func _lightning_retaliate() -> void:
 		lightning.damage_multiplier = 1.0
 		lightning.max_jumps = 1
 		lightning._current_damage = lightning_retaliate_damage
-		get_tree().current_scene.add_child(lightning)
+		var host: Node = get_tree().current_scene
+		if host != null:
+			host.add_child(lightning)
+		else:
+			lightning.queue_free()
 
 		# 身上爆一圈电光，让"反击"这个被动有可见的触发点
 		var vfx := get_node_or_null("/root/VFXManager")

@@ -115,8 +115,9 @@ func _run() -> void:
 	var c1: float = GameConfig.get_elite_affix_chance(1)
 	var c2: float = GameConfig.get_elite_affix_chance(2)
 	var c3: float = GameConfig.get_elite_affix_chance(3)
+	var c_last: float = GameConfig.get_elite_affix_chance(GameConfig.DUNGEON_FLOOR_COUNT)
 	_check(c1 < c2 and c2 < c3, "概率逐层递增（%.2f < %.2f < %.2f）" % [c1, c2, c3])
-	_check(is_equal_approx(GameConfig.get_elite_affix_chance(9), c3), "超出层数时取最后一层的概率")
+	_check(is_equal_approx(GameConfig.get_elite_affix_chance(9), c_last), "超出层数时取最后一层的概率")
 
 	print("\n=== 3. 统一加成 ===")
 	var normal := _spawn_enemy("vampire", "", Vector2(100, 100))

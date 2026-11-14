@@ -892,7 +892,13 @@ func _drop_xp_gem() -> void:
 	# 对象池复用时重新初始化掉落动画
 	if gem.has_method("_setup_gem"):
 		gem._setup_gem()
-	get_tree().current_scene.call_deferred("add_child", gem)
+	# 换场景的瞬间 current_scene 为 null（测试环境 likewise）：此时掉落没有宿主，
+	# 直接归还池里，不能对 null 调 call_deferred。
+	var host: Node = get_tree().current_scene
+	if host == null:
+		ObjectPool.release(gem)
+		return
+	host.call_deferred("add_child", gem)
 
 func _clamp_drop_position(pos: Vector2) -> Vector2:
 	## 掉落点必须落在可走区域里。
