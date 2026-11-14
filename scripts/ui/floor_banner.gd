@@ -76,7 +76,7 @@ func _build_ui() -> void:
 
 func _make_label(text: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()
-	label.text = text
+	label.text = tr(text)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	label.add_theme_font_size_override("font_size", font_size)
@@ -91,11 +91,11 @@ func show_card(kicker: String, title: String, subtitle: String, hint: String, ac
 	_card_serial += 1
 	var my_id := _card_serial
 
-	_kicker.text = kicker
+	_kicker.text = tr(kicker)
 	_kicker.add_theme_color_override("font_color", accent)
-	_title.text = title
-	_subtitle.text = subtitle
-	_hint.text = hint
+	_title.text = tr(title)
+	_subtitle.text = tr(subtitle)
+	_hint.text = tr(hint)
 	_line.color = Color(accent.r, accent.g, accent.b, 0.9)
 
 	visible = true

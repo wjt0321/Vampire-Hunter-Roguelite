@@ -76,6 +76,7 @@ func _apply_button_texture(btn: Button) -> void:
 func show_shop() -> void:
 	visible = true
 	_refresh_ui()
+	I18nUtil.retranslate_tree(self)
 	UiFx.pop_in($Panel, 0.16, 0.97)
 
 func _upgrade_icon_item(upgrade_id: String) -> String:
@@ -92,7 +93,7 @@ func _upgrade_icon_item(upgrade_id: String) -> String:
 func _refresh_ui() -> void:
 	if not save_mgr:
 		return
-	crystals_label.text = "血晶: %d" % save_mgr.get_blood_crystals()
+	crystals_label.text = tr("血晶: %d") % save_mgr.get_blood_crystals()
 	for child in upgrades_container.get_children():
 		child.queue_free()
 	for upgrade_id in UPGRADE_INFO:
@@ -107,7 +108,7 @@ func _refresh_ui() -> void:
 		# 图标：贴图优先（复用统一映射）
 		var icon_tex: Texture2D = ItemCatalog.get_icon_texture(_upgrade_icon_item(upgrade_id))
 		var name_label := Label.new()
-		name_label.text = "%s Lv.%d/%d" % [info["name"], level, 5]
+		name_label.text = "%s Lv.%d/%d" % [tr(String(info["name"])), level, 5]
 		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		if icon_tex != null:
 			var icon_rect := TextureRect.new()
@@ -120,16 +121,16 @@ func _refresh_ui() -> void:
 		row.add_child(name_label)
 		
 		var desc_label := Label.new()
-		desc_label.text = info["desc"]
+		desc_label.text = tr(info["desc"])
 		desc_label.modulate = Color(0.7, 0.7, 0.7)
 		row.add_child(desc_label)
 		
 		var buy_btn := Button.new()
 		if maxed:
-			buy_btn.text = "已满级"
+			buy_btn.text = tr("已满级")
 			buy_btn.disabled = true
 		else:
-			buy_btn.text = "血晶 %d" % cost
+			buy_btn.text = tr("血晶 %d") % cost
 			buy_btn.disabled = save_mgr.get_blood_crystals() < cost
 			var uid: String = upgrade_id
 			buy_btn.pressed.connect(func(): _purchase(uid))
@@ -139,7 +140,7 @@ func _refresh_ui() -> void:
 		
 		upgrades_container.add_child(row)
 	var rule_title := Label.new()
-	rule_title.text = "规则"
+	rule_title.text = tr("规则")
 	rule_title.add_theme_font_size_override("font_size", 18)
 	rule_title.modulate = Color(0.85, 0.72, 0.45)
 	upgrades_container.add_child(rule_title)
@@ -150,19 +151,19 @@ func _refresh_ui() -> void:
 		var rule_row := HBoxContainer.new()
 		rule_row.custom_minimum_size = Vector2(0, 40)
 		var rule_name := Label.new()
-		rule_name.text = String(rule_info.get("name", rule_id))
+		rule_name.text = tr(String(rule_info.get("name", rule_id)))
 		rule_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		rule_row.add_child(rule_name)
 		var rule_desc := Label.new()
-		rule_desc.text = String(rule_info.get("desc", ""))
+		rule_desc.text = tr(String(rule_info.get("desc", "")))
 		rule_desc.modulate = Color(0.7, 0.7, 0.7)
 		rule_row.add_child(rule_desc)
 		var rule_btn := Button.new()
 		if owned:
-			rule_btn.text = "已购置"
+			rule_btn.text = tr("已购置")
 			rule_btn.disabled = true
 		else:
-			rule_btn.text = "血晶 %d" % rule_cost
+			rule_btn.text = tr("血晶 %d") % rule_cost
 			rule_btn.disabled = save_mgr.get_blood_crystals() < rule_cost
 			var rid: String = rule_id
 			rule_btn.pressed.connect(func(): _purchase_rule(rid))

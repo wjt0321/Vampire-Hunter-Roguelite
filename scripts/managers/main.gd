@@ -415,9 +415,9 @@ func _on_wave_completed(wave_number: int) -> void:
 		_open_room_exit(current_room)
 	# 波次标签别继续挂着波次号让人以为还有活怪——写明已清
 	if hud and hud.has_method("set_wave_status"):
-		hud.set_wave_status("出口已开启 · 走传送门", true)
+		hud.set_wave_status(tr("出口已开启 · 走传送门"), true)
 	if onboarding != null:
-		onboarding.hint("portal", "房间已清 · 走进传送门进入下一间")
+		onboarding.hint("portal", tr("房间已清 · 走进传送门进入下一间"))
 
 func _on_portal_chosen(room_type: String) -> void:
 	if dungeon:
@@ -591,7 +591,7 @@ func _enter_shop_room() -> void:
 	print("🏪 商店房间!")
 	AudioManager.play_bgm(_audio_lib.get_shop_bgm())
 	if onboarding != null:
-		onboarding.hint("shop", "银币只在本局商店消费 · 血晶才是局外永久货币")
+		onboarding.hint("shop", tr("银币只在本局商店消费 · 血晶才是局外永久货币"))
 	var ach_mgr := get_node_or_null("/root/AchievementManager")
 	if ach_mgr:
 		ach_mgr.record_room_visit("shop")
@@ -644,7 +644,7 @@ func _enter_treasure_room() -> void:
 				player.gain_xp(80)
 				player.add_silver(40)
 			if hud and hud.has_method("set_wave_status"):
-				hud.set_wave_status("宝 箱 · 已转化为 经验+80 银币+40", true)
+				hud.set_wave_status(tr("宝 箱 · 已转化为 经验+80 银币+40"), true)
 		else:
 			var factory: Callable = weapons.pick_random()
 			weapon_manager.add_weapon(factory.call())
@@ -670,10 +670,10 @@ func _announce_evolution(evolved: Array) -> void:
 		vfx.screen_shake(6.0, 0.3)
 	if floor_banner and floor_banner.has_method("show_card"):
 		floor_banner.show_card(
-			"武器进化",
+			tr("武器进化"),
 			text,
 			"EVOLVED",
-			"宝箱的力量已注入你的武器",
+			tr("宝箱的力量已注入你的武器"),
 			Color(1.0, 0.86, 0.42),
 			1.4
 		)
@@ -732,7 +732,7 @@ func _apply_blood_pact() -> void:
 	player.change_max_hp(-penalty)
 	wave_manager.set_run_modifiers(GameConfig.BLOOD_PACT_COUNT_MULT, GameConfig.BLOOD_PACT_LOOT_MULT)
 	if hud and hud.has_method("update_blood_pact"):
-		hud.update_blood_pact(true, "契约：上限 -%d%% · 掉落 +%d%%" % [
+		hud.update_blood_pact(true, tr("契约：上限 -%d%% · 掉落 +%d%%") % [
 			roundi(GameConfig.BLOOD_PACT_HP_RATIO * 100.0),
 			roundi((GameConfig.BLOOD_PACT_LOOT_MULT - 1.0) * 100.0),
 		])
@@ -744,10 +744,10 @@ func _apply_blood_pact() -> void:
 	])
 	if floor_banner and floor_banner.has_method("show_card"):
 		floor_banner.show_card(
-			"契约生效",
-			"本层：生命上限 -%d%%" % roundi(GameConfig.BLOOD_PACT_HP_RATIO * 100.0),
+			tr("契约生效"),
+			tr("本层：生命上限 -%d%%") % roundi(GameConfig.BLOOD_PACT_HP_RATIO * 100.0),
 			"BLOOD PACT",
-			"敌人 +%d%% 数量 · 银币与经验 +%d%%（层末归还）" % [
+			tr("敌人 +%d%% 数量 · 银币与经验 +%d%%（层末归还）") % [
 				roundi((GameConfig.BLOOD_PACT_COUNT_MULT - 1.0) * 100.0),
 				roundi((GameConfig.BLOOD_PACT_LOOT_MULT - 1.0) * 100.0),
 			],
@@ -781,7 +781,7 @@ func _enter_mutation_room() -> void:
 	print("🩸 变异房!")
 	AudioManager.play_bgm(_audio_lib.get_shop_bgm())
 	if hud and hud.has_method("set_event_status"):
-		hud.set_event_status("献出生命换奖励，也可能什么都换不到")
+		hud.set_event_status(tr("献出生命换奖励，也可能什么都换不到"))
 	var room: Node2D = current_room
 	if mutation_ui == null:
 		_open_portal_after_delay(1.0)
@@ -799,7 +799,7 @@ func _enter_mutation_room() -> void:
 func _on_mutation_decided(kind: String) -> void:
 	if kind != "gamble" or not is_instance_valid(player):
 		if hud and hud.has_method("set_event_status"):
-			hud.set_event_status("你离开了祭坛")
+			hud.set_event_status(tr("你离开了祭坛"))
 		return
 	var cost := GameConfig.mutation_cost(player.max_hp)
 	if not player.spend_hp(cost):
@@ -810,12 +810,12 @@ func _on_mutation_decided(kind: String) -> void:
 	if xp > 0:
 		player.gain_xp(xp)
 	var won: bool = bool(result.get("win", false))
-	var text := "祭坛应验：银币 +%d　经验 +%d" % [int(result.get("silver", 0)), xp] if won \
-		else "祭坛沉默：血已献上，只剩银币 +%d" % int(result.get("silver", 0))
+	var text := tr("祭坛应验：银币 +%d　经验 +%d") % [int(result.get("silver", 0)), xp] if won \
+		else tr("祭坛沉默：血已献上，只剩银币 +%d") % int(result.get("silver", 0))
 	if hud and hud.has_method("set_event_status"):
 		hud.set_event_status(text)
 	if hud and hud.has_method("set_wave_status"):
-		hud.set_wave_status("变异 · %s" % ("应验" if won else "落空"))
+		hud.set_wave_status(tr("变异 · %s") % (tr("应验") if won else tr("落空")))
 	print("🩸 %s" % text)
 
 func _enter_fog_room(autostart: bool) -> void:
@@ -825,7 +825,7 @@ func _enter_fog_room(autostart: bool) -> void:
 	_enable_fog()
 	var pct := roundi((GameConfig.FOG_LOOT_MULT - 1.0) * 100.0)
 	if hud and hud.has_method("set_event_status"):
-		hud.set_event_status("视野受限 · 掉落与经验 +%d%%" % pct)
+		hud.set_event_status(tr("视野受限 · 掉落与经验 +%d%%") % pct)
 	AudioManager.play_bgm(_combat_bgm())
 	if autostart:
 		wave_manager.start(player)
@@ -834,7 +834,7 @@ func _enter_mirror_room(autostart: bool) -> void:
 	print("🪞 镜像房!")
 	wave_manager.mirror_spawns = true
 	if hud and hud.has_method("set_event_status"):
-		hud.set_event_status("敌人与障碍已左右对调")
+		hud.set_event_status(tr("敌人与障碍已左右对调"))
 	AudioManager.play_bgm(_combat_bgm())
 	if autostart:
 		wave_manager.start(player)
@@ -867,7 +867,7 @@ func _open_room_exit(room: Node2D) -> void:
 	var choices: Array = dungeon.peek_room_choices() if dungeon else []
 	if not choices.is_empty() and hud and hud.has_method("set_event_status"):
 		var next_room: Dictionary = choices[0]
-		hud.set_event_status("下一间 · %s · %s" % [next_room.get("title", ""), next_room.get("detail", "")])
+		hud.set_event_status(tr("下一间 · %s · %s") % [next_room.get("title", ""), next_room.get("detail", "")])
 	if choices.size() >= 2 and room.has_method("spawn_choice_portals"):
 		room.spawn_choice_portals(choices)
 		_announce_door_choice(choices)
@@ -885,9 +885,9 @@ func _announce_door_choice(choices: Array) -> void:
 	var left: Dictionary = choices[0]
 	var right: Dictionary = choices[1]
 	if hud.has_method("set_wave_status"):
-		hud.set_wave_status("选路 · 左%s / 右%s" % [left.get("title", ""), right.get("title", "")])
+		hud.set_wave_status(tr("选路 · 左%s / 右%s") % [left.get("title", ""), right.get("title", "")])
 	if hud.has_method("set_event_status"):
-		hud.set_event_status("左：%s　　右：%s" % [left.get("detail", ""), right.get("detail", "")])
+		hud.set_event_status(tr("左：%s　　右：%s") % [left.get("detail", ""), right.get("detail", "")])
 
 func _apply_daily_rules() -> void:
 	## 重开同一场景会再走一遍：每日状态挂在 GameConfig 上，重开仍是今天的挑战。
@@ -1192,7 +1192,7 @@ func _loot_grace_countdown(seconds: int) -> void:
 	player.pickup_range_bonus += PICKUP_CONTRIBUTION
 	for i in range(seconds, 0, -1):
 		if hud != null and is_instance_valid(hud) and hud.has_method("set_wave_status"):
-			hud.set_wave_status("拾取战利品 · %d 秒后下潜" % i, true)
+			hud.set_wave_status(tr("拾取战利品 · %d 秒后下潜") % i, true)
 		await get_tree().create_timer(1.0, false).timeout
 		if not _lifecycle_token_valid(run_token):
 			break
@@ -1221,21 +1221,21 @@ func _show_current_floor_intro() -> void:
 func _show_floor_intro(floor_index: int) -> void:
 	var data_list: Array = dungeon.floors_data
 	var data: Dictionary = data_list[clampi(floor_index - 1, 0, data_list.size() - 1)]
-	var title := "第 %d 层" % floor_index
+	var title := tr("第 %d 层") % floor_index
 	if GameConfig.abyss_level > 0:
 		# 深渊轮：换层横幅必须写明轮次，否则"为什么怪变硬了"无从解释
-		title = "深渊 %d · 第 %d 层" % [GameConfig.abyss_level, floor_index]
+		title = tr("深渊 %d · 第 %d 层") % [GameConfig.abyss_level, floor_index]
 	if GameConfig.daily_active:
-		title = "每日 · " + title
-	var hint := String(data.get("hint", ""))
+		title = tr("每日 · ") + title
+	var hint := tr(String(data.get("hint", "")))
 	var extras: PackedStringArray = PackedStringArray()
 	if GameConfig.daily_active and GameConfig.daily_name_list() != "":
-		extras.append("每日 " + GameConfig.daily_name_list())
+		extras.append(tr("每日 ") + GameConfig.daily_name_list())
 	var rules := GameConfig.abyss_rule_text()
 	if rules != "":
-		extras.append("深渊 " + rules)
+		extras.append(tr("深渊 ") + rules)
 	if extras.size() > 0:
-		hint += "　" + "　".join(extras)
+		hint += tr("　") + tr("　").join(extras)
 	await floor_banner.show_card(
 		title,
 		String(data.get("name", "")),
@@ -1247,10 +1247,10 @@ func _show_floor_intro(floor_index: int) -> void:
 
 func _show_floor_clear(floor_index: int, crystals: int) -> void:
 	await floor_banner.show_card(
-		"第 %d 层" % floor_index,
-		"已肃清",
+		tr("第 %d 层") % floor_index,
+		tr("已肃清"),
 		"FLOOR CLEARED",
-		"血晶 +%d　　生命已恢复" % crystals,
+		tr("血晶 +%d　　生命已恢复") % crystals,
 		Color(0.95, 0.8, 0.35),
 		1.2
 	)
@@ -1258,9 +1258,9 @@ func _show_floor_clear(floor_index: int, crystals: int) -> void:
 func _show_dungeon_clear() -> void:
 	await floor_banner.show_card(
 		"DUNGEON CLEARED",
-		"地下城已征服",
+		tr("地下城已征服"),
 		"THE THRONE IS SILENT",
-		"血族女王的王座，终于空无一人",
+		tr("血族女王的王座，终于空无一人"),
 		Color(1.0, 0.86, 0.42),
 		2.0
 	)
@@ -1275,7 +1275,7 @@ func _on_player_level_up(new_level: int) -> void:
 	if _terminal_state != "":
 		return
 	if onboarding != null:
-		onboarding.hint("upgrade", "升级三选一：选一张强化本局 · R 重抽 · B 放逐 · Tab 跳过换银币")
+		onboarding.hint("upgrade", tr("升级三选一：选一张强化本局 · R 重抽 · B 放逐 · Tab 跳过换银币"))
 	_pending_upgrades += 1
 	_try_open_upgrade()
 
@@ -1312,14 +1312,14 @@ func _on_wave_started(wave: int) -> void:
 	if ach_mgr:
 		ach_mgr.update_wave(wave)
 	if wave == 1 and onboarding != null:
-		onboarding.hint("move", "WASD 走位 · 武器自动开火 · 手枪类武器朝鼠标方向射击")
+		onboarding.hint("move", tr("WASD 走位 · 武器自动开火 · 手枪类武器朝鼠标方向射击"))
 
 func _on_enemy_killed(_kill_count: int = 0) -> void:
 	# 敌人掉血/死亡不影响进化条件（条件已改为 满级 + 被动 + 宝箱），
 	# 但杀怪会掉银币和可能升级，顺手把 HUD 的三态提示刷新一下
 	_refresh_evolution_hint()
 	if onboarding != null:
-		onboarding.hint("gems", "敌人死亡掉经验宝石 · 走过去拾取即可升级")
+		onboarding.hint("gems", tr("敌人死亡掉经验宝石 · 走过去拾取即可升级"))
 
 func _refresh_evolution_hint() -> void:
 	## 把"进化准备度"画到 HUD 上。三态：无 / 还差被动 / 可开宝箱进化
@@ -1336,7 +1336,7 @@ func _refresh_evolution_hint() -> void:
 
 func _on_weapon_added(weapon) -> void:
 	if run_log != null:
-		run_log.note_build("获得", String(weapon.weapon_name))
+		run_log.note_build(tr("获得"), String(weapon.weapon_name))
 	var saves := _save_manager_ref()
 	if saves != null and saves.has_method("discover_codex"):
 		saves.discover_codex("weapon", String(weapon.weapon_id))
@@ -1356,7 +1356,7 @@ func _on_weapon_evolved(weapon, evolution) -> void:
 	if ach_mgr:
 		ach_mgr.record_weapon_evolved(weapon.weapon_id)
 	if run_log != null:
-		run_log.note_build("进化", String(weapon.weapon_name))
+		run_log.note_build(tr("进化"), String(weapon.weapon_name))
 
 func _on_player_died() -> void:
 	if not _begin_terminal_state("death"):

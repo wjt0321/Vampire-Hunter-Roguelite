@@ -69,6 +69,7 @@ func _default_save_data() -> Dictionary:
 		# 非音频的设置项。震屏默认开，晕动症玩家可关。
 		"settings": {
 			"screen_shake": true,
+			"language": "zh_CN",
 		},
 		# 已解锁的成就 id 列表。AchievementManager 往里写，存档时一起带走。
 		"achievements": [],
@@ -97,11 +98,17 @@ func _ready() -> void:
 		save_path = _tool_save_path(test_suite)
 		clear_test_save(test_suite)
 	load_game()
+	TranslationServer.set_locale(String(save_data["settings"]["language"]))
 
 func _exit_tree() -> void:
 	## 工具运行结束删掉本次的测试存档，不在用户目录留垃圾
 	if test_suite != "":
 		clear_test_save(test_suite)
+
+func set_language(lang: String) -> void:
+	save_data["settings"]["language"] = lang if lang in ["zh_CN", "en"] else "zh_CN"
+	TranslationServer.set_locale(String(save_data["settings"]["language"]))
+	save_game()
 
 func save_game() -> void:
 	try_save_game()
@@ -323,6 +330,8 @@ func _sanitize_audio_settings() -> void:
 	if not (general is Dictionary):
 		general = {}
 	general["screen_shake"] = bool(general.get("screen_shake", true))
+	var lang := String(general.get("language", "zh_CN"))
+	general["language"] = lang if lang in ["zh_CN", "en"] else "zh_CN"
 	save_data["settings"] = general
 
 func _sanitize_achievements() -> void:
@@ -451,19 +460,19 @@ func record_daily_run(date_key: String, stats: Dictionary) -> Dictionary:
 	if not bool(bucket.get("participation_claimed", false)):
 		bucket["participation_claimed"] = true
 		crystals += GameConfig.DAILY_PARTICIPATION_CRYSTALS
-		notes.append("参与 +%d" % GameConfig.DAILY_PARTICIPATION_CRYSTALS)
+		notes.append(tr("参与 +%d") % GameConfig.DAILY_PARTICIPATION_CRYSTALS)
 	if had_runs and rank == 0 and _daily_better(entry, prev_best) \
 			and not bool(bucket.get("best_bonus_claimed", false)):
 		bucket["best_bonus_claimed"] = true
 		crystals += GameConfig.DAILY_BEST_BONUS_CRYSTALS
-		notes.append("今日最佳 +%d" % GameConfig.DAILY_BEST_BONUS_CRYSTALS)
+		notes.append(tr("今日最佳 +%d") % GameConfig.DAILY_BEST_BONUS_CRYSTALS)
 	if crystals > 0:
 		save_data["blood_crystals"] = int(save_data.get("blood_crystals", 0)) + crystals
 	save_data["daily_board"] = bucket
 	save_game()
-	var summary := "每日第 %d 名" % (rank + 1) if rank >= 0 else "每日未上榜（本地榜单仅保留前 %d 名）" % DAILY_BOARD_LIMIT
+	var summary := tr("每日第 %d 名") % (rank + 1) if rank >= 0 else tr("每日未上榜（本地榜单仅保留前 %d 名）") % DAILY_BOARD_LIMIT
 	if notes.size() > 0:
-		summary += " · " + "，".join(notes)
+		summary += " · " + tr("，").join(notes)
 	return {"crystals": crystals, "summary": summary, "rank": rank + 1}
 
 func _daily_better(a: Dictionary, b: Dictionary) -> bool:
@@ -569,8 +578,8 @@ func next_unlock_text() -> String:
 		elif need == next_floor:
 			names.append(String(weapon.get("name", wid)))
 	if next_floor == 0:
-		return "新武器已全部解锁"
-	return "下一项解锁：到达第 %d 层，%s" % [next_floor, "、".join(names)]
+		return tr("新武器已全部解锁")
+	return tr("下一项解锁：到达第 %d 层，%s") % [next_floor, tr("、").join(names)]
 
 func unlock_weapons_for_floor(floor_index: int) -> void:
 	var catalog = load("res://scripts/core/item_catalog.gd")

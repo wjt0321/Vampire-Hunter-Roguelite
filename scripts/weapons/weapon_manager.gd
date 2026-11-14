@@ -314,12 +314,12 @@ static func _codex_fusion_line(weapon_id: String) -> String:
 		var fusion_name := String(recipe.get("name", ""))
 		var card := String(recipe.get("card", ""))
 		if weapon_id == primary:
-			return "融合：与%s都满级，且都还没进化时，可融成%s。%s" % [
-				ItemCatalog.get_display_name(secondary), fusion_name, card]
+			return TranslationServer.translate("融合：与%s都满级，且都还没进化时，可融成%s。%s") % [
+				TranslationServer.translate(ItemCatalog.get_display_name(secondary)), TranslationServer.translate(fusion_name), TranslationServer.translate(card)]
 		if weapon_id == secondary:
-			return "融合：满级且还没进化时，可被%s吃掉，变成%s。%s" % [
-				ItemCatalog.get_display_name(primary), fusion_name, card]
-	return "没有融合配方。结局只有宝箱进化。"
+			return TranslationServer.translate("融合：满级且还没进化时，可被%s吃掉，变成%s。%s") % [
+				TranslationServer.translate(ItemCatalog.get_display_name(primary)), TranslationServer.translate(fusion_name), TranslationServer.translate(card)]
+	return TranslationServer.translate("没有融合配方。结局只有宝箱进化。")
 
 
 func lowest_replaceable_weapon():
@@ -1531,7 +1531,7 @@ func get_fusion_progress() -> String:
 	## 玩家不知道往哪凑，两条满级轨道交汇的设计就等于不存在。
 	var offer := get_fusion_offer()
 	if not offer.is_empty():
-		return "可融合：%s（升级里选融合卡）" % String(offer.get("name", ""))
+		return tr("可融合：%s（升级里选融合卡）") % tr(String(offer.get("name", "")))
 	var evolved: Array = []
 	for weapon_id in weapon_evolutions.keys():
 		var evolution: WeaponEvolution = weapon_evolutions[weapon_id]
@@ -1560,8 +1560,8 @@ func get_fusion_progress() -> String:
 			best_sum = sum
 			var na := String(ItemCatalog.find_weapon(a).get("name", a))
 			var nb := String(ItemCatalog.find_weapon(b).get("name", b))
-			best_text = "融合 %s：%s Lv.%d/5 · %s Lv.%d/5" % [
-				String(recipe["name"]), na, int(wa.current_level), nb, int(wb.current_level)]
+			best_text = tr("融合 %s：%s Lv.%d/5 · %s Lv.%d/5") % [
+				tr(String(recipe["name"])), tr(na), int(wa.current_level), tr(nb), int(wb.current_level)]
 	return best_text
 
 func apply_fusion(recipe_id: String) -> bool:
@@ -1586,7 +1586,7 @@ func apply_fusion(recipe_id: String) -> bool:
 	primary.attack_profile = primary_id
 	primary.weapon_id = recipe_id
 	primary.weapon_name = String(recipe["name"])
-	primary.description = String(recipe["card"])
+	primary.description = tr(String(recipe["card"]))
 	primary.fusion_kind = String(recipe["kind"])
 	primary.fused = true
 	primary.bonus_damage_mult = float(recipe.get("damage_mult", 1.0))

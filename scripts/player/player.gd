@@ -873,7 +873,7 @@ func add_passive_item(item) -> void:
 	if is_inside_tree():
 		var log: Node = get_tree().get_first_node_in_group("run_log")
 		if log != null and log.has_method("note_build"):
-			log.call("note_build", "被动", String(item.item_name))
+			log.call("note_build", tr("被动"), String(item.item_name))
 		var saves := get_node_or_null("/root/SaveManager")
 		if saves != null and saves.has_method("discover_codex"):
 			saves.discover_codex("passive", String(item.item_id))
@@ -1035,7 +1035,7 @@ func on_dealt_damage(amount: float) -> void:
 	## 刻意不走 heal()：那会播治疗音效，高频武器等于持续"漏水声"。
 	## 零头先攒着，攒够阈值再结算一次，血量变化看得清也有节奏。
 	if amount > 0.0 and is_inside_tree():
-		var source := "攻击"
+		var source := tr("攻击")
 		if has_meta("outgoing_source"):
 			source = String(get_meta("outgoing_source"))
 		var dealt_log: Node = get_tree().get_first_node_in_group("run_log")

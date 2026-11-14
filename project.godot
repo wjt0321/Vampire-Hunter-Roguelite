@@ -113,3 +113,9 @@ pause={
 2d_physics/layer_4="pickups"
 2d_physics/layer_5="walls"
 2d_physics/layer_6="enemy_bullets"
+
+[internationalization]
+
+locale/default="zh_CN"
+locale/fallback="zh_CN"
+locale/translations=PackedStringArray("res://i18n/game.zh_CN.translation", "res://i18n/game.en.translation")

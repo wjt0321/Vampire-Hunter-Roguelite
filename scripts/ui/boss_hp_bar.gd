@@ -28,9 +28,9 @@ func _setup_bar_textures() -> void:
 
 func show_boss_bar(boss_name: String) -> void:
 	visible = true
-	name_label.text = boss_name
+	name_label.text = tr(boss_name)
 	# 登场阶段：血条先空着，Boss 免疫伤害，填满后才真正开打
-	phase_label.text = "登场中 · 无敌"
+	phase_label.text = tr("登场中 · 无敌")
 	phase_label.modulate = Color(0.75, 0.9, 1.0, 1.0)
 	hp_bar.modulate = Color.WHITE
 	hp_bar.value = 0.0
@@ -41,7 +41,7 @@ func show_boss_bar(boss_name: String) -> void:
 
 func end_intro() -> void:
 	## 登场演出结束：血条已填满，进入正常战斗状态
-	phase_label.text = "第 1 阶段"
+	phase_label.text = tr("第 1 阶段")
 	phase_label.modulate = Color.WHITE
 
 func update_hp(current: float, max_val: float) -> void:
@@ -50,12 +50,12 @@ func update_hp(current: float, max_val: float) -> void:
 func update_phase(phase: int) -> void:
 	match phase:
 		1:
-			phase_label.text = "第 2 阶段 · 狂暴"
+			phase_label.text = tr("第 2 阶段 · 狂暴")
 			phase_label.modulate = Color(1.0, 0.3, 0.3, 1.0)
 			# 血条颜色变红
 			hp_bar.modulate = Color(1.5, 0.5, 0.5, 1.0)
 		2:
-			phase_label.text = "第 3 阶段 · 绝望"
+			phase_label.text = tr("第 3 阶段 · 绝望")
 			phase_label.modulate = Color(1.0, 0.1, 0.1, 1.0)
 			hp_bar.modulate = Color(2.0, 0.3, 0.3, 1.0)
 

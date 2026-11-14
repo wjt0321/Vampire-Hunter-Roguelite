@@ -104,6 +104,7 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 	_run_settlement_submitted = true
 	visible = true
 	PauseController.acquire(self)
+	I18nUtil.retranslate_tree(self)
 	
 	var crystals: int = 0
 	var daily_line := ""
@@ -117,7 +118,7 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 		achievement_mgr.record_crystals_earned(crystals)
 	
 	if is_victory:
-		title_label.text = "胜利！月蚀女王已被终结"
+		title_label.text = tr("胜利！月蚀女王已被终结")
 		stats_label.label_settings = null
 		title_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4, 1.0))
 		stats_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4, 1.0))
@@ -125,7 +126,7 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 			bg_rect.texture = TextureManager.instance.get_ui_texture("victory_bg")
 		AudioManager.play_bgm(AudioLib.get_victory_bgm())
 	else:
-		title_label.text = "游戏结束"
+		title_label.text = tr("游戏结束")
 		title_label.add_theme_color_override("font_color", Color(0.85, 0.2, 0.2, 1.0))
 		stats_label.add_theme_color_override("font_color", Color(0.9, 0.42, 0.42, 1.0))
 		if bg_rect:
@@ -136,33 +137,33 @@ func show_game_over(stats: Dictionary, is_victory: bool = false) -> void:
 	if is_victory:
 		var abyss: int = int(stats.get("abyss_level", 0))
 		if abyss > 0:
-			text += "深渊 %d · " % abyss
-		text += "已征服层数: %d / %d\n" % [
+			text += tr("深渊 %d · ") % abyss
+		text += tr("已征服层数: %d / %d\n") % [
 			stats.get("floors_cleared", GameConfig.DUNGEON_FLOOR_COUNT),
 			GameConfig.DUNGEON_FLOOR_COUNT
 		]
 	else:
-		text += "止步于: 第 %d 层\n" % stats.get("floor", 1)
-	text += "探索房间: %d\n" % stats.get("rooms", 0)
-	text += "存活波次: %d\n" % stats.get("wave", 0)
-	text += "击杀数: %d\n" % stats.get("kills", 0)
-	text += "达到等级: %d\n" % stats.get("level", 1)
+		text += tr("止步于: 第 %d 层\n") % stats.get("floor", 1)
+	text += tr("探索房间: %d\n") % stats.get("rooms", 0)
+	text += tr("存活波次: %d\n") % stats.get("wave", 0)
+	text += tr("击杀数: %d\n") % stats.get("kills", 0)
+	text += tr("达到等级: %d\n") % stats.get("level", 1)
 
 	var survival_seconds: int = stats.get("survival_time", 0)
 	var minutes: int = survival_seconds / 60
 	var seconds: int = survival_seconds % 60
-	text += "生存时间: %d:%02d\n" % [minutes, seconds]
-	text += "受到伤害: %.0f\n" % stats.get("damage_taken", 0)
+	text += tr("生存时间: %d:%02d\n") % [minutes, seconds]
+	text += tr("受到伤害: %.0f\n") % stats.get("damage_taken", 0)
 	var review := String(stats.get("review", ""))
 	if review != "":
 		text += "\n" + review + "\n"
 
 	if save_mgr:
-		text += "\n获得血晶: +%d\n" % crystals
-		text += "总血晶: %d" % save_mgr.get_blood_crystals()
+		text += tr("\n获得血晶: +%d\n") % crystals
+		text += tr("总血晶: %d") % save_mgr.get_blood_crystals()
 	if daily_line != "":
 		text += "\n" + daily_line
-	stats_label.text = text
+	stats_label.text = tr(text)
 	
 	# 显示本局解锁的成就
 	_update_achievement_display()
@@ -192,7 +193,7 @@ func _update_achievement_display() -> void:
 		achievement_label.text = ""
 		return
 
-	achievement_label.text = "本局解锁成就:"
+	achievement_label.text = tr("本局解锁成就:")
 	for ach_id in unlocked:
 		var info: Dictionary = achievement_mgr.get_achievement_info(ach_id)
 		list.add_child(_make_achievement_row(ach_id, String(info.get("name", ach_id))))
@@ -244,7 +245,7 @@ func _make_achievement_row(ach_id: String, ach_name: String) -> HBoxContainer:
 	row.add_child(icon)
 
 	var name_label := Label.new()
-	name_label.text = ach_name
+	name_label.text = tr(ach_name)
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	name_label.add_theme_font_size_override("font_size", 16)
 	name_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
@@ -278,7 +279,7 @@ func _setup_abyss_button(victory: bool) -> void:
 	if abyss_button == null:
 		abyss_button = Button.new()
 		abyss_button.name = "AbyssButton"
-		abyss_button.text = "深渊阶梯"
+		abyss_button.text = tr("深渊阶梯")
 		var vbox: Node = panel.get_node("VBoxContainer")
 		# 放在"重新开始"前面：胜利时它是主推选项。
 		# 位置要落在成就列表**之后**——成就行容器是运行时建的，
@@ -294,7 +295,7 @@ func _setup_abyss_button(victory: bool) -> void:
 	# 百分比是"下一轮的总倍率"（等级 × 每级步进），不是这一次继续的增量。
 	# 不写明口径的话，"血 +45%" 会被读成"在现有基础上再加 45%"。
 	var next_oath := GameConfig.abyss_oath_for_level(next_level)
-	abyss_button.text = "深入深渊 %d（下一轮总计：血 +%d%% · 伤 +%d%% · 掉落 +%d%%）· %s · 从第 2 层起" % [
+	abyss_button.text = tr("深入深渊 %d（下一轮总计：血 +%d%% · 伤 +%d%% · 掉落 +%d%%）· %s · 从第 2 层起") % [
 		next_level,
 		int(GameConfig.ABYSS_STEP_HP * 100.0 * next_level),
 		int(GameConfig.ABYSS_STEP_DAMAGE * 100.0 * next_level),

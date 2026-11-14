@@ -209,8 +209,8 @@ static func codex_meta_line(entry_id: String) -> String:
 		return ""
 	var parts: Array = []
 	if meta.has("floors"):
-		parts.append("出现：" + String(meta["floors"]))
+		parts.append(TranslationServer.translate("出现：") + String(meta["floors"]))
 	if meta.has("weak"):
-		parts.append("弱点：" + String(meta["weak"]))
-	parts.append("掉落：" + String(meta.get("drops", "经验宝石、银币")))
-	return " ｜ ".join(parts)
+		parts.append(TranslationServer.translate("弱点：") + TranslationServer.translate(String(meta["weak"])))
+	parts.append(TranslationServer.translate("掉落：") + TranslationServer.translate(String(meta.get("drops", "经验宝石、银币"))))
+	return TranslationServer.translate(" ｜ ").join(parts)

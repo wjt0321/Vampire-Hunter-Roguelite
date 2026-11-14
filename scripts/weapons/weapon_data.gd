@@ -183,7 +183,7 @@ func describe_next_level() -> String:
 	if fused or is_max_level() or not has_level_table():
 		return ""
 	var step: Dictionary = _step(current_level + 1)
-	return String(step.get("card", ""))
+	return tr(String(step.get("card", "")))
 
 func step_keys(level: int) -> Array:
 	## 这一级真正改掉的字段。card 只是文案，不算数值轴。

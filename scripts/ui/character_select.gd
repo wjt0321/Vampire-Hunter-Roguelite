@@ -42,12 +42,13 @@ func _setup_panel_style() -> void:
 func show_selection() -> void:
 	visible = true
 	_refresh_ui()
+	I18nUtil.retranslate_tree(self)
 	UiFx.pop_in($Panel, 0.16, 0.97)
 
 func _refresh_ui() -> void:
 	if not save_mgr:
 		return
-	crystals_label.text = "血晶: %d" % save_mgr.get_blood_crystals()
+	crystals_label.text = tr("血晶: %d") % save_mgr.get_blood_crystals()
 	for child in chars_container.get_children():
 		child.queue_free()
 	
@@ -63,9 +64,9 @@ func _weapon_display_name(id: String) -> String:
 		return n
 	match id:
 		"pistol":
-			return "手枪"
+			return tr("手枪")
 		"throwing_knife":
-			return "飞刀"
+			return tr("飞刀")
 		_:
 			return id
 
@@ -159,7 +160,7 @@ func _create_card(char_data: Resource) -> PanelContainer:
 	name_row.add_child(star)
 
 	var name_label := Label.new()
-	name_label.text = char_data.char_name
+	name_label.text = tr(char_data.char_name)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.add_theme_font_size_override("font_size", 22)
 	if is_selected:
@@ -168,7 +169,7 @@ func _create_card(char_data: Resource) -> PanelContainer:
 	vbox.add_child(name_row)
 
 	var desc_label := Label.new()
-	desc_label.text = char_data.description
+	desc_label.text = tr(char_data.description)
 	desc_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc_label.add_theme_font_size_override("font_size", 13)
@@ -177,7 +178,7 @@ func _create_card(char_data: Resource) -> PanelContainer:
 	vbox.add_child(desc_label)
 
 	var stats_label := Label.new()
-	stats_label.text = "生命 %d · 速度 %d · 伤害 x%.2f" % [
+	stats_label.text = tr("生命 %d · 速度 %d · 伤害 x%.2f") % [
 		int(char_data.base_hp), int(char_data.base_speed), char_data.base_damage_mult
 	]
 	stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -187,7 +188,7 @@ func _create_card(char_data: Resource) -> PanelContainer:
 	vbox.add_child(stats_label)
 
 	var weapon_label := Label.new()
-	weapon_label.text = "初始武器: %s" % _weapon_display_name(char_data.initial_weapon)
+	weapon_label.text = tr("初始武器: %s") % tr(_weapon_display_name(char_data.initial_weapon))
 	weapon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	weapon_label.add_theme_font_size_override("font_size", 14)
 	vbox.add_child(weapon_label)
@@ -218,14 +219,14 @@ func _create_card(char_data: Resource) -> PanelContainer:
 	passive_text.add_theme_constant_override("separation", 1)
 
 	var passive_name_label := Label.new()
-	passive_name_label.text = String(char_data.passive_name)
+	passive_name_label.text = tr(String(char_data.passive_name))
 	passive_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	passive_name_label.add_theme_font_size_override("font_size", 15)
 	passive_name_label.modulate = Color(0.5, 0.9, 1.0)
 	passive_text.add_child(passive_name_label)
 
 	var passive_label := Label.new()
-	passive_label.text = String(char_data.passive_description)
+	passive_label.text = tr(String(char_data.passive_description))
 	passive_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	passive_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	passive_label.add_theme_font_size_override("font_size", 12)
@@ -245,16 +246,16 @@ func _create_card(char_data: Resource) -> PanelContainer:
 	btn.focus_mode = Control.FOCUS_NONE
 	_apply_button_style(btn)
 	if not is_unlocked:
-		btn.text = "解锁 (血晶 %d)" % char_data.unlock_cost
+		btn.text = tr("解锁 (血晶 %d)") % char_data.unlock_cost
 		btn.disabled = (not save_mgr) or save_mgr.get_blood_crystals() < char_data.unlock_cost
 		var cid: String = char_data.char_id
 		var cost: int = char_data.unlock_cost
 		btn.pressed.connect(func(): _unlock_character(cid, cost))
 	elif is_selected:
-		btn.text = "已选择"
+		btn.text = tr("已选择")
 		btn.disabled = true
 	else:
-		btn.text = "选择角色"
+		btn.text = tr("选择角色")
 		var cid: String = char_data.char_id
 		btn.pressed.connect(func(): _select_character(cid))
 	vbox.add_child(btn)

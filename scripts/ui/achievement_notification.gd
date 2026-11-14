@@ -45,8 +45,8 @@ func _show_next_notification() -> void:
 	var notification: Dictionary = notification_queue.pop_front()
 
 	# 设置内容
-	name_label.text = "成就解锁: %s" % notification["name"]
-	desc_label.text = notification["description"]
+	name_label.text = tr("成就解锁: %s") % tr(String(notification["name"]))
+	desc_label.text = tr(String(notification["description"]))
 
 	# 图标：换成这个成就自己的徽章。
 	# 旧版 IconRect 绑的是通用 achievement_icon.png，25 个成就解锁都长一个样。

@@ -68,14 +68,14 @@ func _build_ui() -> void:
 	panel.add_child(vbox)
 
 	var title := Label.new()
-	title.text = "变 异 祭 坛"
+	title.text = tr("变 异 祭 坛")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 26)
 	title.add_theme_color_override("font_color", Color(1.0, 0.78, 0.72))
 	vbox.add_child(title)
 
 	var sub := Label.new()
-	sub.text = "石盆里的血还是温的。它记得每一个肯付钱的人。"
+	sub.text = tr("石盆里的血还是温的。它记得每一个肯付钱的人。")
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.add_theme_font_size_override("font_size", 13)
 	sub.add_theme_color_override("font_color", Color(0.72, 0.64, 0.66))
@@ -101,7 +101,7 @@ func _build_ui() -> void:
 	row.add_child(_gamble_btn)
 
 	var leave := Button.new()
-	leave.text = "离开\n不献血，也没有奖励"
+	leave.text = tr("离开\n不献血，也没有奖励")
 	leave.custom_minimum_size = Vector2(210, 64)
 	leave.focus_mode = Control.FOCUS_NONE
 	leave.pressed.connect(func(): _choose("leave"))
@@ -114,11 +114,11 @@ func _refresh() -> void:
 		cost = GameConfig.mutation_cost(float(player.max_hp))
 		allowed = GameConfig.can_mutation_gamble(float(player.current_hp), float(player.max_hp))
 	var win_pct := roundi(GameConfig.MUTATION_WIN_CHANCE * 100.0)
-	_hint.text = "献出 %.0f 生命。%d%% 概率获得银币 %d 与经验 %d，否则只剩银币 %d。血不会还。" % [
+	_hint.text = tr("献出 %.0f 生命。%d%% 概率获得银币 %d 与经验 %d，否则只剩银币 %d。血不会还。") % [
 		cost, win_pct, GameConfig.MUTATION_WIN_SILVER, GameConfig.MUTATION_WIN_XP, GameConfig.MUTATION_LOSE_SILVER]
 	if allowed:
-		_gamble_btn.text = "豪赌\n献出 %.0f 生命" % cost
+		_gamble_btn.text = tr("豪赌\n献出 %.0f 生命") % cost
 		_gamble_btn.disabled = false
 	else:
-		_gamble_btn.text = "豪赌\n血不够，会直接倒下"
+		_gamble_btn.text = tr("豪赌\n血不够，会直接倒下")
 		_gamble_btn.disabled = true

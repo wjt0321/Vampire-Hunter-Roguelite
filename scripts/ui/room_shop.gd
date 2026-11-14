@@ -67,6 +67,7 @@ func open(player_node: Node, weapon_mgr: Node = null, floor_index: int = 1) -> v
 		_locked[0] = true
 		_sold[0] = false
 	_refresh()
+	I18nUtil.retranslate_tree(self)
 	visible = true
 	# 暂停世界，玩家可以慢慢挑（和升级界面一致）
 	PauseController.acquire(self)
@@ -206,7 +207,7 @@ func _build_ui() -> void:
 	panel.add_child(vbox)
 
 	var title := Label.new()
-	title.text = "银 币 商 店"
+	title.text = tr("银 币 商 店")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 26)
 	title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
@@ -227,7 +228,7 @@ func _build_ui() -> void:
 	_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hint_label.add_theme_font_size_override("font_size", 12)
 	_hint_label.add_theme_color_override("font_color", Color(0.65, 0.62, 0.58))
-	_hint_label.text = "血瓶每间都有。重抽会变贵。锁定的一件带到下一间，拆解每层一次"
+	_hint_label.text = tr("血瓶每间都有。重抽会变贵。锁定的一件带到下一间，拆解每层一次")
 	vbox.add_child(_hint_label)
 
 	var bottom := HBoxContainer.new()
@@ -235,19 +236,19 @@ func _build_ui() -> void:
 	bottom.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_child(bottom)
 
-	_reroll_btn = _make_button("重抽")
+	_reroll_btn = _make_button(tr("重抽"))
 	_reroll_btn.pressed.connect(_on_reroll)
 	bottom.add_child(_reroll_btn)
 
-	_recast_btn = _make_button("重铸")
+	_recast_btn = _make_button(tr("重铸"))
 	_recast_btn.pressed.connect(_on_recast)
 	bottom.add_child(_recast_btn)
 
-	_dismantle_btn = _make_button("拆解")
+	_dismantle_btn = _make_button(tr("拆解"))
 	_dismantle_btn.pressed.connect(_on_dismantle)
 	bottom.add_child(_dismantle_btn)
 
-	var leave_btn := _make_button("离开商店")
+	var leave_btn := _make_button(tr("离开商店"))
 	leave_btn.pressed.connect(close)
 	bottom.add_child(leave_btn)
 
@@ -265,7 +266,7 @@ func _make_style(bg: Color, border: Color, border_w: int = 1, radius: int = 8) -
 
 func _make_button(text: String) -> Button:
 	var btn := Button.new()
-	btn.text = text
+	btn.text = tr(text)
 	btn.custom_minimum_size = Vector2(150, 42)
 	# Space = 开火（见 project.godot 的 shoot 动作）。按钮可聚焦时
 	# Space 会先被当成"按下焦点按钮"，玩家一边开火一边点商店就会误买。
@@ -282,7 +283,7 @@ func _refresh() -> void:
 	if not _built:
 		return
 
-	_silver_label.text = "持有银币：%d" % _get_silver()
+	_silver_label.text = tr("持有银币：%d") % _get_silver()
 
 	for child in _slots_box.get_children():
 		_slots_box.remove_child(child)
@@ -291,15 +292,15 @@ func _refresh() -> void:
 		_slots_box.add_child(_make_card(i))
 
 	var cost := _current_reroll_cost()
-	_reroll_btn.text = "重抽 (%d 银)" % cost
+	_reroll_btn.text = tr("重抽 (%d 银)") % cost
 	_reroll_btn.disabled = _get_silver() < cost
 	if _recast_btn != null:
 		var used := _recast_floor == _floor_index
-		_recast_btn.text = "本层已重铸" if used else "重铸 (%d 银)" % RECAST_COST
+		_recast_btn.text = tr("本层已重铸") if used else tr("重铸 (%d 银)") % RECAST_COST
 		_recast_btn.disabled = used or _get_silver() < RECAST_COST or weapon_manager == null
 	if _dismantle_btn != null:
 		var dismantled := _dismantle_floor == _floor_index
-		_dismantle_btn.text = "本层已拆解" if dismantled else "拆解 (+%d 银)" % DISMANTLE_REFUND
+		_dismantle_btn.text = tr("本层已拆解") if dismantled else tr("拆解 (+%d 银)") % DISMANTLE_REFUND
 		_dismantle_btn.disabled = dismantled or player == null or not player.has_method("dismantle_passive")
 
 func _make_card(index: int) -> Control:
@@ -318,7 +319,7 @@ func _make_card(index: int) -> Control:
 
 	if slot.is_empty() or sold:
 		var empty := Label.new()
-		empty.text = "— 已售出 —" if sold else "— 空 —"
+		empty.text = tr("— 已售出 —") if sold else tr("— 空 —")
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		empty.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -341,7 +342,7 @@ func _make_card(index: int) -> Control:
 		vb.add_child(icon_rect)
 
 	var name_label := Label.new()
-	name_label.text = String(slot.get("name", "?"))
+	name_label.text = tr(String(slot.get("name", "?")))
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.add_theme_font_size_override("font_size", 17)
 	name_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.72))
@@ -355,7 +356,7 @@ func _make_card(index: int) -> Control:
 	vb.add_child(type_label)
 
 	var desc := Label.new()
-	desc.text = String(slot.get("desc", ""))
+	desc.text = tr(String(slot.get("desc", "")))
 	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc.custom_minimum_size = Vector2(160, 46)
@@ -372,7 +373,7 @@ func _make_card(index: int) -> Control:
 	buy_btn.pressed.connect(func(): _on_buy(index))
 	vb.add_child(buy_btn)
 
-	var lock_btn := _make_button("已锁定" if locked else "锁定")
+	var lock_btn := _make_button(tr("已锁定") if locked else tr("锁定"))
 	lock_btn.custom_minimum_size = Vector2(150, 30)
 	lock_btn.add_theme_font_size_override("font_size", 12)
 	lock_btn.pressed.connect(func(): _on_toggle_lock(index))
@@ -383,11 +384,11 @@ func _make_card(index: int) -> Control:
 func _kind_text(kind: String) -> String:
 	match kind:
 		"weapon":
-			return "武器"
+			return tr("武器")
 		"passive":
-			return "被动道具"
+			return tr("被动道具")
 		"consumable":
-			return "消耗品"
+			return tr("消耗品")
 	return ""
 
 # ---------------------------------------------------------------- 交互
@@ -422,7 +423,7 @@ func _on_recast() -> void:
 			child.queue_free()
 	for i in choices.size():
 		var picked: Dictionary = choices[i]
-		var btn := _make_button("%s→%s" % [picked.get("from_name", ""), picked.get("to_name", "")])
+		var btn := _make_button("%s→%s" % [tr(String(picked.get("from_name", ""))), tr(String(picked.get("to_name", "")))])
 		btn.name = "RecastChoice%d" % i
 		btn.custom_minimum_size = Vector2(120, 64)
 		var choice_index := i

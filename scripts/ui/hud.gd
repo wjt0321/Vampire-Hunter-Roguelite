@@ -13,6 +13,11 @@ extends CanvasLayer
 @onready var room_label: Label = $MarginContainer/VBoxContainer/TopBar/RoomLabel
 
 var silver_label: Label = null
+var _last_silver := 0
+var _last_wave := 1
+var _last_kills := 0
+var _last_room := 1
+var _last_dungeon: Array = []
 var evolution_label: Label = null
 ## 三条横幅各自一个 Label。之前 toast / 进化都复用 wave_banner，
 ## 所以"第 3 波"刚弹出就被"攻击 ×1.30"顶掉，玩家只看到一个瞬间的文字。
@@ -49,6 +54,7 @@ var _evo_pulse: Tween = null
 func _ready() -> void:
 	# 其他 UI（升级卡）要给玩家即时反馈时按组找 HUD，不去猜节点路径
 	add_to_group("hud")
+	I18nUtil.retranslate_tree(self)
 	wave_banner.visible = false
 	_apply_hud_style()
 	_setup_bar_textures()
@@ -154,7 +160,7 @@ func set_event_status(text: String) -> void:
 	if text.is_empty():
 		event_label.visible = false
 		return
-	event_label.text = text
+	event_label.text = tr(text)
 	event_label.visible = true
 
 func bind_run(player_node: Node, weapon_mgr: Node) -> void:
@@ -208,13 +214,13 @@ func _update_shield_indicator() -> void:
 		return
 	_shield_row.visible = true
 	if bool(st.get("active", false)):
-		_shield_text.text = "护盾 已激活"
+		_shield_text.text = tr("护盾 已激活")
 		_shield_text.add_theme_color_override("font_color", Color(0.55, 0.9, 1.0))
 		_shield_bar.value = 1.0
 		_shield_bar.modulate = Color(0.55, 0.9, 1.0)
 		_start_shield_pulse()
 	else:
-		_shield_text.text = "护盾充能 %.0fs" % float(st.get("remain", 0.0))
+		_shield_text.text = tr("护盾充能 %.0fs") % float(st.get("remain", 0.0))
 		_shield_text.add_theme_color_override("font_color", Color(0.55, 0.62, 0.7))
 		_shield_bar.value = float(st.get("progress", 0.0))
 		_shield_bar.modulate = Color(0.45, 0.6, 0.75)
@@ -283,7 +289,7 @@ func _refresh_build(force: bool = false) -> void:
 	# 埋在下面玩家会在打完半层之后才发现自己血上限少了 20%
 	if _pact_text != "":
 		_add_build_pact_row(_pact_text)
-	_add_build_header("武器 %d/%d" % [weapons.size(), GameConfig.weapon_slot_limit()])
+	_add_build_header(tr("武器 %d/%d") % [weapons.size(), GameConfig.weapon_slot_limit()])
 	if weapons.is_empty():
 		_add_build_hint("（空手）")
 	for w in weapons:
@@ -304,7 +310,7 @@ func _refresh_build(force: bool = false) -> void:
 	# 难度软因子：只在真的被修正过时显示，开局写个 ×1.00 纯属噪音
 	var diff: float = _difficulty_scale()
 	if absf(diff - 1.0) > 0.02:
-		_add_build_hint("敌方强度 ×%.2f" % diff)
+		_add_build_hint(tr("敌方强度 ×%.2f") % diff)
 
 func _build_signature_of() -> String:
 	## 轮询用：只有等级/数量变化才重建控件，避免每帧 new 一堆 Label
@@ -329,21 +335,21 @@ func _difficulty_scale() -> float:
 
 func _add_build_pact_row(text: String) -> void:
 	var lbl := Label.new()
-	lbl.text = "%s" % text
+	lbl.text = tr(text)
 	lbl.add_theme_font_size_override("font_size", 11)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.45, 0.45))
 	_build_box.add_child(lbl)
 
 func _add_build_header(text: String) -> void:
 	var lbl := Label.new()
-	lbl.text = text
+	lbl.text = tr(text)
 	lbl.add_theme_font_size_override("font_size", 11)
 	lbl.add_theme_color_override("font_color", Color(0.6, 0.65, 0.78))
 	_build_box.add_child(lbl)
 
 func _add_build_hint(text: String) -> void:
 	var lbl := Label.new()
-	lbl.text = text
+	lbl.text = tr(text)
 	lbl.add_theme_font_size_override("font_size", 11)
 	lbl.add_theme_color_override("font_color", Color(0.45, 0.45, 0.5))
 	_build_box.add_child(lbl)
@@ -368,7 +374,7 @@ func _add_build_row(item_id: String, item_type: String, item_name: String, level
 		row.add_child(icon_rect)
 
 	var name_lbl := Label.new()
-	name_lbl.text = item_name
+	name_lbl.text = tr(item_name)
 	name_lbl.add_theme_font_size_override("font_size", 12)
 	name_lbl.add_theme_color_override("font_color", Color(0.88, 0.88, 0.94))
 	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -405,7 +411,7 @@ func update_evolution(state: String, text: String) -> void:
 		evolution_label.text = ""
 		_stop_evo_pulse()
 		return
-	evolution_label.text = text
+	evolution_label.text = tr(text)
 	if state == "ready":
 		evolution_label.add_theme_color_override("font_color", Color(1.0, 0.86, 0.42))
 		_start_evo_pulse()
@@ -434,7 +440,7 @@ func show_evolution_banner(text: String) -> void:
 		return
 	if _evo_banner_tween != null and _evo_banner_tween.is_valid():
 		_evo_banner_tween.kill()
-	_evolution_banner.text = "进化 · %s" % text
+	_evolution_banner.text = tr("进化 · %s") % text
 	_evolution_banner.visible = true
 	_evolution_banner.modulate = Color(1, 1, 1, 1)
 	_evo_banner_tween = create_tween()
@@ -451,7 +457,7 @@ func show_toast(text: String) -> void:
 		return
 	if _toast_tween != null and _toast_tween.is_valid():
 		_toast_tween.kill()
-	_toast_banner.text = text
+	_toast_banner.text = tr(text)
 	_toast_banner.visible = true
 	_toast_banner.modulate = Color(1, 1, 1, 1)
 	_toast_tween = create_tween()
@@ -492,7 +498,7 @@ func _create_silver_label() -> void:
 	top_bar.add_child(spacer)
 	silver_label = Label.new()
 	silver_label.name = "SilverLabel"
-	silver_label.text = "银币 0"
+	silver_label.text = tr("银币 0")
 	silver_label.add_theme_color_override("font_color", Color(1.0, 0.87, 0.45))
 	top_bar.add_child(silver_label)
 
@@ -504,8 +510,10 @@ func update_blood_pact(active: bool, text: String = "") -> void:
 	_pact_text = new_text
 	_refresh_build(true)
 
-func update_silver(amount: int) -> void:	if silver_label:
-		silver_label.text = "银币 %d" % amount
+func update_silver(amount: int) -> void:
+	_last_silver = amount
+	if silver_label:
+		silver_label.text = tr("银币 %d") % amount
 
 func _process(delta: float) -> void:
 	var achievement_mgr := get_node_or_null("/root/AchievementManager")
@@ -548,11 +556,12 @@ func update_xp(current_xp: int, xp_needed: int, level: int) -> void:
 	level_label.text = "Lv.%d" % level
 
 func update_wave(wave_number: int) -> void:
+	_last_wave = wave_number
 	## Boss 战里不写波次：Boss 不计入波次，这个数字会永远停在进场前那一波。
 	if _boss_mode:
 		_hide_wave_banner()
 		return
-	wave_label.text = "第 %d 波" % wave_number
+	wave_label.text = tr("第 %d 波") % wave_number
 	# Boss 模式会把它藏起来，退出后如果只改文字不改 visible，
 	# 波次标签就再也不出现了（"下一波开始"是唯一该把它请回来的时机）。
 	wave_label.visible = true
@@ -570,32 +579,35 @@ func set_wave_status(text: String, dim: bool = false) -> void:
 		# Boss 房也在走这条路径（main 会写 "BOSS"）。Boss 有自己的血条和名字，
 		# 再挂一个"BOSS"标签属于同一个信息说两遍，还挤掉真正需要的空间。
 		wave_label.visible = false
-		wave_label.text = text
+		wave_label.text = tr(text)
 		return
-	wave_label.text = text
+	wave_label.text = tr(text)
 	wave_label.visible = true
 	wave_label.modulate = Color(1, 1, 1, 0.45) if dim else Color(1, 1, 1, 1)
 
 func update_kills(total_kills: int) -> void:
-	kills_label.text = "击杀 %d" % total_kills
+	_last_kills = total_kills
+	kills_label.text = tr("击杀 %d") % total_kills
 
 func update_room(room_number: int) -> void:
-	room_label.text = "房间 %d" % room_number
+	_last_room = room_number
+	room_label.text = tr("房间 %d") % room_number
 
 func update_dungeon(floor_index: int, room_in_floor: int, rooms_per_floor: int, floor_name: String) -> void:
+	_last_dungeon = [floor_index, room_in_floor, rooms_per_floor, floor_name]
 	## 地下城层进度：第N层 · 层名 · X/Y
 	var shown: int = clampi(room_in_floor, 1, maxi(rooms_per_floor, 1))
 	var tags: PackedStringArray = PackedStringArray()
 	if GameConfig.daily_active:
-		tags.append("每日")
+		tags.append(tr("每日"))
 	if GameConfig.abyss_level > 0:
-		tags.append("渊%d" % GameConfig.abyss_level)
+		tags.append(tr("渊%d") % GameConfig.abyss_level)
 	for rule in GameConfig.abyss_rule_tags():
 		tags.append(rule)
 	var prefix := ""
 	if tags.size() > 0:
 		prefix = " ".join(tags) + " "
-	room_label.text = "%s第%d层 %s  %d/%d" % [prefix, floor_index, floor_name, shown, rooms_per_floor]
+	room_label.text = tr("%s第%d层 %s  %d/%d") % [prefix, floor_index, tr(floor_name), shown, rooms_per_floor]
 
 ## 成就解锁时在角色身上炸一圈金环。
 ## 为什么不放在通知面板上：通知在右上角滑入，跟"我做成了什么"的因果联系太弱；
@@ -643,7 +655,7 @@ func _show_wave_banner(wave_number: int) -> void:
 		return
 	if _wave_banner_tween != null and _wave_banner_tween.is_valid():
 		_wave_banner_tween.kill()
-	wave_banner.text = "第 %d 波" % wave_number
+	wave_banner.text = tr("第 %d 波") % wave_number
 	wave_banner.visible = true
 	wave_banner.modulate = Color(1, 1, 1, 1)
 	_spawn_banner_glow()
@@ -683,3 +695,11 @@ func _setup_bar_textures() -> void:
 		var xp_bg_style := StyleBoxTexture.new()
 		xp_bg_style.texture = xp_bg_texture
 		xp_bar.add_theme_stylebox_override("background", xp_bg_style)
+
+func retranslate() -> void:
+	update_silver(_last_silver)
+	update_wave(_last_wave)
+	update_kills(_last_kills)
+	update_room(_last_room)
+	if not _last_dungeon.is_empty():
+		update_dungeon(_last_dungeon[0], _last_dungeon[1], _last_dungeon[2], _last_dungeon[3])

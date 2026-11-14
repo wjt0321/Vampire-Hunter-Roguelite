@@ -742,26 +742,26 @@ static func abyss_forces_dual_affix() -> bool:
 static func abyss_rule_tags() -> PackedStringArray:
 	var out := PackedStringArray()
 	if abyss_level >= ABYSS_RANGED_EXTRA_LEVEL:
-		out.append("弹+1")
+		out.append(TranslationServer.translate("弹+1"))
 	if abyss_level >= ABYSS_DUAL_AFFIX_LEVEL:
-		out.append("双缀")
+		out.append(TranslationServer.translate("双缀"))
 	var oath := abyss_oath()
 	if not oath.is_empty():
-		out.append(String(oath.get("name", "")))
+		out.append(TranslationServer.translate(String(oath.get("name", ""))))
 	return out
 
 static func abyss_rule_text() -> String:
 	var parts := PackedStringArray()
 	if abyss_level >= ABYSS_RANGED_EXTRA_LEVEL:
-		parts.append("远程敌人额外 1 发")
+		parts.append(TranslationServer.translate("远程敌人额外 1 发"))
 	if abyss_level >= ABYSS_DUAL_AFFIX_LEVEL:
-		parts.append("精英必带双词缀")
+		parts.append(TranslationServer.translate("精英必带双词缀"))
 	var oath := abyss_oath()
 	if not oath.is_empty():
-		parts.append("%s：%s" % [String(oath.get("name", "")), String(oath.get("detail", ""))])
+		parts.append(TranslationServer.translate("%s：%s") % [TranslationServer.translate(String(oath.get("name", ""))), TranslationServer.translate(String(oath.get("detail", "")))])
 	if abyss_level > 0:
-		parts.append("从第 %d 层开局" % abyss_start_floor())
-	return "、".join(parts)
+		parts.append(TranslationServer.translate("从第 %d 层开局") % abyss_start_floor())
+	return TranslationServer.translate("、").join(parts)
 
 ## 鼠标瞄准的武器。其余武器自动索敌。誓约按这个名单禁新武器，已拿在手里的不收走。
 const AIMED_WEAPON_IDS: Array = ["pistol", "shotgun", "repeater", "thorn_whip", "flame_thrower"]
@@ -864,12 +864,12 @@ static func room_choice_info(room_type: String) -> Dictionary:
 		"combat": {"title": "深入", "detail": "普通战斗", "color": Color(0.62, 0.38, 1.0)},
 		"mutation": {
 			"title": "变异房",
-			"detail": "献出 %d%% 生命豪赌，可能血本无归" % hp_pct,
+			"detail": TranslationServer.translate("献出 %d%% 生命豪赌，可能血本无归") % hp_pct,
 			"color": Color(0.86, 0.22, 0.28),
 		},
 		"fog": {
 			"title": "迷雾房",
-			"detail": "视野受限，掉落与经验 +%d%%" % fog_pct,
+			"detail": TranslationServer.translate("视野受限，掉落与经验 +%d%%") % fog_pct,
 			"color": Color(0.55, 0.68, 0.78),
 		},
 		"mirror": {"title": "镜像房", "detail": "敌人与障碍左右对调", "color": Color(0.95, 0.78, 0.32)},
@@ -951,7 +951,7 @@ static func daily_name_list() -> String:
 		if info.is_empty():
 			continue
 		parts.append(String(info.get("name", id)))
-	return "、".join(parts)
+	return TranslationServer.translate("、").join(parts)
 
 static func daily_enemy_speed_mult() -> float:
 	if has_daily("haste"):

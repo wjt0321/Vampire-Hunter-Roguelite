@@ -22,23 +22,23 @@ func open_today(save_mgr: Node) -> void:
 	var lines: PackedStringArray = PackedStringArray()
 	lines.append(String(spec.get("date", "")))
 	for entry in spec.get("modifiers", []):
-		lines.append("%s　%s" % [String(entry.get("name", "")), String(entry.get("desc", ""))])
+		lines.append(tr("%s　%s") % [tr(String(entry.get("name", ""))), tr(String(entry.get("desc", "")))])
 	_rules.text = "\n".join(lines)
 	_board.text = _format_board(save_mgr, String(spec.get("date", "")))
 	visible = true
 
 func _format_board(save_mgr: Node, date_key: String) -> String:
 	if save_mgr == null or not save_mgr.has_method("get_daily_runs"):
-		return "本地还没有今日记录"
+		return tr("本地还没有今日记录")
 	var runs: Array = save_mgr.get_daily_runs(date_key)
 	if runs.is_empty():
-		return "今天还没有记录。\n打完一局记一次：先比波次，再比击杀，最后比用时。"
+		return tr("今天还没有记录。\n打完一局记一次：先比波次，再比击杀，最后比用时。")
 	var lines: PackedStringArray = PackedStringArray()
 	var shown := mini(runs.size(), 5)
 	for i in shown:
 		var row: Dictionary = runs[i]
 		var secs := int(row.get("time", 0))
-		lines.append("%d.  波次 %d   击杀 %d   %d:%02d" % [
+		lines.append(tr("%d.  波次 %d   击杀 %d   %d:%02d") % [
 			i + 1, int(row.get("wave", 0)), int(row.get("kills", 0)), secs / 60, secs % 60])
 	return "\n".join(lines)
 
@@ -76,14 +76,14 @@ func _build() -> void:
 	panel.add_child(vbox)
 
 	var title := Label.new()
-	title.text = "每 日 挑 战"
+	title.text = tr("每 日 挑 战")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 26)
 	title.add_theme_color_override("font_color", Color(1.0, 0.86, 0.55))
 	vbox.add_child(title)
 
 	var sub := Label.new()
-	sub.text = "今天的地图和词缀是固定的。记录只存在这台机器上。"
+	sub.text = tr("今天的地图和词缀是固定的。记录只存在这台机器上。")
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.add_theme_font_size_override("font_size", 13)
 	sub.add_theme_color_override("font_color", Color(0.75, 0.7, 0.62))
@@ -96,7 +96,7 @@ func _build() -> void:
 	vbox.add_child(_rules)
 
 	var board_title := Label.new()
-	board_title.text = "今日本地排名"
+	board_title.text = tr("今日本地排名")
 	board_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	board_title.add_theme_font_size_override("font_size", 14)
 	board_title.add_theme_color_override("font_color", Color(0.8, 0.72, 0.5))
@@ -109,7 +109,7 @@ func _build() -> void:
 	vbox.add_child(_board)
 
 	var reward := Label.new()
-	reward.text = "首次打完 +%d 血晶。刷新今日最佳再 +%d（各一次）。" % [
+	reward.text = tr("首次打完 +%d 血晶。刷新今日最佳再 +%d（各一次）。") % [
 		GameConfig.DAILY_PARTICIPATION_CRYSTALS, GameConfig.DAILY_BEST_BONUS_CRYSTALS]
 	reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	reward.add_theme_font_size_override("font_size", 13)
@@ -122,7 +122,7 @@ func _build() -> void:
 	vbox.add_child(row)
 
 	var start := Button.new()
-	start.text = "开始今日挑战"
+	start.text = tr("开始今日挑战")
 	start.custom_minimum_size = Vector2(180, 42)
 	# Space 是开火键：这个面板出现在菜单上，按钮吃焦点会把开火键吞掉。
 	start.focus_mode = Control.FOCUS_NONE
@@ -133,7 +133,7 @@ func _build() -> void:
 	row.add_child(start)
 
 	var back := Button.new()
-	back.text = "返回"
+	back.text = tr("返回")
 	back.custom_minimum_size = Vector2(120, 42)
 	back.focus_mode = Control.FOCUS_NONE
 	back.pressed.connect(func():

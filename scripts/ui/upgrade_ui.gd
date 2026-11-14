@@ -88,6 +88,7 @@ func _draw_and_render_options() -> void:
 
 	current_options = _shape_hand(draw_options(available_options))
 	_render_options()
+	I18nUtil.retranslate_tree(self)
 
 func _render_options() -> void:
 	## 模式变化只重建当前手牌的显示。
@@ -99,10 +100,10 @@ func _render_options() -> void:
 		if banish_mode:
 			# 放逐模式下把卡片信息整块换成"这张卡要被删掉"，
 			# 避免玩家在 ban 模式下还以为点下去是选它
-			decorated["badge"] = "放逐"
+			decorated["badge"] = tr("放逐")
 			decorated["badge_color"] = Color(1.0, 0.34, 0.34)
-			decorated["level_text"] = "点这张卡从本局池移除"
-			decorated["desc"] = "本局不会再出现"
+			decorated["level_text"] = tr("点这张卡从本局池移除")
+			decorated["desc"] = tr("本局不会再出现")
 		options_container.add_child(_create_option_button(decorated))
 
 # ==================== 等级信息（卡片上的 Lv 提示） ====================
@@ -120,11 +121,11 @@ func _decorate_option(option: Dictionary) -> Dictionary:
 			if w == null:
 				opt["badge"] = "NEW"
 				opt["badge_color"] = Color(0.42, 0.95, 0.58)
-				opt["level_text"] = "新武器 · Lv.1"
+				opt["level_text"] = tr("新武器 · Lv.1")
 			else:
 				var cur: int = int(w.current_level)
 				var max_lv: int = maxi(int(w.max_level), cur + 1)
-				opt["badge"] = "升级"
+				opt["badge"] = tr("升级")
 				opt["badge_color"] = Color(1.0, 0.82, 0.35)
 				opt["level_text"] = "Lv.%d → Lv.%d" % [cur, mini(cur + 1, max_lv)]
 				# 卡片只写这一级真正变化的那一轴。
@@ -133,15 +134,15 @@ func _decorate_option(option: Dictionary) -> Dictionary:
 					step_text = String(w.describe_next_level())
 				opt["desc"] = step_text if step_text != "" else String(opt.get("desc", ""))
 		"fusion":
-			opt["badge"] = "融合"
+			opt["badge"] = tr("融合")
 			opt["badge_color"] = Color(0.95, 0.55, 1.0)
-			opt["level_text"] = "主武器留下，副武器离槽"
+			opt["level_text"] = tr("主武器留下，副武器离槽")
 		"passive":
 			var p = _find_owned_passive(opt_id)
 			if p == null:
 				opt["badge"] = "NEW"
 				opt["badge_color"] = Color(0.42, 0.95, 0.58)
-				opt["level_text"] = "新被动 · Lv.1"
+				opt["level_text"] = tr("新被动 · Lv.1")
 				# 新拿到的只写"拿到手就是什么效果"。
 				# 之前写 get_scaled_value_at(1) → get_scaled_value_at(2)，
 				# 第一次见到这张卡的玩家看到"流血 25% → 33%"，读起来像"拿了立刻升一级"，
@@ -151,20 +152,20 @@ func _decorate_option(option: Dictionary) -> Dictionary:
 					opt["desc"] = _passive_value_current(opt_id, fresh.get_scaled_value_at(1))
 			else:
 				var cur: int = int(p.current_level)
-				opt["badge"] = "升级"
+				opt["badge"] = tr("升级")
 				opt["badge_color"] = Color(1.0, 0.82, 0.35)
 				opt["level_text"] = "Lv.%d → Lv.%d" % [cur, mini(cur + 1, 5)]
 				opt["desc"] = _passive_value_text(opt_id,
 					p.get_scaled_value_at(cur), p.get_scaled_value_at(cur + 1))
 		"stat":
-			opt["badge"] = "属性"
+			opt["badge"] = tr("属性")
 			opt["badge_color"] = Color(0.6, 0.76, 1.0)
 			opt["level_text"] = _stat_preview(opt_id)
 		"basic":
 			# 满级后的补给卡。原本只写一句"攻击力+10%（本局）"，
 			# 玩家既不知道自己现在多少、也不知道加完是多少——
 			# 「攻击力提升没有具体数值，可以有体感提升」说的就是这个。
-			opt["badge"] = "补给"
+			opt["badge"] = tr("补给")
 			opt["badge_color"] = Color(0.95, 0.72, 0.42)
 			opt["level_text"] = _basic_preview(opt_id)
 		_:
@@ -200,44 +201,44 @@ func _passive_value_current(passive_id: String, value: float) -> String:
 	value = _cap_passive_value(passive_id, value)
 	match passive_id:
 		"shield":
-			return "每 %.0fs 生成一次护盾" % value
+			return tr("每 %.0fs 生成一次护盾") % value
 		"lightning_shield":
-			return "受击反击 %.0f 伤害" % value
+			return tr("受击反击 %.0f 伤害") % value
 		"magnet":
 			# 磁铁的 base_value 是"倍率"，实际加成 = 50px × 倍率。
 			# 按 (倍率 - 1) 折算成百分比会在 Lv.1 写出 "+0%" ——
 			# 而 Lv.1 其实已经给了 +50px，玩家会以为这件道具是空卡。
-			return "拾取范围 +%.0f" % (GameConfig.MAGNET_BASE_RANGE * value)
+			return tr("拾取范围 +%.0f") % (GameConfig.MAGNET_BASE_RANGE * value)
 		"blood_edge":
-			return "命中时 %.0f%% 几率使敌人流血" % (value * 100.0)
+			return tr("命中时 %.0f%% 几率使敌人流血") % (value * 100.0)
 		"frost_bind":
-			return "命中时 %.0f%% 几率使敌人减速" % (value * 100.0)
+			return tr("命中时 %.0f%% 几率使敌人减速") % (value * 100.0)
 		"blood_drain":
-			return "造成伤害的 %.1f%% 转为生命" % (value * 100.0)
+			return tr("造成伤害的 %.1f%% 转为生命") % (value * 100.0)
 		"execution_mark":
-			return "同一精英或 Boss 每层伤害 +%.0f%%" % (value * 100.0)
+			return tr("同一精英或 Boss 每层伤害 +%.0f%%") % (value * 100.0)
 		"time_gear":
-			return "弹丸放大到 %.0f%%，穿透 +1，飞行变慢" % (value * 100.0)
+			return tr("弹丸放大到 %.0f%%，穿透 +1，飞行变慢") % (value * 100.0)
 		"cold_blood":
-			return "流血且霜缚时崩开 %.0f 伤害" % value
+			return tr("流血且霜缚时崩开 %.0f 伤害") % value
 		"regeneration":
-			return "每 5 秒恢复 %.0f%% 最大生命" % (value * 100.0)
+			return tr("每 5 秒恢复 %.0f%% 最大生命") % (value * 100.0)
 		"greed_ring":
-			return "经验获取 +%.0f%%" % (value * 100.0)
+			return tr("经验获取 +%.0f%%") % (value * 100.0)
 		"berserker_blood":
-			return "低血时伤害 +%.0f%%" % (value * 100.0)
+			return tr("低血时伤害 +%.0f%%") % (value * 100.0)
 		"frozen_heart":
-			return "命中 %.0f%% 几率冻结敌人" % (value * 100.0)
+			return tr("命中 %.0f%% 几率冻结敌人") % (value * 100.0)
 		"shadow_cloak":
-			return "闪避几率 +%.0f%%" % (value * 100.0)
+			return tr("闪避几率 +%.0f%%") % (value * 100.0)
 		"vampiric_fang":
-			return "击杀 %.0f%% 几率回血" % (value * 100.0)
+			return tr("击杀 %.0f%% 几率回血") % (value * 100.0)
 		"swift_boots":
-			return "移动速度 +%.0f%%" % (value * 100.0)
+			return tr("移动速度 +%.0f%%") % (value * 100.0)
 		"lucky_clover":
-			return "暴击几率 +%.0f%%" % (value * 100.0)
+			return tr("暴击几率 +%.0f%%") % (value * 100.0)
 		_:
-			return "效果 %.0f%%" % (value * 100.0)
+			return tr("效果 %.0f%%") % (value * 100.0)
 
 func _passive_value_text(passive_id: String, cur_value: float, next_value: float) -> String:
 	## 被动数值量级不统一（有的是倍率 1.3、有的是 0.08、有的是 30 秒），
@@ -246,42 +247,42 @@ func _passive_value_text(passive_id: String, cur_value: float, next_value: float
 	next_value = _cap_passive_value(passive_id, next_value)
 	match passive_id:
 		"shield":
-			return "冷却 %.0fs → %.0fs" % [cur_value, next_value]
+			return tr("冷却 %.0fs → %.0fs") % [cur_value, next_value]
 		"lightning_shield":
-			return "反击 %.0f → %.0f 伤害" % [cur_value, next_value]
+			return tr("反击 %.0f → %.0f 伤害") % [cur_value, next_value]
 		"magnet":
-			return "拾取范围 +%.0f → +%.0f" % [
+			return tr("拾取范围 +%.0f → +%.0f") % [
 				GameConfig.MAGNET_BASE_RANGE * cur_value, GameConfig.MAGNET_BASE_RANGE * next_value]
 		"blood_edge":
-			return "流血几率 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
+			return tr("流血几率 %.0f%% → %.0f%%") % [cur_value * 100.0, next_value * 100.0]
 		"frost_bind":
-			return "减速几率 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
+			return tr("减速几率 %.0f%% → %.0f%%") % [cur_value * 100.0, next_value * 100.0]
 		"blood_drain":
-			return "伤害转治疗 %.1f%% → %.1f%%" % [cur_value * 100.0, next_value * 100.0]
+			return tr("伤害转治疗 %.1f%% → %.1f%%") % [cur_value * 100.0, next_value * 100.0]
 		"execution_mark":
-			return "每层伤害 +%.0f%% → +%.0f%%" % [cur_value * 100.0, next_value * 100.0]
+			return tr("每层伤害 +%.0f%% → +%.0f%%") % [cur_value * 100.0, next_value * 100.0]
 		"time_gear":
-			return "弹丸 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
+			return tr("弹丸 %.0f%% → %.0f%%") % [cur_value * 100.0, next_value * 100.0]
 		"cold_blood":
-			return "崩开 %.0f → %.0f" % [cur_value, next_value]
+			return tr("崩开 %.0f → %.0f") % [cur_value, next_value]
 		"regeneration":
-			return "每 5 秒回复 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
+			return tr("每 5 秒回复 %.0f%% → %.0f%%") % [cur_value * 100.0, next_value * 100.0]
 		"greed_ring":
-			return "经验获取 +%.0f%% → +%.0f%%" % [cur_value * 100.0, next_value * 100.0]
+			return tr("经验获取 +%.0f%% → +%.0f%%") % [cur_value * 100.0, next_value * 100.0]
 		"berserker_blood":
-			return "低血时伤害 +%.0f%% → +%.0f%%" % [cur_value * 100.0, next_value * 100.0]
+			return tr("低血时伤害 +%.0f%% → +%.0f%%") % [cur_value * 100.0, next_value * 100.0]
 		"frozen_heart":
-			return "冻结几率 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
+			return tr("冻结几率 %.0f%% → %.0f%%") % [cur_value * 100.0, next_value * 100.0]
 		"shadow_cloak":
-			return "闪避几率 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
+			return tr("闪避几率 %.0f%% → %.0f%%") % [cur_value * 100.0, next_value * 100.0]
 		"vampiric_fang":
-			return "回血几率 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
+			return tr("回血几率 %.0f%% → %.0f%%") % [cur_value * 100.0, next_value * 100.0]
 		"swift_boots":
-			return "移动速度 +%.0f%% → +%.0f%%" % [cur_value * 100.0, next_value * 100.0]
+			return tr("移动速度 +%.0f%% → +%.0f%%") % [cur_value * 100.0, next_value * 100.0]
 		"lucky_clover":
-			return "暴击几率 +%.0f%% → +%.0f%%" % [cur_value * 100.0, next_value * 100.0]
+			return tr("暴击几率 +%.0f%% → +%.0f%%") % [cur_value * 100.0, next_value * 100.0]
 		_:
-			return "效果 %.0f%% → %.0f%%" % [cur_value * 100.0, next_value * 100.0]
+			return tr("效果 %.0f%% → %.0f%%") % [cur_value * 100.0, next_value * 100.0]
 
 func _stat_preview(stat_id: String) -> String:
 	## 属性卡显示"现在 → 选完"，让加成幅度可比较
@@ -290,22 +291,22 @@ func _stat_preview(stat_id: String) -> String:
 	var lv := "　" + _stat_level_text(stat_id)
 	match stat_id:
 		"damage":
-			return "攻击 ×%.2f → ×%.2f%s" % [player.damage_multiplier,
+			return tr("攻击 ×%.2f → ×%.2f%s") % [player.damage_multiplier,
 				player.damage_multiplier + GameConfig.UPGRADE_DAMAGE_MULT, lv]
 		"speed":
-			return "移速 ×%.2f → ×%.2f%s" % [player.speed_multiplier,
+			return tr("移速 ×%.2f → ×%.2f%s") % [player.speed_multiplier,
 				player.speed_multiplier + GameConfig.UPGRADE_SPEED_MULT, lv]
 		"shoot_speed":
-			return "射速 ×%.2f → ×%.2f%s" % [player.shoot_speed_multiplier,
+			return tr("射速 ×%.2f → ×%.2f%s") % [player.shoot_speed_multiplier,
 				player.shoot_speed_multiplier + GameConfig.UPGRADE_SHOOT_SPEED_MULT, lv]
 		"max_hp":
-			return "生命 %.0f → %.0f%s" % [player.max_hp,
+			return tr("生命 %.0f → %.0f%s") % [player.max_hp,
 				player.max_hp + GameConfig.UPGRADE_MAX_HP, lv]
 		"armor":
-			return "护甲 %.0f → %.0f%s" % [player.armor,
+			return tr("护甲 %.0f → %.0f%s") % [player.armor,
 				player.armor + GameConfig.UPGRADE_ARMOR, lv]
 		"pickup_range":
-			return "拾取 %.0f → %.0f%s" % [player.pickup_range_bonus,
+			return tr("拾取 %.0f → %.0f%s") % [player.pickup_range_bonus,
 				player.pickup_range_bonus + GameConfig.UPGRADE_PICKUP_RANGE, lv]
 	return ""
 
@@ -318,15 +319,15 @@ func _basic_preview(reward_id: String) -> String:
 		"damage_boost":
 			var now: float = player.damage_multiplier
 			var nxt: float = now + GameConfig.BASIC_REWARD_DAMAGE
-			return "攻击 ×%.2f → ×%.2f" % [now, nxt]
+			return tr("攻击 ×%.2f → ×%.2f") % [now, nxt]
 		"heal":
 			var before: float = player.current_hp
 			var after: float = minf(before + player.max_hp * 0.3, player.max_hp)
 			if is_equal_approx(before, player.max_hp):
-				return "生命已满 %.0f/%.0f · 选了没收益" % [before, player.max_hp]
-			return "生命 %.0f → %.0f（上限 %.0f）" % [before, after, player.max_hp]
+				return tr("生命已满 %.0f/%.0f · 选了没收益") % [before, player.max_hp]
+			return tr("生命 %.0f → %.0f（上限 %.0f）") % [before, after, player.max_hp]
 		"gold":
-			return "血晶 +100（立即入账）"
+			return tr("血晶 +100（立即入账）")
 	return ""
 
 # ==================== 重抽 / 跳过 ====================
@@ -452,7 +453,7 @@ func _floor_debut_card() -> Dictionary:
 		return {}
 	var start_level := maxi(1, int(victim.current_level) - 1)
 	pick["replace_lowest"] = true
-	pick["desc"] = "栏位已满，换下%s Lv.%d。新武器从 Lv.%d 起，这一层还会继续给它升级。" % [
+	pick["desc"] = tr("栏位已满，换下%s Lv.%d。新武器从 Lv.%d 起，这一层还会继续给它升级。") % [
 		String(victim.weapon_name), int(victim.current_level), start_level]
 	return pick
 
@@ -496,7 +497,7 @@ func _build_footer() -> void:
 
 func _make_footer_button(text: String, accent: Color) -> Button:
 	var btn := Button.new()
-	btn.text = text
+	btn.text = tr(text)
 	btn.custom_minimum_size = Vector2(150, 34)
 	btn.focus_mode = Control.FOCUS_NONE
 	UiFx.hover(btn)
@@ -537,25 +538,25 @@ func _refresh_footer() -> void:
 		return
 	var cost := reroll_cost()
 	if cost == 0:
-		_reroll_button.text = "重抽 (%d)" % rerolls_left
+		_reroll_button.text = tr("重抽 (%d)") % rerolls_left
 	else:
-		_reroll_button.text = "重抽 (-%d 银)" % cost
+		_reroll_button.text = tr("重抽 (-%d 银)") % cost
 	_reroll_button.disabled = _submitted or not can_reroll()
 
 	if _banish_button != null:
 		if banish_mode:
-			_banish_button.text = "取消放逐"
+			_banish_button.text = tr("取消放逐")
 		else:
-			_banish_button.text = "放逐 (%d)" % banish_left
+			_banish_button.text = tr("放逐 (%d)") % banish_left
 		_banish_button.disabled = _submitted or (banish_left <= 0 and not banish_mode)
 
 	_skip_button.disabled = _submitted
-	_skip_button.text = "跳过 (+%d 银)" % GameConfig.SKIP_SILVER_REWARD
+	_skip_button.text = tr("跳过 (+%d 银)") % GameConfig.SKIP_SILVER_REWARD
 	if banish_mode:
-		_hint_label.text = "放逐模式：点任意一张卡把它从本局池移除（剩 %d 次）　B 取消" % banish_left
+		_hint_label.text = tr("放逐模式：点任意一张卡把它从本局池移除（剩 %d 次）　B 取消") % banish_left
 		_hint_label.add_theme_color_override("font_color", Color(1.0, 0.55, 0.55))
 	else:
-		_hint_label.text = "R 重抽　B 放逐　Tab 跳过　　免费重抽剩 %d 次 · 放逐剩 %d 次" % [rerolls_left, banish_left]
+		_hint_label.text = tr("R 重抽　B 放逐　Tab 跳过　　免费重抽剩 %d 次 · 放逐剩 %d 次") % [rerolls_left, banish_left]
 		if weapon_manager != null and weapon_manager.has_method("get_fusion_progress"):
 			var fusion_line: String = weapon_manager.get_fusion_progress()
 			if fusion_line != "":
@@ -776,7 +777,7 @@ func _stat_level_text(stat_id: String) -> String:
 		var used: int = int(player.call("get_total_stat_level"))
 		var budget: int = int(player.call("get_total_stat_max_level"))
 		if budget > 0:
-			text += " · 属性点 %d/%d" % [used, budget]
+			text += tr(" · 属性点 %d/%d") % [used, budget]
 	return text
 
 func _is_weapon_unlocked(weapon_id: String) -> bool:
@@ -810,9 +811,9 @@ func _get_basic_rewards() -> Array:
 	## 文案只讲"是什么"，具体幅度由 _basic_preview 补成"现在 → 选完"。
 	## 图标留空：本机字体不含 emoji，填 ⚔️💰❤️ 会在 Button 上渲染成蓝方块。
 	return [
-		{"id": "heal", "name": "生命恢复", "desc": "回复 30% 最大生命", "type": "basic"},
-		{"id": "gold", "name": "血晶奖励", "desc": "100 血晶立即入账", "type": "basic"},
-		{"id": "damage_boost", "name": "伤害提升", "desc": "攻击倍率 +10%（本局永久）", "type": "basic"},
+		{"id": "heal", "name": tr("生命恢复"), "desc": tr("回复 30% 最大生命"), "type": "basic"},
+		{"id": "gold", "name": tr("血晶奖励"), "desc": tr("100 血晶立即入账"), "type": "basic"},
+		{"id": "damage_boost", "name": tr("伤害提升"), "desc": tr("攻击倍率 +10%（本局永久）"), "type": "basic"},
 	]
 
 func _available_basic_rewards() -> Array:
@@ -887,7 +888,7 @@ func _create_option_button(option: Dictionary) -> Button:
 
 	# 添加名称
 	var name_label := Label.new()
-	name_label.text = option["name"]
+	name_label.text = tr(option["name"])
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	name_label.custom_minimum_size.x = 186
@@ -901,7 +902,7 @@ func _create_option_button(option: Dictionary) -> Button:
 	var level_text := String(option.get("level_text", ""))
 	if level_text != "":
 		var level_label := Label.new()
-		level_label.text = level_text
+		level_label.text = tr(level_text)
 		level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		level_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		level_label.custom_minimum_size.x = 186
@@ -913,7 +914,7 @@ func _create_option_button(option: Dictionary) -> Button:
 
 	# 添加描述
 	var desc_label := Label.new()
-	desc_label.text = option["desc"]
+	desc_label.text = tr(option["desc"])
 	desc_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	desc_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	desc_label.custom_minimum_size.x = 186  # 数值行加宽后，描述行对齐同一宽度
@@ -1064,7 +1065,7 @@ func _apply_basic_reward(reward_id: String) -> void:
 				player.heal(heal_amount)
 				print("❤ 恢复 %.0f 生命" % heal_amount)
 				if hud and hud.has_method("show_toast"):
-					hud.show_toast("生命 +%.0f（%.0f / %.0f）" % [
+					hud.show_toast(tr("生命 +%.0f（%.0f / %.0f）") % [
 						heal_amount, player.current_hp, player.max_hp])
 		"gold":
 			var save_mgr := get_node_or_null("/root/SaveManager")
@@ -1075,7 +1076,7 @@ func _apply_basic_reward(reward_id: String) -> void:
 					achievements.record_crystals_earned(100)
 				print("+ 获得 100 血晶")
 				if hud and hud.has_method("show_toast"):
-					hud.show_toast("血晶 +100（立即入账）")
+					hud.show_toast(tr("血晶 +100（立即入账）"))
 		"damage_boost":
 			if player != null:
 				var before: float = player.damage_multiplier
@@ -1083,5 +1084,5 @@ func _apply_basic_reward(reward_id: String) -> void:
 				var after: float = player.damage_multiplier
 				print("⚔ 攻击倍率 %.2f → %.2f" % [before, after])
 				if hud and hud.has_method("show_toast"):
-					hud.show_toast("攻击 ×%.2f → ×%.2f" % [before, after])
+					hud.show_toast(tr("攻击 ×%.2f → ×%.2f") % [before, after])
 				print("⚔️ 攻击力 +10%")

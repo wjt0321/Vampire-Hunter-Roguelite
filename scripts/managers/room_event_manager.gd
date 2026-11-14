@@ -122,13 +122,13 @@ func _start_hunt() -> void:
 	kind = "hunt"
 	_hunt_delay = HuntDelay
 	_hunt_timer = GameConfig.ROOM_EVENT_HUNT_TIME
-	_notify("深 渊 猎 物 现 身")
+	_notify(tr("深 渊 猎 物 现 身"))
 	event_started.emit("hunt")
 	print("🏹 局内事件：深渊猎物（限时 %.0f 秒）" % GameConfig.ROOM_EVENT_HUNT_TIME)
 
 func _start_guard() -> void:
 	kind = "guard"
-	_notify("受 诅 宝 箱 · 守 卫 苏 醒")
+	_notify(tr("受 诅 宝 箱 · 守 卫 苏 醒"))
 	event_started.emit("guard")
 	print("🎁 局内事件：受诅宝箱（守卫 %d 只）" % GameConfig.ROOM_EVENT_GUARD_COUNT)
 	_spawn_chest()
@@ -170,24 +170,24 @@ func _process_hunt(delta: float, hud_dirty: bool) -> void:
 			return
 		# 已出场却失效（换房清场 / 对象池回收 / 被别的系统释放）：
 		# 不能一直等一个不存在的敌人，否则事件永远停在 hunt、HUD 卡在倒计时
-		_end(false, "猎物失踪")
+		_end(false, tr("猎物失踪"))
 		return
 	# 敌人出场后才开始走倒计时（1.5 秒延迟不算在 20 秒里）
 	_hunt_timer -= delta
 	if hud_dirty:
-		_set_hud("猎杀 %d 秒" % maxi(ceili(_hunt_timer), 0))
+		_set_hud(tr("猎杀 %d 秒") % maxi(ceili(_hunt_timer), 0))
 	if _hunt_timer <= 0.0:
 		_hunt_escape()
 
 func _process_guard(hud_dirty: bool) -> void:
 	if hud_dirty and _guards_left > 0:
-		_set_hud("守卫 ×%d" % _guards_left)
+		_set_hud(tr("守卫 ×%d") % _guards_left)
 
 # ==================== 猎杀 ====================
 
 func _spawn_hunt_enemy() -> void:
 	if wave_manager == null or player == null or not is_instance_valid(player):
-		_end(false, "猎物未现身")
+		_end(false, tr("猎物未现身"))
 		return
 	# 类型从本层敌人池里挑（Boss 类型除外）——玩家已经知道怎么打它，
 	# 新鲜感来自"双词缀 + 限时"而不是没见过的怪
@@ -198,7 +198,7 @@ func _spawn_hunt_enemy() -> void:
 		pool = ["vampire", "bat", "zombie", "skeleton_archer", "werewolf"]
 	pool.erase("vampire_prince")
 	if pool.is_empty():
-		_end(false, "猎物未现身")
+		_end(false, tr("猎物未现身"))
 		return
 	var enemy_type: String = String(pool.pick_random())
 
@@ -229,11 +229,11 @@ func _spawn_hunt_enemy() -> void:
 	_hunt_enemy = wave_manager.spawn_special_enemy(
 		enemy_type, pos, affixes, 1.0, GameConfig.ROOM_EVENT_HUNT_HP_MULT)
 	if _hunt_enemy == null:
-		_end(false, "猎物未现身")
+		_end(false, tr("猎物未现身"))
 		return
 	_hunt_enemy.enemy_died.connect(_on_hunt_killed)
 	# 名字标识：头顶加一行字，别让玩家把猎物当成普通精英
-	_tag_enemy(_hunt_enemy, "猎 物", Color(1.0, 0.42, 0.3))
+	_tag_enemy(_hunt_enemy, tr("猎 物"), Color(1.0, 0.42, 0.3))
 
 func _on_hunt_killed(_enemy: Node) -> void:
 	# 事件已结束（超时遁走 / cancel）后补发的死亡信号不能结算：
@@ -241,8 +241,8 @@ func _on_hunt_killed(_enemy: Node) -> void:
 	if kind != "hunt":
 		return
 	_reward(GameConfig.ROOM_EVENT_HUNT_SILVER, GameConfig.ROOM_EVENT_HUNT_XP,
-		"猎物已诛 +%d 银" % GameConfig.ROOM_EVENT_HUNT_SILVER)
-	_end(true, "猎物已诛")
+		tr("猎物已诛 +%d 银") % GameConfig.ROOM_EVENT_HUNT_SILVER)
+	_end(true, tr("猎物已诛"))
 
 func _hunt_escape() -> void:
 	_disconnect_hunt_killed()
@@ -257,8 +257,8 @@ func _hunt_escape() -> void:
 			if shape:
 				shape.set_deferred("disabled", true)
 	if hud and hud.has_method("show_toast"):
-		hud.show_toast("猎物遁入黑暗…")
-	_end(false, "猎物逃走")
+		hud.show_toast(tr("猎物遁入黑暗…"))
+	_end(false, tr("猎物逃走"))
 
 # ==================== 守卫 / 宝箱 ====================
 
@@ -284,7 +284,7 @@ func _spawn_chest() -> void:
 
 func _spawn_guards() -> void:
 	if wave_manager == null or _chest == null:
-		_end(false, "宝箱未现身")
+		_end(false, tr("宝箱未现身"))
 		return
 	# 守卫类型：同样从本层池里挑，但不重复——一圈各不相同的怪读起来更像"护卫队"
 	var pool: Array = []
@@ -309,11 +309,11 @@ func _spawn_guards() -> void:
 			continue
 		guard.enemy_died.connect(_on_guard_died)
 		guard.modulate = GameConfig.ROOM_EVENT_GUARD_COLOR
-		_tag_enemy(guard, "守 卫", GameConfig.ROOM_EVENT_GUARD_COLOR)
+		_tag_enemy(guard, tr("守 卫"), GameConfig.ROOM_EVENT_GUARD_COLOR)
 		_guards_left += 1
 	if _guards_left == 0:
 		# 一只守卫都没刷出来：宝箱由 _end() 统一回收
-		_end(false, "守卫未现身")
+		_end(false, tr("守卫未现身"))
 
 func _on_guard_died(_enemy: Node) -> void:
 	# 同猎杀：cancel / 超时后守卫才被清场打死，不能补开箱给奖励
@@ -327,8 +327,8 @@ func _on_guard_died(_enemy: Node) -> void:
 	# 开箱动画自己会 queue_free：把引用交还出去，别让 _end() 的回收抢在动画前
 	_chest = null
 	_reward(GameConfig.ROOM_EVENT_GUARD_SILVER, GameConfig.ROOM_EVENT_GUARD_XP,
-		"诅咒解除 +%d 银" % GameConfig.ROOM_EVENT_GUARD_SILVER)
-	_end(true, "宝箱开启")
+		tr("诅咒解除 +%d 银") % GameConfig.ROOM_EVENT_GUARD_SILVER)
+	_end(true, tr("宝箱开启"))
 
 # ==================== 通用 ====================
 
@@ -337,7 +337,7 @@ func _tag_enemy(enemy: Node, text: String, color: Color) -> void:
 	## 直接放 enemy 下面跟着走（敌人死亡缩放动画会带着它一起消失）
 	var label := Label.new()
 	label.name = "EventTag"
-	label.text = text
+	label.text = tr(text)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.size = Vector2(64, 14)
 	# 词缀图标中心在 y=-66，24px 图标的顶部为 -78；Label 实际高度为 24px，
@@ -390,28 +390,28 @@ func _start_nest() -> void:
 	_nest_time = 18.0
 	_nest_spawn = 1.2
 	_nest_adds = 0
-	_notify("血 巢 出 现 · 打 掉 核 心")
+	_notify(tr("血 巢 出 现 · 打 掉 核 心"))
 	event_started.emit("nest")
 	if wave_manager == null or player == null:
-		_end(false, "血巢未现身")
+		_end(false, tr("血巢未现身"))
 		return
 	var pos: Vector2 = _offset_from_player(220.0)
 	_nest_core = wave_manager.spawn_special_enemy("zombie", pos, [], 1.0, 2.4)
 	if _nest_core == null:
-		_end(false, "血巢未现身")
+		_end(false, tr("血巢未现身"))
 		return
 	_nest_core.enemy_died.connect(_on_nest_killed)
-	_tag_enemy(_nest_core, "血 巢", Color(0.85, 0.2, 0.28))
+	_tag_enemy(_nest_core, tr("血 巢"), Color(0.85, 0.2, 0.28))
 
 func _process_nest(delta: float, hud_dirty: bool) -> void:
 	_nest_time -= delta
 	_nest_spawn -= delta
 	if hud_dirty:
-		_set_hud("血巢 %.0f 秒" % maxf(_nest_time, 0.0))
+		_set_hud(tr("血巢 %.0f 秒") % maxf(_nest_time, 0.0))
 	if _nest_time <= 0.0:
 		if _nest_core != null and is_instance_valid(_nest_core):
 			_nest_core.queue_free()
-		_end(false, "血巢消失")
+		_end(false, tr("血巢消失"))
 		return
 	if _nest_spawn > 0.0 or _nest_adds >= 4 or wave_manager == null or _nest_core == null:
 		return
@@ -419,56 +419,56 @@ func _process_nest(delta: float, hud_dirty: bool) -> void:
 	_nest_adds += 1
 	var add: Node = wave_manager.spawn_special_enemy("bat", _offset_from_player(160.0), [], 1.0, 0.7)
 	if add != null:
-		_tag_enemy(add, "巢 虫", Color(0.7, 0.25, 0.3))
+		_tag_enemy(add, tr("巢 虫"), Color(0.7, 0.25, 0.3))
 
 func _on_nest_killed(_enemy: Node) -> void:
 	if kind != "nest":
 		return
-	_reward(28, 70, "血巢摧毁 +28 银")
-	_end(true, "血巢摧毁")
+	_reward(28, 70, tr("血巢摧毁 +28 银"))
+	_end(true, tr("血巢摧毁"))
 
 func _start_flee() -> void:
 	kind = "flee"
-	_notify("逃 匿 魔 · 在 它 跑 出 去 前 打 倒")
+	_notify(tr("逃 匿 魔 · 在 它 跑 出 去 前 打 倒"))
 	event_started.emit("flee")
 	if wave_manager == null or player == null:
-		_end(false, "逃匿魔未现身")
+		_end(false, tr("逃匿魔未现身"))
 		return
 	var pos: Vector2 = _offset_from_player(180.0)
 	_flee_enemy = wave_manager.spawn_special_enemy("bat", pos, [], 1.0, 0.8)
 	if _flee_enemy == null:
-		_end(false, "逃匿魔未现身")
+		_end(false, tr("逃匿魔未现身"))
 		return
 	if _flee_enemy.has_method("set_base_move_speed"):
 		_flee_enemy.set_base_move_speed(0.0)
 	_flee_dir = _edge_direction(pos)
 	_flee_enemy.enemy_died.connect(_on_flee_killed)
-	_tag_enemy(_flee_enemy, "逃 匿", Color(0.55, 0.85, 0.95))
+	_tag_enemy(_flee_enemy, tr("逃 匿"), Color(0.55, 0.85, 0.95))
 
 func _process_flee(delta: float, hud_dirty: bool) -> void:
 	if _flee_enemy == null or not is_instance_valid(_flee_enemy):
-		_end(false, "逃匿魔失踪")
+		_end(false, tr("逃匿魔失踪"))
 		return
 	_flee_enemy.global_position += _flee_dir * 110.0 * delta
 	if hud_dirty:
-		_set_hud("拦住逃匿魔")
+		_set_hud(tr("拦住逃匿魔"))
 	var bounds := _room_bounds()
 	var pos: Vector2 = _flee_enemy.global_position
 	if pos.x <= bounds.position.x + 28.0 or pos.x >= bounds.end.x - 28.0 \
 			or pos.y <= bounds.position.y + 28.0 or pos.y >= bounds.end.y - 28.0:
 		_flee_enemy.queue_free()
-		_end(false, "逃匿魔逃走")
+		_end(false, tr("逃匿魔逃走"))
 
 func _on_flee_killed(_enemy: Node) -> void:
 	if kind != "flee":
 		return
-	_reward(26, 64, "逃匿魔倒下 +26 银")
-	_end(true, "逃匿魔倒下")
+	_reward(26, 64, tr("逃匿魔倒下 +26 银"))
+	_end(true, tr("逃匿魔倒下"))
 
 func _start_seals() -> void:
 	kind = "seals"
 	_seal_time = [0.0, 0.0]
-	_notify("双 封 印 · 站 在 圈 里")
+	_notify(tr("双 封 印 · 站 在 圈 里"))
 	event_started.emit("seals")
 	var bounds := _room_bounds()
 	var center := bounds.get_center()
@@ -489,31 +489,31 @@ func _process_seals(delta: float, hud_dirty: bool) -> void:
 		var filled: float = clampf(float(_seal_time[i]) / 1.2, 0.0, 1.0)
 		_update_seal_marker(seal, filled)
 	if hud_dirty:
-		_set_hud("封印 %.0f%% / %.0f%%" % [
+		_set_hud(tr("封印 %.0f%% / %.0f%%") % [
 			clampf(float(_seal_time[0]) / 1.2, 0.0, 1.0) * 100.0,
 			clampf(float(_seal_time[1]) / 1.2, 0.0, 1.0) * 100.0,
 		])
 	if float(_seal_time[0]) >= 1.2 and float(_seal_time[1]) >= 1.2:
-		_reward(24, 60, "封印完成 +24 银")
-		_end(true, "封印完成")
+		_reward(24, 60, tr("封印完成 +24 银"))
+		_end(true, tr("封印完成"))
 
 func _start_bounty() -> void:
 	kind = "bounty"
 	_bounty_accepted = false
-	_notify("悬 赏 · 走 进 标记 才 会 强化 目 标")
+	_notify(tr("悬 赏 · 走 进 标记 才 会 强化 目 标"))
 	event_started.emit("bounty")
 	if wave_manager == null or player == null:
-		_end(false, "悬赏未现身")
+		_end(false, tr("悬赏未现身"))
 		return
 	var pos: Vector2 = _offset_from_player(240.0)
 	_bounty_enemy = wave_manager.spawn_special_enemy("vampire", pos, [], 1.0, 1.0)
 	if _bounty_enemy == null:
-		_end(false, "悬赏未现身")
+		_end(false, tr("悬赏未现身"))
 		return
 	_bounty_mark = pos + Vector2(70, 0)
 	_make_marker(_bounty_mark, Color(0.95, 0.75, 0.25, 0.9), false)
 	_bounty_enemy.enemy_died.connect(_on_bounty_killed)
-	_tag_enemy(_bounty_enemy, "可 拒 绝", Color(0.95, 0.8, 0.35))
+	_tag_enemy(_bounty_enemy, tr("可 拒 绝"), Color(0.95, 0.8, 0.35))
 
 func _process_bounty(hud_dirty: bool) -> void:
 	if _bounty_enemy == null or not is_instance_valid(_bounty_enemy):
@@ -526,18 +526,18 @@ func _process_bounty(hud_dirty: bool) -> void:
 			_bounty_enemy.current_hp = _bounty_enemy.max_hp
 		if "base_contact_damage" in _bounty_enemy:
 			_bounty_enemy.base_contact_damage *= 1.4
-		_tag_enemy(_bounty_enemy, "悬 赏", Color(1.0, 0.45, 0.2))
+		_tag_enemy(_bounty_enemy, tr("悬 赏"), Color(1.0, 0.45, 0.2))
 	if hud_dirty:
-		_set_hud("悬赏已接受" if _bounty_accepted else "走进标记接受悬赏，也可以走开")
+		_set_hud(tr("悬赏已接受") if _bounty_accepted else tr("走进标记接受悬赏，也可以走开"))
 
 func _on_bounty_killed(_enemy: Node) -> void:
 	if kind != "bounty":
 		return
 	if not _bounty_accepted:
-		_end(false, "未接受悬赏")
+		_end(false, tr("未接受悬赏"))
 		return
-	_reward(32, 72, "悬赏完成 +32 银")
-	_end(true, "悬赏完成")
+	_reward(32, 72, tr("悬赏完成 +32 银"))
+	_end(true, tr("悬赏完成"))
 
 func _offset_from_player(distance: float) -> Vector2:
 	var angle := randf() * TAU
@@ -672,4 +672,4 @@ func cancel() -> void:
 		return
 	_disconnect_hunt_killed()
 	# 猎物与普通敌人由 main 的换房清场统一回收；宝箱由 _end() 回收。
-	_end(false, "离开房间")
+	_end(false, tr("离开房间"))

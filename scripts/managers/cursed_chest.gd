@@ -64,7 +64,7 @@ func _ready() -> void:
 			_chest.add_child(edge)
 
 	var name_label := Label.new()
-	name_label.text = "受 诅 宝 箱"
+	name_label.text = tr("受 诅 宝 箱")
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.size = Vector2(80, 14)
 	name_label.position = Vector2(-40, 18)

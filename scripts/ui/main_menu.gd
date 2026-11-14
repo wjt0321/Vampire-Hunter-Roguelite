@@ -51,6 +51,7 @@ func _ready() -> void:
 	_setup_volume_sliders()
 	_animate_title()
 	_update_crystals()
+	I18nUtil.retranslate_tree(self)
 	upgrade_shop.shop_closed.connect(_update_crystals)
 	character_select.selection_closed.connect(_update_crystals)
 	
@@ -71,7 +72,7 @@ func _setup_settings_panel() -> void:
 	var master_row := HBoxContainer.new()
 	master_row.add_theme_constant_override("separation", 10)
 	var master_label := Label.new()
-	master_label.text = "主音量"
+	master_label.text = tr("主音量")
 	master_label.add_theme_font_size_override("font_size", 16)
 	master_row.add_child(master_label)
 	master_slider = HSlider.new()
@@ -88,7 +89,7 @@ func _setup_settings_panel() -> void:
 	settings_vbox.move_child(master_row, back_btn.get_index())
 	shake_check = CheckButton.new()
 	shake_check.name = "ShakeCheck"
-	shake_check.text = "屏幕震动"
+	shake_check.text = tr("屏幕震动")
 	shake_check.focus_mode = Control.FOCUS_NONE
 	shake_check.add_theme_font_size_override("font_size", 16)
 	shake_check.toggled.connect(func(on: bool) -> void:
@@ -98,6 +99,26 @@ func _setup_settings_panel() -> void:
 			save.save_game())
 	settings_vbox.add_child(shake_check)
 	settings_vbox.move_child(shake_check, back_btn.get_index())
+	var lang_row := HBoxContainer.new()
+	lang_row.add_theme_constant_override("separation", 10)
+	var lang_label := Label.new()
+	lang_label.text = tr("语言")
+	lang_label.add_theme_font_size_override("font_size", 16)
+	lang_row.add_child(lang_label)
+	var lang_option := OptionButton.new()
+	lang_option.name = "LanguageOption"
+	lang_option.add_item("中文")
+	lang_option.add_item("English")
+	lang_option.focus_mode = Control.FOCUS_NONE
+	lang_option.select(0 if TranslationServer.get_locale().begins_with("zh") else 1)
+	lang_option.item_selected.connect(func(idx: int) -> void:
+		var save := get_node_or_null("/root/SaveManager")
+		if save != null and save.has_method("set_language"):
+			save.set_language("zh_CN" if idx == 0 else "en")
+		get_tree().reload_current_scene())
+	lang_row.add_child(lang_option)
+	settings_vbox.add_child(lang_row)
+	settings_vbox.move_child(lang_row, back_btn.get_index())
 	var panel_texture := TextureManager.instance.get_ui_texture("stats_panel")
 	if panel_texture:
 		var style := StyleBoxTexture.new()
@@ -181,7 +202,7 @@ func _decorate_button(btn: Button, tex: Texture2D) -> void:
 	row.add_child(icon)
 
 	var label := Label.new()
-	label.text = text
+	label.text = tr(text)
 	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_font_size_override("font_size", btn.get_theme_font_size("font_size"))
@@ -190,13 +211,13 @@ func _decorate_button(btn: Button, tex: Texture2D) -> void:
 
 func _update_crystals() -> void:
 	if save_mgr:
-		crystals_label.text = "血晶: %d" % save_mgr.get_blood_crystals()
+		crystals_label.text = tr("血晶: %d") % save_mgr.get_blood_crystals()
 
 func _create_daily_button() -> void:
 	var box := $CenterContainer/VBoxContainer/ButtonContainer
 	daily_btn = Button.new()
 	daily_btn.name = "DailyButton"
-	daily_btn.text = "每日挑战"
+	daily_btn.text = tr("每日挑战")
 	daily_btn.custom_minimum_size = Vector2(280, 45)
 	daily_btn.add_theme_font_size_override("font_size", 18)
 	daily_btn.pivot_offset = Vector2(140, 22)

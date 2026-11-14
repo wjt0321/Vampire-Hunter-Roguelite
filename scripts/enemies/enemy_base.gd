@@ -380,7 +380,7 @@ func dot_damage(amount: float) -> void:
 	if "armor" in self:
 		actual *= 1.0 - GameConfig.calculate_damage_reduction(float(get("armor")))
 	actual = _subtract_hp(actual)
-	_report_with_source(actual, "流血")
+	_report_with_source(actual, tr("流血"))
 	# Boss 的血条不刷新会显示成"打完没掉血"（take_damage 的 4 个覆写里这个是漏得最多的）。
 	# 用 emit_signal 而不是直接写 boss_hp_changed.emit —— 基类没有声明这个信号，
 	# 直接引用会让整个 EnemyBase 解析失败（连带所有子类一起炸）。
@@ -709,7 +709,7 @@ func _after_damage_taken(amount: float) -> void:
 		_cold_blood_cd = 1.4
 		var rupture := float(p.get("cold_blood_damage"))
 		_subtract_hp(rupture)
-		_report_with_source(rupture, "寒血")
+		_report_with_source(rupture, tr("寒血"))
 		# 寒血崩开的专属音：有冷却，不会连成一片
 		var cold_key := IterationAudioMap.passive_sound("cold_blood")
 		if not cold_key.is_empty():

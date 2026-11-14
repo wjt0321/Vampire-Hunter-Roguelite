@@ -37,6 +37,7 @@ func _ready() -> void:
 	_build_settings_panel()
 	_build_codex_panel()
 	_setup_button_effects()
+	I18nUtil.retranslate_tree(self)
 
 func _input(event: InputEvent) -> void:
 	if not event.is_action_pressed("pause"):
@@ -74,7 +75,7 @@ func _setup_button_effects() -> void:
 	if _abandon_button != null:
 		# 按钮文案要说清后果：原来的"返回主菜单"看起来像"去看看菜单"，
 		# 实际是把这一局（含深渊层数）整局丢掉。
-		_abandon_button.text = "放弃本局"
+		_abandon_button.text = tr("放弃本局")
 	_ensure_settings_button()
 	_ensure_codex_button()
 	# owned 必须传 false：find_children 默认只返回"场景文件里带的"子节点，
@@ -96,7 +97,7 @@ func _ensure_settings_button() -> void:
 		return
 	_settings_button = Button.new()
 	_settings_button.name = "SettingsButton"
-	_settings_button.text = "设置"
+	_settings_button.text = tr("设置")
 	_settings_button.custom_minimum_size = Vector2(0, 45)
 	_settings_button.add_theme_font_size_override("font_size", 18)
 	_settings_button.focus_mode = Control.FOCUS_NONE
@@ -115,7 +116,7 @@ func _ensure_codex_button() -> void:
 		return
 	var button := Button.new()
 	button.name = "CodexButton"
-	button.text = "图鉴"
+	button.text = tr("图鉴")
 	button.custom_minimum_size = Vector2(0, 45)
 	button.focus_mode = Control.FOCUS_NONE
 	button.pressed.connect(_show_codex)
@@ -175,7 +176,7 @@ func _build_codex_panel() -> void:
 	codex_panel.add_child(root)
 
 	var title := Label.new()
-	title.text = "图  鉴"
+	title.text = tr("图  鉴")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 24)
 	title.add_theme_color_override("font_color", Color(1.0, 0.9, 0.66))
@@ -193,7 +194,7 @@ func _build_codex_panel() -> void:
 
 	var back := Button.new()
 	back.name = "CodexBackButton"
-	back.text = "返回"
+	back.text = tr("返回")
 	back.custom_minimum_size = Vector2(190, 42)
 	# 不占满整行：按钮贴图是横向花纹带，拉到 900px 宽就成了"一条空杠"。
 	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -270,7 +271,7 @@ func _codex_known(saves: Node, kind: String, entry_id: String) -> bool:
 
 func _codex_section(parent: VBoxContainer, title_text: String) -> void:
 	var lbl := Label.new()
-	lbl.text = title_text
+	lbl.text = tr(title_text)
 	lbl.add_theme_font_size_override("font_size", 19)
 	lbl.add_theme_color_override("font_color", Color(0.85, 0.72, 0.45))
 	parent.add_child(lbl)
@@ -318,14 +319,14 @@ func _codex_entry(parent: VBoxContainer, display_name: String, blurb: String,
 	row.add_child(info)
 
 	var name_label := Label.new()
-	name_label.text = display_name if known else "???"
+	name_label.text = tr(display_name) if known else "???"
 	name_label.add_theme_font_size_override("font_size", 16)
 	name_label.add_theme_color_override("font_color",
 		Color(0.96, 0.9, 0.8) if known else Color(0.52, 0.49, 0.55))
 	info.add_child(name_label)
 
 	var desc := Label.new()
-	desc.text = blurb if known else "尚未遭遇"
+	desc.text = tr(blurb) if known else tr("尚未遭遇")
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc.add_theme_font_size_override("font_size", 13)
 	desc.add_theme_color_override("font_color",
@@ -334,7 +335,7 @@ func _codex_entry(parent: VBoxContainer, display_name: String, blurb: String,
 
 	if known and meta_line != "":
 		var meta := Label.new()
-		meta.text = meta_line
+		meta.text = tr(meta_line)
 		meta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		meta.add_theme_font_size_override("font_size", 12)
 		meta.add_theme_color_override("font_color", Color(0.62, 0.55, 0.38))
@@ -413,21 +414,21 @@ func _build_settings_panel() -> void:
 	settings_panel.add_child(vbox)
 
 	var title := Label.new()
-	title.text = "设 置"
+	title.text = tr("设 置")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 22)
 	title.add_theme_color_override("font_color", Color(1.0, 0.9, 0.66))
 	vbox.add_child(title)
 
-	music_slider = _make_slider_row(vbox, "音乐", func(v: float) -> void:
+	music_slider = _make_slider_row(vbox, tr("音乐"), func(v: float) -> void:
 		AudioManager.set_music_volume(v))
-	sfx_slider = _make_slider_row(vbox, "音效", func(v: float) -> void:
+	sfx_slider = _make_slider_row(vbox, tr("音效"), func(v: float) -> void:
 		AudioManager.set_sfx_volume(v))
-	master_slider = _make_slider_row(vbox, "主音量", func(v: float) -> void:
+	master_slider = _make_slider_row(vbox, tr("主音量"), func(v: float) -> void:
 		AudioManager.set_master_volume(v))
 	shake_check = CheckButton.new()
 	shake_check.name = "ShakeCheck"
-	shake_check.text = "屏幕震动"
+	shake_check.text = tr("屏幕震动")
 	shake_check.focus_mode = Control.FOCUS_NONE
 	shake_check.add_theme_font_size_override("font_size", 16)
 	shake_check.toggled.connect(func(on: bool) -> void:
@@ -437,9 +438,29 @@ func _build_settings_panel() -> void:
 			save.save_game())
 	vbox.add_child(shake_check)
 
+	var lang_row := HBoxContainer.new()
+	lang_row.add_theme_constant_override("separation", 10)
+	var lang_label := Label.new()
+	lang_label.text = tr("语言")
+	lang_label.add_theme_font_size_override("font_size", 16)
+	lang_row.add_child(lang_label)
+	var lang_option := OptionButton.new()
+	lang_option.name = "LanguageOption"
+	lang_option.add_item("中文")
+	lang_option.add_item("English")
+	lang_option.focus_mode = Control.FOCUS_NONE
+	lang_option.select(0 if TranslationServer.get_locale().begins_with("zh") else 1)
+	lang_option.item_selected.connect(func(idx: int) -> void:
+		var save := get_node_or_null("/root/SaveManager")
+		if save != null and save.has_method("set_language"):
+			save.set_language("zh_CN" if idx == 0 else "en")
+		retranslate())
+	lang_row.add_child(lang_option)
+	vbox.add_child(lang_row)
+
 	var controls := Label.new()
 	controls.name = "ControlsCard"
-	controls.text = "操作说明\n走位：WASD / 左摇杆 · 瞄准：鼠标 / 右摇杆\n键盘：R 重抽 · B 放逐 · Tab 跳过 · ESC 暂停\n手柄：X 重抽 · Y 放逐 · B 跳过 · A 确认 · Start 暂停\n武器默认自动开火"
+	controls.text = tr("操作说明\n走位：WASD / 左摇杆 · 瞄准：鼠标 / 右摇杆\n键盘：R 重抽 · B 放逐 · Tab 跳过 · ESC 暂停\n手柄：X 重抽 · Y 放逐 · B 跳过 · A 确认 · Start 暂停\n武器默认自动开火")
 	controls.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	controls.add_theme_font_size_override("font_size", 13)
 	controls.add_theme_color_override("font_color", Color(0.78, 0.74, 0.68))
@@ -447,7 +468,7 @@ func _build_settings_panel() -> void:
 
 	var back := Button.new()
 	back.name = "SettingsBackButton"
-	back.text = "返回"
+	back.text = tr("返回")
 	back.custom_minimum_size = Vector2(0, 40)
 	back.focus_mode = Control.FOCUS_NONE
 	back.add_theme_font_size_override("font_size", 16)
@@ -456,13 +477,54 @@ func _build_settings_panel() -> void:
 	UiFx.hover(back)
 	vbox.add_child(back)
 
+func retranslate() -> void:
+	## 语言切换后就地重刷：场景按钮文案 + 两块运行时面板重建。
+	var title := panel.find_child("TitleLabel", true, false) as Label
+	if title != null:
+		title.text = tr("暂 停")
+	var resume := panel.find_child("ResumeButton", true, false) as Button
+	if resume != null:
+		resume.text = tr("继续游戏")
+	if _abandon_button != null:
+		_abandon_button.text = tr("放弃本局")
+	if _settings_button != null:
+		_settings_button.text = tr("设置")
+	var codex_btn := panel.find_child("CodexButton", true, false) as Button
+	if codex_btn != null:
+		codex_btn.text = tr("图鉴")
+	var settings_was_visible := settings_panel != null and settings_panel.visible
+	if settings_panel != null:
+		settings_panel.queue_free()
+		settings_panel = null
+	_build_settings_panel()
+	if settings_was_visible:
+		settings_panel.visible = true
+		_sync_slider(music_slider, AudioManager.get_music_volume())
+		_sync_slider(sfx_slider, AudioManager.get_sfx_volume())
+		_sync_slider(master_slider, AudioManager.get_master_volume())
+		if shake_check != null:
+			var save := get_node_or_null("/root/SaveManager")
+			if save != null:
+				shake_check.button_pressed = bool(save.save_data["settings"]["screen_shake"])
+	var codex_was_visible := codex_panel != null and codex_panel.visible
+	if codex_panel != null:
+		codex_panel.queue_free()
+		codex_panel = null
+	if codex_was_visible:
+		_build_codex_panel()
+		_refresh_codex()
+		codex_panel.visible = true
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud != null and hud.has_method("retranslate"):
+		hud.retranslate()
+
 func _make_slider_row(parent: VBoxContainer, label_text: String, on_change: Callable) -> HSlider:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	parent.add_child(row)
 
 	var lbl := Label.new()
-	lbl.text = label_text
+	lbl.text = tr(label_text)
 	lbl.custom_minimum_size = Vector2(52, 0)
 	lbl.add_theme_font_size_override("font_size", 16)
 	lbl.add_theme_color_override("font_color", Color(0.9, 0.88, 0.84))
@@ -556,7 +618,7 @@ func _on_resume_pressed() -> void:
 func _disarm_abandon() -> void:
 	_abandon_armed = false
 	if _abandon_button != null and is_instance_valid(_abandon_button):
-		_abandon_button.text = "放弃本局"
+		_abandon_button.text = tr("放弃本局")
 
 func _on_abandon_pressed() -> void:
 	## 第一次点：只把按钮换成确认文案。第二次点才真的走。
@@ -564,7 +626,7 @@ func _on_abandon_pressed() -> void:
 	if not _abandon_armed:
 		_abandon_armed = true
 		if _abandon_button != null and is_instance_valid(_abandon_button):
-			_abandon_button.text = "再点一次确认放弃"
+			_abandon_button.text = tr("再点一次确认放弃")
 		return
 	_on_menu_pressed()
 

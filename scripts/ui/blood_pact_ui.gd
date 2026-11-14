@@ -99,7 +99,7 @@ func _build_ui() -> void:
 	panel.add_child(vbox)
 
 	var title := Label.new()
-	title.text = "血 之 祭 坛"
+	title.text = tr("血 之 祭 坛")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 26)
 	title.add_theme_color_override("font_color", Color(1.0, 0.84, 0.72))
@@ -121,18 +121,18 @@ func _build_ui() -> void:
 	vbox.add_child(row)
 
 	_rest_btn = _make_card(
-		"安　息",
-		"恢复 %d%% 最大生命" % roundi(GameConfig.BLOOD_PACT_REST_HEAL_RATIO * 100.0),
-		"稳妥，但这间房就白跑了",
+		tr("安　息"),
+		tr("恢复 %d%% 最大生命") % roundi(GameConfig.BLOOD_PACT_REST_HEAL_RATIO * 100.0),
+		tr("稳妥，但这间房就白跑了"),
 		Color(0.62, 0.85, 1.0)
 	)
 	_rest_btn.pressed.connect(func(): _choose("rest"))
 	row.add_child(_rest_btn)
 
 	_pact_btn = _make_card(
-		"缔 结 契 约",
-		"本层最大生命 -%d%%" % roundi(GameConfig.BLOOD_PACT_HP_RATIO * 100.0),
-		"本层：敌人 +%d%% 数量 · 银币与经验 +%d%%" % [
+		tr("缔 结 契 约"),
+		tr("本层最大生命 -%d%%") % roundi(GameConfig.BLOOD_PACT_HP_RATIO * 100.0),
+		tr("本层：敌人 +%d%% 数量 · 银币与经验 +%d%%") % [
 			roundi((GameConfig.BLOOD_PACT_COUNT_MULT - 1.0) * 100.0),
 			roundi((GameConfig.BLOOD_PACT_LOOT_MULT - 1.0) * 100.0),
 		],
@@ -183,7 +183,7 @@ func _make_card(title: String, main_text: String, sub_text: String, accent: Colo
 	btn.add_child(vbox)
 
 	var l1 := Label.new()
-	l1.text = title
+	l1.text = tr(title)
 	l1.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l1.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l1.add_theme_font_size_override("font_size", 20)
@@ -191,7 +191,7 @@ func _make_card(title: String, main_text: String, sub_text: String, accent: Colo
 	vbox.add_child(l1)
 
 	var l2 := Label.new()
-	l2.text = main_text
+	l2.text = tr(main_text)
 	l2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l2.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l2.add_theme_font_size_override("font_size", 15)
@@ -199,7 +199,7 @@ func _make_card(title: String, main_text: String, sub_text: String, accent: Colo
 	vbox.add_child(l2)
 
 	var l3 := Label.new()
-	l3.text = sub_text
+	l3.text = tr(sub_text)
 	l3.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l3.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l3.custom_minimum_size = Vector2(216, 0)
@@ -212,16 +212,16 @@ func _make_card(title: String, main_text: String, sub_text: String, accent: Colo
 
 func _refresh() -> void:
 	if _floor_label != null:
-		_floor_label.text = "第 %d 层 · 石台上还留着上一个人的血" % floor_index
+		_floor_label.text = tr("第 %d 层 · 石台上还留着上一个人的血") % floor_index
 	if _pact_btn == null:
 		return
 	var pact_ok: bool = can_pact()
 	_pact_btn.disabled = not pact_ok
 	if pact_ok:
-		_hint.text = "1 安息　　2 缔结契约　　（契约在本层结束时归还）"
+		_hint.text = tr("1 安息　　2 缔结契约　　（契约在本层结束时归还）")
 		_hint.add_theme_color_override("font_color", Color(0.62, 0.6, 0.64))
 	else:
-		_hint.text = "生命太低，祭坛拒绝与你缔约"
+		_hint.text = tr("生命太低，祭坛拒绝与你缔约")
 		_hint.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5))
 
 # ---------------------------------------------------------------- 输入

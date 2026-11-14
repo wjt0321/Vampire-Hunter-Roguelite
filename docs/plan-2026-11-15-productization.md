@@ -89,6 +89,15 @@
   改进二：换槽保护规则——优先换下不在凑对中的武器；四槽全凑对时回退旧规则不白丢卡。
   属性卡预算 12 与后期 TTK 无数据支持问题（bot 政策不选属性卡），不动数值。
   验证：58/58 全量绿 + 保护规则相关 9 套复跑绿 + 带窗口启动零报错。
+- 2026-11-15 阶段 3 代码完成：768 条词条（i18n/game.csv，zh_CN+en 全填）。
+  接线工具 tools/wrap_i18n.py（显示上下文包 tr/TranslationServer.translate，
+  static 函数不能用 tr）+ tools/extract_i18n.py（tr 键 + 数据表白名单 + 场景 text，
+  源码转义需要 unescape 才能和运行时键对上）+ tools/fill_i18n_en.py。
+  引擎不自动翻译场景控件文案：新增 I18nUtil.retranslate_tree，各 UI 打开时过一遍。
+  语言进存档 settings.language（洗白只认 zh_CN/en），启动即应用；
+  主菜单切换重载场景、暂停菜单就地 retranslate（含 HUD 状态重刷）。
+  新套件 locale_test：CSV 覆盖 + tr 行为 + en 下 14 处面板扫描无中文残留，31/31 绿。
+  踩坑：变量型接线正则曾吞行尾把两条语句粘成一行（已修工具并修复 30 处）。
 
 ## 工程约定
 
