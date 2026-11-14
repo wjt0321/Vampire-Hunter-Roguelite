@@ -1,0 +1,271 @@
+[
+  {
+    "asset": "vampire_idle",
+    "mode": "t2i",
+    "cell": 56,
+    "frames": 4,
+    "motion": "idle",
+    "steps": 25,
+    "prompt": "A vampire lord: a tall aristocratic humanoid in a black leather doublet under a heavy dark crimson high-collared cape fastened at the throat with an antique gold clasp set with a large oval ruby, sharp pale face with high cheekbones and slicked black hair, crimson-lined high boots, dark gauntlets with gold filigree, a straight dark steel rapier held point down in the right hand  Full body, head to toe, front view, centered, symmetrical stance, standing still. dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "vampire_death",
+    "mode": "edit",
+    "char_ref": "raw:vampire_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "corpse",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it now dead: collapsed flat on the ground on its back, the dark crimson cape spread out and soaked through with black blood, the pale face turned to the side with the mouth open and the fangs showing, the antique gold throat clasp torn loose with the big ruby fallen out and lying beside the head, the rapier slipped from the slack hand and lying flat in front of the body, motionless Full body, head to toe, front view, centered. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "werewolf_idle",
+    "mode": "t2i",
+    "cell": 56,
+    "frames": 4,
+    "motion": "idle",
+    "steps": 25,
+    "prompt": "A werewolf: a tall hulking humanoid wolf-man covered in coarse dark brown fur, a long muzzled grey wolf head with bared yellow fangs and burning amber eyes, hunched broad shoulders with a torn leather harness and antique gold studs across the chest, bare clawed grey paws, digitigrade legs ending in dark hooves  Full body, head to toe, front view, centered, symmetrical stance, standing still. dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "werewolf_death",
+    "mode": "edit",
+    "char_ref": "raw:werewolf_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "corpse",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it now dead: collapsed on its side on the ground, the fur matted and bloodied, one hind leg folded awkwardly under the body, the wolf head slack with the jaws still open and the yellow fangs bared, the torn leather harness hanging open and the gold studs scattered loose on the ground, one clawed paw stretched out, motionless Full body, head to toe, front view, centered. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "zombie_idle",
+    "mode": "t2i",
+    "cell": 56,
+    "frames": 4,
+    "motion": "idle",
+    "steps": 25,
+    "prompt": "A shambling zombie: a bloated rotting humanoid with sickly desaturated green-grey skin stretched over a swollen belly, sunken black eye sockets, a slack jaw with rotting teeth, torn blackened burial clothes hanging in strips, one shoulder exposed showing a dark crimson wound, bare cracked feet  Full body, head to toe, front view, centered, symmetrical stance, standing still. dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "zombie_death",
+    "mode": "edit",
+    "char_ref": "raw:zombie_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "corpse",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it now dead: collapsed forward onto the ground, the bloated body deflated and slumped, the torn burial clothes spread out in the dirt, the slack jaw turned to the side with the rotting teeth showing, the exposed shoulder wound dried to a dark scab, one arm stretched out in front, motionless Full body, head to toe, front view, centered. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "bat_idle",
+    "mode": "t2i",
+    "cell": 56,
+    "frames": 4,
+    "motion": "idle",
+    "steps": 25,
+    "prompt": "A giant vampire bat: a dark leathery winged creature with ragged scalloped wings of deep charcoal membrane stretched over thin black finger bones, a furry dark brown body, a short snout with small pale fangs and glowing crimson eyes, hooked black claws, hanging upside down  Full body, head to toe, front view, centered, symmetrical stance, standing still. dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "bat_death",
+    "mode": "edit",
+    "char_ref": "raw:bat_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "corpse",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it now dead: fallen flat on the ground with the ragged wings crumpled and folded under the body, one leathery wing stretched out and torn, the furry body limp, the small fangs bared in a slack snout with the crimson eyes dimmed to dull points, motionless Full body, head to toe, front view, centered. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "skeleton_idle",
+    "mode": "t2i",
+    "cell": 56,
+    "frames": 4,
+    "motion": "idle",
+    "steps": 25,
+    "prompt": "A skeleton archer: a bare bone humanoid skeleton in a tattered dark hood and a short leather shoulder guard with antique gold rivets, a cracked bone-white skull with two points of cold violet light in the eye sockets, holding a dark steel longbow with an arrow nocked, thin bone fingers  Full body, head to toe, front view, centered, symmetrical stance, standing still. dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "skeleton_death",
+    "mode": "edit",
+    "char_ref": "raw:skeleton_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "corpse",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it now dead: collapsed into a heap of bones on the ground, the cracked skull rolled to one side with the violet eye light gone out, the tattered hood fallen away, the longbow snapped in two with the broken limbs and the nocked arrow lying separately, loose ribs and bone fragments scattered around, motionless Full body, head to toe, front view, centered. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "exploder_idle",
+    "mode": "t2i",
+    "cell": 56,
+    "frames": 4,
+    "motion": "idle",
+    "steps": 25,
+    "prompt": "An exploder: a bloated round humanoid corpse-puppet strapped with dark steel bands and brass rivets, its swollen chest cavity split open to reveal a glowing red chemical core packed with dark crimson alchemical fluid, thin arms with metal clamps, short legs  Full body, head to toe, front view, centered, symmetrical stance, standing still. dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "exploder_death",
+    "mode": "edit",
+    "char_ref": "raw:exploder_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "corpse",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it now dead: burst apart on the ground, the steel straps and brass rivets sprung and scattered, the swollen chest cavity torn fully open with the red chemical core spattered out and burned out to black crust, the thin arms flung to either side, motionless Full body, head to toe, front view, centered. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "gargoyle_idle",
+    "mode": "t2i",
+    "cell": 56,
+    "frames": 4,
+    "motion": "idle",
+    "steps": 25,
+    "prompt": "A stone gargoyle: a squat winged guardian carved from rough grey granite blocks with mossy cracks, heavy folded bat wings of stone, a blunt snarling face with no eyes, claws of grey stone, patches of dull green lichen  Full body, head to toe, front view, centered, symmetrical stance, standing still. dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "gargoyle_death",
+    "mode": "edit",
+    "char_ref": "raw:gargoyle_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "corpse",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it now dead: collapsed into a heap of broken stone on the ground, one heavy stone wing snapped off and lying apart, large chunks of grey granite scattered around with lichen on the broken faces, the blunt snarling face cracked in half, motionless Full body, head to toe, front view, centered. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "vampire_mage_idle",
+    "mode": "t2i",
+    "cell": 56,
+    "frames": 4,
+    "motion": "idle",
+    "steps": 25,
+    "prompt": "A vampire mage: a gaunt humanoid in a long deep purple robe embroidered with faded gold thread and trimmed in dark crimson, a pointed hood shadowing a skull-like pale face with two violet lights in the sockets, holding a slender dark steel wand tipped with a violet crystal, bone-thin hands  Full body, head to toe, front view, centered, symmetrical stance, standing still. dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "vampire_mage_death",
+    "mode": "edit",
+    "char_ref": "raw:vampire_mage_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "corpse",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it now dead: collapsed on the ground with the deep purple robe spread out and its gold thread embroidery dulled, the pointed hood fallen back, the skull-like pale face turned upward with the violet lights gone out, the slender wand broken and lying beside the body, dark purple dust spilling out of the robe folds, motionless Full body, head to toe, front view, centered. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "summoner_idle",
+    "mode": "t2i",
+    "cell": 56,
+    "frames": 4,
+    "motion": "idle",
+    "steps": 25,
+    "prompt": "A summoner: a tall gaunt humanoid in a dark charcoal robe with a deep crimson sash, an iron half-mask covering the upper face with two burning orange lights in the eye slits, bone charms and small bronze bells strung across the chest, both hands raised with clawed fingers  Full body, head to toe, front view, centered, symmetrical stance, standing still. dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "summoner_death",
+    "mode": "edit",
+    "char_ref": "raw:summoner_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "corpse",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it now dead: collapsed on the ground with the dark charcoal robe pooled around the body and the deep crimson sash askew, the iron half-mask fallen off to one side with the orange lights snuffed out, the bone charms and bronze bells spilled loose and scattered, both clawed hands slack, motionless Full body, head to toe, front view, centered. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "vampire_prince_idle",
+    "mode": "t2i",
+    "cell": 56,
+    "frames": 4,
+    "motion": "idle",
+    "steps": 25,
+    "prompt": "A vampire prince: a tall lean humanoid in a dark steel breastplate over a deep crimson doublet, a heavy dark cape lined in antique gold, a pale narrow face with slicked back black hair and a thin scar, red gloves, holding a slender dark steel sword  Full body, head to toe, front view, centered, symmetrical stance, standing still. dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "vampire_prince_death",
+    "mode": "edit",
+    "char_ref": "raw:vampire_prince_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "corpse",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it now dead: collapsed on the ground, the heavy gold-lined cape spread out and bloodied, the dark steel breastplate dented and split, the slender sword slipped from one slack red-gloved hand and lying flat, the pale narrow face turned to the side with the hair across the face, motionless Full body, head to toe, front view, centered. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "elite_vampire_idle",
+    "mode": "t2i",
+    "cell": 56,
+    "frames": 4,
+    "motion": "idle",
+    "steps": 25,
+    "prompt": "An elite vampire: a hulking armored vampire in heavy dark steel plate with gold filigree edging, a deep crimson cape, a horned closed helm with two glowing crimson eye slits, a huge two-handed dark steel greatsword resting on the shoulder  Full body, head to toe, front view, centered, symmetrical stance, standing still. dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "elite_vampire_death",
+    "mode": "edit",
+    "char_ref": "raw:elite_vampire_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "corpse",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it now dead: collapsed face down on the ground, the heavy dark steel plate dented all over, the horned closed helm cracked and lying apart from the head, the gold filigree edging torn, the huge greatsword dropped flat in front with the crimson eye lights out, the deep crimson cape spread out and soaked, motionless Full body, head to toe, front view, centered. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "werewolf_run",
+    "mode": "edit",
+    "char_ref": "raw:werewolf_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "run",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it in motion: the werewolf loping forward at a run, body pitched forward, one clawed paw lifted and the other planted, the torn leather harness and fur streaming back Full body, head to toe, front view, centered, feet on the ground. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "summoner_walk",
+    "mode": "edit",
+    "char_ref": "raw:summoner_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "run",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it in motion: the summoner walking forward slowly, both clawed hands lowered to the sides, the bone charms and bronze bells swinging, the dark charcoal robe swaying Full body, head to toe, front view, centered, feet on the ground. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "vampire_mage_walk",
+    "mode": "edit",
+    "char_ref": "raw:vampire_mage_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "run",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it in motion: the mage walking forward slowly with the deep purple robe swaying, the slender wand held low in one bone-thin hand Full body, head to toe, front view, centered, feet on the ground. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "elite_vampire_run",
+    "mode": "edit",
+    "char_ref": "raw:elite_vampire_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "run",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it in motion: the elite vampire charging forward at a run, the heavy dark steel plate shifting, the huge greatsword still resting on the shoulder, the deep crimson cape streaming back Full body, head to toe, front view, centered, feet on the ground. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "vampire_prince_run",
+    "mode": "edit",
+    "char_ref": "raw:vampire_prince_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "run",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it in motion: the vampire prince running forward, the heavy gold-lined cape streaming back and the slender sword carried low Full body, head to toe, front view, centered, feet on the ground. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "zombie_walk",
+    "mode": "edit",
+    "char_ref": "raw:zombie_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "run",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit, colors and equipment from image 2 exactly, but show it in motion: the shambling zombie lurching forward, the swollen belly swaying, the torn burial clothes dragging, one arm hanging low Full body, head to toe, front view, centered, feet on the ground. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  }
+]

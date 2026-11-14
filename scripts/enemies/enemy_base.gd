@@ -663,6 +663,9 @@ func take_damage_with_knockback(amount: float, knockback_dir: Vector2, knockback
 	hit_stun_timer = maxf(hit_stun_timer, maxf(stun_duration, GameConfig.HIT_FREEZE_DURATION))
 	knockback_velocity += knockback_dir.normalized() * knockback_force
 
+## 命中火花的冷却时间戳（毫秒），防止连射时同屏刷出几十个火花。
+var _hit_spark_at: int = 0
+
 func _flash_hit() -> void:
 	## 受击闪白效果
 	if sprite == null:
@@ -674,6 +677,14 @@ func _flash_hit() -> void:
 	var vfx := _get_vfx()
 	if vfx:
 		vfx.spawn_hit_particles(global_position, sprite.modulate, 4)
+		# 命中火花：用了序列帧版的命中特效就播它（4 帧真的爆一次），
+		# 带 90ms 冷却，免得霰弹枪连发时糊成一片白。
+		var now := Time.get_ticks_msec()
+		if now - _hit_spark_at >= 90:
+			_hit_spark_at = now
+			vfx.spawn_sheet_fx("hit", global_position,
+				{"scale_from": 0.75, "scale_to": 1.15, "duration": 0.28,
+				 "fade_delay": 0.12, "z": 95})
 	# 播放受击音效：迭代新增的 12 种敌人有专属受击音，没有的走通用音
 	var audio_lib := AudioLib
 	var hit_key := IterationAudioMap.enemy_hit_sound(_get_enemy_type())

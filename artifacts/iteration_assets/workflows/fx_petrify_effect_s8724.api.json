@@ -1,0 +1,149 @@
+{
+ "1": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "qwen_image_edit_2511_int8_convrot.safetensors",
+   "weight_dtype": "default"
+  }
+ },
+ "2": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+   "type": "qwen_image",
+   "device": "default"
+  }
+ },
+ "3": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "qwen_image_vae.safetensors"
+  }
+ },
+ "4": {
+  "class_type": "ModelSamplingAuraFlow",
+  "inputs": {
+   "model": [
+    "1",
+    0
+   ],
+   "shift": 3.1
+  }
+ },
+ "5": {
+  "class_type": "CFGNorm",
+  "inputs": {
+   "model": [
+    "4",
+    0
+   ],
+   "strength": 1.0,
+   "pre_cfg": false
+  }
+ },
+ "10": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "fxcard_petrify_effect.png"
+  }
+ },
+ "12": {
+  "class_type": "VAEEncode",
+  "inputs": {
+   "pixels": [
+    "10",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  }
+ },
+ "13": {
+  "class_type": "TextEncodeQwenImageEditPlus",
+  "inputs": {
+   "clip": [
+    "2",
+    0
+   ],
+   "prompt": "Image 1 is the same effect repeated in 6 identical cells on a magenta card. Redraw all 6 cells as one continuous animation of that exact effect, keeping its exact shape, colors, materials and style. The 6 cells are: cell 1 shows a thin grey stone crust appearing cell 2 shows the crust spreading across the shape cell 3 shows the stone shell thickening and turning fully grey cell 4 shows the shell solid with cracks running through it cell 5 shows the stone shell hardening and darkening cell 6 shows the stone shell fully formed and still. Every cell must be a visibly different frame, never a copy of another cell. The background of every cell stays the same flat magenta as the card: no panel, no plate, no frame, no border, no decorative surround, no dark backdrop, no scenery, no ground; only the effect itself is drawn on the magenta. Keep every cell clean: one effect plus small particles, no thick smoke or dust covering the whole cell. Dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, deep crimson and bone white highlights over near-black shadows, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Flat solid pure magenta #FF00FF background, uniform bright magenta color card, no gradient, no shadow on the background, no text, no grid lines, no smoke or haze in the background.",
+   "vae": [
+    "3",
+    0
+   ],
+   "image1": [
+    "10",
+    0
+   ]
+  }
+ },
+ "14": {
+  "class_type": "TextEncodeQwenImageEditPlus",
+  "inputs": {
+   "clip": [
+    "2",
+    0
+   ],
+   "prompt": "",
+   "vae": [
+    "3",
+    0
+   ],
+   "image1": [
+    "10",
+    0
+   ]
+  }
+ },
+ "5b": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "5",
+    0
+   ],
+   "seed": 8724,
+   "steps": 16,
+   "cfg": 3.0,
+   "sampler_name": "euler",
+   "scheduler": "simple",
+   "positive": [
+    "13",
+    0
+   ],
+   "negative": [
+    "14",
+    0
+   ],
+   "latent_image": [
+    "12",
+    0
+   ],
+   "denoise": 1.0
+  }
+ },
+ "6": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "5b",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  }
+ },
+ "7": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "6",
+    0
+   ],
+   "filename_prefix": "vhr_fx_petrify_effect_s8724"
+  }
+ }
+}

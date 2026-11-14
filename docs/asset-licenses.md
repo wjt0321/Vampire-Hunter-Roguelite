@@ -953,3 +953,35 @@
 - 修改记录：SFX 裁掉前置静音保留瞬态 → 峰值归一到每条目标电平 → 48kHz 单声道 OGG；
   BGM 响度归一到 -21 LUFS / -2 dBTP → 循环曲做尾首线性交叠接缝 → 48kHz 立体声 OGG。
 - 备注：本次本地交付不代表已获发布授权；若要商用或分发，需按所用生成服务账号条款核实。
+### 13. 2026-11-14 旧 MVP 资产「动起来」+ 旧敌人新风格重画
+
+- 状态：已使用
+- 风险：高（AI 生成，商用与分发条件待核实）
+- 类型：精灵图 / 动画序列帧
+- 来源 URL：不适用（本机生成）
+- 来源平台：AI（本机 ComfyUI 0.45.2 + Qwen-Image-2.1 turbo 文生图 / Qwen-Image-Edit 2511 图生图）
+- 作者 / 版权方：项目作者（AI 生成）
+- 授权名称：待确认
+- 是否允许商用：待确认
+- 是否允许修改：是（项目内已抠底、缩格、拼条、切格重排）
+- 是否需要署名：待确认
+- 下载 / 生成日期：2026-11-14
+- 原始文件保存位置：
+  - E:\AI\ComfyUI\output\vhr_iter\（文生图原图）
+  - artifacts/iteration_assets/（编辑原图与逐张生成记录）
+  - artifacts/iteration_assets/workflows/（实际 API 图）
+  - artifacts/iteration_assets/plan_legacy_idle.json（11 个旧敌人的立绘提示词）
+  - artifacts/iteration_assets/death_steps_legacy.json（11 个旧敌人的死亡逐格语义）
+  - tools/pose_grid_data.py（14 条动作条的逐格姿态描述）
+  - tools/effects_plan_data.py（16 条特效/道具的逐格描述）
+- 项目内使用路径：
+  - assets/sprites/enemies/<enemy_id>/（11 个旧敌人的专属目录：idle / 动作 / death）
+  - assets/effects/*_sheet.png（11 条特效序列帧）
+  - assets/tiles/props/*_sheet.png、assets/items/cursed_chest_sheet.png、assets/ui/merchant_sheet.png（5 条道具序列帧）
+- 用途说明：把旧 MVP 里静止的特效与道具改成真正的动画，
+  并把 11 个旧敌人统一重画到本轮的新风格（暗钢 + 旧金 + 深红），
+  让旧敌人和迭代新增的 12 种敌人看起来是同一套美术。
+- 修改记录：文生图出立绘（品红底）→ 抠底清紫边 → NEAREST 缩到 56px 单格；
+  3×2 网格图生图出多姿态 → 切格 → 统一缩放 → 拼横条；
+  特效/道具单帧 → N 格卡片图生图 → 切格 → 共用缩放系数（保留帧间大小关系）→ 拼横条。
+- 备注：本次本地交付不代表已获发布授权；若要商用或分发，需按所用生成服务账号条款核实。

@@ -1,0 +1,146 @@
+{
+ "hit_effect": {
+  "sheet": "assets/effects/hit_effect_sheet.png",
+  "frames": 4,
+  "cell": [
+   64,
+   64
+  ],
+  "mode": "once"
+ },
+ "death_explosion": {
+  "sheet": "assets/effects/death_explosion_sheet.png",
+  "frames": 6,
+  "cell": [
+   128,
+   128
+  ],
+  "mode": "once"
+ },
+ "portal": {
+  "sheet": "assets/effects/portal_sheet.png",
+  "frames": 6,
+  "cell": [
+   96,
+   96
+  ],
+  "mode": "loop"
+ },
+ "shield_break": {
+  "sheet": "assets/effects/shield_break_sheet.png",
+  "frames": 6,
+  "cell": [
+   64,
+   64
+  ],
+  "mode": "once"
+ },
+ "poison_spread": {
+  "sheet": "assets/effects/poison_spread_sheet.png",
+  "frames": 6,
+  "cell": [
+   128,
+   128
+  ],
+  "mode": "loop"
+ },
+ "levelup_aura": {
+  "sheet": "assets/effects/levelup_aura_sheet.png",
+  "frames": 6,
+  "cell": [
+   128,
+   128
+  ],
+  "mode": "once"
+ },
+ "freeze_effect": {
+  "sheet": "assets/effects/freeze_effect_sheet.png",
+  "frames": 6,
+  "cell": [
+   48,
+   48
+  ],
+  "mode": "once"
+ },
+ "petrify_effect": {
+  "sheet": "assets/effects/petrify_effect_sheet.png",
+  "frames": 6,
+  "cell": [
+   48,
+   48
+  ],
+  "mode": "once"
+ },
+ "holy_light": {
+  "sheet": "assets/effects/holy_light_sheet.png",
+  "frames": 6,
+  "cell": [
+   128,
+   128
+  ],
+  "mode": "once"
+ },
+ "chain_lightning": {
+  "sheet": "assets/effects/chain_lightning_sheet.png",
+  "frames": 4,
+  "cell": [
+   128,
+   128
+  ],
+  "mode": "once"
+ },
+ "thunder_wrath": {
+  "sheet": "assets/effects/thunder_wrath_sheet.png",
+  "frames": 6,
+  "cell": [
+   128,
+   128
+  ],
+  "mode": "once"
+ },
+ "torch": {
+  "sheet": "assets/tiles/props/torch_sheet.png",
+  "frames": 4,
+  "cell": [
+   24,
+   48
+  ],
+  "mode": "loop"
+ },
+ "campfire": {
+  "sheet": "assets/tiles/props/campfire_sheet.png",
+  "frames": 4,
+  "cell": [
+   40,
+   48
+  ],
+  "mode": "loop"
+ },
+ "chest": {
+  "sheet": "assets/tiles/props/chest_sheet.png",
+  "frames": 6,
+  "cell": [
+   48,
+   40
+  ],
+  "mode": "once"
+ },
+ "cursed_chest": {
+  "sheet": "assets/items/cursed_chest_sheet.png",
+  "frames": 6,
+  "cell": [
+   48,
+   40
+  ],
+  "mode": "once"
+ },
+ "merchant": {
+  "sheet": "assets/ui/merchant_sheet.png",
+  "frames": 4,
+  "cell": [
+   128,
+   128
+  ],
+  "mode": "loop"
+ }
+}

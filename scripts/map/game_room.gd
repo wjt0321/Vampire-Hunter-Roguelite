@@ -2,6 +2,9 @@ extends Node2D
 ## 战斗地图生成器
 ## 程序化生成战斗房间（墙壁碰撞 + 地板 + 障碍物 + 装饰物）
 
+const AssetSlots = preload("res://scripts/core/asset_slots.gd")
+const SpriteFramesLib = preload("res://scripts/core/sprite_frames_lib.gd")
+
 @export var room_width: float = 1280.0    # 房间宽（像素）
 @export var room_height: float = 768.0    # 房间高（像素）
 @export var wall_thickness: float = 32.0
@@ -386,9 +389,8 @@ func spawn_portal(preview: String = "") -> void:
 	# 传送门视觉
 	var portal_texture := TextureManager.instance.get_effect_texture("portal")
 	if portal_texture:
-		var portal_visual := Sprite2D.new()
+		var portal_visual := _make_effect_visual("portal", portal_texture)
 		portal_visual.name = "PortalVisual"
-		portal_visual.texture = portal_texture
 		portal_visual.scale = Vector2(0.6, 0.6)
 		portal.add_child(portal_visual)
 	else:
@@ -460,8 +462,7 @@ func _build_choice_portal(pos: Vector2, info: Dictionary) -> Area2D:
 
 	var portal_texture := TextureManager.instance.get_effect_texture("portal")
 	if portal_texture:
-		var portal_visual := Sprite2D.new()
-		portal_visual.texture = portal_texture
+		var portal_visual := _make_effect_visual("portal", portal_texture)
 		portal_visual.scale = Vector2(0.6, 0.6)
 		portal.add_child(portal_visual)
 	else:
@@ -666,8 +667,7 @@ func _create_prop(prop_name: String, pos: Vector2) -> void:
 	shape.position = Vector2(0, tex_size.y * 0.15)
 	prop.add_child(shape)
 
-	var visual := Sprite2D.new()
-	visual.texture = texture
+	var visual := _make_prop_visual(prop_name, texture)
 	prop.add_child(visual)
 
 	add_child(prop)
@@ -691,9 +691,8 @@ func _create_decoration(dec_name: String, pos: Vector2) -> void:
 	if texture == null:
 		return
 
-	var deco := Sprite2D.new()
+	var deco := _make_prop_visual(dec_name, texture)
 	deco.name = "Deco_%s" % dec_name
-	deco.texture = texture
 	deco.position = pos
 	deco.z_index = -8 if dec_name == "blood_splatter" else -1
 	deco.add_to_group("mirrorable")
@@ -775,6 +774,45 @@ func _add_decoration_at(dec_name: String, pos: Vector2) -> void:
 	if pos != Vector2.INF:
 		_create_decoration(dec_name, pos)
 
+## 道具的视觉：有序列帧就用序列帧（火把/营火的火焰在循环、宝箱的开箱是一次性），
+## 没有序列帧文件就退回单张贴图。
+## 特效的视觉：有序列帧就用序列帧（传送门是循环动画），没有才用单张贴图。
+func _make_effect_visual(effect_name: String, fallback: Texture2D) -> Node2D:
+	var slot: Dictionary = AssetSlots.effect_sheet(effect_name)
+	if not slot.is_empty():
+		var path: String = String(slot.get("path", ""))
+		if path != "" and ResourceLoader.exists(path):
+			var sheet_tex := load(path) as Texture2D
+			if sheet_tex != null:
+				var cell: Array = slot.get("cell", [64, 64])
+				var frames: int = int(slot.get("frames", 1))
+				var mode: String = String(slot.get("mode", "loop"))
+				var anim := SpriteFramesLib.make_animated(sheet_tex, int(cell[0]), int(cell[1]), frames, 8.0, mode == "loop")
+				if anim.sprite_frames.get_frame_count("play") > 0:
+					return anim
+	var spr := Sprite2D.new()
+	spr.texture = fallback
+	return spr
+
+
+func _make_prop_visual(prop_name: String, texture: Texture2D) -> Node2D:
+	var slot: Dictionary = AssetSlots.prop_sheet(prop_name)
+	if not slot.is_empty():
+		var path: String = String(slot.get("path", ""))
+		if path != "" and ResourceLoader.exists(path):
+			var sheet_tex := load(path) as Texture2D
+			if sheet_tex != null:
+				var cell: Array = slot.get("cell", [48, 48])
+				var frames: int = int(slot.get("frames", 1))
+				var mode: String = String(slot.get("mode", "loop"))
+				var anim := SpriteFramesLib.make_animated(sheet_tex, int(cell[0]), int(cell[1]), frames, 8.0, mode == "loop")
+				if anim.sprite_frames.get_frame_count("play") > 0:
+					return anim
+	var spr := Sprite2D.new()
+	spr.texture = texture
+	return spr
+
+
 func _create_merchant(pos: Vector2) -> void:
 	## 在房间中放置商人立绘（无碰撞装饰）
 	var tm := _texture_manager()
@@ -784,9 +822,8 @@ func _create_merchant(pos: Vector2) -> void:
 	if texture == null:
 		return
 
-	var merchant := Sprite2D.new()
+	var merchant := _make_prop_visual("merchant", texture)
 	merchant.name = "MerchantNPC"
-	merchant.texture = texture
 	merchant.position = pos
 	merchant.scale = Vector2(0.8, 0.8)
 	merchant.z_index = -1

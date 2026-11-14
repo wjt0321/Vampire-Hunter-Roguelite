@@ -2,6 +2,9 @@ extends Node
 ## 视觉效果管理器
 ## 提供粒子特效和屏幕震动功能
 
+const AssetSlots = preload("res://scripts/core/asset_slots.gd")
+const SpriteFramesLib = preload("res://scripts/core/sprite_frames_lib.gd")
+
 var camera: Camera2D = null
 var _current_scene: Node = null
 
@@ -315,7 +318,60 @@ func spawn_freeze_particles(pos: Vector2) -> void:
 ##   scale_from / scale_to（倍数，默认 0.35 → 1.0）
 ##   duration（默认 0.35）、fade_delay（先放大后消隐）
 ##   rotation、color（modulate）、additive（默认 true）、z（默认 100）
-func spawn_texture_fx(tex_name: String, pos: Vector2, opts: Dictionary = {}) -> Sprite2D:
+## 序列帧特效：把 N 格横条逐帧播一遍，播完自毁。
+## 没有登记序列帧（或者文件还没生成）时返回 null，调用方退回单帧版本。
+func spawn_sheet_fx(key: String, pos: Vector2, opts: Dictionary = {}) -> Node2D:
+	var slot: Dictionary = AssetSlots.effect_sheet(key)
+	if slot.is_empty():
+		return null
+	var path: String = String(slot.get("path", ""))
+	if path == "" or not ResourceLoader.exists(path):
+		return null
+	var tex := load(path) as Texture2D
+	if tex == null:
+		return null
+	var cell: Array = slot.get("cell", [64, 64])
+	var frames: int = int(slot.get("frames", 1))
+	var fps := float(opts.get("fps", 12.0))
+	var scene := _ensure_current_scene()
+	if scene == null:
+		return null
+	var anim := SpriteFramesLib.make_animated(tex, int(cell[0]), int(cell[1]), frames, fps, false)
+	if anim.sprite_frames.get_frame_count("play") <= 0:
+		return null
+	anim.name = "Fx_" + key
+	anim.global_position = pos
+	anim.z_index = int(opts.get("z", 100))
+	anim.modulate = opts.get("color", Color.WHITE)
+	anim.scale = Vector2.ONE * float(opts.get("scale_from", 1.0))
+	if bool(opts.get("additive", true)):
+		var mat := CanvasItemMaterial.new()
+		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		anim.material = mat
+	scene.add_child(anim)
+	var dur := float(opts.get("duration", 0.0))
+	var life := float(frames) / maxf(1.0, fps)
+	if dur > 0.0:
+		life = maxf(life, dur)
+		var tw := anim.create_tween()
+		tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+		tw.set_parallel(true)
+		tw.tween_property(anim, "scale", Vector2.ONE * float(opts.get("scale_to", 1.0)), dur) \
+			.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+		tw.tween_property(anim, "modulate:a", 0.0, dur).set_delay(float(opts.get("fade_delay", 0.0)))
+		tw.chain().tween_callback(anim.queue_free)
+	else:
+		var life_tween := anim.create_tween()
+		life_tween.tween_interval(life)
+		life_tween.tween_callback(anim.queue_free)
+	return anim
+
+
+func spawn_texture_fx(tex_name: String, pos: Vector2, opts: Dictionary = {}) -> Node2D:
+	## 有序列帧的特效优先播序列帧；没有登记的才用单帧贴图。
+	var sheet := spawn_sheet_fx(tex_name, pos, opts)
+	if sheet != null:
+		return sheet
 	if TextureManager.instance == null:
 		return null
 	var tex: Texture2D = TextureManager.instance.get_effect_texture(tex_name)

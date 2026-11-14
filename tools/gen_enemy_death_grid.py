@@ -58,6 +58,22 @@ NEG = ("blurry, low quality, watermark, text, signature, jpeg artifacts, 3d rend
 
 MAX_TRIES = 3
 
+# 外部死亡语义表：旧 MVP 敌人的死亡过程写在这里，供本脚本复用同一条
+# "3x2 网格 Edit 出 6 个真姿态" 的管线。
+# 格式：{"<enemy_id>": "1 ..., 2 ..., ..., 6 ..."}
+DEATH_STEPS_FILE = OUT / "death_steps_legacy.json"
+
+
+def death_steps_for(enemy_id: str) -> str:
+    """取死亡语义：外部 JSON 优先，其次内置表。
+    外部表让旧敌人复用同一条管线，而不必把 11 只旧怪的描述硬编码进来。
+    """
+    if DEATH_STEPS_FILE.is_file():
+        table = json.loads(DEATH_STEPS_FILE.read_text(encoding="utf-8"))
+        if enemy_id in table:
+            return str(table[enemy_id])
+    return DEATH_STEPS[enemy_id]
+
 # 个别角色的专属补充约束。
 # gem_leech 之前三次都被判不合格：模型给每一格都画了一片贴地的泥土，
 # 泥土与角色连成一个连通域，"站高比"永远测不出塌陷。
@@ -130,7 +146,7 @@ def judge(frames: list) -> tuple:
 
 
 def build_prompt(enemy_id: str) -> str:
-    steps = DEATH_STEPS[enemy_id].split(", ")
+    steps = death_steps_for(enemy_id).split(", ")
     cells = []
     for i, s in enumerate(steps):
         cells.append("cell %d shows %s" % (i + 1, s[2:] if s[:2].isdigit() else s))

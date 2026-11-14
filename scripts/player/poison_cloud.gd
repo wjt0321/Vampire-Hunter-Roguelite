@@ -2,6 +2,9 @@ extends Area2D
 ## 毒雾区域
 ## 对范围内的敌人造成持续伤害
 
+const AssetSlots = preload("res://scripts/core/asset_slots.gd")
+const SpriteFramesLib = preload("res://scripts/core/sprite_frames_lib.gd")
+
 @export var base_damage: float = 5.0
 @export var tick_interval: float = 0.5
 @export var duration: float = 5.0
@@ -19,6 +22,22 @@ var _enemies_in_cloud: Array = []
 
 func _ready() -> void:
 	# 正式雾团贴图统一按 128px 基准尺寸显示，与碰撞半径 64px 对齐。
+	# 有序列帧就用序列帧（毒雾在翻滚），原来的单张精灵隐藏掉。
+	var sheet_slot: Dictionary = AssetSlots.effect_sheet("poison_spread")
+	var sheet_path: String = String(sheet_slot.get("path", ""))
+	if sprite and sheet_path != "" and ResourceLoader.exists(sheet_path):
+		var sheet_tex := load(sheet_path) as Texture2D
+		if sheet_tex != null:
+			var cell: Array = sheet_slot.get("cell", [128, 128])
+			var frames: int = int(sheet_slot.get("frames", 6))
+			var anim := SpriteFramesLib.make_animated(sheet_tex, int(cell[0]), int(cell[1]), frames, 8.0, true)
+			if anim.sprite_frames.get_frame_count("play") > 0:
+				anim.name = "PoisonSheet"
+				anim.position = sprite.position
+				anim.modulate = tint
+				anim.scale = Vector2(128.0 / float(int(cell[0])), 128.0 / float(int(cell[1])))
+				add_child(anim)
+				sprite.visible = false
 	if sprite:
 		var cloud_tex: Texture2D = TextureManager.instance.get_effect_texture("poison_spread")
 		if cloud_tex != null:

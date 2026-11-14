@@ -22,18 +22,18 @@ const ENEMIES := {
 	"furnace_golem": {"states": ["idle", "death"], "blurb": "外甲在时又慢又硬，甲碎了就冲上来"},
 	"resonance_mage": {"states": ["idle", "death"], "blurb": "把同伴连起来分摊伤害，先杀术士"},
 	"moon_wing": {"states": ["idle", "death"], "blurb": "弧线换位后俯冲，并留下短风刃"},
-	"bat": {"states": ["idle"], "blurb": "飞得快，优先清掉以免被缠住"},
+	"bat": {"states": ["fly", "death"], "blurb": "飞得快，优先清掉以免被缠住"},
 	"blood_larva": {"states": ["idle"], "blurb": "绕母皇巡逻，靠近就扑咬"},
-	"vampire": {"states": ["idle"], "blurb": "近身追击，别让它贴住"},
-	"zombie": {"states": ["idle"], "blurb": "慢，血厚，用来挡路"},
-	"skeleton_archer": {"states": ["idle"], "blurb": "远处点射，用墙或近身打断"},
-	"werewolf": {"states": ["idle"], "blurb": "冲得快，横向躲开再打"},
-	"exploder": {"states": ["idle"], "blurb": "靠近会炸，自己也会伤到同伴"},
-	"summoner": {"states": ["idle"], "blurb": "先杀召唤者，再清它叫出来的东西"},
-	"vampire_mage": {"states": ["idle"], "blurb": "远程施法，不要站在弹道上"},
-	"gargoyle": {"states": ["idle"], "blurb": "会石化停住，等它落地再打"},
-	"elite_vampire": {"states": ["idle"], "blurb": "比普通血族更硬的近战"},
-	"vampire_prince": {"states": ["idle"], "blurb": "高层近战，会把人逼进角落"},
+	"vampire": {"states": ["idle", "run", "death"], "blurb": "近身追击，别让它贴住"},
+	"zombie": {"states": ["walk", "death"], "blurb": "慢，血厚，用来挡路"},
+	"skeleton_archer": {"states": ["idle", "shoot", "death"], "blurb": "远处点射，用墙或近身打断"},
+	"werewolf": {"states": ["idle", "charge", "death"], "blurb": "冲得快，横向躲开再打"},
+	"exploder": {"states": ["walk", "explode", "death"], "blurb": "靠近会炸，自己也会伤到同伴"},
+	"summoner": {"states": ["idle", "cast", "death"], "blurb": "先杀召唤者，再清它叫出来的东西"},
+	"vampire_mage": {"states": ["idle", "cast", "teleport", "death"], "blurb": "远程施法，不要站在弹道上"},
+	"gargoyle": {"states": ["idle", "petrify", "wake", "death"], "blurb": "会石化停住，等它落地再打"},
+	"elite_vampire": {"states": ["idle", "death"], "blurb": "比普通血族更硬的近战"},
+	"vampire_prince": {"states": ["idle", "dash", "rage", "death"], "blurb": "高层近战，会把人逼进角落"},
 }
 
 ## Boss：单格 128×128。先备 idle，其余动作有文件才会被读到。
@@ -67,6 +67,31 @@ const PASSIVES := {
 	"cold_blood": "流血又被霜缚的目标会崩开一下，每个目标单独冷却",
 }
 
+## 特效序列帧：矩形单格，必须显式给帧数和单格尺寸。
+## 路径不存在时，游戏侧自动退回单帧贴图，不会有硬报错。
+const EFFECT_SHEETS := {
+	"hit": {"path": "res://assets/effects/hit_effect_sheet.png", "frames": 4, "cell": [64, 64], "mode": "once"},
+	"explosion": {"path": "res://assets/effects/death_explosion_sheet.png", "frames": 6, "cell": [128, 128], "mode": "once"},
+	"portal": {"path": "res://assets/effects/portal_sheet.png", "frames": 6, "cell": [96, 96], "mode": "loop"},
+	"shield_break": {"path": "res://assets/effects/shield_break_sheet.png", "frames": 6, "cell": [64, 64], "mode": "once"},
+	"poison_spread": {"path": "res://assets/effects/poison_spread_sheet.png", "frames": 6, "cell": [128, 128], "mode": "loop"},
+	"levelup_aura": {"path": "res://assets/effects/levelup_aura_sheet.png", "frames": 6, "cell": [128, 128], "mode": "once"},
+	"freeze_effect": {"path": "res://assets/effects/freeze_effect_sheet.png", "frames": 6, "cell": [48, 48], "mode": "once"},
+	"petrify_effect": {"path": "res://assets/effects/petrify_effect_sheet.png", "frames": 6, "cell": [48, 48], "mode": "once"},
+	"holy_light": {"path": "res://assets/effects/holy_light_sheet.png", "frames": 6, "cell": [128, 128], "mode": "once"},
+	"chain_lightning": {"path": "res://assets/effects/chain_lightning_sheet.png", "frames": 4, "cell": [128, 128], "mode": "once"},
+	"thunder_wrath": {"path": "res://assets/effects/thunder_wrath_sheet.png", "frames": 6, "cell": [128, 128], "mode": "once"},
+}
+
+## 环境道具的序列帧：火把/营火循环，宝箱/受诅宝箱是一次性开箱。
+const PROP_SHEETS := {
+	"torch": {"path": "res://assets/tiles/props/torch_sheet.png", "frames": 4, "cell": [24, 48], "mode": "loop"},
+	"campfire": {"path": "res://assets/tiles/props/campfire_sheet.png", "frames": 4, "cell": [40, 48], "mode": "loop"},
+	"chest": {"path": "res://assets/tiles/props/chest_sheet.png", "frames": 6, "cell": [48, 40], "mode": "once"},
+	"cursed_chest": {"path": "res://assets/items/cursed_chest_sheet.png", "frames": 6, "cell": [48, 40], "mode": "once"},
+	"merchant": {"path": "res://assets/ui/merchant_sheet.png", "frames": 4, "cell": [128, 128], "mode": "loop"},
+}
+
 static func enemy_path(enemy_id: String, state: String = "idle") -> String:
 	return "%s/%s/%s.png" % [ENEMY_ROOT, enemy_id, state]
 
@@ -95,6 +120,14 @@ static func weapon_icon(weapon_id: String) -> Texture2D:
 
 static func passive_icon(passive_id: String) -> Texture2D:
 	return texture_at(passive_icon_path(passive_id))
+
+## 特效序列帧的登记项；没有登记返回空字典。
+static func effect_sheet(effect_name: String) -> Dictionary:
+	return EFFECT_SHEETS.get(effect_name, {})
+
+## 道具序列帧的登记项；没有登记返回空字典。
+static func prop_sheet(prop_name: String) -> Dictionary:
+	return PROP_SHEETS.get(prop_name, {})
 
 static func blurb(kind: String, entry_id: String) -> String:
 	match kind:

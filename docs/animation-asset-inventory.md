@@ -586,3 +586,144 @@ gem_leech 连续三次出图都被帧序质检判不合格，但目视那张图�
 ### 授权边界
 
 全部为 AI 生成素材，登记为「AI 生成、待核实」，见 docs/asset-licenses.md 第 12 条。
+## 十九、2026-11-14 旧 MVP 资产「动起来」+ 旧敌人新风格重画
+
+### 为什么做这一轮
+
+用户问了三件事：旧 MVP 有没有做优化、旧 MVP 多数是静态帧能不能动起来、迭代清单是不是全做完了。
+
+核查结论跟「旧 MVP 是静态帧」这个印象相反：
+
+- **11 个旧敌人全是多帧横条**（2/4/6 帧，单格 56×56），不是静态帧；
+- 全仓 295 张 PNG 里单帧的有 170 张，主要集中在 UI（59）、武器图标（49）、瓦片（24）、**特效（22）**；
+- 真正没做完的是**迭代清单的 P1-A / P1-B / P2 三批**（特效序列帧、道具动画、旧敌人的动作与死亡缺口）。
+
+本轮用户选定：**三批全做**，并且**旧敌人改用本轮新风格（暗钢 + 旧金 + 深红）重画**，
+这样旧敌人和新敌人看起来是同一套美术，而不是两代画风混在一起。
+
+### 范围
+
+| 批次 | 内容 | 数量 |
+|---|---|---|
+| P1-A | 11 个旧敌人的新风格立绘 | 11 张 224×56（4 帧） |
+| P1-A | 11 个旧敌人的死亡条 | 11 张 336×56（6 帧真倒地） |
+| P1-A | 旧敌人的动作缺口（跑/冲锋/爬/飞/走/射/爆/石化/苏醒/施法/瞬移/召唤/冲刺/暴怒） | 14 张 336×56（6 帧真姿态） |
+| P1-B | 特效序列帧（命中/死亡爆炸/传送门/护盾破碎/毒云/升级法阵） | 6 张 |
+| P2 | 低频进化特效（冰冻/石化/圣光/连锁闪电/雷神之怒） | 5 张 |
+| P2 | 道具（火把/营火/宝箱/受诅宝箱/商人） | 5 张 |
+
+### 关键做法：3×2 网格 Edit 出「真姿态」
+
+单张立绘只能出一帧。程序化错帧（下摆摆 1px、尸体下沉）出来的是**同一张图的几何变形**，
+6 帧看起来几乎一样——本轮先做的 pilot 就是这个问题。
+
+真正管用的做法是**把立绘原图拼成 3×2 品红底卡片当编辑源图**，
+让 Qwen-Image-Edit 把每一格重画成不同姿态，再切格拼成横条：
+
+| 环节 | 做法 | 出处 |
+|---|---|---|
+| 立绘 | 本机 ComfyUI + Qwen-Image-2.1 turbo 文生图，11 个敌人逐个写全造型描述 | tools/gen_iteration_sprites.py + artifacts/iteration_assets/plan_legacy_idle.json |
+| 死亡条 | 立绘原图 → 3×2 品红底网格 → 图像编辑 → 切 3×2 → 缩到 56px → 拼 336×56 | tools/gen_legacy_death.py |
+| 动作条 | 同上，提示词逐格点名这一帧是什么姿势 | tools/gen_pose_grid.py + tools/pose_grid_data.py |
+| 特效/道具 | 现有单帧图 → N 格品红底卡片 → 图像编辑 → 切格 → 统一缩放拼横条 | tools/gen_effect_sheets.py + tools/effects_plan_data.py |
+| 抠底 | 品红键控（放宽到偏品红色相，保护紫罗兰）+ 紫边清理 | tools/death_repack.py |
+| 缩格 | NEAREST 整数倍缩到目标单格，脚底锚点固定 | tools/death_repack.py pack() |
+
+**帧质检（两段判据）**：
+
+- 严格判据：主体的「站高比」（本体连通域高 / 格高）必须大致单调下降，末帧明显低于首帧；
+- 放宽判据：顶边明显下沉、**或**末两帧平均高度明显低于首两帧、**或**主体面积明显缩小。
+
+严格判据对人形怪成立，对四足/矮趴的怪不成立——狼人趴下时本来就矮，
+高度比掉不到 25%，于是被误判成不合格（连着三次重出图）。所以改成严格优先、放宽兜底，
+并且**先扫已生成的原始网格**，能过就直接打包，不重复烧 GPU。
+
+动作条用另一套判据：每格必须有内容，且**相邻两帧的差异必须超过阈值**——
+这一条把「6 格复制同一张」直接判掉。
+
+### 接线：专属目录优先，不用改敌人脚本
+
+旧敌人的脚本本来就在请求具体状态：
+
+    TextureManager.instance.get_enemy_texture("vampire", "run")
+
+而 `get_enemy_texture` 早就**先找专属目录** `assets/sprites/enemies/<id>/<state>.png`，
+找不到才退回旧的平铺图。所以本轮只要把文件放对位置，旧敌人自动就用上新资产，
+**一行敌人脚本都没改**（唯一例外见下）。
+
+| 敌人 | 落盘状态 |
+|---|---|
+| 吸血鬼 | idle / run / death |
+| 狼人 | idle / charge / death |
+| 蝙蝠 | fly / death |
+| 僵尸 | idle / walk / death |
+| 骨架弓手 | idle / shoot / death |
+| 爆裂者 | idle / walk / explode / death |
+| 石像鬼 | idle / petrify / wake / death |
+| 血族法师 | idle / cast / teleport / death |
+| 召唤师 | idle / cast / death |
+| 血族王子 | idle / dash / rage / death |
+| 精英吸血鬼 | idle / death |
+
+**精英吸血鬼有两份**：它的贴图键是 `elite_vampire`，但 `_get_enemy_type()` 返回 `elite`，
+而死亡动画是按 `_get_enemy_type()` 找表的。两边都得放文件，否则死亡时会退回淡出。
+
+### 矩形单格播放器
+
+特效和道具的单格不是正方形（火把 24×48、宝箱 48×40、商人 128×128），
+而 `SpriteSheet` 那套用「宽 ÷ 高 = 帧数」推帧数，只对正方形单格成立
+（96×48 在方形规则下只算 2 帧，实际是 4 帧）。
+
+所以新增 `scripts/core/sprite_frames_lib.gd`：用 AtlasTexture 按显式单格尺寸切帧 +
+AnimatedSprite2D 播放，帧数从登记表来，不再靠猜。
+
+登记表在 `scripts/core/asset_slots.gd`：
+
+- `EFFECT_SHEETS`：11 个特效（路径 / 帧数 / 单格尺寸 / once 或 loop）；
+- `PROP_SHEETS`：5 个道具。
+
+接入点：
+
+| 位置 | 改动 |
+|---|---|
+| vfx_manager.gd | 新增 `spawn_sheet_fx()`；`spawn_texture_fx()` 先问序列帧，问不到才走单帧 |
+| game_room.gd | 火把/营火/宝箱/商人/传送门改用序列帧（`_make_prop_visual` / `_make_effect_visual`） |
+| poison_cloud.gd | 毒雾地面改用序列帧 |
+| cursed_chest.gd | 受诅宝箱开箱播 6 帧开箱序列，播完再闪光淡出 |
+
+### 自动回归
+
+| 组 | 断言 | 结果 |
+|---|---|---|
+| tools/legacy_animation_test.gd（新增） | 11 个旧敌人的每个动作都有专属精灵条、单格 56、多帧可识别；死亡条恰好 6 帧且相邻帧确实不同；特效/道具序列帧文件在位且尺寸 = 帧数×单格；矩形单格能被 SpriteFrames 正确切帧 | 200 / 200 通过 |
+| tools/enemy_death_strip_test.gd | 既有 12 种新敌人的死亡演出未被波及 | 60 / 60 通过 |
+| tools/iteration_pack_test.gd | 玩法与图鉴未被波及 | 44 / 44 通过 |
+| tools/sprite_sheet_test.gd | 既有横条播放未被波及 | 18 / 18 通过 |
+| tools/verify_round4.gd | 全量场景回归 | 全通过 |
+
+### 踩坑记录
+
+1. **提示词让模型给每个格子加「暗底板 + 装饰边框」**（2026-11-14，特效批）
+   早期提示词写成 "Draw the SAME effect in six separate square cells arranged in 3 columns
+   and 2 rows"，模型理解成「画六个带暗底板和华丽边框的独立小画格」，
+   每个格子里都多出一块黑色底板和一圈哥特画框。
+   改成死亡条那套已验证的写法（"repeated in N identical cells on a magenta card"）
+   之后，模型只重画内容、不再自己加板子。
+   同时把画风词里的 "antique gold filigree trim, deep crimson gems" 去掉——
+   这两个词就是模型画装饰边框的直接诱因。
+
+2. **严格帧序判据对四足怪不成立**（2026-11-14，狼人/僵尸）
+   见上文「帧质检（两段判据）」。
+
+3. **`FluxKontextImageScale` 会把编辑源图硬拉到 ~1MP**（2026-11-14，特效批）
+   19.5GB 的 Edit 模型在 8GB 显存上每一步都要搬权重，拉到 1MP 意味着单张 3 分钟。
+   特效最终只有 64~128px 一格，不需要 1MP：拆掉这个节点、直接用卡片原图当 latent 输入，
+   采样面积降到 1/5。敌人死亡/动作条因为要刻画角色细节，仍然走 1MP。
+
+4. **GDScript 里 `tw2` 紧跟在 `tw` 后面声明会解析失败**（2026-11-14，vfx_manager.gd）
+   报错是 `Identifier "w2" not declared in the current scope`，报错行号还差一行，
+   很容易误判成别处的问题。改名 `life_tween` 即过。
+
+### 授权边界
+
+全部为 AI 生成素材，登记为「AI 生成、待核实」，见 docs/asset-licenses.md 第 13 条。

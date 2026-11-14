@@ -1,0 +1,21 @@
+[
+  {
+    "asset": "vampire_idle",
+    "mode": "t2i",
+    "cell": 56,
+    "frames": 4,
+    "motion": "idle",
+    "steps": 25,
+    "prompt": "A vampire lord: a tall aristocratic humanoid in a black leather doublet under a heavy dark crimson high-collared cape fastened at the throat with an antique gold clasp set with a large oval ruby, sharp pale face with high cheekbones and slicked black hair, crimson-lined high boots, dark gauntlets with gold filigree, a straight dark steel rapier held point down in the right hand. Full body, head to toe, front view, centered, symmetrical stance, standing still. dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  },
+  {
+    "asset": "vampire_death",
+    "mode": "edit",
+    "char_ref": "raw:vampire_idle",
+    "cell": 56,
+    "frames": 6,
+    "motion": "corpse",
+    "steps": 25,
+    "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, outfit and colors from image 2 exactly, but show it now dead: collapsed flat on the ground on its back, the dark crimson cape spread out and soaked through with black blood, the pale face turned to the side with the mouth open and the fangs showing, the antique gold throat clasp torn loose with the big ruby fallen out and lying beside the head, the rapier slipped from the slack hand and lying flat in front of the body, motionless. Full body, head to toe, front view, centered. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+  }
+]
