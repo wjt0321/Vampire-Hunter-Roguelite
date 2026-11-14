@@ -283,7 +283,7 @@ func _refresh_build(force: bool = false) -> void:
 	# 埋在下面玩家会在打完半层之后才发现自己血上限少了 20%
 	if _pact_text != "":
 		_add_build_pact_row(_pact_text)
-	_add_build_header("武器 %d/%d" % [weapons.size(), GameConfig.MAX_WEAPON_SLOTS])
+	_add_build_header("武器 %d/%d" % [weapons.size(), GameConfig.weapon_slot_limit()])
 	if weapons.is_empty():
 		_add_build_hint("（空手）")
 	for w in weapons:

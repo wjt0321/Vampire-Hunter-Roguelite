@@ -134,6 +134,7 @@ func _create_card(char_data: Resource) -> PanelContainer:
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	# 像素精灵放大必须用最近邻，否则糊成一团
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	portrait.modulate = char_data.sprite_tint
 	portrait_frame.add_child(portrait)
 	portrait.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	portrait.offset_left = 10

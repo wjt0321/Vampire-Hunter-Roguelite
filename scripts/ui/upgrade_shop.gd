@@ -138,10 +138,47 @@ func _refresh_ui() -> void:
 		row.add_child(buy_btn)
 		
 		upgrades_container.add_child(row)
+	var rule_title := Label.new()
+	rule_title.text = "规则"
+	rule_title.add_theme_font_size_override("font_size", 18)
+	rule_title.modulate = Color(0.85, 0.72, 0.45)
+	upgrades_container.add_child(rule_title)
+	for rule_id in GameConfig.RULE_OFFERS.keys():
+		var rule_info: Dictionary = GameConfig.RULE_OFFERS[rule_id]
+		var owned: bool = bool(save_mgr.has_rule(rule_id))
+		var rule_cost := int(rule_info.get("cost", 0))
+		var rule_row := HBoxContainer.new()
+		rule_row.custom_minimum_size = Vector2(0, 40)
+		var rule_name := Label.new()
+		rule_name.text = String(rule_info.get("name", rule_id))
+		rule_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		rule_row.add_child(rule_name)
+		var rule_desc := Label.new()
+		rule_desc.text = String(rule_info.get("desc", ""))
+		rule_desc.modulate = Color(0.7, 0.7, 0.7)
+		rule_row.add_child(rule_desc)
+		var rule_btn := Button.new()
+		if owned:
+			rule_btn.text = "已购置"
+			rule_btn.disabled = true
+		else:
+			rule_btn.text = "血晶 %d" % rule_cost
+			rule_btn.disabled = save_mgr.get_blood_crystals() < rule_cost
+			var rid: String = rule_id
+			rule_btn.pressed.connect(func(): _purchase_rule(rid))
+		rule_btn.custom_minimum_size = Vector2(100, 0)
+		_apply_button_texture(rule_btn)
+		rule_row.add_child(rule_btn)
+		upgrades_container.add_child(rule_row)
 
 func _purchase(upgrade_id: String) -> void:
 	if save_mgr and save_mgr.purchase_upgrade(upgrade_id):
 		print("🛒 购买升级: %s" % upgrade_id)
+		_refresh_ui()
+
+func _purchase_rule(rule_id: String) -> void:
+	if save_mgr and save_mgr.purchase_rule(rule_id):
+		print("🛒 购置规则: %s" % rule_id)
 		_refresh_ui()
 
 func _on_back_pressed() -> void:

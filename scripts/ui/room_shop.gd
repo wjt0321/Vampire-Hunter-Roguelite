@@ -93,7 +93,7 @@ func _build_pool() -> Array:
 	if weapon_manager != null and "weapons" in weapon_manager:
 		for w in weapon_manager.weapons:
 			owned_ids.append(w.weapon_id)
-	var slots_full: bool = owned_ids.size() >= GameConfig.MAX_WEAPON_SLOTS
+	var slots_full: bool = owned_ids.size() >= GameConfig.weapon_slot_limit()
 
 	for w in ItemCatalog.WEAPONS:
 		if weapon_manager != null and weapon_manager.has_method("is_weapon_evolved") \
@@ -105,6 +105,12 @@ func _build_pool() -> Array:
 			continue
 		if not (w["id"] in owned_ids) and GameConfig.abyss_blocks_new_weapon(String(w["id"])):
 			continue
+		if not (w["id"] in owned_ids):
+			var need_floor := GameConfig.effective_unlock_floor(int(w.get("unlock_floor", 0)))
+			if need_floor > 0:
+				var saves := get_node_or_null("/root/SaveManager")
+				if saves != null and saves.has_method("is_weapon_unlocked") and not bool(saves.is_weapon_unlocked(String(w["id"]))):
+					continue
 		if not _can_apply_offer(w):
 			continue
 		pool.append(w.duplicate())

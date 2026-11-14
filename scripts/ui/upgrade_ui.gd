@@ -50,7 +50,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_panel_style()
 	rerolls_left = GameConfig.REROLL_FREE_COUNT
-	banish_left = GameConfig.BANISH_COUNT
+	banish_left = GameConfig.banish_count()
 	_build_footer()
 
 func _setup_panel_style() -> void:
@@ -413,7 +413,7 @@ func _floor_debut_card() -> Dictionary:
 	var owned_ones: Array = []
 	var fresh: Array = []
 	for weapon_opt in ItemCatalog.WEAPONS:
-		if int(weapon_opt.get("unlock_floor", 0)) != floor:
+		if GameConfig.effective_unlock_floor(int(weapon_opt.get("unlock_floor", 0))) != floor:
 			continue
 		var weapon_id := String(weapon_opt.get("id", ""))
 		if saves != null and saves.has_method("is_weapon_unlocked") and not bool(saves.is_weapon_unlocked(weapon_id)):
@@ -442,7 +442,7 @@ func _floor_debut_card() -> Dictionary:
 	var slots_full := false
 	var held: Variant = weapon_manager.get("weapons")
 	if held is Array:
-		slots_full = (held as Array).size() >= GameConfig.MAX_WEAPON_SLOTS
+		slots_full = (held as Array).size() >= GameConfig.weapon_slot_limit()
 	if not slots_full:
 		return pick
 	if not weapon_manager.has_method("lowest_replaceable_weapon"):
@@ -682,7 +682,7 @@ func _get_available_options() -> Array:
 	if weapon_manager != null and "weapons" in weapon_manager:
 		for w in weapon_manager.weapons:
 			owned_ids.append(w.weapon_id)
-	var slots_full: bool = owned_ids.size() >= GameConfig.MAX_WEAPON_SLOTS
+	var slots_full: bool = owned_ids.size() >= GameConfig.weapon_slot_limit()
 
 	# 添加武器选项（排除已进化的、以及已满级的）
 	for weapon_opt in ItemCatalog.WEAPONS:
@@ -695,7 +695,7 @@ func _get_available_options() -> Array:
 			continue
 		if slots_full and not owned:
 			continue
-		if not owned and int(weapon_opt.get("unlock_floor", 0)) > 0 and not _is_weapon_unlocked(String(weapon_opt["id"])):
+		if not owned and GameConfig.effective_unlock_floor(int(weapon_opt.get("unlock_floor", 0))) > 0 and not _is_weapon_unlocked(String(weapon_opt["id"])):
 			continue
 		if not owned and GameConfig.abyss_blocks_new_weapon(String(weapon_opt["id"])):
 			continue

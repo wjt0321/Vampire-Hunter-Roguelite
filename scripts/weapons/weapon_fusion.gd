@@ -72,10 +72,8 @@ static func offer(weapons: Array, evolved_ids: Array, already_fused: bool) -> Di
 		return {}
 	var owned := {}
 	for weapon in weapons:
-		if weapon == null:
+		if weapon == null or bool(weapon.get("fused")):
 			continue
-		if bool(weapon.get("fused")):
-			return {}
 		owned[String(weapon.weapon_id)] = weapon
 	for recipe_id in RECIPES.keys():
 		var recipe: Dictionary = RECIPES[recipe_id]
@@ -87,9 +85,9 @@ static func offer(weapons: Array, evolved_ids: Array, already_fused: bool) -> Di
 			continue
 		var primary = owned[primary_id]
 		var secondary = owned[secondary_id]
-		if int(primary.current_level) < int(primary.max_level):
+		if int(primary.current_level) < GameConfig.fusion_level_requirement():
 			continue
-		if int(secondary.current_level) < int(secondary.max_level):
+		if int(secondary.current_level) < GameConfig.fusion_level_requirement():
 			continue
 		if bool(primary.get("fused")) or bool(secondary.get("fused")):
 			continue
