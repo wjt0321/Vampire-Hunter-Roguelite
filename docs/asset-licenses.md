@@ -1072,3 +1072,35 @@
 - 备注：本次本地交付不代表已获发布授权；若要商用或分发，需按所用生成服务账号条款核实。
 
 
+### 17. 2026-11-14 旧 MVP 敌人受击条补齐 11 条 + 深渊镜像模式专属 BGM
+
+- 状态：已使用
+- 风险：高（AI 生成，商用与分发条件待核实）
+- 类型：精灵图 / 音乐
+- 来源 URL：不适用（本机生成）
+- 来源平台：
+  - 受击条：本机 ComfyUI 0.45.2 + qwen-image edit 2511（品红卡片参考图管线，与第 15 条同规格 336×56 / 6 帧）
+  - BGM：本机 ComfyUI 0.45.2 + YuE2 int8 乐器 LoRA 工作流（沿用第 12/16 条同一套模板）
+- 作者 / 版权方：项目作者（AI 生成）
+- 授权名称：待确认
+- 是否允许商用：待确认
+- 是否允许修改：是（项目内已抠底、缩格、拼条 / 裁剪、母带、循环接缝、编码）
+- 是否需要署名：待确认
+- 下载 / 生成日期：2026-11-14
+- 原始文件保存位置：
+  - artifacts/game-audio-abyss/（abyss BGM 的 manifest 与渲染产物）
+  - tools/legacy_hurt_data.py（11 条受击条的逐格姿态描述与生成计划）
+- 项目内使用路径：
+  - assets/sprites/enemies/{bat,elite,exploder,gargoyle,skeleton,summoner,vampire,vampire_mage,vampire_prince,werewolf,zombie}/hurt.png
+  - assets/audio/generated/bgm/abyss.ogg（56.75s，-6.3 LUFS，深渊镜像模式战斗曲，循环）
+- 用途说明：
+  - 受击条：第 15 条只覆盖了 13 个迭代新增敌人；本轮把 11 个旧 MVP 敌人的
+    hurt.png 补齐，普通敌人受击条达到 24/24 全覆盖（`elite_vampire` 走 `elite/hurt.png`）。
+    至此普通敌人挨打都有专属受击条，仅剩 Boss 走独立贴图通道、无受击条（设计如此）。
+  - BGM：实机反馈「深渊模式要专属 BGM」。`GameConfig.abyss_level > 0` 的整轮里
+    所有普通战斗房（含雾房/镜像房）改播 abyss.ogg，Boss 房/商店/变异房不变；
+    文件缺失时 `AudioLib.get_abyss_bgm()` 回退 battle 曲，不静音。
+- 修改记录：受击条复用各敌人已有立绘 → 品红卡片参考图 → qwen-image edit →
+  切格 → 统一缩放 → 拼 56px 横条；BGM：FLAC → 裁剪 → 响度归一 →
+  尾首交叠循环 → 48kHz 立体声 OGG。
+- 备注：本次本地交付不代表已获发布授权；若要商用或分发，需按所用生成服务账号条款核实。

@@ -78,28 +78,31 @@
 > **本表已于 2026-11-14 更新。** 第十九节（旧 MVP 资产「动起来」）、第二十节
 > （迭代新增敌人动作条）、第二十一节（受击条接线）三轮补完后，下面 11 个旧敌人的
 > 待机、死亡与核心动作条都已到位，帧数按实际文件登记。
-> `hurt` 的**请求点已由第二十一节接上**（挨打会播专属受击条），
-> 但这 11 个旧敌人自己的 `hurt.png` 还没做——没有文件时静默跳过，表现与从前一致。
+> `hurt` 的**请求点已由第二十一节接上**（挨打会播专属受击条）。
+> **2026-11-14 第四轮：这 11 个旧敌人的 `hurt.png` 已全部补齐**（6 帧 56px 横条，
+> AI 生成：qwen-image edit + 品红卡片管线，数据 `tools/legacy_hurt_data.py`），
+> 普通敌人受击条 24/24 全覆盖。
 
 | 敌人 / 前缀 | 现有精灵表与实际帧数 | 当前动作覆盖 | 剩余缺口 | 优先级 |
 |---|---|---|---|---|
-| 吸血鬼 `vampire` | `idle` 4、`run` 6、`death` 6 | 待机、移动循环、真倒地 | `hurt` 2–4 帧（图未做）；近战 `attack` 4 帧为 P2 | P2 |
-| 狼人 `werewolf` | `idle` 4、`charge` 6、`death` 6 | 待机、冲锋一次性动作、真倒地 | `run` 6 帧（移动仍播 idle）、`hurt` 2–4 | P2 |
-| 蝙蝠 `bat` | `idle` 4、`fly` 6、`death` 6 | 待机、飞行循环、真倒地 | `hurt` 2 帧为 P2，避免高频受击闪烁过度 | P2 |
-| 僵尸 `zombie` | `idle` 4、`walk` 6、`death` 6 | 待机、移动循环、真倒地 | `hurt` 2–4 帧；近战 `attack` 4 帧为 P2 | P2 |
-| 骷髅弓手 `skeleton` | `idle` 4、`shoot` 6、`death` 6 | 待机、射箭一次性动作、真倒地 | `hurt` 2–4 帧；射击接触帧需对齐箭矢生成点 | P2 |
-| 爆裂者 `exploder` | `idle` 4、`walk` 6、`explode` 6、`death` 6 | 待机、移动、爆炸蓄势/触发、真倒地 | `hurt` 2 帧为 P2 | P2 |
-| 石像鬼 `gargoyle` | `idle` 4、`petrify` 6、`wake` 6、`death` 6 | 待机、石化保持、苏醒一次性动作、真倒地 | `hurt` 2 帧；无需为静止守卫硬加跑步 | P2 |
-| 吸血鬼法师 `vampire_mage` | `idle` 4、`cast` 6、`teleport` 6、`death` 6 | 待机、施法、瞬移一次性动作、真倒地 | `hurt` 2–4 帧；移动表为 P2 | P2 |
-| 召唤师 `summoner` | `idle` 4、`cast` 6、`death` 6 | 待机、施法一次性动作、真倒地 | `walk` 6 帧、`hurt` 2–4 帧 | P2 |
-| 血族亲王敌人 `vampire_prince` | `idle` 4、`dash` 6、`rage` 6、`death` 6 | 待机、冲刺、狂暴循环、真倒地 | `run` 6、`hurt` 2–4 帧；近战 `attack` 4–6 为 P2 | P2 |
-| 精英吸血鬼 `elite_vampire` | `idle` 4、`death` 6 | 待机兼移动、真倒地 | `run` 6、`attack` 4–6、`hurt` 2–4 帧 | P2 |
+| 吸血鬼 `vampire` | `idle` 4、`run` 6、`death` 6、`hurt` 6 | 待机、移动循环、真倒地、受击 | 近战 `attack` 4 帧为 P2 | P2 |
+| 狼人 `werewolf` | `idle` 4、`charge` 6、`death` 6、`hurt` 6 | 待机、冲锋一次性动作、真倒地、受击 | `run` 6 帧（移动仍播 idle） | P2 |
+| 蝙蝠 `bat` | `idle` 4、`fly` 6、`death` 6、`hurt` 6 | 待机、飞行循环、真倒地、受击 | 高频受击已由 6 帧节奏自然控制 | P2 |
+| 僵尸 `zombie` | `idle` 4、`walk` 6、`death` 6、`hurt` 6 | 待机、移动循环、真倒地、受击 | 近战 `attack` 4 帧为 P2 | P2 |
+| 骷髅弓手 `skeleton` | `idle` 4、`shoot` 6、`death` 6、`hurt` 6 | 待机、射箭一次性动作、真倒地、受击 | 射击接触帧需对齐箭矢生成点 | P2 |
+| 爆裂者 `exploder` | `idle` 4、`walk` 6、`explode` 6、`death` 6、`hurt` 6 | 待机、移动、爆炸蓄势/触发、真倒地、受击 | — | P2 |
+| 石像鬼 `gargoyle` | `idle` 4、`petrify` 6、`wake` 6、`death` 6、`hurt` 6 | 待机、石化保持、苏醒一次性动作、真倒地、受击 | 无需为静止守卫硬加跑步 | P2 |
+| 吸血鬼法师 `vampire_mage` | `idle` 4、`cast` 6、`teleport` 6、`death` 6、`hurt` 6 | 待机、施法、瞬移一次性动作、真倒地、受击 | 移动表为 P2 | P2 |
+| 召唤师 `summoner` | `idle` 4、`cast` 6、`death` 6、`hurt` 6 | 待机、施法一次性动作、真倒地、受击 | `walk` 6 帧 | P2 |
+| 血族亲王敌人 `vampire_prince` | `idle` 4、`dash` 6、`rage` 6、`death` 6、`hurt` 6 | 待机、冲刺、狂暴循环、真倒地、受击 | `run` 6；近战 `attack` 4–6 为 P2 | P2 |
+| 精英吸血鬼 `elite_vampire` | `idle` 4、`death` 6、`hurt` 6（挂在 `elite/hurt.png`） | 待机兼移动、真倒地、受击 | `run` 6、`attack` 4–6 | P2 |
 
 补充边界：`prince_idle/dash/rage.png` 属于当前特殊敌人组，不等同于楼层 Boss「血族亲王」已经拥有独立资产。新 Boss 的动作表按下节单独制作。
 
 > `hurt` 自 2026-11-14 起不再是死数据：`enemy_base.take_damage()` 会请求受击条。
-> 上表 11 个旧敌人的 `hurt.png` 尚未制作，缺文件时静默跳过。
+> 上表 11 个旧敌人的 `hurt.png` 已于 2026-11-14 全部补齐（`elite_vampire` 走 `elite/hurt.png`）。
 > 把图放进 `assets/sprites/enemies/<enemy>/hurt.png` 即自动生效，不需要再改代码。
+> 剩余无受击条的只有 Boss（走 `AssetSlots.boss_texture` 独立贴图通道）——这是设计如此，不是缺项。
 
 ### 迭代新增 12 敌人：2026-11-14 补完专属动作条
 
