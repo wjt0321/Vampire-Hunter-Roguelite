@@ -556,6 +556,10 @@ func _refresh_footer() -> void:
 		_hint_label.add_theme_color_override("font_color", Color(1.0, 0.55, 0.55))
 	else:
 		_hint_label.text = "R 重抽　B 放逐　Tab 跳过　　免费重抽剩 %d 次 · 放逐剩 %d 次" % [rerolls_left, banish_left]
+		if weapon_manager != null and weapon_manager.has_method("get_fusion_progress"):
+			var fusion_line: String = weapon_manager.get_fusion_progress()
+			if fusion_line != "":
+				_hint_label.text += "\n" + fusion_line
 		_hint_label.add_theme_color_override("font_color", Color(0.66, 0.66, 0.72))
 
 func _on_reroll() -> bool:
@@ -629,6 +633,17 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				_on_banish_toggle()
 			KEY_TAB:
+				get_viewport().set_input_as_handled()
+				_on_skip()
+	if event is InputEventJoypadButton and event.pressed:
+		match event.button_index:
+			JOY_BUTTON_X:
+				get_viewport().set_input_as_handled()
+				_on_reroll()
+			JOY_BUTTON_Y:
+				get_viewport().set_input_as_handled()
+				_on_banish_toggle()
+			JOY_BUTTON_B:
 				get_viewport().set_input_as_handled()
 				_on_skip()
 

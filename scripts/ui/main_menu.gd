@@ -24,6 +24,8 @@ const DailyChallengeScript = preload("res://scripts/core/daily_challenge.gd")
 @onready var music_slider: HSlider = $SettingsPanel/VBoxContainer/MusicSlider
 @onready var sfx_slider: HSlider = $SettingsPanel/VBoxContainer/SFXSlider
 @onready var fullscreen_check: CheckButton = $SettingsPanel/VBoxContainer/FullscreenCheck
+var master_slider: HSlider = null
+var shake_check: CheckButton = null
 @onready var back_btn: Button = $SettingsPanel/VBoxContainer/BackButton
 
 var save_mgr: Node
@@ -65,6 +67,37 @@ func _setup_settings_panel() -> void:
 	fullscreen_check.focus_mode = Control.FOCUS_NONE
 	music_slider.focus_mode = Control.FOCUS_NONE
 	sfx_slider.focus_mode = Control.FOCUS_NONE
+	var settings_vbox := $SettingsPanel/VBoxContainer
+	var master_row := HBoxContainer.new()
+	master_row.add_theme_constant_override("separation", 10)
+	var master_label := Label.new()
+	master_label.text = "主音量"
+	master_label.add_theme_font_size_override("font_size", 16)
+	master_row.add_child(master_label)
+	master_slider = HSlider.new()
+	master_slider.name = "MasterSlider"
+	master_slider.min_value = 0.0
+	master_slider.max_value = 1.0
+	master_slider.step = 0.05
+	master_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	master_slider.focus_mode = Control.FOCUS_NONE
+	master_slider.value_changed.connect(func(v: float) -> void:
+		AudioManager.set_master_volume(v))
+	master_row.add_child(master_slider)
+	settings_vbox.add_child(master_row)
+	settings_vbox.move_child(master_row, back_btn.get_index())
+	shake_check = CheckButton.new()
+	shake_check.name = "ShakeCheck"
+	shake_check.text = "屏幕震动"
+	shake_check.focus_mode = Control.FOCUS_NONE
+	shake_check.add_theme_font_size_override("font_size", 16)
+	shake_check.toggled.connect(func(on: bool) -> void:
+		var save := get_node_or_null("/root/SaveManager")
+		if save != null:
+			save.save_data["settings"]["screen_shake"] = on
+			save.save_game())
+	settings_vbox.add_child(shake_check)
+	settings_vbox.move_child(shake_check, back_btn.get_index())
 	var panel_texture := TextureManager.instance.get_ui_texture("stats_panel")
 	if panel_texture:
 		var style := StyleBoxTexture.new()
@@ -268,6 +301,11 @@ func _on_shop_pressed() -> void:
 
 func _on_settings_pressed() -> void:
 	_sync_fullscreen_check()
+	if master_slider != null:
+		master_slider.set_value_no_signal(AudioManager.get_master_volume())
+	if shake_check != null:
+		var save := get_node_or_null("/root/SaveManager")
+		shake_check.set_pressed_no_signal(bool(save.save_data.get("settings", {}).get("screen_shake", true)) if save != null else true)
 	settings_panel.visible = true
 	settings_panel.modulate = Color(1, 1, 1, 0)
 	var tween := create_tween()

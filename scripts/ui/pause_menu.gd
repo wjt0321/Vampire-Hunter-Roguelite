@@ -15,6 +15,8 @@ var go_to_main_menu: Callable = Callable()
 var settings_panel: PanelContainer = null
 var music_slider: HSlider = null
 var sfx_slider: HSlider = null
+var master_slider: HSlider = null
+var shake_check: CheckButton = null
 ## 放弃本局的一次性"上膛"状态：第一次点只把按钮变成确认，
 ## 第二次点才真的退出。暂停菜单是 ESC 顺手按出来的地方，
 ## 一个误点就把整局（和深渊层数）扔掉，代价和操作太不匹配。
@@ -421,6 +423,27 @@ func _build_settings_panel() -> void:
 		AudioManager.set_music_volume(v))
 	sfx_slider = _make_slider_row(vbox, "音效", func(v: float) -> void:
 		AudioManager.set_sfx_volume(v))
+	master_slider = _make_slider_row(vbox, "主音量", func(v: float) -> void:
+		AudioManager.set_master_volume(v))
+	shake_check = CheckButton.new()
+	shake_check.name = "ShakeCheck"
+	shake_check.text = "屏幕震动"
+	shake_check.focus_mode = Control.FOCUS_NONE
+	shake_check.add_theme_font_size_override("font_size", 16)
+	shake_check.toggled.connect(func(on: bool) -> void:
+		var save := get_node_or_null("/root/SaveManager")
+		if save != null:
+			save.save_data["settings"]["screen_shake"] = on
+			save.save_game())
+	vbox.add_child(shake_check)
+
+	var controls := Label.new()
+	controls.name = "ControlsCard"
+	controls.text = "操作说明\n走位：WASD / 左摇杆 · 瞄准：鼠标 / 右摇杆\n键盘：R 重抽 · B 放逐 · Tab 跳过 · ESC 暂停\n手柄：X 重抽 · Y 放逐 · B 跳过 · A 确认 · Start 暂停\n武器默认自动开火"
+	controls.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	controls.add_theme_font_size_override("font_size", 13)
+	controls.add_theme_color_override("font_color", Color(0.78, 0.74, 0.68))
+	vbox.add_child(controls)
 
 	var back := Button.new()
 	back.name = "SettingsBackButton"
@@ -491,6 +514,10 @@ func _on_settings_pressed() -> void:
 	settings_panel.visible = true
 	_sync_slider(music_slider, AudioManager.get_music_volume())
 	_sync_slider(sfx_slider, AudioManager.get_sfx_volume())
+	_sync_slider(master_slider, AudioManager.get_master_volume())
+	if shake_check != null:
+		var save := get_node_or_null("/root/SaveManager")
+		shake_check.set_pressed_no_signal(bool(save.save_data.get("settings", {}).get("screen_shake", true)) if save != null else true)
 	UiFx.pop_in(settings_panel, 0.16, 0.96)
 
 func _on_settings_back_pressed() -> void:

@@ -12,7 +12,9 @@ var is_showing: bool = false
 
 func _ready() -> void:
 	panel.visible = false
-	panel.position = Vector2(-400, 20)  # 初始位置在屏幕外
+	# 左下角：顶部左侧是玩家血条、顶中是 Boss 血条，成就弹窗放上面会压住它们。
+	var vh := get_viewport().get_visible_rect().size.y
+	panel.position = Vector2(-400, vh - 96)  # 初始位置在屏幕外
 	
 	# 连接成就管理器信号
 	var ach_mgr = get_node_or_null("/root/AchievementManager")

@@ -5,6 +5,7 @@ extends Node
 # ========== 音量设置 ==========
 var music_volume: float = 0.1  # 0.0 - 1.0 (默认10%)
 var sfx_volume: float = 0.1    # 0.0 - 1.0 (默认10%)
+var master_volume: float = 1.0 # 0.0 - 1.0 主总线
 
 # ========== 音频播放器 ==========
 var _bgm_player: AudioStreamPlayer = null
@@ -55,6 +56,8 @@ func _load_volume_settings() -> void:
 		var audio_settings: Dictionary = save_mgr.save_data["audio_settings"]
 		music_volume = audio_settings.get("music_volume", 0.1)
 		sfx_volume = audio_settings.get("sfx_volume", 0.1)
+		master_volume = audio_settings.get("master_volume", 1.0)
+		_apply_master_volume()
 		print("🎵 音量设置已加载: 音乐 %.0f%%, 音效 %.0f%%" % [music_volume * 100, sfx_volume * 100])
 
 func _save_volume_settings() -> void:
@@ -64,6 +67,7 @@ func _save_volume_settings() -> void:
 			save_mgr.save_data["audio_settings"] = {}
 		save_mgr.save_data["audio_settings"]["music_volume"] = music_volume
 		save_mgr.save_data["audio_settings"]["sfx_volume"] = sfx_volume
+		save_mgr.save_data["audio_settings"]["master_volume"] = master_volume
 		save_mgr.save_game()
 		print("🎵 音量设置已保存")
 
@@ -216,6 +220,18 @@ func get_music_volume() -> float:
 
 func get_sfx_volume() -> float:
 	return sfx_volume
+
+func set_master_volume(volume: float, save: bool = true) -> void:
+	master_volume = clampf(volume, 0.0, 1.0)
+	_apply_master_volume()
+	if save:
+		_save_volume_settings()
+
+func get_master_volume() -> float:
+	return master_volume
+
+func _apply_master_volume() -> void:
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), _volume_to_db(master_volume))
 
 # ========== 工具函数 ==========
 

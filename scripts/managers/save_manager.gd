@@ -64,9 +64,16 @@ func _default_save_data() -> Dictionary:
 		"audio_settings": {
 			"music_volume": 0.1,
 			"sfx_volume": 0.1,
+			"master_volume": 1.0,
+		},
+		# 非音频的设置项。震屏默认开，晕动症玩家可关。
+		"settings": {
+			"screen_shake": true,
 		},
 		# 已解锁的成就 id 列表。AchievementManager 往里写，存档时一起带走。
 		"achievements": [],
+		# 首局上下文提示是否已完成。第一个结算局落 true，之后不再飘新手提示。
+		"onboarding_done": false,
 	}
 
 # 升级价格（每级递增）
@@ -310,7 +317,13 @@ func _sanitize_audio_settings() -> void:
 	var settings: Dictionary = audio
 	settings["music_volume"] = clampf(float(settings.get("music_volume", 0.1)), 0.0, 1.0)
 	settings["sfx_volume"] = clampf(float(settings.get("sfx_volume", 0.1)), 0.0, 1.0)
+	settings["master_volume"] = clampf(float(settings.get("master_volume", 1.0)), 0.0, 1.0)
 	save_data["audio_settings"] = settings
+	var general = save_data.get("settings", null)
+	if not (general is Dictionary):
+		general = {}
+	general["screen_shake"] = bool(general.get("screen_shake", true))
+	save_data["settings"] = general
 
 func _sanitize_achievements() -> void:
 	## 成就列表洗白：不是数组就换成空数组，顺手去掉重复项和空串。

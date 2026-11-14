@@ -16,6 +16,9 @@ func _ensure_current_scene() -> Node:
 # ========== 屏幕震动 ==========
 
 func screen_shake(intensity: float = 5.0, duration: float = 0.2) -> void:
+	var save := get_node_or_null("/root/SaveManager")
+	if save != null and not bool(save.save_data.get("settings", {}).get("screen_shake", true)):
+		return
 	if camera == null:
 		var cam_nodes := get_tree().get_nodes_in_group("camera")
 		if cam_nodes.size() > 0:

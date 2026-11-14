@@ -184,6 +184,7 @@ func _ready() -> void:
 	_audio_lib = AudioLib
 	# 加载精灵图纹理
 	_load_sprite_texture()
+	_add_ground_glow()
 	invincible_timer.wait_time = invincible_duration
 	invincible_timer.one_shot = true
 	invincible_timer.timeout.connect(_on_invincible_timer_timeout)
@@ -195,6 +196,26 @@ func _player_tex(state: String) -> Texture2D:
 	if TextureManager.instance == null:
 		return null
 	return TextureManager.instance.get_player_texture(state, character_id)
+
+## 脚下一层冷色光晕：怪群里双方都是深色小精灵，没有一个一眼可认的锚点，
+## 玩家会在躲弹时"丢了自己"。加色椭圆光，画在玩家之下地面之上，不出新资产。
+func _add_ground_glow() -> void:
+	var img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+	for y in 64:
+		for x in 64:
+			var d := Vector2(float(x) - 31.5, float(y) - 31.5).length() / 32.0
+			var a := clampf(1.0 - d, 0.0, 1.0)
+			img.set_pixel(x, y, Color(0.55, 0.85, 1.0, a * a * 0.38))
+	var glow := Sprite2D.new()
+	glow.name = "GroundGlow"
+	glow.texture = ImageTexture.create_from_image(img)
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	glow.material = mat
+	glow.z_index = ReadabilityVisuals.Z_PLAYER - 1
+	glow.scale = Vector2(1.5, 0.8)
+	glow.position = _sprite_rest_pos + Vector2(0, 26)
+	add_child(glow)
 
 func _load_sprite_texture() -> void:
 	## 加载玩家精灵图。开局先贴待机，移动后再换成 run。
@@ -405,12 +426,18 @@ func _end_one_shot() -> void:
 	_sync_player_pose()
 
 func _handle_rotation() -> void:
-	var mouse_pos := get_global_mouse_position()
-	var direction := mouse_pos - global_position
+	var direction := aim_direction_from(global_position)
 	if direction.x < 0:
 		sprite.flip_h = true
 	else:
 		sprite.flip_h = false
+
+## 手柄右摇杆瞄准：没推摇杆时回退鼠标。瞄准类武器与角色朝向共用这一个入口。
+func aim_direction_from(origin: Vector2) -> Vector2:
+	var pad := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
+	if pad.length() >= 0.25:
+		return pad.normalized()
+	return (get_global_mouse_position() - origin).normalized()
 
 # === 经验值相关 ===
 func is_dead() -> bool:

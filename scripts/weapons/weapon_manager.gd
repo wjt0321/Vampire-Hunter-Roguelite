@@ -324,13 +324,36 @@ static func _codex_fusion_line(weapon_id: String) -> String:
 
 func lowest_replaceable_weapon():
 	## 栏位满了、又必须塞进解锁层的新武器时，换下还没进化、也没融合的最低级那把。
+	## 保护规则：优先保留"正在凑融合对"的武器（配方伙伴在槽里且双方都未进化/融合），
+	## 否则解锁层强制插卡会拆掉玩家养了半局的配对（机器模拟：5 整局融合 0 触发）。
+	## 四槽全在凑对时回退旧规则——卡面承诺"换下最低级"，不能让玩家白丢一张卡。
 	var best = null
-	for weapon in weapons:
-		if bool(weapon.get("fused")) or is_weapon_evolved(String(weapon.weapon_id)):
+	for protect_pass in [true, false]:
+		for weapon in weapons:
+			if bool(weapon.get("fused")) or is_weapon_evolved(String(weapon.weapon_id)):
+				continue
+			if protect_pass and _in_progress_pair(String(weapon.weapon_id)):
+				continue
+			if best == null or int(weapon.current_level) < int(best.current_level):
+				best = weapon
+		if best != null:
+			return best
+	return null
+
+func _in_progress_pair(weapon_id: String) -> bool:
+	for recipe in WeaponFusionScript.RECIPES.values():
+		var a := String(recipe["primary"])
+		var b := String(recipe["secondary"])
+		if weapon_id != a and weapon_id != b:
 			continue
-		if best == null or int(weapon.current_level) < int(best.current_level):
-			best = weapon
-	return best
+		var partner := b if weapon_id == a else a
+		for w in weapons:
+			if String(w.weapon_id) != partner:
+				continue
+			if bool(w.get("fused")) or is_weapon_evolved(partner):
+				continue
+			return true
+	return false
 
 
 func replace_lowest_with(weapon_id: String) -> bool:
@@ -763,7 +786,7 @@ func _fire_weapon(weapon) -> void:
 	if weapon.auto_aim:
 		base_direction = _get_nearest_enemy_direction(origin)
 	else:
-		base_direction = (player.get_global_mouse_position() - origin).normalized()
+		base_direction = player.aim_direction_from(origin)
 	if base_direction == Vector2.ZERO:
 		return
 
@@ -1502,6 +1525,45 @@ func get_fusion_offer() -> Dictionary:
 			evolved.append(String(weapon_id))
 	return WeaponFusionScript.offer(weapons, evolved, false)
 
+func get_fusion_progress() -> String:
+	## 融合的可见目标：报"双持、未进化、未融合"里最接近完成的一条配方进度。
+	## 没有这条提示时融合整局都是随机遇见（机器模拟：随机政策 3 整局 0 次触发），
+	## 玩家不知道往哪凑，两条满级轨道交汇的设计就等于不存在。
+	var offer := get_fusion_offer()
+	if not offer.is_empty():
+		return "可融合：%s（升级里选融合卡）" % String(offer.get("name", ""))
+	var evolved: Array = []
+	for weapon_id in weapon_evolutions.keys():
+		var evolution: WeaponEvolution = weapon_evolutions[weapon_id]
+		if evolution != null and evolution.is_evolved:
+			evolved.append(String(weapon_id))
+	var best_text := ""
+	var best_sum := -1
+	for recipe in WeaponFusionScript.RECIPES.values():
+		var a := String(recipe["primary"])
+		var b := String(recipe["secondary"])
+		var wa: Resource = null
+		var wb: Resource = null
+		for w in weapons:
+			if String(w.weapon_id) == a:
+				wa = w
+			elif String(w.weapon_id) == b:
+				wb = w
+		if wa == null or wb == null:
+			continue
+		if a in evolved or b in evolved:
+			continue
+		if bool(wa.get("fused")) or bool(wb.get("fused")):
+			continue
+		var sum: int = int(wa.current_level) + int(wb.current_level)
+		if sum > best_sum:
+			best_sum = sum
+			var na := String(ItemCatalog.find_weapon(a).get("name", a))
+			var nb := String(ItemCatalog.find_weapon(b).get("name", b))
+			best_text = "融合 %s：%s Lv.%d/5 · %s Lv.%d/5" % [
+				String(recipe["name"]), na, int(wa.current_level), nb, int(wb.current_level)]
+	return best_text
+
 func apply_fusion(recipe_id: String) -> bool:
 	var recipe := WeaponFusionScript.recipe(recipe_id)
 	if recipe.is_empty() or fusion_count >= GameConfig.fusion_limit():
@@ -1698,7 +1760,7 @@ func _spawn_whip(weapon) -> void:
 	if _live_count("player_whip") >= 4:
 		return
 	var origin := player.global_position
-	var direction := (player.get_global_mouse_position() - origin).normalized()
+	var direction: Vector2 = player.aim_direction_from(origin)
 	if direction == Vector2.ZERO:
 		direction = Vector2.RIGHT
 	var swings: int = weapon.get_scaled_swings()
@@ -1751,7 +1813,7 @@ func _get_nearest_enemy_position(from: Vector2) -> Vector2:
 
 func _shot_direction(auto_aim: bool) -> Vector2:
 	var origin := player.global_position
-	var direction: Vector2 = _get_nearest_enemy_direction(origin) if auto_aim else (player.get_global_mouse_position() - origin).normalized()
+	var direction: Vector2 = _get_nearest_enemy_direction(origin) if auto_aim else player.aim_direction_from(origin)
 	if direction == Vector2.ZERO:
 		direction = Vector2.RIGHT
 	return direction
