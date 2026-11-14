@@ -34,6 +34,18 @@ HOST = "http://127.0.0.1:8188"
 
 NEG_BASE = "blurry, low quality, watermark, text, signature, jpeg artifacts"
 
+# ComfyUI 输出子目录。
+# 2026-11-14 之前这里没设，SaveImage 直接把 `vhr_<name>_00001_.png` 落在
+# E:\AI\ComfyUI\output\ 根目录，几轮出图攒了 140 个散落文件。
+# 别的管线（vhr_edit / vhr_new / vhr_reskin / vhr_priestess / vhr_iter）都有子目录，
+# 只有走 build_workflow 的这几条没有 —— 现在统一进 vhr_raw。
+#
+# 注意：这套 ComfyUI（0.45.2）的 SaveImage **没有 subfolder 输入**，
+# 子目录是写在 filename_prefix 的路径里的 —— 见 folder_paths.get_save_image_path：
+# 它取 os.path.dirname(os.path.normpath(filename_prefix)) 作为子目录。
+# 别的管线也是这么写的（例如 make_workflow.py 的 "vhr_sprites\\{asset}"）。
+SAVE_SUBFOLDER = "vhr_raw"
+
 # Official Qwen-Image 2.1 turbo schedule (8 steps).
 TURBO_SIGMAS = "1.0, 0.978453, 0.95418, 0.926626, 0.89508, 0.845148, 0.704534, 0.414568, 0"
 
@@ -55,7 +67,7 @@ def build_workflow(name, prompt, width, height, refs, seed, steps, cfg, backend=
             "sampler_name": "euler", "scheduler": "simple",
             "positive": ["4", 0], "negative": ["4b", 0], "latent_image": ["4", 1], "denoise": 1.0}}
         wf["6"] = {"class_type": "VAEDecode", "inputs": {"samples": ["5", 0], "vae": ["3", 0]}}
-        wf["7"] = {"class_type": "SaveImage", "inputs": {"images": ["6", 0], "filename_prefix": "vhr_%s" % name}}
+        wf["7"] = {"class_type": "SaveImage", "inputs": {"images": ["6", 0], "filename_prefix": "%s/vhr_%s" % (SAVE_SUBFOLDER, name)}}
         return wf
 
     if backend == "qwen_t2i":
@@ -75,7 +87,7 @@ def build_workflow(name, prompt, width, height, refs, seed, steps, cfg, backend=
             "noise": ["8", 0], "guider": ["9", 0], "sampler": ["7", 0],
             "sigmas": ["6", 0], "latent_image": ["5", 0]}}
         wf["11"] = {"class_type": "VAEDecode", "inputs": {"samples": ["10", 0], "vae": ["3", 0]}}
-        wf["7b"] = {"class_type": "SaveImage", "inputs": {"images": ["11", 0], "filename_prefix": "vhr_%s" % name}}
+        wf["7b"] = {"class_type": "SaveImage", "inputs": {"images": ["11", 0], "filename_prefix": "%s/vhr_%s" % (SAVE_SUBFOLDER, name)}}
         return wf
 
     # qwen_edit
@@ -96,7 +108,7 @@ def build_workflow(name, prompt, width, height, refs, seed, steps, cfg, backend=
         "sampler_name": "euler", "scheduler": "simple",
         "positive": ["13", 0], "negative": ["14", 0], "latent_image": ["12", 0], "denoise": 1.0}}
     wf["6"] = {"class_type": "VAEDecode", "inputs": {"samples": ["5b", 0], "vae": ["3", 0]}}
-    wf["7"] = {"class_type": "SaveImage", "inputs": {"images": ["6", 0], "filename_prefix": "vhr_%s" % name}}
+    wf["7"] = {"class_type": "SaveImage", "inputs": {"images": ["6", 0], "filename_prefix": "%s/vhr_%s" % (SAVE_SUBFOLDER, name)}}
     return wf
 
 

@@ -489,6 +489,8 @@ E:\AI\ComfyUI\output\vhr_reskin\（36 张 1024×1024）。它的特征是
 | 调色板 | 固定 32 色哥特色板（不按频次取色，避免一张偏暖一张偏冷） | .workbuddy/comfy/postprocess.py |
 
 出图落盘统一在 E:\AI\ComfyUI\output\vhr_iter\，与 vhr_reskin / vhr_new / vhr_edit 同级。
+网格类中间产物（3×2 姿态网格、死亡网格、特效网格）落在 E:\AI\ComfyUI\output\vhr_raw\ ——
+2026-11-14 之前这几条管线没设输出子目录，几百张原图直接堆在 output 根目录，已归档并修好。
 
 ### 交付物
 
