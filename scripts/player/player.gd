@@ -951,6 +951,11 @@ func _apply_passive_effect(item) -> void:
 		15:
 			has_time_gear = true
 			time_gear_scale = item.get_scaled_value()
+			# 齿轮上膛的专属音：只在装配这一瞬播一次
+			if is_inside_tree():
+				var gear_key := IterationAudioMap.passive_sound("time_gear")
+				if not gear_key.is_empty():
+					AudioManager.play_sfx(AudioLib.get_sound(gear_key))
 		16:
 			has_cold_blood = true
 			cold_blood_damage = item.get_scaled_value()
@@ -982,6 +987,11 @@ func execution_multiplier(enemy: Node) -> float:
 		execution_stacks = 1
 	else:
 		execution_stacks = mini(execution_stacks + 1, 4)
+	# 印记叠上时给一声专属音：换目标清空不播，叠层才播
+	if execution_stacks > 1 and is_inside_tree():
+		var mark_key := IterationAudioMap.passive_sound("execution_mark")
+		if not mark_key.is_empty():
+			AudioManager.play_sfx(AudioLib.get_sound(mark_key))
 	return 1.0 + execution_bonus_per_stack * float(execution_stacks)
 
 func on_dealt_damage(amount: float) -> void:

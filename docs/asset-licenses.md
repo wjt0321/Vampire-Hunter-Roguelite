@@ -926,3 +926,30 @@
 - 备注：风格基准取自 E:\AI\ComfyUI\output\vhr_reskin\（MVP 阶段用户已认可的 1024 源图），
   沿用同一套 ComfyUI 工作流与后处理脚本。本次本地交付不代表已获发布授权；
   若要商用或分发，需按所用生成服务账号条款核实。
+### 12. 2026-11-14 迭代新增内容专属音效与 BGM 重做
+
+- 状态：已使用
+- 风险：高（AI 生成，商用与分发条件待核实）
+- 类型：音效 / 音乐
+- 来源 URL：不适用（本机生成）
+- 来源平台：AI（本机 ComfyUI 0.45.2 + Stable Audio 3 Small SFX / YuE2 int8）
+- 作者 / 版权方：项目作者（AI 生成）
+- 授权名称：待确认
+- 是否允许商用：待确认
+- 是否允许修改：是（项目内已裁剪、母带、循环接缝、编码）
+- 是否需要署名：待确认
+- 下载 / 生成日期：2026-11-14
+- 原始文件保存位置：
+  - artifacts/game-audio-iteration/raw/（原始 FLAC）
+  - artifacts/game-audio-iteration/manifest.json（提示词、种子、版本）
+  - artifacts/game-audio-iteration/workflows/（实际 API 图）
+  - artifacts/game-audio-iteration/audio_report.json（剪辑参数、波形指标与哈希）
+  - artifacts/game-audio-iteration/preview/（试听样带与循环接缝试听）
+- 项目内使用路径：
+  - assets/audio/generated/sfx/（39 条新增 SFX，与既有 29 条共存共 68 条）
+  - assets/audio/generated/bgm/（6 首 BGM 全部重做）
+- 用途说明：为迭代新增内容补上专属听感，消除“借用别的武器/敌人音效”的重复感；
+  并把 6 首 BGM 统一到本轮视觉风格（粗颗粒像素哥特、暗钢+旧金+深红）。
+- 修改记录：SFX 裁掉前置静音保留瞬态 → 峰值归一到每条目标电平 → 48kHz 单声道 OGG；
+  BGM 响度归一到 -21 LUFS / -2 dBTP → 循环曲做尾首线性交叠接缝 → 48kHz 立体声 OGG。
+- 备注：本次本地交付不代表已获发布授权；若要商用或分发，需按所用生成服务账号条款核实。

@@ -640,6 +640,10 @@ func _after_damage_taken(amount: float) -> void:
 		var rupture := float(p.get("cold_blood_damage"))
 		_subtract_hp(rupture)
 		_report_with_source(rupture, "寒血")
+		# 寒血崩开的专属音：有冷却，不会连成一片
+		var cold_key := IterationAudioMap.passive_sound("cold_blood")
+		if not cold_key.is_empty():
+			AudioManager.play_sfx(AudioLib.get_sound(cold_key))
 
 func _apply_hit_freeze() -> void:
 	## 命中冻帧：让受击者停 0.05 秒，给"打中了"一个物理层面的确认。
@@ -670,9 +674,12 @@ func _flash_hit() -> void:
 	var vfx := _get_vfx()
 	if vfx:
 		vfx.spawn_hit_particles(global_position, sprite.modulate, 4)
-	# 播放受击音效
+	# 播放受击音效：迭代新增的 12 种敌人有专属受击音，没有的走通用音
 	var audio_lib := AudioLib
-	AudioManager.play_sfx(audio_lib.get_sound("hit_enemy"))
+	var hit_key := IterationAudioMap.enemy_hit_sound(_get_enemy_type())
+	if hit_key.is_empty():
+		hit_key = "hit_enemy"
+	AudioManager.play_sfx(audio_lib.get_sound(hit_key))
 
 func _die() -> void:
 	if is_dead:
@@ -689,9 +696,12 @@ func _die() -> void:
 	var vfx := _get_vfx()
 	if vfx:
 		vfx.spawn_death_particles(global_position, sprite.modulate, 10)
-	# 播放死亡音效
+	# 播放死亡音效：迭代新增的 12 种敌人有专属死亡音，没有的走通用音
 	var audio_lib := AudioLib
-	AudioManager.play_sfx(audio_lib.get_sound("enemy_death"))
+	var death_key := IterationAudioMap.enemy_death_sound(_get_enemy_type())
+	if death_key.is_empty():
+		death_key = "enemy_death"
+	AudioManager.play_sfx(audio_lib.get_sound(death_key))
 	# 掉落经验宝石
 	_drop_xp_gem()
 	# 掉落银币（局内货币）

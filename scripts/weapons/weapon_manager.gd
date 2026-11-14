@@ -665,7 +665,7 @@ func _fire_weapon(weapon) -> void:
 	_muzzle_flash(origin, base_direction, kind)
 	_apply_recoil(base_direction)
 	# 一次开火只播放一次，散弹/双管/环形弹幕共享这一声。
-	_play_shoot_sound(kind)
+	_play_shoot_sound(kind, String(weapon.get("fusion_kind")))
 
 	# 进化行为：环形弹幕（放弃瞄准，向四周均匀喷射）
 	if _get_behavior(weapon.weapon_id) == "radial":
@@ -962,8 +962,14 @@ static func create_magic_book() -> Resource:
 	w.auto_aim = true
 	return w
 
-func _play_shoot_sound(weapon_id: String) -> void:
+func _play_shoot_sound(weapon_id: String, fusion_kind: String = "") -> void:
 	var sound_name: String = "shoot_pistol"
+	# 融合卡优先：它不改主武器 id，但会改变这发子弹听起来该是什么。
+	var fusion_key := IterationAudioMap.fusion_sound(fusion_kind)
+	if not fusion_key.is_empty():
+		var fusion_stream := _audio_lib.get_sound(fusion_key)
+		AudioManager.play_sfx(fusion_stream)
+		return
 	match weapon_id:
 		"shotgun":
 			sound_name = "shoot_shotgun"
@@ -985,14 +991,22 @@ func _play_shoot_sound(weapon_id: String) -> void:
 			sound_name = "poison_cloud"
 		"lightning_chain":
 			sound_name = "lightning_chain"
-		"scythe", "thorn_whip":
-			sound_name = "knife_throw"
-		"frost_bell", "soul_lantern":
-			sound_name = "holy_wand"
-		"repeater", "chain_gun":
-			sound_name = "shoot_pistol"
+		# 迭代新增的武器改用专属发射音（2026-11-14）；
+		# 没进 IterationAudioMap 的仍走上面的通用映射。
+		"scythe":
+			sound_name = "shot_scythe"
+		"thorn_whip":
+			sound_name = "shot_thorn_whip"
+		"frost_bell":
+			sound_name = "shot_frost_bell"
+		"repeater":
+			sound_name = "shot_repeater"
+		"soul_lantern":
+			sound_name = "shot_soul_lantern"
 		"spike_tome":
-			sound_name = "shoot_magic"
+			sound_name = "shot_spike_tome"
+		"chain_gun":
+			sound_name = "shot_chain_gun"
 	var sound := _audio_lib.get_sound(sound_name)
 	AudioManager.play_sfx(sound)
 
@@ -1531,7 +1545,7 @@ func _spawn_scythes(weapon) -> void:
 	var count: int = weapon.get_scaled_projectile_count()
 	if _get_behavior(weapon.weapon_id) == "scythe_fan":
 		count = maxi(count, 3)
-	_play_shoot_sound("scythe")
+	_play_shoot_sound("scythe", String(weapon.get("fusion_kind")))
 	var player_mult: float = player.get_total_damage_multiplier() if player.has_method("get_total_damage_multiplier") else 1.0
 	for i in range(count):
 		if _live_count("player_scythe") >= 6:
@@ -1561,7 +1575,7 @@ func _spawn_whip(weapon) -> void:
 	if direction == Vector2.ZERO:
 		direction = Vector2.RIGHT
 	var swings: int = weapon.get_scaled_swings()
-	_play_shoot_sound("thorn_whip")
+	_play_shoot_sound("thorn_whip", String(weapon.get("fusion_kind")))
 	var player_mult: float = player.get_total_damage_multiplier() if player.has_method("get_total_damage_multiplier") else 1.0
 	for i in range(swings):
 		var lash = preload("res://scripts/player/thorn_lash.gd").new()
@@ -1591,7 +1605,7 @@ func _spawn_frost(weapon) -> void:
 	_ensure_current_scene()
 	if _current_scene:
 		_current_scene.add_child(ring)
-	_play_shoot_sound("frost_bell")
+	_play_shoot_sound("frost_bell", String(weapon.get("fusion_kind")))
 
 func _get_nearest_enemy_position(from: Vector2) -> Vector2:
 	# Recheck living targets before placing an attack.
@@ -1625,7 +1639,7 @@ func _spawn_repeater(weapon) -> void:
 	var count: int = weapon.get_scaled_projectile_count()
 	var gap: float = weapon.get_scaled_burst_gap()
 	var heavy: bool = _get_behavior(weapon.weapon_id) == "heavy_last"
-	_play_shoot_sound("repeater")
+	_play_shoot_sound("repeater", String(weapon.get("fusion_kind")))
 	for i in range(count):
 		var index := i
 		var delay := gap * float(i)
@@ -1651,7 +1665,7 @@ func _spawn_souls(weapon) -> void:
 	if _live_count("player_soul") >= 4:
 		return
 	var count: int = mini(weapon.get_scaled_projectile_count(), 4 - _live_count("player_soul"))
-	_play_shoot_sound("soul_lantern")
+	_play_shoot_sound("soul_lantern", String(weapon.get("fusion_kind")))
 	for i in range(count):
 		var wisp = preload("res://scripts/player/soul_wisp.gd").new()
 		wisp.global_position = player.global_position
@@ -1677,7 +1691,7 @@ func _spawn_spikes(weapon) -> void:
 	var dir := (aim - origin).normalized()
 	if dir == Vector2.ZERO:
 		dir = Vector2.RIGHT
-	_play_shoot_sound("spike_tome")
+	_play_shoot_sound("spike_tome", String(weapon.get("fusion_kind")))
 	for i in range(count):
 		var spike = preload("res://scripts/player/ground_spike.gd").new()
 		spike.global_position = aim + dir * 54.0 * float(i)
@@ -1692,7 +1706,7 @@ func _spawn_spikes(weapon) -> void:
 func _fire_chain_gun(weapon) -> void:
 	var direction := _shot_direction(bool(weapon.auto_aim))
 	_muzzle_flash(player.global_position, direction, "chain_gun")
-	_play_shoot_sound("chain_gun")
+	_play_shoot_sound("chain_gun", String(weapon.get("fusion_kind")))
 	_spawn_bullet(player.global_position, direction, weapon)
 
 func _chain_from(from_pos: Vector2, dealt: float) -> void:

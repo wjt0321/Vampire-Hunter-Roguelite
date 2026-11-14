@@ -7,6 +7,17 @@ const SFX_KEYS: Array[String] = [
 	"hover", "teleport", "shoot_crossbow", "flame_thrower", "blood_burst",
 	"holy_wand", "purchase", "chest_open", "room_clear", "door_open",
 	"pickup_coin", "pickup_magnet", "pickup_frenzy",
+	# 迭代新增内容（2026-11-14）：12 武器/融合卡发射音 + 12 敌人受击 + 12 敌人死亡 + 3 被动
+	"shot_scythe", "shot_thorn_whip", "shot_frost_bell", "shot_repeater",
+	"shot_soul_lantern", "shot_spike_tome", "shot_chain_gun", "shot_thunder_bolt",
+	"shot_miasma", "shot_returning_blade", "shot_twin_chant", "shot_burning_blood",
+	"hit_shield_guard", "hit_blood_priest", "hit_web_weaver", "hit_coffin_guard",
+	"hit_blood_hound", "hit_furnace_golem", "hit_burrower", "hit_gem_leech",
+	"hit_lantern_wraith", "hit_alchemist_pitcher", "hit_resonance_mage", "hit_moon_wing",
+	"death_shield_guard", "death_blood_priest", "death_web_weaver", "death_coffin_guard",
+	"death_blood_hound", "death_furnace_golem", "death_burrower", "death_gem_leech",
+	"death_lantern_wraith", "death_alchemist_pitcher", "death_resonance_mage", "death_moon_wing",
+	"passive_execution_mark", "passive_time_gear", "passive_cold_blood",
 ]
 const BGM_LOOPS: Dictionary = {
 	"menu": true, "battle": true, "boss": true,
@@ -50,7 +61,7 @@ func _run() -> void:
 			check(AudioServer.get_bus_send(bus_index) == &"Master", "audio bus routes to Master " + bus_name)
 	var lib = root.get_node("AudioLib")
 	var audio = root.get_node("AudioManager")
-	check(lib.SFX_PATHS.size() == 29 and lib.BGM_PATHS.size() == 6, "complete 29 SFX and 6 BGM catalog")
+	check(lib.SFX_PATHS.size() == 68 and lib.BGM_PATHS.size() == 6, "complete 68 SFX and 6 BGM catalog")
 	for key in SFX_KEYS:
 		var stream: AudioStream = lib.get_sound(key)
 		check_asset(stream, "res://assets/audio/generated/sfx/%s.ogg" % key, false)

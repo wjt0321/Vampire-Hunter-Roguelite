@@ -1,0 +1,1115 @@
+{
+  "assets": [
+    {
+      "kind": "sfx",
+      "key": "shot_scythe",
+      "label": "回旋镰",
+      "file": "assets/audio/generated/sfx/shot_scythe.ogg",
+      "seconds": 0.41733333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -11.81440821790545,
+      "rms_dbfs": -29.650194344634183,
+      "sha256": "55e47b679f4802964f1ecb580064a78de8783dad4ab7869112e5ceee476e83b3",
+      "edit": {
+        "source_start_seconds": 0.276,
+        "source_end_seconds": 0.696,
+        "peak_target_dbfs": -11
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "shot_thorn_whip",
+      "label": "荆棘长鞭",
+      "file": "assets/audio/generated/sfx/shot_thorn_whip.ogg",
+      "seconds": 0.3373333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -12.226161809634172,
+      "rms_dbfs": -33.83733532792422,
+      "sha256": "ff63a7487a139dbfe7cfd2b0a12f6a3755886935defcb666ed42fe7f9952eb4a",
+      "edit": {
+        "source_start_seconds": 0.328,
+        "source_end_seconds": 0.668,
+        "peak_target_dbfs": -12
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "shot_frost_bell",
+      "label": "寒霜圣铃",
+      "file": "assets/audio/generated/sfx/shot_frost_bell.ogg",
+      "seconds": 0.7693333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -12.26794388546216,
+      "rms_dbfs": -32.67290101047587,
+      "sha256": "1c32b1fd2ff107ec183101019f2e96eed7d9d666ce5f7060848db6665f1507f5",
+      "edit": {
+        "source_start_seconds": 0.004,
+        "source_end_seconds": 0.754,
+        "peak_target_dbfs": -12
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "shot_repeater",
+      "label": "连珠火铳",
+      "file": "assets/audio/generated/sfx/shot_repeater.ogg",
+      "seconds": 0.30133333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -13.688212063310761,
+      "rms_dbfs": -32.02479855887909,
+      "sha256": "8e7d995dffc54063d1cfc6d93232b97fb328c8a2a1e3cd7dd98ba3d099709299",
+      "edit": {
+        "source_start_seconds": 0.028,
+        "source_end_seconds": 0.328,
+        "peak_target_dbfs": -13
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "shot_soul_lantern",
+      "label": "魂引灯",
+      "file": "assets/audio/generated/sfx/shot_soul_lantern.ogg",
+      "seconds": 0.5473333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -12.988208849596358,
+      "rms_dbfs": -25.26368458516032,
+      "sha256": "c983995900823b1042a1b63a1b13fdaedc0c23d6019a5be212bbb00a2d8e892e",
+      "edit": {
+        "source_start_seconds": 0.152,
+        "source_end_seconds": 0.702,
+        "peak_target_dbfs": -13
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "shot_spike_tome",
+      "label": "地刺法典",
+      "file": "assets/audio/generated/sfx/shot_spike_tome.ogg",
+      "seconds": 0.47733333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -11.99054711238073,
+      "rms_dbfs": -36.81040944992323,
+      "sha256": "2d2838c915b0c9dcc941022cdccf48a81e1eb955cee764dafd6880d0a64f2d68",
+      "edit": {
+        "source_start_seconds": 0.024,
+        "source_end_seconds": 0.504,
+        "peak_target_dbfs": -12
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "shot_chain_gun",
+      "label": "锁链枪",
+      "file": "assets/audio/generated/sfx/shot_chain_gun.ogg",
+      "seconds": 0.3973333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -11.072710832657638,
+      "rms_dbfs": -33.726931002071325,
+      "sha256": "4db7461ca7631057f4b8d570effe662f47c4354b712fc66cdeb7322a1a0562a4",
+      "edit": {
+        "source_start_seconds": 0.176,
+        "source_end_seconds": 0.576,
+        "peak_target_dbfs": -11
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "shot_thunder_bolt",
+      "label": "雷鸣融合",
+      "file": "assets/audio/generated/sfx/shot_thunder_bolt.ogg",
+      "seconds": 0.5173333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -10.158021905676831,
+      "rms_dbfs": -36.0874761505631,
+      "sha256": "fd1eb69e4e1b2b33c3cf734c3da33ca9a4310e9a7670afcf57c8b1d10d731b33",
+      "edit": {
+        "source_start_seconds": 0.0,
+        "source_end_seconds": 0.52,
+        "peak_target_dbfs": -10
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "shot_miasma",
+      "label": "瘴气融合",
+      "file": "assets/audio/generated/sfx/shot_miasma.ogg",
+      "seconds": 0.7973333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -12.896449667290002,
+      "rms_dbfs": -26.356013586886284,
+      "sha256": "4c0880eef30f7b786048c3b311152708642174804dcebaa8e21e1e92d637b604",
+      "edit": {
+        "source_start_seconds": 0.112,
+        "source_end_seconds": 0.912,
+        "peak_target_dbfs": -13
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "shot_returning_blade",
+      "label": "回返刃融合",
+      "file": "assets/audio/generated/sfx/shot_returning_blade.ogg",
+      "seconds": 0.35733333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -12.495387868421393,
+      "rms_dbfs": -34.861294948736436,
+      "sha256": "2a906d838e2f5c234ef24b1248b63513861991776e569f5004eab32a23e94d74",
+      "edit": {
+        "source_start_seconds": 1.444,
+        "source_end_seconds": 1.804,
+        "peak_target_dbfs": -12
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "shot_twin_chant",
+      "label": "双声咏唱融合",
+      "file": "assets/audio/generated/sfx/shot_twin_chant.ogg",
+      "seconds": 0.5973333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -12.053195898557238,
+      "rms_dbfs": -25.541352155124486,
+      "sha256": "207528af7f2bbd433017e187894f92678e81a10781004b5eca2dd11c71cfb9b7",
+      "edit": {
+        "source_start_seconds": 0.1,
+        "source_end_seconds": 0.7,
+        "peak_target_dbfs": -12
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "shot_burning_blood",
+      "label": "燃血融合",
+      "file": "assets/audio/generated/sfx/shot_burning_blood.ogg",
+      "seconds": 0.5106666666666667,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -11.761058051588016,
+      "rms_dbfs": -30.60763482217347,
+      "sha256": "aada5332dd883efe4afe1f6891f4f74074aa707e7bba3cf9034cea783fb7aa85",
+      "edit": {
+        "source_start_seconds": 0.14,
+        "source_end_seconds": 0.64,
+        "peak_target_dbfs": -11
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "death_shield_guard",
+      "label": "盾卫死亡",
+      "file": "assets/audio/generated/sfx/death_shield_guard.ogg",
+      "seconds": 0.6973333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -10.517012323386972,
+      "rms_dbfs": -31.31899645834878,
+      "sha256": "88b654ddc0659b7f1be155b8cd032c266ce36974b8fad1206ed39c83d0db0dd7",
+      "edit": {
+        "source_start_seconds": 0.296,
+        "source_end_seconds": 0.996,
+        "peak_target_dbfs": -10
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "death_blood_priest",
+      "label": "血祭司死亡",
+      "file": "assets/audio/generated/sfx/death_blood_priest.ogg",
+      "seconds": 0.82,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -10.951976619300348,
+      "rms_dbfs": -33.89904094247128,
+      "sha256": "fa732627e4235e183c36e1c470daccef46f3c352a08d9bdd6e904b62dee14bd4",
+      "edit": {
+        "source_start_seconds": 0.08,
+        "source_end_seconds": 0.88,
+        "peak_target_dbfs": -11
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "death_web_weaver",
+      "label": "织网者死亡",
+      "file": "assets/audio/generated/sfx/death_web_weaver.ogg",
+      "seconds": 0.6473333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -12.215212804519402,
+      "rms_dbfs": -40.96410402567875,
+      "sha256": "3be60b87b3c8f241edbb09ed30a5c9ce882028ae1f0da3d2b56ffe3907ee4674",
+      "edit": {
+        "source_start_seconds": 0.068,
+        "source_end_seconds": 0.718,
+        "peak_target_dbfs": -12
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "death_coffin_guard",
+      "label": "棺卫死亡",
+      "file": "assets/audio/generated/sfx/death_coffin_guard.ogg",
+      "seconds": 0.8473333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -10.210464233240907,
+      "rms_dbfs": -37.574051495445474,
+      "sha256": "e3eed43d8ed1bd8a63db7d13d69836877e76c065638d23b9b36fc5a657739c13",
+      "edit": {
+        "source_start_seconds": 0.164,
+        "source_end_seconds": 1.014,
+        "peak_target_dbfs": -10
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "death_blood_hound",
+      "label": "血猎犬死亡",
+      "file": "assets/audio/generated/sfx/death_blood_hound.ogg",
+      "seconds": 0.62,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -11.185490282759062,
+      "rms_dbfs": -34.038255984431196,
+      "sha256": "67f8e58e485298ea8d8781a6b7e848398f07b551aee527b8013c51ea69061e77",
+      "edit": {
+        "source_start_seconds": 0.216,
+        "source_end_seconds": 0.816,
+        "peak_target_dbfs": -11
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "death_furnace_golem",
+      "label": "炉心巨像死亡",
+      "file": "assets/audio/generated/sfx/death_furnace_golem.ogg",
+      "seconds": 0.9473333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -9.33900795699051,
+      "rms_dbfs": -24.470744181567035,
+      "sha256": "517143b1e13b19c7c1d1e1c08acacad090b172badb5ab244a8771ed23dedd947",
+      "edit": {
+        "source_start_seconds": 0.28,
+        "source_end_seconds": 1.23,
+        "peak_target_dbfs": -9
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "death_burrower",
+      "label": "潜伏者死亡",
+      "file": "assets/audio/generated/sfx/death_burrower.ogg",
+      "seconds": 0.7473333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -11.943206801785244,
+      "rms_dbfs": -33.92224784231875,
+      "sha256": "279e10ada8a6e27782a8c7ac5b7ac65de1ecfc3e620a975f22eaff2680374578",
+      "edit": {
+        "source_start_seconds": 0.084,
+        "source_end_seconds": 0.834,
+        "peak_target_dbfs": -12
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "death_gem_leech",
+      "label": "吞晶虫死亡",
+      "file": "assets/audio/generated/sfx/death_gem_leech.ogg",
+      "seconds": 0.6973333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -10.937771097697738,
+      "rms_dbfs": -26.971783226910986,
+      "sha256": "8ecfb7f6cc5296eea370fbc85c866a571e9496fad11481cedde52214224f751d",
+      "edit": {
+        "source_start_seconds": 0.0,
+        "source_end_seconds": 0.7,
+        "peak_target_dbfs": -11
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "death_lantern_wraith",
+      "label": "灯鬼死亡",
+      "file": "assets/audio/generated/sfx/death_lantern_wraith.ogg",
+      "seconds": 0.74,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -12.097122308253903,
+      "rms_dbfs": -25.812683810220708,
+      "sha256": "8d864d661036a7804f0eebe1e2b3ef0264c48cb5b381e6faf9d7aa572e6f5ebf",
+      "edit": {
+        "source_start_seconds": 0.18,
+        "source_end_seconds": 0.9,
+        "peak_target_dbfs": -12
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "death_alchemist_pitcher",
+      "label": "炼金投手死亡",
+      "file": "assets/audio/generated/sfx/death_alchemist_pitcher.ogg",
+      "seconds": 0.7173333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -10.931221479380442,
+      "rms_dbfs": -36.267801584099985,
+      "sha256": "d3267ab629ec3513a9011be73371f625c6d0797e653c94b6c98dd6cccfa38cca",
+      "edit": {
+        "source_start_seconds": 0.064,
+        "source_end_seconds": 0.784,
+        "peak_target_dbfs": -11
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "death_resonance_mage",
+      "label": "共鸣术士死亡",
+      "file": "assets/audio/generated/sfx/death_resonance_mage.ogg",
+      "seconds": 0.8773333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -9.493154998667082,
+      "rms_dbfs": -25.23595633342406,
+      "sha256": "0806c1806a8d169dfbb366743c2aee263790e8a15afe2c4d25feff7740852456",
+      "edit": {
+        "source_start_seconds": 0.008,
+        "source_end_seconds": 0.888,
+        "peak_target_dbfs": -10
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "death_moon_wing",
+      "label": "月翼兽死亡",
+      "file": "assets/audio/generated/sfx/death_moon_wing.ogg",
+      "seconds": 0.8473333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -10.898043448716383,
+      "rms_dbfs": -29.773448431119487,
+      "sha256": "60f81d294f8de0767362e8037c78bb4ad9c8a19086b29bc6697a5b3ec8b77a4b",
+      "edit": {
+        "source_start_seconds": 0.084,
+        "source_end_seconds": 0.934,
+        "peak_target_dbfs": -11
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "hit_shield_guard",
+      "label": "盾卫受击",
+      "file": "assets/audio/generated/sfx/hit_shield_guard.ogg",
+      "seconds": 0.19733333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -13.114263694628058,
+      "rms_dbfs": -31.371732151669896,
+      "sha256": "fe3a8374679fd890ea8013c704ed497626ceae5906360cf6e35e4b9143a0baaa",
+      "edit": {
+        "source_start_seconds": 0.0,
+        "source_end_seconds": 0.2,
+        "peak_target_dbfs": -13
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "hit_blood_priest",
+      "label": "血祭司受击",
+      "file": "assets/audio/generated/sfx/hit_blood_priest.ogg",
+      "seconds": 0.19733333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -14.063916559797551,
+      "rms_dbfs": -33.99585434397436,
+      "sha256": "66bfcedc78400a2f53354834e58927a7a3cca5ec5442861f418d4356d22fd45c",
+      "edit": {
+        "source_start_seconds": 0.072,
+        "source_end_seconds": 0.272,
+        "peak_target_dbfs": -14
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "hit_web_weaver",
+      "label": "织网者受击",
+      "file": "assets/audio/generated/sfx/hit_web_weaver.ogg",
+      "seconds": 0.21733333333333332,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -14.007184398798675,
+      "rms_dbfs": -37.4957647097179,
+      "sha256": "5a7d0d50d69e32784c8d43b1dc0bf4aef6b140a682325f599d3c44544afa5423",
+      "edit": {
+        "source_start_seconds": 0.008,
+        "source_end_seconds": 0.228,
+        "peak_target_dbfs": -14
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "hit_coffin_guard",
+      "label": "棺卫受击",
+      "file": "assets/audio/generated/sfx/hit_coffin_guard.ogg",
+      "seconds": 0.23733333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -13.048731143110867,
+      "rms_dbfs": -33.498137621137126,
+      "sha256": "65e559133500abeb619581a94f8d203a8db87b926d884b93307261b89b5bea59",
+      "edit": {
+        "source_start_seconds": 0.324,
+        "source_end_seconds": 0.564,
+        "peak_target_dbfs": -13
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "hit_blood_hound",
+      "label": "血猎犬受击",
+      "file": "assets/audio/generated/sfx/hit_blood_hound.ogg",
+      "seconds": 0.19733333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -14.103251353856976,
+      "rms_dbfs": -29.872303397237886,
+      "sha256": "2830f2a9938d67ca093bacd0242a00317822b94c38fd8861e8015c94b0d68f6d",
+      "edit": {
+        "source_start_seconds": 0.036,
+        "source_end_seconds": 0.236,
+        "peak_target_dbfs": -14
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "hit_furnace_golem",
+      "label": "炉心巨像受击",
+      "file": "assets/audio/generated/sfx/hit_furnace_golem.ogg",
+      "seconds": 0.23733333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -11.850397305552585,
+      "rms_dbfs": -24.907243912774288,
+      "sha256": "82b0c964c4789d25f8a868f5c8f8f68fe6c89710c4b3a209362a3f14061deb32",
+      "edit": {
+        "source_start_seconds": 0.012,
+        "source_end_seconds": 0.252,
+        "peak_target_dbfs": -12
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "hit_burrower",
+      "label": "潜伏者受击",
+      "file": "assets/audio/generated/sfx/hit_burrower.ogg",
+      "seconds": 0.21733333333333332,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -14.030927729409504,
+      "rms_dbfs": -31.31837004178088,
+      "sha256": "130faf8cdd8a4f0b47cbd5472b9bb59b80f3577ad2108b531056ce149ade8aad",
+      "edit": {
+        "source_start_seconds": 0.176,
+        "source_end_seconds": 0.396,
+        "peak_target_dbfs": -14
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "hit_gem_leech",
+      "label": "吞晶虫受击",
+      "file": "assets/audio/generated/sfx/hit_gem_leech.ogg",
+      "seconds": 0.19733333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -13.138379281283592,
+      "rms_dbfs": -30.84733199068751,
+      "sha256": "df28499dfc606201a9b29fefb028d6952302881fb737b8008d31d9e54b780594",
+      "edit": {
+        "source_start_seconds": 0.004,
+        "source_end_seconds": 0.204,
+        "peak_target_dbfs": -13
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "hit_lantern_wraith",
+      "label": "灯鬼受击",
+      "file": "assets/audio/generated/sfx/hit_lantern_wraith.ogg",
+      "seconds": 0.21733333333333332,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -14.710448992627974,
+      "rms_dbfs": -26.195242581149657,
+      "sha256": "cdcca452092939adebf6704a08ea53243b0c55e4b2e12463bce7a6086a895876",
+      "edit": {
+        "source_start_seconds": 0.12,
+        "source_end_seconds": 0.34,
+        "peak_target_dbfs": -14
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "hit_alchemist_pitcher",
+      "label": "炼金投手受击",
+      "file": "assets/audio/generated/sfx/hit_alchemist_pitcher.ogg",
+      "seconds": 0.21733333333333332,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -13.885855302660273,
+      "rms_dbfs": -34.993270817484664,
+      "sha256": "619fe9f7e0e0ac1e415ffe825d6c568340e9ee92a13e3a267d66ebc157d3b06f",
+      "edit": {
+        "source_start_seconds": 0.004,
+        "source_end_seconds": 0.224,
+        "peak_target_dbfs": -14
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "hit_resonance_mage",
+      "label": "共鸣术士受击",
+      "file": "assets/audio/generated/sfx/hit_resonance_mage.ogg",
+      "seconds": 0.23733333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -12.934640285243315,
+      "rms_dbfs": -20.441219131232053,
+      "sha256": "7e2632f42e5a86013d5d929610f3a918fc56eddce8218ea0810ac8c6bdd4a688",
+      "edit": {
+        "source_start_seconds": 0.272,
+        "source_end_seconds": 0.512,
+        "peak_target_dbfs": -13
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "hit_moon_wing",
+      "label": "月翼兽受击",
+      "file": "assets/audio/generated/sfx/hit_moon_wing.ogg",
+      "seconds": 0.21733333333333332,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -13.911719485208074,
+      "rms_dbfs": -26.565382120287204,
+      "sha256": "3451d2be2e3bf4248634d1821dffd98bf6162a8288cb09766e4dd365a15ee816",
+      "edit": {
+        "source_start_seconds": 0.04,
+        "source_end_seconds": 0.26,
+        "peak_target_dbfs": -14
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "passive_execution_mark",
+      "label": "处刑印记",
+      "file": "assets/audio/generated/sfx/passive_execution_mark.ogg",
+      "seconds": 0.5473333333333333,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -12.545505934539943,
+      "rms_dbfs": -38.522656537090434,
+      "sha256": "e496452d65765f2f8ff6af4f492711e017039c697d4394e8ef3b1aab076d525b",
+      "edit": {
+        "source_start_seconds": 0.308,
+        "source_end_seconds": 0.858,
+        "peak_target_dbfs": -12
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "passive_time_gear",
+      "label": "时滞齿轮",
+      "file": "assets/audio/generated/sfx/passive_time_gear.ogg",
+      "seconds": 0.6973333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -13.368584355801548,
+      "rms_dbfs": -38.58407441638099,
+      "sha256": "a69ad362e3be5d3052ad0e240eedb7b336dd633aa83796908a42ffec3fb3042b",
+      "edit": {
+        "source_start_seconds": 0.02,
+        "source_end_seconds": 0.72,
+        "peak_target_dbfs": -13
+      }
+    },
+    {
+      "kind": "sfx",
+      "key": "passive_cold_blood",
+      "label": "寒血反应",
+      "file": "assets/audio/generated/sfx/passive_cold_blood.ogg",
+      "seconds": 0.5973333333333334,
+      "channels": 1,
+      "sample_rate": 48000,
+      "peak_dbfs": -12.795129852914089,
+      "rms_dbfs": -38.92418288331926,
+      "sha256": "f2729dbfe887153d60849ea26f4872150bdbcc6e61cb409e32b17d9fbdbd9e3b",
+      "edit": {
+        "source_start_seconds": 0.152,
+        "source_end_seconds": 0.752,
+        "peak_target_dbfs": -12
+      }
+    },
+    {
+      "kind": "bgm",
+      "key": "menu",
+      "label": "夜幕猎人",
+      "file": "assets/audio/generated/bgm/menu.ogg",
+      "seconds": 56.75,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -6.663533920494828,
+      "rms_dbfs": -22.952419705762864,
+      "sha256": "8be4a5898522cfbdb3062b58c9aa187a16eac391ca76a5d749ff70b5b714d2d8",
+      "edit": {
+        "source_start_seconds": 1,
+        "source_end_seconds": 59.0,
+        "wrap_crossfade_seconds": 1.25,
+        "gain_db": -6.42,
+        "method": "tail/head linear overlap; cyclic rotation preserves sample continuity"
+      },
+      "loudness": {
+        "input_i": "-20.57",
+        "input_tp": "-6.66",
+        "input_lra": "12.60",
+        "input_thresh": "-30.99",
+        "output_i": "-18.88",
+        "output_tp": "-5.97",
+        "output_lra": "9.50",
+        "output_thresh": "-29.16",
+        "normalization_type": "dynamic",
+        "target_offset": "-2.12"
+      },
+      "loop": true,
+      "seam_jump": 0.001066618598997593
+    },
+    {
+      "kind": "bgm",
+      "key": "battle",
+      "label": "猎杀脉冲",
+      "file": "assets/audio/generated/bgm/battle.ogg",
+      "seconds": 57.35,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -7.333390746964325,
+      "rms_dbfs": -23.58756121138137,
+      "sha256": "a38c02f4af3f3ba7400723fdcd29e6d3def2fb62bdeca0feca02ca7c3d6d1e01",
+      "edit": {
+        "source_start_seconds": 1,
+        "source_end_seconds": 59.0,
+        "wrap_crossfade_seconds": 0.65,
+        "gain_db": -3.66,
+        "method": "tail/head linear overlap; cyclic rotation preserves sample continuity"
+      },
+      "loudness": {
+        "input_i": "-20.92",
+        "input_tp": "-7.32",
+        "input_lra": "4.70",
+        "input_thresh": "-30.92",
+        "output_i": "-19.62",
+        "output_tp": "-6.95",
+        "output_lra": "2.20",
+        "output_thresh": "-29.62",
+        "normalization_type": "dynamic",
+        "target_offset": "-1.38"
+      },
+      "loop": true,
+      "seam_jump": 0.0057698823511600494
+    },
+    {
+      "kind": "bgm",
+      "key": "boss",
+      "label": "猩红王座",
+      "file": "assets/audio/generated/bgm/boss.ogg",
+      "seconds": 57.35,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -8.248654841318437,
+      "rms_dbfs": -21.024027786931995,
+      "sha256": "36b8aa9b5df288775df4fa6716971cf967d1b591984b85bb0dbb1d7e86b481a1",
+      "edit": {
+        "source_start_seconds": 1,
+        "source_end_seconds": 59.0,
+        "wrap_crossfade_seconds": 0.65,
+        "gain_db": -0.5599999999999987,
+        "method": "tail/head linear overlap; cyclic rotation preserves sample continuity"
+      },
+      "loudness": {
+        "input_i": "-21.00",
+        "input_tp": "-8.21",
+        "input_lra": "5.10",
+        "input_thresh": "-31.00",
+        "output_i": "-19.46",
+        "output_tp": "-6.29",
+        "output_lra": "2.40",
+        "output_thresh": "-29.46",
+        "normalization_type": "dynamic",
+        "target_offset": "-1.54"
+      },
+      "loop": true,
+      "seam_jump": 0.0031478144228458405
+    },
+    {
+      "kind": "bgm",
+      "key": "shop",
+      "label": "烛火与银币",
+      "file": "assets/audio/generated/bgm/shop.ogg",
+      "seconds": 56.75,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -9.391803025132553,
+      "rms_dbfs": -22.92899852382501,
+      "sha256": "83ed730e6cc015aa4b4b511741d282f2ea4be826746a9702f2d3aac59862d47f",
+      "edit": {
+        "source_start_seconds": 1,
+        "source_end_seconds": 59.0,
+        "wrap_crossfade_seconds": 1.25,
+        "gain_db": -7.1,
+        "method": "tail/head linear overlap; cyclic rotation preserves sample continuity"
+      },
+      "loudness": {
+        "input_i": "-21.02",
+        "input_tp": "-9.39",
+        "input_lra": "2.50",
+        "input_thresh": "-31.04",
+        "output_i": "-20.35",
+        "output_tp": "-7.28",
+        "output_lra": "2.80",
+        "output_thresh": "-30.35",
+        "normalization_type": "dynamic",
+        "target_offset": "-0.65"
+      },
+      "loop": true,
+      "seam_jump": 0.0004059311468154192
+    },
+    {
+      "kind": "bgm",
+      "key": "victory",
+      "label": "黎明归来",
+      "file": "assets/audio/generated/bgm/victory.ogg",
+      "seconds": 20.0,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -5.893215626001056,
+      "rms_dbfs": -23.823223383018277,
+      "sha256": "35cef66201da810d914ff819df2b1009b74f133e8202cf6174bf75ef4448b617",
+      "edit": {
+        "end_fade_seconds": 2.0,
+        "gain_db": -5.550000000000001,
+        "loop": false
+      },
+      "loudness": {
+        "input_i": "-21.40",
+        "input_tp": "-5.87",
+        "input_lra": "2.80",
+        "input_thresh": "-31.55",
+        "output_i": "-20.39",
+        "output_tp": "-5.22",
+        "output_lra": "2.00",
+        "output_thresh": "-30.49",
+        "normalization_type": "dynamic",
+        "target_offset": "-0.61"
+      },
+      "loop": false
+    },
+    {
+      "kind": "bgm",
+      "key": "defeat",
+      "label": "最后的烛火",
+      "file": "assets/audio/generated/bgm/defeat.ogg",
+      "seconds": 20.0,
+      "channels": 2,
+      "sample_rate": 48000,
+      "peak_dbfs": -8.059599553502172,
+      "rms_dbfs": -24.28990940793352,
+      "sha256": "0dbd51cd2c9228014aca45ad1c790900eb85047180f3e991650e6d862b308d34",
+      "edit": {
+        "end_fade_seconds": 2.0,
+        "gain_db": 0.3099999999999987,
+        "loop": false
+      },
+      "loudness": {
+        "input_i": "-21.49",
+        "input_tp": "-8.04",
+        "input_lra": "3.10",
+        "input_thresh": "-31.60",
+        "output_i": "-21.13",
+        "output_tp": "-7.95",
+        "output_lra": "2.70",
+        "output_thresh": "-31.20",
+        "normalization_type": "dynamic",
+        "target_offset": "0.13"
+      },
+      "loop": false
+    }
+  ],
+  "reels": [
+    {
+      "file": "sfx_reel_1.mp3",
+      "entries": [
+        {
+          "start": 0,
+          "end": 0.42,
+          "key": "shot_scythe",
+          "label": "回旋镰"
+        },
+        {
+          "start": 3,
+          "end": 3.34,
+          "key": "shot_thorn_whip",
+          "label": "荆棘长鞭"
+        },
+        {
+          "start": 6,
+          "end": 6.75,
+          "key": "shot_frost_bell",
+          "label": "寒霜圣铃"
+        },
+        {
+          "start": 9,
+          "end": 9.3,
+          "key": "shot_repeater",
+          "label": "连珠火铳"
+        },
+        {
+          "start": 12,
+          "end": 12.55,
+          "key": "shot_soul_lantern",
+          "label": "魂引灯"
+        },
+        {
+          "start": 15,
+          "end": 15.48,
+          "key": "shot_spike_tome",
+          "label": "地刺法典"
+        },
+        {
+          "start": 18,
+          "end": 18.4,
+          "key": "shot_chain_gun",
+          "label": "锁链枪"
+        },
+        {
+          "start": 21,
+          "end": 21.52,
+          "key": "shot_thunder_bolt",
+          "label": "雷鸣融合"
+        },
+        {
+          "start": 24,
+          "end": 24.8,
+          "key": "shot_miasma",
+          "label": "瘴气融合"
+        },
+        {
+          "start": 27,
+          "end": 27.36,
+          "key": "shot_returning_blade",
+          "label": "回返刃融合"
+        }
+      ]
+    },
+    {
+      "file": "sfx_reel_2.mp3",
+      "entries": [
+        {
+          "start": 0,
+          "end": 0.6,
+          "key": "shot_twin_chant",
+          "label": "双声咏唱融合"
+        },
+        {
+          "start": 3,
+          "end": 3.5,
+          "key": "shot_burning_blood",
+          "label": "燃血融合"
+        },
+        {
+          "start": 6,
+          "end": 6.7,
+          "key": "death_shield_guard",
+          "label": "盾卫死亡"
+        },
+        {
+          "start": 9,
+          "end": 9.8,
+          "key": "death_blood_priest",
+          "label": "血祭司死亡"
+        },
+        {
+          "start": 12,
+          "end": 12.65,
+          "key": "death_web_weaver",
+          "label": "织网者死亡"
+        },
+        {
+          "start": 15,
+          "end": 15.85,
+          "key": "death_coffin_guard",
+          "label": "棺卫死亡"
+        },
+        {
+          "start": 18,
+          "end": 18.6,
+          "key": "death_blood_hound",
+          "label": "血猎犬死亡"
+        },
+        {
+          "start": 21,
+          "end": 21.95,
+          "key": "death_furnace_golem",
+          "label": "炉心巨像死亡"
+        },
+        {
+          "start": 24,
+          "end": 24.75,
+          "key": "death_burrower",
+          "label": "潜伏者死亡"
+        },
+        {
+          "start": 27,
+          "end": 27.7,
+          "key": "death_gem_leech",
+          "label": "吞晶虫死亡"
+        }
+      ]
+    },
+    {
+      "file": "sfx_reel_3.mp3",
+      "entries": [
+        {
+          "start": 0,
+          "end": 0.72,
+          "key": "death_lantern_wraith",
+          "label": "灯鬼死亡"
+        },
+        {
+          "start": 3,
+          "end": 3.7199999999999998,
+          "key": "death_alchemist_pitcher",
+          "label": "炼金投手死亡"
+        },
+        {
+          "start": 6,
+          "end": 6.88,
+          "key": "death_resonance_mage",
+          "label": "共鸣术士死亡"
+        },
+        {
+          "start": 9,
+          "end": 9.85,
+          "key": "death_moon_wing",
+          "label": "月翼兽死亡"
+        },
+        {
+          "start": 12,
+          "end": 12.2,
+          "key": "hit_shield_guard",
+          "label": "盾卫受击"
+        },
+        {
+          "start": 15,
+          "end": 15.2,
+          "key": "hit_blood_priest",
+          "label": "血祭司受击"
+        },
+        {
+          "start": 18,
+          "end": 18.22,
+          "key": "hit_web_weaver",
+          "label": "织网者受击"
+        },
+        {
+          "start": 21,
+          "end": 21.24,
+          "key": "hit_coffin_guard",
+          "label": "棺卫受击"
+        },
+        {
+          "start": 24,
+          "end": 24.2,
+          "key": "hit_blood_hound",
+          "label": "血猎犬受击"
+        },
+        {
+          "start": 27,
+          "end": 27.24,
+          "key": "hit_furnace_golem",
+          "label": "炉心巨像受击"
+        }
+      ]
+    },
+    {
+      "file": "sfx_reel_4.mp3",
+      "entries": [
+        {
+          "start": 0,
+          "end": 0.22,
+          "key": "hit_burrower",
+          "label": "潜伏者受击"
+        },
+        {
+          "start": 3,
+          "end": 3.2,
+          "key": "hit_gem_leech",
+          "label": "吞晶虫受击"
+        },
+        {
+          "start": 6,
+          "end": 6.22,
+          "key": "hit_lantern_wraith",
+          "label": "灯鬼受击"
+        },
+        {
+          "start": 9,
+          "end": 9.22,
+          "key": "hit_alchemist_pitcher",
+          "label": "炼金投手受击"
+        },
+        {
+          "start": 12,
+          "end": 12.24,
+          "key": "hit_resonance_mage",
+          "label": "共鸣术士受击"
+        },
+        {
+          "start": 15,
+          "end": 15.22,
+          "key": "hit_moon_wing",
+          "label": "月翼兽受击"
+        },
+        {
+          "start": 18,
+          "end": 18.55,
+          "key": "passive_execution_mark",
+          "label": "处刑印记"
+        },
+        {
+          "start": 21,
+          "end": 21.7,
+          "key": "passive_time_gear",
+          "label": "时滞齿轮"
+        },
+        {
+          "start": 24,
+          "end": 24.6,
+          "key": "passive_cold_blood",
+          "label": "寒血反应"
+        }
+      ]
+    }
+  ]
+}
