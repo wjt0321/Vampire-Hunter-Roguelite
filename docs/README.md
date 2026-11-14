@@ -1,20 +1,23 @@
 # 项目文档索引
 
-## 先看这一份
+当前玩法只看一份：[CURRENT.md](CURRENT.md)。
+怎么运行、测试命令和目录，看仓库根目录 [README.md](../README.md)。
 
-- **[美术资产状态](asset-status.md)** — 静态美术完成记录、规格依据、历史验收数据与回退方式。
-- **[动态帧与动画资产清单](animation-asset-inventory.md)** — 当前动画覆盖、缺失动作、补帧规格、使用位置、优先级与验收台账。
+## 还在维护的
 
-## 核心文档
+- [当前玩法](CURRENT.md) — 层数、武器、角色、血晶规则、深渊。和代码不一致时，以代码为准，并改这份。
+- [美术资产状态](asset-status.md) — 静态美术完成记录。尺寸冲突时以这份第三节为准。
+- [动态帧与动画资产清单](animation-asset-inventory.md) — 动画覆盖和补帧规格。
+- [素材授权登记](asset-licenses.md)
+- [素材来源清单](asset-source-list.md)
+- [美术资源需求与风格指南](art-assets-requirements.md) — 命名和风格。二节以后的尺寸表是旧的。
 
-- [开发路线图](ROADMAP.md) — 后续开发阶段与建议顺序
-- [美术资源需求与风格指南](art-assets-requirements.md) — 资源规格、命名规范、色彩与像素风格（⚠️ 二节以后的尺寸表是旧规格，实际尺寸以 `asset-status.md` 第三节为准）
-- [素材授权登记](asset-licenses.md) — 第三方素材来源、授权、风险登记
-- [素材来源清单](asset-source-list.md) — 可用素材站、包、作者链接汇总
-- [武器变种与融合方案](superpowers/specs/2026-11-13-weapon-variant-fusion-design.md) — 下一轮玩法的唯一方案。未确认前不实现，也不要在根目录或 GDD 里再写一份
+## 留着查当时为什么这么定，不要拿来排期
 
-## 历史与归档
+- [GDD](GDD.md) — 停在 2026-11-08。
+- [路线图](ROADMAP.md) — 停在 2026-11-14。
+- [武器变种与融合规格](superpowers/specs/2026-11-13-weapon-variant-fusion-design.md) — 已经落地。不要再实现第二遍。
+- [竞品拆解](reference-deconstruction.md) — 调研记录。已经做进游戏的部分见 CURRENT，不要按这份再抄一轮。
+- [归档](archive/README.md) — 更早的采集报告和修复记录。
 
-- **[归档文档](archive/README.md)** — 已不再维护的历史文档（素材采集报告、音频前修复记录、旧代码审核、重构规划），保留供追溯，不作为当前依据。
-
-`asset-inventory.md` 是早期素材缺口清单（历史记录）；当前动画迭代以 `animation-asset-inventory.md` 为准。
+`asset-inventory.md` 是早期素材缺口，不使用。

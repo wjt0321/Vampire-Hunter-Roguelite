@@ -273,7 +273,7 @@ kbd{
 .affix span{font-size:12px;color:var(--ash)}
 
 /* ---------- 角色 / 敌人 ---------- */
-.hero-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:900px;margin:0 auto}
+.hero-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1100px;margin:0 auto}
 .hero-card{
   text-align:center;padding:34px 26px 28px;border:1px solid var(--line);
   background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.005));
@@ -299,6 +299,7 @@ kbd{
 }
 .sprite.player{background-image:url(../img/chars/player_idle.png);background-size:400% 100%;animation:sp4 1.2s steps(1,end) infinite}
 .sprite.priestess{background-image:url(../img/chars/priestess_idle.png);background-size:400% 100%;animation:sp4 1.2s steps(1,end) infinite}
+.sprite.assassin{background-image:url(../img/chars/player_idle.png);background-size:400% 100%;animation:sp4 1.2s steps(1,end) infinite;filter:hue-rotate(190deg) saturate(.55) brightness(1.05)}
 .sprite.boss-sprite{width:190px;height:190px;background-image:url(../img/boss/boss_idle.png);background-size:400% 100%;animation:sp4 1.6s steps(1,end) infinite}
 @keyframes sp4{
   0%,24.9%{background-position-x:0%}

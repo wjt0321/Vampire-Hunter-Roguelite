@@ -15,8 +15,9 @@
 
 | 文档 | 作用 |
 |---|---|
-| [../GDD.md](../GDD.md) | 玩法规格与取舍说明 |
-| [../ROADMAP.md](../ROADMAP.md) | 开发阶段与推进顺序 |
+| [../CURRENT.md](../CURRENT.md) | 当前玩法。层数、武器、角色、深渊 |
+| [../GDD.md](../GDD.md) | 2026-11-08 以前的设计取舍，不再改数字 |
+| [../ROADMAP.md](../ROADMAP.md) | 做到 2026-11-14 的阶段记录，不再当排期 |
 | [../asset-status.md](../asset-status.md) | 静态美术完成记录、验收数据与回退方式 |
 | [../animation-asset-inventory.md](../animation-asset-inventory.md) | 动态帧覆盖、缺口与补帧规格 |
 | [../asset-licenses.md](../asset-licenses.md) | 第三方素材授权与风险登记 |
