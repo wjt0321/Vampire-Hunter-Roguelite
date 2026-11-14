@@ -572,8 +572,9 @@ Phase 12 的资产与接线全部收尾。**不要再用脚本把旧图错帧**�
 | 音频 | 39 SFX + 6 BGM 重做与接线 | `assets/audio/` |
 | 旧 MVP 资产 | 11 敌人新风格立绘 + 11 死亡条 + 14 动作条 + 16 特效/道具序列帧 | `assets/sprites/enemies/<id>/`、`assets/effects/`、`assets/tiles/props/` |
 | 迭代敌人动作 | 12 个新增敌人各一条专属行为动作条 + 血铠幼虫全套 | `assets/sprites/enemies/<id>/` |
+| 敌人受击 | 13 个敌人各一条 6 帧受击条 + `enemy_base` 受击请求点 | `assets/sprites/enemies/<id>/hurt.png` |
 
-明细与验收数据见 [animation-asset-inventory.md](animation-asset-inventory.md) 第十九、二十节。
+明细与验收数据见 [animation-asset-inventory.md](animation-asset-inventory.md) 第十九、二十、二十一节。
 
 ### 接下来该定方向的三件事（都不是可以直接动手的）
 
@@ -581,9 +582,9 @@ Phase 12 的资产与接线全部收尾。**不要再用脚本把旧图错帧**�
    弹道现在走 `ProjectileVisuals` 的程序化外观（按武器上色）。要用得先定「程序化改贴图还是保留」。
 2. **局内手感层动效** —— 目前只有 UI 层动效（悬停/按下/淡入）。受击顿帧、击杀提示弹出节奏这类
    「局内」动效还没做，它们不进资产管线，要单独排。
-3. **弹道尾迹与角色动作的优先级** —— 迭代新增敌人的动作条已补齐，但受击（hurt）状态
-   统一未做：游戏脚本从未请求过 hurt 状态，属于死数据。要做就得先在 `enemy_base.gd`
-   加请求点，否则图做出来没人播。
+3. **弹道尾迹与角色动作的优先级** —— 迭代新增敌人的动作条与 13 个敌人的受击条都已补齐，
+   受击请求点也已接进 `enemy_base.take_damage()`。仍待定的是：受击条要不要连**旧 MVP
+   11 个敌人**一起做（请求点已就位，出图即生效），以及弹道要不要从程序化外观改成贴图。
 
 ---
 

@@ -43,23 +43,25 @@ static func apply(sprite: Sprite2D, texture: Texture2D, target_size: float, scal
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	return scale
 
-static func advance(sprite: Sprite2D, wait: float, delta: float) -> float:
+static func advance(sprite: Sprite2D, wait: float, delta: float, fps: float = 0.0) -> float:
 	## 循环播放。返回更新后的等待时间。单帧不动。
+	## fps <= 0 表示用默认循环帧率；受击条要更短，所以单独给一个更快的帧率。
 	if sprite == null or sprite.hframes <= 1:
 		return 0.0
 	wait += delta
-	var step := 1.0 / LOOP_FPS
+	var step := 1.0 / (LOOP_FPS if fps <= 0.0 else fps)
 	while wait >= step:
 		wait -= step
 		sprite.frame = (sprite.frame + 1) % sprite.hframes
 	return wait
 
-static func advance_once(sprite: Sprite2D, wait: float, delta: float) -> Array:
+static func advance_once(sprite: Sprite2D, wait: float, delta: float, fps: float = 0.0) -> Array:
 	## 播到最后一格就停。返回 [等待时间, 是否已经播完]。
+	## fps <= 0 表示用默认帧率。
 	if sprite == null or sprite.hframes <= 1:
 		return [0.0, true]
 	wait += delta
-	var step := 1.0 / LOOP_FPS
+	var step := 1.0 / (LOOP_FPS if fps <= 0.0 else fps)
 	var finished := false
 	while wait >= step and not finished:
 		wait -= step

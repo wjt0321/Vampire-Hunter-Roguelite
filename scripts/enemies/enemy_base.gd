@@ -43,10 +43,23 @@ var _sprite_rest_ready: bool = false
 var _sprite_anim_time: float = 0.0
 var _sprite_frame_wait: float = 0.0
 ## loop：一直循环。once：播完回到 loop 那张。hold：播完停在最后一格。
+## hurt：受击条，语义同 once（播完回到 loop 那张）。
 var _sprite_play: String = "loop"
 var _sprite_loop_tex: Texture2D = null
 var _sprite_target: float = 56.0
 var _sprite_hold: bool = false
+## 当前这条横条的播放帧率。0 = 用默认帧率（见 SpriteSheet.LOOP_FPS）。
+## 受击条要短促，单独给一个更快的帧率。
+var _sprite_fps: float = 0.0
+## 受击条正在播吗？正在播时不再重播（见 _trigger_hurt_reaction）。
+var _hurt_playing: bool = false
+## 受击条播完后的冷却秒数。挡住连射武器在同一瞬间反复触发受击。
+var _hurt_lock: float = 0.0
+## 受击条的播放帧率：6 帧 ÷ 12fps ≈ 0.5 秒。比待机的 8fps 快，受击反应才干脆。
+const HURT_FPS: float = 12.0
+## 受击条播完后的冷却：连射（霰弹/链炮）能在极短时间内多次命中，
+## 不冷却的话受击条会被一遍遍从头播，敌人看起来像在原地抽搐。
+const HURT_LOCK_TIME: float = 0.2
 ## 专属序列帧还没到时借用旧图染色。受击闪白结束后回到这层颜色，而不是纯白。
 var using_placeholder: bool = false
 var placeholder_tint: Color = Color.WHITE
@@ -244,6 +257,8 @@ func _process(delta: float) -> void:
 		_status_vfx_cd -= delta
 	if _cold_blood_cd > 0.0:
 		_cold_blood_cd -= delta
+	if _hurt_lock > 0.0:
+		_hurt_lock -= delta
 	if is_frozen:
 		freeze_timer -= delta
 		if freeze_timer <= 0.0:
@@ -416,6 +431,8 @@ func use_dedicated_sprite(enemy_id: String, state: String = "idle", fallback_tin
 	if dedicated != null:
 		using_placeholder = false
 		placeholder_tint = Color.WHITE
+		# 换成新姿态就说明受击反应被打断了，不能还占着「正在播」。
+		_hurt_playing = false
 		if sprite != null:
 			sprite.texture = dedicated
 			sprite.modulate = Color.WHITE
@@ -428,6 +445,7 @@ func use_placeholder_sprite(source_type: String, state: String, tint: Color) -> 
 	## 正式动作表补上之后，删掉调用处，改回该敌人自己的精灵。
 	using_placeholder = true
 	placeholder_tint = tint
+	_hurt_playing = false
 	if sprite == null:
 		return
 	var texture: Texture2D = null
@@ -453,10 +471,14 @@ func _adjust_sprite_scale() -> void:
 	## 小怪统一缩到 56px。横条按一格算，单张仍按长边，见 SpriteSheet。
 	_present_sprite(56.0)
 
-func use_sprite(texture: Texture2D, mode: String = "loop") -> void:
-	## mode：loop 记下这张当回家的姿态；once 播完回家；hold 播完停在末格。
+func use_sprite(texture: Texture2D, mode: String = "loop", fps: float = 0.0) -> void:
+	## mode：loop 记下这张当回家的姿态；once 播完回家；hold 播完停在末格；
+	##        hurt 播完回家（受击反应）。
+	## fps：0 表示用默认帧率；受击条要更短促，单独给更快的帧率。
 	if sprite == null or texture == null:
 		return
+	_sprite_fps = fps
+	_hurt_playing = (mode == "hurt")
 	if mode == "loop":
 		_sprite_loop_tex = texture
 		_sprite_play = "loop"
@@ -479,6 +501,30 @@ func play_action_strip(enemy_id: String, state: String, mode: String = "once") -
 		return false
 	use_sprite(texture, mode)
 	return true
+
+
+func play_hurt_strip() -> bool:
+	## 播自己的受击条（assets/sprites/enemies/<enemy>/hurt.png）。
+	## 文件不存在时返回 false，静默跳过，不影响原有表现。
+	var enemy_id := _get_enemy_type()
+	if enemy_id.is_empty() or enemy_id == "unknown":
+		return false
+	var texture: Texture2D = null
+	if TextureManager.instance != null:
+		texture = TextureManager.instance.get_enemy_texture(enemy_id, "hurt")
+	if texture == null:
+		return false
+	use_sprite(texture, "hurt", HURT_FPS)
+	return true
+
+
+func _trigger_hurt_reaction() -> void:
+	## 受击反应：挨打但没死才播。
+	## 正在播或还在冷却里就跳过 —— 连射武器会把受击条一遍遍从头播，
+	## 敌人看起来像在原地抽搐，而不是被打中。
+	if _hurt_playing or _hurt_lock > 0.0:
+		return
+	play_hurt_strip()
 
 
 func _present_sprite(target_size: float) -> void:
@@ -510,17 +556,22 @@ func _tick_sprite(delta: float) -> void:
 	if sprite.hframes > 1 and not _sprite_hold:
 		sprite.position = _sprite_rest_pos
 		if _sprite_play == "loop":
-			_sprite_frame_wait = SpriteSheetLib.advance(sprite, _sprite_frame_wait, delta)
+			_sprite_frame_wait = SpriteSheetLib.advance(sprite, _sprite_frame_wait, delta, _sprite_fps)
 		else:
-			var stepped: Array = SpriteSheetLib.advance_once(sprite, _sprite_frame_wait, delta)
+			var stepped: Array = SpriteSheetLib.advance_once(sprite, _sprite_frame_wait, delta, _sprite_fps)
 			_sprite_frame_wait = float(stepped[0])
 			if bool(stepped[1]):
 				_sprite_hold = true
-				if _sprite_play == "once" and _sprite_loop_tex != null:
+				if (_sprite_play == "once" or _sprite_play == "hurt") and _sprite_loop_tex != null:
 					_sprite_play = "loop"
 					_sprite_hold = false
 					sprite.texture = _sprite_loop_tex
 					_present_sprite(_sprite_target)
+					if _hurt_playing:
+						_hurt_playing = false
+						_hurt_lock = HURT_LOCK_TIME
+						# 回到待机必须恢复默认帧率，否则待机会比平时快一圈。
+						_sprite_fps = 0.0
 		return
 	# 单张没有循环可播。1 像素、1.2 秒的浮动只是过渡，横条换上之后这条不再走。
 	_sprite_anim_time += delta
@@ -580,6 +631,9 @@ func take_damage(amount: float) -> void:
 	_after_damage_taken(amount)
 	if current_hp <= 0:
 		_die()
+		return
+	# 受击反应：只有活下来的这一下才播，死了的直接走死亡条。
+	_trigger_hurt_reaction()
 
 func _direct_damage(amount: float) -> float:
 	# Every direct weapon hit rolls once, including subclass damage handlers.
@@ -710,6 +764,8 @@ func _die() -> void:
 	if is_dead:
 		return
 	is_dead = true
+	# 死了就不再有受击反应：死亡条接管精灵。
+	_hurt_playing = false
 	var kill_log: Node = get_tree().get_first_node_in_group("run_log") if is_inside_tree() else null
 	if kill_log != null and kill_log.has_method("note_kill") and is_instance_valid(player):
 		var source := String(player.get_meta("outgoing_source")) if player.has_meta("outgoing_source") else ""

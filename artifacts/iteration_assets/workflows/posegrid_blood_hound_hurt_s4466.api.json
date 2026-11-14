@@ -1,0 +1,158 @@
+{
+ "1": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "qwen_image_edit_2511_int8_convrot.safetensors",
+   "weight_dtype": "default"
+  }
+ },
+ "2": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+   "type": "qwen_image",
+   "device": "default"
+  }
+ },
+ "3": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "qwen_image_vae.safetensors"
+  }
+ },
+ "4": {
+  "class_type": "ModelSamplingAuraFlow",
+  "inputs": {
+   "model": [
+    "1",
+    0
+   ],
+   "shift": 3.1
+  }
+ },
+ "5": {
+  "class_type": "CFGNorm",
+  "inputs": {
+   "model": [
+    "4",
+    0
+   ],
+   "strength": 1.0,
+   "pre_cfg": false
+  }
+ },
+ "10": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "posecard_blood_hound_hurt.png"
+  }
+ },
+ "11": {
+  "class_type": "FluxKontextImageScale",
+  "inputs": {
+   "image": [
+    "10",
+    0
+   ]
+  }
+ },
+ "12": {
+  "class_type": "VAEEncode",
+  "inputs": {
+   "pixels": [
+    "11",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  }
+ },
+ "13": {
+  "class_type": "TextEncodeQwenImageEditPlus",
+  "inputs": {
+   "clip": [
+    "2",
+    0
+   ],
+   "prompt": "Image 1 is the same character repeated in 6 identical cells on a magenta card. Redraw all 6 cells as 6 consecutive frames of the same animation of that exact character, keeping its exact design, colors, equipment and proportions. The animation is: jolted by a hit and thrown off balance. Draw exactly 3 columns and 2 rows, 6 equal cells, reading order left to right then top to bottom. The cells are: cell 1 shows 1 the body jolted sideways on all fours with the head snapped to the side and the legs splayed cell 2 shows 2 the hindquarters shoved back with the shoulders twisted and the jaws open cell 3 shows 3 the hound staggering with one front leg lifted and the spine arched cell 4 shows 4 the stagger slowing with the head lowered and the body still turned cell 5 shows 5 the legs gathering under the body again with the head still low cell 6 shows 6 back in the original four legged stance with the head forward. Every cell must be a visibly different pose, never a copy of another cell. Keep the character at the same scale in every cell and fully inside its own cell, never overlapping the cell border. Keep every cell clean: one character plus small particles, no thick smoke or dust covering the background. Dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Flat solid pure magenta #FF00FF background, uniform bright magenta color card, no gradient, no shadow on the background, no ground, no text, no grid lines, no smoke or haze in the background.",
+   "vae": [
+    "3",
+    0
+   ],
+   "image1": [
+    "11",
+    0
+   ]
+  }
+ },
+ "14": {
+  "class_type": "TextEncodeQwenImageEditPlus",
+  "inputs": {
+   "clip": [
+    "2",
+    0
+   ],
+   "prompt": "",
+   "vae": [
+    "3",
+    0
+   ],
+   "image1": [
+    "11",
+    0
+   ]
+  }
+ },
+ "5b": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "5",
+    0
+   ],
+   "seed": 4466,
+   "steps": 16,
+   "cfg": 3.0,
+   "sampler_name": "euler",
+   "scheduler": "simple",
+   "positive": [
+    "13",
+    0
+   ],
+   "negative": [
+    "14",
+    0
+   ],
+   "latent_image": [
+    "12",
+    0
+   ],
+   "denoise": 1.0
+  }
+ },
+ "6": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "5b",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  }
+ },
+ "7": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "6",
+    0
+   ],
+   "filename_prefix": "vhr_posegrid_blood_hound_hurt_s4466"
+  }
+ }
+}
