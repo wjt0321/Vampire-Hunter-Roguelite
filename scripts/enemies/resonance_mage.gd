@@ -25,9 +25,12 @@ func _move_towards_player(delta: float) -> void:
 	_link_cd -= delta
 	if _link_cd <= 0.0:
 		_link_cd = 1.2
-		link_nearby()
+		if link_nearby():
+			# 连上同伴：播连线动作条
+			play_action_strip("resonance_mage", "cast", "once")
 
-func link_nearby() -> void:
+## 连上附近同伴时返回 true（用于播连线动作条）。
+func link_nearby() -> bool:
 	clear_links()
 	var found: Array = []
 	for enemy in get_tree().get_nodes_in_group("enemies"):
@@ -44,9 +47,12 @@ func link_nearby() -> void:
 		found[0].split_partner = found[1]
 		found[1].split_partner = found[0]
 		_linked = found
-	elif found.size() == 1:
+		return true
+	if found.size() == 1:
 		found[0].split_partner = self
 		_linked = found
+		return true
+	return false
 
 func clear_links() -> void:
 	for enemy in _linked:

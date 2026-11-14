@@ -30,6 +30,8 @@ func _move_towards_player(delta: float) -> void:
 			_phase = "windup"
 			_timer = 0.35
 			_lunge_dir = to_player.normalized()
+			# 蓄力起跳：播扑击动作条
+			play_action_strip("blood_hound", "pounce", "once")
 	elif _phase == "windup":
 		velocity = Vector2.ZERO
 		if _timer <= 0.0:

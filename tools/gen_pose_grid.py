@@ -180,9 +180,15 @@ def main() -> None:
     ap.add_argument("--only", default="")
     ap.add_argument("--enemy", default="")
     ap.add_argument("--finalize-only", action="store_true")
+    ap.add_argument("--plan", default="",
+                    help="额外的数据源模块名（tools/ 下），用于迭代新增敌人的动作条")
     args = ap.parse_args()
 
-    entries = [e for e in PLAN.ACTIONS
+    entries = list(PLAN.ACTIONS)
+    if args.plan:
+        import importlib
+        entries = list(importlib.import_module(args.plan).ACTIONS)
+    entries = [e for e in entries
                if (not args.only or e["enemy"] + "_" + e["state"] == args.only)
                and (not args.enemy or e["enemy"] == args.enemy)]
     print("POSE GRID START total=%d" % len(entries), flush=True)

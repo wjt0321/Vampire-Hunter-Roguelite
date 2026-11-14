@@ -38,7 +38,8 @@ func _move_towards_player(delta: float) -> void:
 	_heal_cd -= delta
 	if _heal_cd <= 0.0:
 		_heal_cd = HEAL_INTERVAL
-		try_heal()
+		if try_heal():
+			play_action_strip("blood_priest", "cast", "once")
 
 func try_heal() -> bool:
 	var target := _worst_ally()

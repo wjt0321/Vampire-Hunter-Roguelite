@@ -26,6 +26,8 @@ func _move_towards_player(delta: float) -> void:
 				stolen = int(gem.xp_value)
 				gem.xp_value = 0
 				gem.queue_free()
+				# 吞下宝石：播吞食动作条
+				play_action_strip("gem_leech", "steal", "once")
 			return
 	if player == null:
 		return

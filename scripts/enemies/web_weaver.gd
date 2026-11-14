@@ -31,6 +31,8 @@ func _move_towards_player(delta: float) -> void:
 		return
 	_web_cd = WEB_INTERVAL
 	drop_web()
+	# 吐网：播吐网动作条
+	play_action_strip("web_weaver", "cast", "once")
 
 func drop_web() -> Node:
 	var web := preload("res://scripts/enemies/web_patch.gd").new()

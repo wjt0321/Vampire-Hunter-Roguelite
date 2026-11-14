@@ -65,7 +65,11 @@ func _test_slots() -> void:
 	# 仍然没有落盘的 id 必须读不到（不能用占位假装有）。
 	_check(Slots.texture_at(Slots.enemy_path("shield_guard")) != null, "盾卫专属图已经就位")
 	_check(Slots.texture_at(Slots.enemy_path("shield_guard", "death")) != null, "盾卫死亡图已经就位")
-	var missing_tex: Texture2D = Slots.texture_at(Slots.enemy_path("blood_larva"))
+	# 2026-11-14：血铠幼虫的专属 idle 也已落盘（不再借用蝙蝠飞帧染色）。
+	_check(Slots.texture_at(Slots.enemy_path("blood_larva")) != null, "血铠幼虫专属图已经就位")
+	_check(Slots.texture_at(Slots.enemy_path("blood_larva", "pounce")) != null, "血铠幼虫扑击图已经就位")
+	# 仍然没有落盘的状态必须读不到（不能用占位假装有）：hurt 状态全项目未做。
+	var missing_tex: Texture2D = Slots.texture_at(Slots.enemy_path("blood_larva", "hurt"))
 	_check(missing_tex == null, "还没放进去的图不会假装已经有了")
 	var missing: Array = []
 	for enemy_id in ["shield_guard", "blood_hound", "blood_priest", "web_weaver", "burrower", "gem_leech", "coffin_guard", "lantern_wraith", "alchemist_pitcher", "furnace_golem", "resonance_mage", "moon_wing"]:

@@ -45,3 +45,5 @@ func _move_towards_player(delta: float) -> void:
 		if _timer < -2.2:
 			buried = true
 			_timer = 0.4
+			# 再次钻回地下：播下潜动作条
+			play_action_strip("burrower", "burrow", "once")

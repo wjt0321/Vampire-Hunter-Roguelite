@@ -28,8 +28,8 @@ func _get_enemy_type() -> String:
 	return "blood_larva"
 
 func _load_sprite_texture() -> void:
-	# 专属幼虫表还没做；借蝙蝠飞帧染绛红，登记在 asset_slots 后可 drop-in 替换。
-	use_placeholder_sprite("bat", "fly", Color(0.78, 0.22, 0.42))
+	# 专属幼虫表（idle / pounce / death）已做，不再借蝙蝠飞帧染色。
+	use_dedicated_sprite("blood_larva", "idle", Color(0.78, 0.22, 0.42))
 	_adjust_sprite_scale()
 
 func _move_towards_player(delta: float) -> void:
@@ -53,6 +53,8 @@ func _move_towards_player(delta: float) -> void:
 				motion = Motion.POUNCE
 				_motion_timer = POUNCE_TIME
 				_pounce_dir = to_player.normalized() if to_player.length_squared() > 1.0 else Vector2.RIGHT
+				# 扑咬：播扑击动作条
+				play_action_strip("blood_larva", "pounce", "once")
 		Motion.POUNCE:
 			velocity = _pounce_dir * POUNCE_SPEED
 			_motion_timer -= delta

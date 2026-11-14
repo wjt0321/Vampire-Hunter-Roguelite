@@ -62,6 +62,8 @@ func revive_from_coffin() -> void:
 	var contact := get_node_or_null("ContactArea/ContactShape") as CollisionShape2D
 	if contact:
 		contact.disabled = false
+	# 从棺材里爬起：播苏醒动作条
+	play_action_strip("coffin_guard", "revive", "once")
 
 func _finish() -> void:
 	if not is_inside_tree():

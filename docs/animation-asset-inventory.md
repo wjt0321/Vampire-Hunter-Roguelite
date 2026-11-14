@@ -25,17 +25,19 @@
 
 ## 二、当前资产快照
 
-截至 2026-11-14 实际扫描到 **256 张 PNG**。下表是文件数量，不把音频、导入缓存、备份目录或设计文档计入。
+截至 2026-11-14 实际扫描到 **351 张 PNG**。下表是文件数量，不把音频、导入缓存、备份目录或设计文档计入。
 
 | 目录 | PNG 数 | 动画管理口径 |
 |---|---:|---|
-| `assets/sprites/` | 80 | 全部为多帧横向精灵表；本文逐项登记 |
-| `assets/effects/` | 23 | 当前全部为单帧；区分补帧候选与保留单帧 |
-| `assets/ui/` | 70 | 图标、面板、按钮和徽章原则上不做序列帧；商人另列环境动画 |
-| `assets/weapons/` | 39 | 武器图标与弹道贴图以旋转、拖尾、Tween 为主 |
-| `assets/tiles/` | 28 | 墙体与地面保持静态；火把、营火、宝箱另列 |
-| `assets/items/` | 11 | 掉落物以静态图和程序动效为主；受诅宝箱另列 |
+| `assets/sprites/` | 144 | 全部为多帧横向精灵表；本文逐项登记 |
+| `assets/effects/` | 34 | 11 条序列帧 + 23 张保留单帧 |
+| `assets/ui/` | 74 | 图标、面板、按钮和徽章原则上不做序列帧；商人另列环境动画 |
+| `assets/weapons/` | 51 | 武器图标与弹道贴图以旋转、拖尾、Tween 为主 |
+| `assets/tiles/` | 31 | 墙体与地面保持静态；火把、营火、宝箱另列 |
+| `assets/items/` | 12 | 掉落物以静态图和程序动效为主；受诅宝箱另列 |
 | `assets/backgrounds/` | 5 | 整图背景保持静态，不把镜头运动误记为序列帧 |
+
+`assets/sprites/` 的 144 张拆开看：敌人 84（23 个敌人目录）、Boss 48（6 名 Boss 目录）、玩家 12（2 角色 × 6 动作）。
 
 ### 已有精灵表的真实构成
 
@@ -73,21 +75,49 @@
 
 所有现有文件均位于 `assets/sprites/enemies/`。当前 `enemy_base.gd` 已支持 loop、once、hold 三种播放方式；表中“待补”表示还要制作文件并在对应敌人的状态点接线。
 
-| 敌人 / 前缀 | 现有精灵表与实际帧数 | 当前动作覆盖 | 待补动作与建议规格 | 优先级 |
+> **本表已于 2026-11-14 更新。** 第十九节（旧 MVP 资产「动起来」）与第二十节
+> （迭代新增敌人动作条）两轮补完后，下面 11 个旧敌人的待机、死亡与核心动作条都已到位，
+> 帧数按实际文件登记。剩下的只有 `hurt`——而游戏脚本从未请求过 hurt 状态，属死数据。
+
+| 敌人 / 前缀 | 现有精灵表与实际帧数 | 当前动作覆盖 | 剩余缺口 | 优先级 |
 |---|---|---|---|---|
-| 吸血鬼 `vampire` | `idle` 4、`run` 6 | 待机、移动循环 | `hurt` 2–4 帧、`death` 6 帧；近战 `attack` 4 帧为 P2 | P1 |
-| 狼人 `werewolf` | `idle` 4、`charge` 4 | 待机、冲锋一次性动作 | `run` 6 帧、`hurt` 2–4 帧、`death` 6 帧；普通移动不能长期只播 idle | P1 |
-| 蝙蝠 `bat` | `fly` 4 | 飞行循环 | `death` 4–6 帧；`hurt` 2 帧为 P2，避免高频受击闪烁过度 | P1 |
-| 僵尸 `zombie` | `walk` 6 | 移动循环 | `hurt` 2–4 帧、`death` 6 帧；近战 `attack` 4 帧为 P2 | P1 |
-| 骷髅弓手 `skeleton` | `idle` 4、`shoot` 4 | 待机、射箭一次性动作 | `hurt` 2–4 帧、`death` 6 帧；射击接触帧需对齐箭矢生成点 | P1 |
-| 爆裂者 `exploder` | `walk` 4、`explode` 4 | 移动、爆炸蓄势/触发 | `hurt` 2 帧为 P2；另补 `death` 4–6 帧，不能把自爆表同时当所有死亡原因 | P1 |
-| 石像鬼 `gargoyle` | `idle` 2、`petrify` 4、`wake` 4 | 待机、石化保持、苏醒一次性动作 | `hurt` 2 帧、`death` 6 帧；无需为静止守卫硬加跑步 | P2 |
-| 吸血鬼法师 `vampire_mage` | `cast` 4、`teleport` 4 | 施法循环、瞬移一次性动作 | 独立 `idle` 4、`hurt` 2–4、`death` 6；移动表为 P2 | P1 |
-| 召唤师 `summoner` | `cast` 4 | 施法兼默认循环 | 独立 `idle` 4、`walk` 6、`hurt` 2–4、`death` 6，避免移动和待机也一直施法 | P1 |
-| 血族亲王敌人 `vampire_prince` | `idle` 4、`dash` 4、`rage` 4 | 待机、冲刺、狂暴循环 | `run` 6、`hurt` 2–4、`death` 6；近战 `attack` 4–6 为 P2 | P1 |
-| 精英吸血鬼 `elite_vampire` | `idle` 4 | 待机兼移动 | `run` 6、`attack` 4–6、`hurt` 2–4、`death` 6 | P1 |
+| 吸血鬼 `vampire` | `idle` 4、`run` 6、`death` 6 | 待机、移动循环、真倒地 | `hurt` 2–4 帧（脚本未请求）；近战 `attack` 4 帧为 P2 | P2 |
+| 狼人 `werewolf` | `idle` 4、`charge` 6、`death` 6 | 待机、冲锋一次性动作、真倒地 | `run` 6 帧（移动仍播 idle）、`hurt` 2–4 | P2 |
+| 蝙蝠 `bat` | `idle` 4、`fly` 6、`death` 6 | 待机、飞行循环、真倒地 | `hurt` 2 帧为 P2，避免高频受击闪烁过度 | P2 |
+| 僵尸 `zombie` | `idle` 4、`walk` 6、`death` 6 | 待机、移动循环、真倒地 | `hurt` 2–4 帧；近战 `attack` 4 帧为 P2 | P2 |
+| 骷髅弓手 `skeleton` | `idle` 4、`shoot` 6、`death` 6 | 待机、射箭一次性动作、真倒地 | `hurt` 2–4 帧；射击接触帧需对齐箭矢生成点 | P2 |
+| 爆裂者 `exploder` | `idle` 4、`walk` 6、`explode` 6、`death` 6 | 待机、移动、爆炸蓄势/触发、真倒地 | `hurt` 2 帧为 P2 | P2 |
+| 石像鬼 `gargoyle` | `idle` 4、`petrify` 6、`wake` 6、`death` 6 | 待机、石化保持、苏醒一次性动作、真倒地 | `hurt` 2 帧；无需为静止守卫硬加跑步 | P2 |
+| 吸血鬼法师 `vampire_mage` | `idle` 4、`cast` 6、`teleport` 6、`death` 6 | 待机、施法、瞬移一次性动作、真倒地 | `hurt` 2–4 帧；移动表为 P2 | P2 |
+| 召唤师 `summoner` | `idle` 4、`cast` 6、`death` 6 | 待机、施法一次性动作、真倒地 | `walk` 6 帧、`hurt` 2–4 帧 | P2 |
+| 血族亲王敌人 `vampire_prince` | `idle` 4、`dash` 6、`rage` 6、`death` 6 | 待机、冲刺、狂暴循环、真倒地 | `run` 6、`hurt` 2–4 帧；近战 `attack` 4–6 为 P2 | P2 |
+| 精英吸血鬼 `elite_vampire` | `idle` 4、`death` 6 | 待机兼移动、真倒地 | `run` 6、`attack` 4–6、`hurt` 2–4 帧 | P2 |
 
 补充边界：`prince_idle/dash/rage.png` 属于当前特殊敌人组，不等同于楼层 Boss「血族亲王」已经拥有独立资产。新 Boss 的动作表按下节单独制作。
+
+### 迭代新增 12 敌人：2026-11-14 补完专属动作条
+
+这批敌人的「辨识度在行为上」，没有专属动作条就看不出它们在干什么。
+第二十节给每个补了一条行为动作条：
+
+| 敌人 / 前缀 | 专属动作条 | 帧数 | 行为语义 |
+|---|---|---|---|
+| 盾卫 `shield_guard` | `guard` | 6 | 举盾格挡（正面受击时播） |
+| 血猎犬 `blood_hound` | `pounce` | 6 | 蓄力扑击 |
+| 血祭司 `blood_priest` | `cast` | 6 | 抬手治疗 |
+| 织网者 `web_weaver` | `cast` | 6 | 吐网 |
+| 潜伏者 `burrower` | `burrow` | 6 | 钻回地下 |
+| 吞晶虫 `gem_leech` | `steal` | 6 | 吞下宝石 |
+| 棺卫 `coffin_guard` | `revive` | 6 | 从棺材爬起 |
+| 摄魂灯鬼 `lantern_wraith` | `beam` | 6 | 提灯放光束 |
+| 炼金投手 `alchemist_pitcher` | `throw` | 6 | 投掷药瓶 |
+| 炉心傀儡 `furnace_golem` | `charge` | 6 | 外甲碎裂后冲锋 |
+| 共振术士 `resonance_mage` | `cast` | 6 | 伸手连线 |
+| 月翼兽 `moon_wing` | `dive` | 6 | 收翼俯冲 |
+| 血铠幼虫 `blood_larva` | `idle` 4、`pounce` 6、`death` 6 | — | 全套专属资产，替换借蝙蝠染色的占位图 |
+
+这些动作条都只在**行为触发点**播一次（`mode = "once"`），播完回待机条，
+不常驻循环。接线细节与踩坑见第二十节。
 
 ### 敌人首批制作顺序
 
@@ -127,25 +157,28 @@
 
 ## 六、特效：只给有明确收益的贴图补序列帧
 
-当前 `assets/effects/` 的 23 张 PNG 都是单帧。现有 `vfx_manager.spawn_texture_fx()` 使用 Sprite2D + 缩放/淡出 Tween；界面动效和程序粒子不算序列帧资产。
+> **本节已于 2026-11-14 更新。** 第十九节一轮把下表 11 条全部补齐并接线，
+> 原单帧作为缺图降级保留。播放走 `vfx_manager.spawn_sheet_fx()`，
+> 显式给帧数与单格尺寸（矩形单格不能用「宽 ÷ 高 = 帧数」推断）。
 
-### 6.1 补帧候选
+### 6.1 补帧候选（已全部完成）
 
-目标帧数是制作建议，不是要求一次性全部完成。新序列表先以 `_sheet.png` 命名，原单帧保留到新播放路径验收后再决定是否归档。
+| 当前文件 | 当前尺寸与使用位置 | 序列帧规格 | 状态 |
+|---|---|---|---|
+| `hit_effect.png` | 1024×1024 | 4 帧×64×64，一次性 | ✅ 已完成（`hit_effect_sheet.png`） |
+| `death_explosion.png` | 1024×1024；以 `explosion` 播放 | 6 帧×128×128，一次性 | ✅ 已完成（`death_explosion_sheet.png`） |
+| `portal.png` | 96×96 | 6 帧×96×96，循环 | ✅ 已完成（`portal_sheet.png`） |
+| `shield_break.png` | 64×64 | 6 帧×64×64，一次性 | ✅ 已完成（`shield_break_sheet.png`） |
+| `poison_spread.png` | 128×128 | 6 帧×128×128，慢速循环 | ✅ 已完成（`poison_spread_sheet.png`） |
+| `levelup_aura.png` | 128×128 | 6 帧×128×128，一次性 | ✅ 已完成（`levelup_aura_sheet.png`） |
+| `freeze_effect.png` | 48×48 | 6 帧×48×48，一次性 | ✅ 已完成（`freeze_effect_sheet.png`） |
+| `petrify_effect.png` | 48×48 | 6 帧×48×48，一次性 | ✅ 已完成（`petrify_effect_sheet.png`） |
+| `holy_light.png` | 128×128 | 6 帧×128×128，一次性 | ✅ 已完成（`holy_light_sheet.png`） |
+| `chain_lightning.png` | 256×256 | 4 帧×128×128，一次性 | ✅ 已完成（`chain_lightning_sheet.png`） |
+| `thunder_wrath.png` | 256×256 | 6 帧×128×128，一次性 | ✅ 已完成（`thunder_wrath_sheet.png`） |
 
-| 当前文件 | 当前尺寸与使用位置 | 建议序列帧规格 | 补帧理由 | 优先级 / 状态 |
-|---|---|---|---|---|
-| `hit_effect.png` | 1024×1024；已注册，未查见直接播放调用 | 4 帧×64×64，一次性 | 高频命中反馈；接入前先决定是否替代现有粒子，不能双份叠爆 | P1 / 待补 |
-| `death_explosion.png` | 1024×1024；以 `explosion` 在 `weapon_manager.gd` 播放 | 6 帧×128×128，一次性 | 血爆等重击需要起爆、扩散、消散过程 | P1 / 待补 |
-| `portal.png` | 96×96；传送门与商人光环直接使用，当前仅透明度呼吸 | 6 帧×96×96，循环 | 常驻场景物件，序列帧收益高于一次性闪光 | P1 / 待补 |
-| `shield_break.png` | 64×64；护盾破碎 Tween | 6 帧×64×64，一次性 | 需要表现完整碎裂，而不只是单图放大淡出 | P1 / 待补 |
-| `poison_spread.png` | 128×128；毒云贴图与扩散 Tween | 4–6 帧×128×128，慢速循环 | 持续区域需要内部流动；动画不能降低地面危险边界可读性 | P1 / 待补 |
-| `levelup_aura.png` | 128×128；升级法阵 Tween | 6 帧×128×128，一次性 | 低频重要奖励时刻，适合精修 | P2 / 待补 |
-| `freeze_effect.png` | 48×48；冰冻触发 Tween + 粒子 | 6 帧×48×48，一次性 | 可表现结冰到碎裂，但需避免遮住敌人动作 | P2 / 待补 |
-| `petrify_effect.png` | 48×48；石像鬼石化 Tween | 4–6 帧×48×48，一次性或 hold | 与现有石化角色表配合，表现石壳蔓延 | P2 / 待补 |
-| `holy_light.png` | 128×128；圣光柱 Tween | 6 帧×128×128，一次性 | 进化演出可有聚合、爆发、消散层次 | P2 / 待补 |
-| `chain_lightning.png` | 256×256；每跳落点 Tween | 4 帧×128×128，一次性 | 可选精修；重新校准当前 0.45 缩放，不能遮挡连锁路径 | P2 / 待补 |
-| `thunder_wrath.png` | 256×256；雷神之怒 Tween | 4–6 帧×128×128，一次性 | 可选精修；先保证攻击预警与落点清楚 | P2 / 待补 |
+登记与接线见 `scripts/core/asset_slots.gd` 的 `EFFECT_SHEETS`
+与 `scripts/managers/vfx_manager.gd` 的 `spawn_sheet_fx()`。
 
 ### 6.2 明确保留单帧
 
@@ -168,17 +201,24 @@
 
 ## 七、环境、交互物与静态资产
 
-### 7.1 环境动态候选
+### 7.1 环境动态候选（已全部完成）
 
-| 资产 | 当前情况与位置 | 建议规格 | 优先级 / 状态 |
-|---|---|---|---|
-| `tiles/props/torch.png` | 24×48 单帧；`game_room.gd` 墙面装饰 | 4 帧×24×48，循环；火盆根部固定，只让火焰变化 | P1 / 待补 |
-| `tiles/props/campfire.png` | 40×48 单帧；休息房装饰 | 4–6 帧×40×48，循环 | P2 / 待补 |
-| `tiles/props/chest.png` | 单帧；宝箱房交互物 | 4–6 帧开箱表，单格沿用原图尺寸，末帧保持打开 | P2 / 待补 |
-| `items/cursed_chest.png` | 48×40 单帧；受诅宝箱当前使用缩放脉冲 | 4–6 帧×48×40，解锁/开箱与待机脉冲分开 | P2 / 待补 |
-| `ui/merchant.png` | 128×128 单帧；房间商人 Sprite2D | 4 帧×128×128 待机；不移动、不做无意义大幅度呼吸 | P2 / 待补 |
+> 第十九节一轮把这 5 条全部补齐并接线。
 
-注意：火把、营火和受诅宝箱不是正方形单格，不能直接套当前按“宽 ÷ 高”推断正方形帧数的 `SpriteSheet`。后续应使用 `AnimatedSprite2D + SpriteFrames`，或另写支持矩形单格的播放器。
+| 资产 | 序列帧规格 | 状态 |
+|---|---|---|
+| `tiles/props/torch.png` | 4 帧×24×48，循环；火盆根部固定，只让火焰变化 | ✅ `torch_sheet.png` |
+| `tiles/props/campfire.png` | 4 帧×40×48，循环 | ✅ `campfire_sheet.png` |
+| `tiles/props/chest.png` | 6 帧×48×40 开箱表，末帧保持打开 | ✅ `chest_sheet.png` |
+| `items/cursed_chest.png` | 6 帧×48×40，开箱序列播完再闪光淡出 | ✅ `cursed_chest_sheet.png` |
+| `ui/merchant.png` | 4 帧×128×128 待机；不移动、不做无意义大幅度呼吸 | ✅ `merchant_sheet.png` |
+
+**矩形单格的播放器已经写好**：`scripts/core/sprite_frames_lib.gd`（AtlasTexture +
+AnimatedSprite2D，显式单格切帧）。火把 24×48、宝箱 48×40、商人 128×128 都不是正方形，
+不能套「宽 ÷ 高 = 帧数」的推断规则。登记见 `asset_slots.gd` 的 `PROP_SHEETS`。
+
+接线点：`game_room.gd` 的 `_make_prop_visual()` / `_make_effect_visual()`、
+`cursed_chest.gd` 的开箱序列、`poison_cloud.gd` 的毒雾地面。
 
 ### 7.2 不进入补帧队列的资产
 
@@ -240,12 +280,28 @@
 
 ## 十、后续迭代入口
 
-每次只挑一个可验收批次，不把整张清单当成一次性制作任务：
+> **本节已于 2026-11-14 更新。** P0/P1-A/P1-B/P2 四批全部完成并接线，
+> 下面是**接下来**真正剩下的缺口。
 
-1. **P0：** 血铠领主（2026-11-13），织血母皇、墓穴守望者、炼金亲王与月蚀女王（2026-11-14）均已完成收尾，五名 Boss 专属动作全部替换完毕。
-2. **P1-A：** 高频敌人死亡与狼人、召唤师、法师、精英吸血鬼的移动/待机缺口。
-3. **P1-B：** 传送门、火把、命中、血爆、护盾破碎和毒云序列帧。
-4. **P2：** 低频进化特效、营火、宝箱、商人待机和额外攻击动作。
+已完成的批次：
+
+| 批次 | 内容 | 完成日期 |
+|---|---|---|
+| P0 | 血铠领主、织血母皇、墓穴守望者、炼金亲王、月蚀女王专属动作 | 2026-11-13 / 14 |
+| P1-A | 旧敌人新风格立绘 + 11 死亡条 + 14 动作条；迭代 12 敌人专属动作条 | 2026-11-14 |
+| P1-B | 11 条特效序列帧 | 2026-11-14 |
+| P2 | 5 条低频进化特效 + 5 条道具序列帧 | 2026-11-14 |
+
+接下来剩下的缺口：
+
+1. **敌人受击（hurt）状态——全缺。** 游戏脚本从未请求过 hurt 状态，属死数据。
+   要做必须先在 `enemy_base.gd` 加请求点（并决定 2 帧还是 4 帧、高频受击会不会太闪），
+   否则图做出来没人播。这不是「画图」能单独解决的事。
+2. **地面危险贴图。** 减速网、棺材、卵巢、药液、月蚀安全圈仍是半透明多边形和圆环，
+   与敌人动作条的风格不统一（敌人已经是手绘像素风，地面还是程序几何）。
+3. **旧敌人补跑动条。** 狼人、召唤师、精英吸血鬼移动时仍播待机条。
+4. **零引用的四张特效图**（`crit_text` / `magic_trail` / `knife_spin` / `lifesteal`）：
+   要用得先定「弹道改不改贴图」。
 
 每批交付同时更新资产文件、代码触发点、本文状态和验收记录；只更新其中一项不算闭环。
 
@@ -727,3 +783,75 @@ AnimatedSprite2D 播放，帧数从登记表来，不再靠猜。
 ### 授权边界
 
 全部为 AI 生成素材，登记为「AI 生成、待核实」，见 docs/asset-licenses.md 第 13 条。
+## 二十、2026-11-14 迭代新增敌人专属动作条 + 血铠幼虫专属资产
+
+### 为什么做这一轮
+
+上一轮把 12 个迭代新增敌人的立绘与死亡条做出来了，但它们只停在「待机 + 死亡」：
+移动时播的是待机条（下摆 1px 摆动），而这些敌人的**辨识度恰恰在行为上**——
+扑击、治疗、吐网、钻地、投掷、光束、俯冲……没有专属动作条，玩家看不出它们在干什么。
+
+同时血铠幼虫（`blood_larva`）一直是借蝙蝠飞帧染绛红的占位图。
+
+### 交付物
+
+| 敌人 | 新增动作条 | 状态语义 | 接入点（脚本） |
+|---|---|---|---|
+| `shield_guard` | `guard` 6 帧 | 举盾格挡 | `shield_guard.gd` 正面受击时（`is_frontal_hit`） |
+| `blood_hound` | `pounce` 6 帧 | 蓄力扑击 | `blood_hound.gd` 转入 windup 时 |
+| `blood_priest` | `cast` 6 帧 | 抬手治疗 | `blood_priest.gd` `try_heal()` 成功时 |
+| `web_weaver` | `cast` 6 帧 | 吐网 | `web_weaver.gd` `drop_web()` 之后 |
+| `burrower` | `burrow` 6 帧 | 钻回地下 | `burrower.gd` 再次下潜时 |
+| `gem_leech` | `steal` 6 帧 | 吞下宝石 | `gem_leech.gd` 吃到宝石时 |
+| `coffin_guard` | `revive` 6 帧 | 从棺材爬起 | `coffin_guard.gd` `revive_from_coffin()` |
+| `lantern_wraith` | `beam` 6 帧 | 提灯放光束 | `lantern_wraith.gd` 光束启动时 |
+| `alchemist_pitcher` | `throw` 6 帧 | 投掷药瓶 | `alchemist_pitcher.gd` `toss()` 之后 |
+| `furnace_golem` | `charge` 6 帧 | 外甲碎裂后冲锋 | `furnace_golem.gd` 外甲归零时 |
+| `resonance_mage` | `cast` 6 帧 | 伸手连线 | `resonance_mage.gd` 连上同伴时 |
+| `moon_wing` | `dive` 6 帧 | 收翼俯冲 | `moon_wing.gd` 转入 dive 时 |
+
+血铠幼虫全套：
+
+| 文件 | 规格 | 说明 |
+|---|---|---|
+| `blood_larva/idle.png` | 224×56 / 4 帧 | t2i 新角色立绘：绛红分节虫身、苍白骨肋、无眼钝头 |
+| `blood_larva/pounce` | 336×56 / 6 帧 | 蜷缩蓄力 → 扑咬 |
+| `blood_larva/death.png` | 336×56 / 6 帧 | 真倒地：躯体裂开、苍白骨肋外露 |
+
+### 接线做法
+
+新增 `enemy_base.gd` 的 `play_action_strip(enemy_id, state, mode)`：
+取专属动作条 → `use_sprite(tex, mode)`。文件不存在时静默跳过，不影响原有表现。
+
+- `mode = "once"`：播完自动回待机条（沿用 `enemy_base` 既有语义）。
+- 动作条只在这 12 个敌人的**行为触发点**播一次，不做常驻循环。
+
+`asset_slots.gd` 的 `ENEMIES` 登记表同步补上各敌人的新状态名，
+这样暂停菜单的图鉴和 `get_enemy_texture()` 走同一份口径。
+
+### 踩坑记录
+
+1. **`link_nearby()` 原本没有返回值**（2026-11-14，`resonance_mage.gd`）
+   接线时想「连上同伴才播连线动作」，但原函数是 `-> void`，
+   只能改成「每次都播」——那样没有同伴时也会演一次空动作。
+   改成 `-> bool`，两个分支各自返回 true/false。这是**唯一**改动的既有敌人行为签名。
+
+2. **盾卫的格挡动作接在伤害路径上，不是移动路径上**（2026-11-14，`shield_guard.gd`）
+   盾卫没有独立的「格挡」状态，它的减伤发生在 `_direct_damage()` 里。
+   接在 `is_frontal_hit()` 成立时才播：玩家从正面打会看到举盾，
+   绕到侧面打则不播——动作和减伤规则对齐，不是随便找个时机播。
+
+3. **`coffin_guard` 的苏醒动作接在 `revive_from_coffin()`**（2026-11-14）
+   这个函数由 `coffin_shell.gd` 在棺材倒计时结束时调用，
+   接在这里能保证「棺材裂开 → 怪爬出来」在同一个时刻发生。
+
+### 仍然没做的（边界）
+
+- **敌人受击（hurt）状态仍然全缺**：游戏脚本从未请求过 hurt 状态，属死数据。
+  要做必须先在 `enemy_base.gd` 加请求点，否则图做出来没人播。
+- **地面危险贴图仍然没有**：减速网、棺材、卵巢、药液、月蚀安全圈仍是半透明多边形和圆环。
+- **`portal` 单帧版仍被商人脚下光晕使用**（`game_room.gd` 的 merchant glow）。
+
+### 授权边界
+
+全部为 AI 生成素材，登记为「AI 生成、待核实」，见 docs/asset-licenses.md 第 14 条。

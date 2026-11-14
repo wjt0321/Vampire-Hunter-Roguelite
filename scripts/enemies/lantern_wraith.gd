@@ -35,6 +35,8 @@ func _move_towards_player(delta: float) -> void:
 		_beam_dir = (player.global_position - global_position).normalized()
 		_beam_left = 0.7
 		_beam_timer = 2.4
+		# 提灯放光束：播光束动作条
+		play_action_strip("lantern_wraith", "beam", "once")
 
 func _beam_hits_player() -> bool:
 	if player == null:

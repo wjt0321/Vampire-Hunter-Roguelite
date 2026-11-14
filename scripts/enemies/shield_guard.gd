@@ -40,4 +40,6 @@ func _direct_damage(amount: float) -> float:
 	amount = super._direct_damage(amount)
 	if is_frontal_hit(_hit_dir):
 		amount *= 0.25
+		# 打在盾面上：播举盾格挡动作，让玩家看出「正面打不动」
+		play_action_strip("shield_guard", "guard", "once")
 	return amount

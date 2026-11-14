@@ -30,6 +30,8 @@ func _move_towards_player(delta: float) -> void:
 			_phase = "dive"
 			_timer = 0.35
 			_dive_to = player.global_position
+			# 收翼俯冲：播俯冲动作条
+			play_action_strip("moon_wing", "dive", "once")
 	else:
 		velocity = (_dive_to - global_position).normalized() * 260.0
 		move_and_slide()

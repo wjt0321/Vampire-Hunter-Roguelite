@@ -64,10 +64,14 @@ Windows 也可直接双击 `RunGame.bat`（自动在常见路径下找 Godot，�
 
 ## 美术
 
-全部 200+ 张贴图（角色、敌人、武器、道具、特效、UI 边框、场景材质）为 AI 生成 +
+全部 350+ 张贴图（角色、敌人、武器、道具、特效、UI 边框、场景材质）为 AI 生成 +
 程序化后处理的原创资产，不含第三方版权素材；主菜单图标、特效构图参考等由
 PIL 脚本绘制。生成与替换管线保留在 `.workbuddy/comfy/`，来源与许可说明见
 `docs/asset-licenses.md`、`docs/asset-source-list.md`。
+
+角色、敌人与 Boss 都有多帧横条（56px / 128px 单格），旧敌人与迭代新增敌人
+各有专属动作条；11 条特效与 5 个环境道具是序列帧。动态帧的完整清单见
+[`docs/animation-asset-inventory.md`](docs/animation-asset-inventory.md)。
 
 ## 项目结构
 
@@ -83,7 +87,7 @@ scripts/
   weapons/       # 武器基类、武器管理器、进化
   ui/            # HUD、升级三选一、商店、血之祭坛、UI 动效
 tools/           # 无头测试套件与数值验算脚本（见下）
-docs/            # GDD、路线图、资产清单、开源竞品拆解、README 截图
+docs/            # GDD、路线图、资产清单、动态帧台账、归档文档、README 截图
 ```
 
 ## 开发与自测

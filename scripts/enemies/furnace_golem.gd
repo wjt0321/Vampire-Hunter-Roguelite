@@ -26,4 +26,6 @@ func _direct_damage(amount: float) -> float:
 	if armor_hp <= 0.0:
 		move_speed = 150.0
 		armor_hp = 0.0
+		# 外甲碎裂：播冲锋动作条
+		play_action_strip("furnace_golem", "charge", "once")
 	return amount

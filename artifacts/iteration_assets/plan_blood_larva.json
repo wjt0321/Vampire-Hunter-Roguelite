@@ -1,0 +1,21 @@
+[
+ {
+  "asset": "blood_larva_idle",
+  "mode": "t2i",
+  "cell": 56,
+  "frames": 4,
+  "motion": "idle",
+  "steps": 25,
+  "prompt": "A blood larva: a fat crawling blood-worm creature of the crimson brood of the blood matriarch, a segmented thick body of dark red wet flesh with glossy chitin plates along the back, pale bone-white ribbed ridges between the crimson segments, a short blunt head with a wide horizontal mouth full of small hooked fangs and no eyes, four thin insect-like legs at the front, a tapering tail that drags on the ground, thin pale veins showing under the translucent crimson skin Full body, head to toe, side-front view, centered, symmetrical stance, standing still. dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+ },
+ {
+  "asset": "blood_larva_death",
+  "mode": "edit",
+  "char_ref": "raw:blood_larva_idle",
+  "cell": 56,
+  "frames": 6,
+  "motion": "corpse",
+  "steps": 25,
+  "prompt": "Redraw the single character from image 2 in dark gothic fantasy pixel art, chunky visible pixels, limited 32-color palette, brushed dark steel and worn leather, antique gold filigree trim, deep crimson gems, high contrast with dramatic rim light, crisp 2px black outline, dense micro-detail, muted desaturated shadows with a few saturated accents Mature heroic proportions, about 6 heads tall, narrow waist and broad shoulders. NOT chibi, NOT super-deformed, no oversized head, no big cute eyes, no toy-like look. Keep the character identity, body color, segments and fangs from image 2 exactly, but show it now dead: collapsed flat on the ground, the segmented crimson body ruptured and slack, the pale ribs showing through the torn skin, the blunt head lolled to the side with the fanged mouth open and inert, dark blood pooling under the body and soaking the ground, the thin legs folded under the corpse, motionless Full body, head to toe, side-front view, centered. Flat solid pure magenta #FF00FF background, no gradient, no shadow, no ground, no text, no frame, no border."
+ }
+]

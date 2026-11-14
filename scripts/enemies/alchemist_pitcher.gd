@@ -27,6 +27,8 @@ func _move_towards_player(delta: float) -> void:
 	if _throw_cd <= 0.0:
 		_throw_cd = 2.6
 		toss(player.global_position)
+		# 投掷药瓶：播投掷动作条
+		play_action_strip("alchemist_pitcher", "throw", "once")
 
 func toss(at: Vector2) -> Node:
 	var puddle = preload("res://scripts/map/potion_puddle.gd").new()

@@ -467,6 +467,20 @@ func use_sprite(texture: Texture2D, mode: String = "loop") -> void:
 	sprite.texture = texture
 	_present_sprite(_sprite_target if _sprite_target > 0.0 else 56.0)
 
+## 播放一条专属动作条（一次性）。文件不存在时静默跳过，不影响原有表现。
+## mode：once 播完回待机；hold 播完停在末格。
+func play_action_strip(enemy_id: String, state: String, mode: String = "once") -> bool:
+	if sprite == null:
+		return false
+	var texture: Texture2D = null
+	if TextureManager.instance != null:
+		texture = TextureManager.instance.get_enemy_texture(enemy_id, state)
+	if texture == null:
+		return false
+	use_sprite(texture, mode)
+	return true
+
+
 func _present_sprite(target_size: float) -> void:
 	if sprite == null or sprite.texture == null:
 		return
