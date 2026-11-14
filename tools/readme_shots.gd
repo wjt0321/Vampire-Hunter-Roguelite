@@ -56,7 +56,10 @@ func _run() -> void:
 	await create_timer(0.3).timeout
 
 	menu.upgrade_shop.show_shop()
-	await create_timer(0.9).timeout
+	await create_timer(0.6).timeout
+	var shop_scroll: ScrollContainer = menu.upgrade_shop.get_node("Panel/VBoxContainer/ScrollContainer")
+	shop_scroll.scroll_vertical = 10000
+	await create_timer(0.4).timeout
 	await _shot("shop")
 	menu.upgrade_shop.visible = false
 
