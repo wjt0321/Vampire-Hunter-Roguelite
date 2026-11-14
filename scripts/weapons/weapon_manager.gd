@@ -17,7 +17,8 @@ const HolyBoltScene = preload("res://scenes/player/holy_bolt.tscn")
 
 var weapons: Array = []
 var weapon_evolutions: Dictionary = {}  # weapon_id -> WeaponEvolution
-## 本局是否已经融合过。融合只有一次。
+var fusion_count: int = 0
+## 本局是否已经融合过。融合次数见 fusion_count，血晶规则可以把它放到 2。
 var run_fused: bool = false
 var shoot_timers: Dictionary = {}
 var player: CharacterBody2D = null
@@ -394,7 +395,7 @@ func can_add_weapon(weapon_id: String) -> bool:
 	for existing in weapons:
 		if existing.weapon_id == weapon_id:
 			return not existing.is_max_level()
-	return weapons.size() < GameConfig.MAX_WEAPON_SLOTS
+	return weapons.size() < GameConfig.weapon_slot_limit()
 
 func add_weapon(weapon_data) -> bool:
 	if weapon_data == null or not can_add_weapon(weapon_data.weapon_id):
@@ -1492,18 +1493,18 @@ func _spawn_lightning_chain(weapon) -> void:
 	# 闪电节点找到首个目标时播放一次，空场不发声。
 
 func get_fusion_offer() -> Dictionary:
-	if run_fused:
+	if fusion_count >= GameConfig.fusion_limit():
 		return {}
 	var evolved: Array = []
 	for weapon_id in weapon_evolutions.keys():
 		var evolution: WeaponEvolution = weapon_evolutions[weapon_id]
 		if evolution != null and evolution.is_evolved:
 			evolved.append(String(weapon_id))
-	return WeaponFusionScript.offer(weapons, evolved, run_fused)
+	return WeaponFusionScript.offer(weapons, evolved, false)
 
 func apply_fusion(recipe_id: String) -> bool:
 	var recipe := WeaponFusionScript.recipe(recipe_id)
-	if recipe.is_empty() or run_fused:
+	if recipe.is_empty() or fusion_count >= GameConfig.fusion_limit():
 		return false
 	var offer := get_fusion_offer()
 	if offer.is_empty() or String(offer.get("id", "")) != recipe_id:
@@ -1534,6 +1535,7 @@ func apply_fusion(recipe_id: String) -> bool:
 	_rekey_weapon_timer(primary_id, recipe_id, primary)
 	weapon_evolutions.erase(primary_id)
 	weapon_evolutions.erase(secondary_id)
+	fusion_count += 1
 	run_fused = true
 	if shoot_timers.has(recipe_id):
 		shoot_timers[recipe_id].wait_time = get_fire_interval(primary)

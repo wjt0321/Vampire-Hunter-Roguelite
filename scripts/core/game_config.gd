@@ -86,6 +86,42 @@ const LIGHTNING_EVOLVED_JUMP_RANGE: float = 340.0
 # 没有上限时玩家能同时持有全部 10 把武器，每把独立开火、DPS 线性叠加，
 # 10 级以后必然变成无双割草。上限设定后，多余的选择会转为"升级已有武器"。
 const MAX_WEAPON_SLOTS: int = 4
+## 本局实际槽位、融合等级和次数。角色和血晶规则在开局写入，默认就是上面的常量。
+static var run_weapon_slots: int = MAX_WEAPON_SLOTS
+static var run_fusion_level: int = 5
+static var run_fusion_limit: int = 1
+static var run_early_arms: bool = false
+static var run_extra_banish: bool = false
+
+static func weapon_slot_limit() -> int:
+	return maxi(run_weapon_slots, 1)
+
+static func fusion_level_requirement() -> int:
+	return clampi(run_fusion_level, 1, 5)
+
+static func fusion_limit() -> int:
+	return maxi(run_fusion_limit, 1)
+
+static func effective_unlock_floor(raw_floor: int) -> int:
+	if raw_floor <= 0:
+		return 0
+	if run_early_arms:
+		return maxi(1, raw_floor - 1)
+	return raw_floor
+
+static func configure_run(slots: int, fusion_level: int, fusion_cap: int, early_arms: bool, extra_banish: bool) -> void:
+	run_weapon_slots = slots
+	run_fusion_level = fusion_level
+	run_fusion_limit = fusion_cap
+	run_early_arms = early_arms
+	run_extra_banish = extra_banish
+
+## 血晶买的是规则，不是又一条百分比。买过就一直生效。
+const RULE_OFFERS: Dictionary = {
+	"early_arms": {"name": "提前武装", "desc": "楼层武器提前 1 层进入升级和商店", "cost": 600},
+	"extra_banish": {"name": "多一次放逐", "desc": "每局放逐次数 +1", "cost": 450},
+	"second_fusion": {"name": "第二次融合", "desc": "每局可以融合两次", "cost": 900},
+}
 
 # 武器进化系数 (降低以避免数值崩塌)
 const EVOLUTION_DAMAGE_MIN: float = 1.6
@@ -324,8 +360,6 @@ const UPGRADE_COSTS: Dictionary = {
 const CHARACTER_UNLOCK_COSTS: Dictionary = {
 	"priestess": 500,
 	"assassin": 1500,
-	"mage": 1500,
-	"knight": 2000,
 }
 
 # ==================== 工具函数 ====================
@@ -402,6 +436,9 @@ const SKIP_SILVER_REWARD: int = 15
 
 ## 每局放逐次数
 const BANISH_COUNT: int = 3
+
+static func banish_count() -> int:
+	return BANISH_COUNT + (1 if run_extra_banish else 0)
 
 # ==================== 深渊契约（休息房） ====================
 #

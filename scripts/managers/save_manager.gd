@@ -49,6 +49,8 @@ func _default_save_data() -> Dictionary:
 		"unlocked_weapons": [],
 		"codex": {"enemies": [], "weapons": [], "passives": [], "bosses": []},
 		"selected_character": "hunter",
+		# 血晶买下的规则。和百分比升级分开，买过就一直在。
+		"rules": [],
 		# 深渊阶梯：历史最高通关深渊层
 		"best_abyss": 0,
 		# 每日挑战：只留当天的本地排名。换日清空，不跟历史最佳混在一张表里。
@@ -286,6 +288,14 @@ func _sanitize_save() -> void:
 		save_data["codex"] = {"enemies": [], "weapons": [], "passives": [], "bosses": []}
 	if not (save_data.get("selected_character", "") in unlocked):
 		save_data["selected_character"] = "hunter"
+	var rules = save_data.get("rules", [])
+	if not (rules is Array):
+		rules = []
+	var kept: Array = []
+	for rule_id in rules:
+		if GameConfig.RULE_OFFERS.has(String(rule_id)) and String(rule_id) not in kept:
+			kept.append(String(rule_id))
+	save_data["rules"] = kept
 	_sanitize_daily_board()
 	_sanitize_audio_settings()
 	_sanitize_achievements()
@@ -476,6 +486,23 @@ func purchase_upgrade(upgrade_id: String) -> bool:
 func is_upgrade_maxed(upgrade_id: String) -> bool:
 	return get_upgrade_level(upgrade_id) >= MAX_UPGRADE_LEVEL
 
+func has_rule(rule_id: String) -> bool:
+	return String(rule_id) in save_data.get("rules", [])
+
+func purchase_rule(rule_id: String) -> bool:
+	var info: Dictionary = GameConfig.RULE_OFFERS.get(rule_id, {})
+	if info.is_empty() or has_rule(rule_id):
+		return false
+	var cost := int(info.get("cost", 0))
+	if save_data["blood_crystals"] < cost:
+		return false
+	save_data["blood_crystals"] -= cost
+	var rules: Array = save_data.get("rules", [])
+	rules.append(rule_id)
+	save_data["rules"] = rules
+	save_game()
+	return true
+
 # === 角色解锁 ===
 func is_character_unlocked(char_id: String) -> bool:
 	return char_id in save_data["unlocked_characters"]
@@ -519,7 +546,7 @@ func next_unlock_text() -> String:
 	var next_floor := 0
 	var names: PackedStringArray = PackedStringArray()
 	for weapon in catalog.WEAPONS:
-		var need := int(weapon.get("unlock_floor", 0))
+		var need := GameConfig.effective_unlock_floor(int(weapon.get("unlock_floor", 0)))
 		var wid := String(weapon.get("id", ""))
 		if need <= 0 or wid in owned:
 			continue
@@ -537,7 +564,7 @@ func unlock_weapons_for_floor(floor_index: int) -> void:
 	var changed := false
 	var owned: Array = save_data.get("unlocked_weapons", [])
 	for weapon in catalog.WEAPONS:
-		var need := int(weapon.get("unlock_floor", 0))
+		var need := GameConfig.effective_unlock_floor(int(weapon.get("unlock_floor", 0)))
 		var wid := String(weapon.get("id", ""))
 		if need > 0 and floor_index >= need and wid not in owned:
 			owned.append(wid)

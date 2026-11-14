@@ -124,6 +124,7 @@ var _drain_pool: float = 0.0
 
 # === 角色特性 ===
 var character_id: String = "hunter"
+var body_tint: Color = Color.WHITE
 var character_passive_timer: float = 0.0
 var character_passive_interval: float = 10.0  # 牧师被动每10秒触发
 
@@ -204,7 +205,7 @@ func _load_sprite_texture() -> void:
 		_sprite_rest_ready = true
 	var texture := _player_tex("idle")
 	if texture:
-		sprite.modulate = Color.WHITE
+		sprite.modulate = body_tint
 		_apply_player_pose("idle", texture)
 	else:
 		var img := Image.create(16, 24, false, Image.FORMAT_RGBA8)
@@ -252,6 +253,9 @@ func apply_character_data(char_data: Resource) -> void:
 	current_hp = max_hp
 	move_speed = char_data.base_speed
 	damage_multiplier = char_data.base_damage_mult
+	body_tint = char_data.sprite_tint
+	if sprite != null:
+		sprite.modulate = body_tint
 	# 猎人直觉：拾取范围 +20%
 	if character_id == "hunter":
 		pickup_range_bonus += 20.0
@@ -670,12 +674,12 @@ func _start_invincibility() -> void:
 
 func _on_invincible_timer_timeout() -> void:
 	is_invincible = false
-	sprite.modulate = Color.WHITE
+	sprite.modulate = body_tint
 
 func _flash_damage() -> void:
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", Color(1.0, 0.3, 0.3, 1.0), 0.05)
-	tween.tween_property(sprite, "modulate", Color.WHITE, 0.05)
+	tween.tween_property(sprite, "modulate", body_tint, 0.05)
 	tween.tween_property(sprite, "modulate", Color(1.0, 0.3, 0.3, 0.7), 0.05)
 	tween.tween_property(sprite, "modulate", Color.WHITE, 0.05)
 

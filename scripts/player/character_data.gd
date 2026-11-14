@@ -16,8 +16,10 @@ extends Resource
 @export var passive_name: String = "无"
 @export var passive_description: String = ""
 ## 被动技能图标 key（对应 assets/ui/passive_<key>.png）。
-## 角色选择界面原本只有两行纯文字，玩家看不出被动到底给了什么。
 @export var passive_icon: String = ""
+@export var weapon_slots: int = 4
+@export var fusion_level: int = 5
+@export var sprite_tint: Color = Color.WHITE
 
 static func create_hunter() -> Resource:
 	var data := Resource.new()
@@ -33,6 +35,9 @@ static func create_hunter() -> Resource:
 	data.passive_name = "猎人直觉"
 	data.passive_description = "拾取范围 +20%"
 	data.passive_icon = "hunter_instinct"
+	data.weapon_slots = 4
+	data.fusion_level = 5
+	data.sprite_tint = Color.WHITE
 	return data
 
 static func create_priestess() -> Resource:
@@ -49,7 +54,29 @@ static func create_priestess() -> Resource:
 	data.passive_name = "神圣庇护"
 	data.passive_description = "每 10 秒恢复 5% 最大生命"
 	data.passive_icon = "holy_ward"
+	data.weapon_slots = 4
+	data.fusion_level = 5
+	data.sprite_tint = Color.WHITE
+	return data
+
+static func create_assassin() -> Resource:
+	var data := Resource.new()
+	data.set_script(load("res://scripts/player/character_data.gd"))
+	data.char_id = "assassin"
+	data.char_name = "刺客莉薇娅"
+	data.description = "只有 3 个武器槽。两把武器 4 级就能融合，融合后不再升级。"
+	data.initial_weapon = "kunai"
+	data.unlock_cost = 1500
+	data.base_hp = 90.0
+	data.base_speed = 215.0
+	data.base_damage_mult = 1.0
+	data.passive_name = "断刃"
+	data.passive_description = "槽位更少，融合提前一级。融合会停在 4 级。"
+	data.passive_icon = "swift_boots"
+	data.weapon_slots = 3
+	data.fusion_level = 4
+	data.sprite_tint = Color(0.62, 0.74, 1.0)
 	return data
 
 static func get_all_characters() -> Array:
-	return [create_hunter(), create_priestess()]
+	return [create_hunter(), create_priestess(), create_assassin()]

@@ -247,9 +247,19 @@ func _apply_selected_character() -> String:
 	
 	if char_data and player.has_method("apply_character_data"):
 		player.apply_character_data(char_data)
+		_apply_run_rules(int(char_data.weapon_slots), int(char_data.fusion_level))
 		return char_data.initial_weapon
-	
+	_apply_run_rules(GameConfig.MAX_WEAPON_SLOTS, 5)
 	return "pistol"
+
+func _apply_run_rules(slots: int, fusion_level: int) -> void:
+	var saves := _save_manager_ref()
+	var early := saves != null and saves.has_method("has_rule") and bool(saves.has_rule("early_arms"))
+	var extra := saves != null and saves.has_method("has_rule") and bool(saves.has_rule("extra_banish"))
+	var second := saves != null and saves.has_method("has_rule") and bool(saves.has_rule("second_fusion"))
+	GameConfig.configure_run(slots, fusion_level, 2 if second else 1, early, extra)
+	if upgrade_ui != null:
+		upgrade_ui.banish_left = GameConfig.banish_count()
 
 func _connect_signals() -> void:
 	player.hp_changed.connect(hud.update_hp)
@@ -604,7 +614,7 @@ func _enter_treasure_room() -> void:
 	if not evolved.is_empty():
 		_announce_evolution(evolved)
 	elif weapon_manager:
-		var slots_full: bool = weapon_manager.weapons.size() >= GameConfig.MAX_WEAPON_SLOTS
+		var slots_full: bool = weapon_manager.weapons.size() >= GameConfig.weapon_slot_limit()
 		var weapon_script = preload("res://scripts/weapons/weapon_manager.gd")
 		var weapons := [weapon_script.create_shotgun, weapon_script.create_magic_book]
 		if slots_full:
