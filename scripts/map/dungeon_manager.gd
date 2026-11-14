@@ -3,11 +3,11 @@ class_name DungeonManager
 ## 地下城管理器
 ## 负责楼层推进、层内房间节奏（战斗/商店/宝箱/休息/Boss）、每层敌人池与 Boss 形态
 ##
-## 结构：5 层 × 7 个节点。每层 5 间战斗、1 间特殊房、1 间 Boss。
+## 结构：5 层。第 1、5 层 7 间，第 2–4 层 5 间。每层 1 间特殊房，最后一间是 Boss。
 ## 波次计数全局累加（不随楼层重置），层倍率叠加在波次缩放之上
 
 # === 层配置表 ===
-# 每层 7 个节点：5 战斗 + 1 特殊 + 1 Boss。boss_id 决定场景。
+# 第 1、5 层 7 间，中间三层 5 间。boss_id 决定场景。
 const FLOOR_BLUEPRINT: Array = [
 	{"index": 1, "boss_id": "blood_lord", "playable": true, "greybox": false},
 	{"index": 2, "boss_id": "blood_matriarch", "playable": true, "greybox": false},
@@ -21,7 +21,7 @@ var floors_data: Array = [
 		"index": 1,
 		"name": "血月回廊",
 		"subtitle": "THE CRIMSON HALLS",
-		"hint": "盾卫挡在正面，绕开再打",
+		"hint": "地上的网会拖慢脚步，绕开或打掉。盾卫挡正面",
 		"rooms": 7,
 		"special_rooms": 1,
 		"rule": "halls",
@@ -36,7 +36,7 @@ var floors_data: Array = [
 		"name": "织血巢穴",
 		"subtitle": "THE BLOOD NEST",
 		"hint": "祭司会治疗同伴，网要先清掉",
-		"rooms": 7,
+		"rooms": 5,
 		"special_rooms": 1,
 		"rule": "nest",
 		"themes": ["cave", "dungeon"],
@@ -51,7 +51,7 @@ var floors_data: Array = [
 		"name": "骸骨墓穴",
 		"subtitle": "THE BONE CRYPT",
 		"hint": "先打结界和棺材，别让亡者爬起来",
-		"rooms": 7,
+		"rooms": 5,
 		"special_rooms": 1,
 		"rule": "tomb",
 		"themes": ["dungeon", "cave"],
@@ -65,7 +65,7 @@ var floors_data: Array = [
 		"name": "炼金工坊",
 		"subtitle": "THE ALCHEMY WORKS",
 		"hint": "药液敌我都会伤，可以引到怪群里",
-		"rooms": 7,
+		"rooms": 5,
 		"special_rooms": 1,
 		"rule": "alchemy",
 		"themes": ["castle", "cave"],
@@ -129,8 +129,8 @@ func _ready() -> void:
 # ==================== 生命周期 ====================
 
 func start_dungeon() -> void:
-	## 开始一局新的地下城
-	current_floor = 1
+	## 开始一局新的地下城。深渊轮从第 2 层起，不再重打教学层。
+	current_floor = GameConfig.abyss_start_floor()
 	room_in_floor = 0
 	rooms_cleared_total = 0
 	combat_rooms_entered = 0

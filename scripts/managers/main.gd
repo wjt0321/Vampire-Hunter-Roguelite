@@ -168,6 +168,9 @@ func _ready() -> void:
 	# 提示结束后才正式开战
 	AudioManager.play_bgm(_combat_bgm())
 	wave_manager.start(player)
+	# 首房 autostart=false，楼层机关要在这里补一次，否则第 1 间没有网。
+	_apply_room_variant()
+	_apply_floor_rule()
 	# 首房走 autostart=false，但仍要计入本层战斗房数；否则“第 2 间起”会错成第 3 间。
 	if room_events:
 		room_events.on_combat_room_entered(dungeon.current_floor)
@@ -924,6 +927,13 @@ func _apply_floor_rule() -> void:
 	var rule := String(dungeon.get_current_floor_data().get("rule", ""))
 	var pos: Vector2 = current_room.to_global(current_room.get_center())
 	match rule:
+		"halls":
+			var lane = preload("res://scripts/enemies/web_patch.gd").new()
+			lane.global_position = pos + Vector2(0, 64)
+			current_room.add_child(lane)
+			var lane_side = preload("res://scripts/enemies/web_patch.gd").new()
+			lane_side.global_position = pos + Vector2(72, -36)
+			current_room.add_child(lane_side)
 		"nest":
 			var web = preload("res://scripts/enemies/web_patch.gd").new()
 			web.global_position = pos
@@ -954,6 +964,10 @@ func _apply_floor_rule() -> void:
 			var well_side = preload("res://scripts/map/moon_well.gd").new()
 			well_side.global_position = pos + Vector2(-150, 60)
 			current_room.add_child(well_side)
+	if GameConfig.abyss_spills_puddle() and current_room.has_method("get_center"):
+		var spill = preload("res://scripts/map/potion_puddle.gd").new()
+		spill.global_position = pos + Vector2(-48, 96)
+		current_room.add_child(spill)
 
 func _boss_scene_for(boss_id: String) -> PackedScene:
 	match boss_id:

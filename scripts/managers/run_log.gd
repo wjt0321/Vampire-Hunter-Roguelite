@@ -80,6 +80,10 @@ func summary() -> String:
 		lines.append("最后一击：%s 打死 %s" % [last_kill_source, last_kill_target])
 	if last_hit_source != "":
 		lines.append("最后受伤来自：%s" % last_hit_source)
+		lines.append(_dodge_advice())
+	var build_hint := _build_hint()
+	if build_hint != "":
+		lines.append(build_hint)
 	var last_room := "无"
 	if not rooms.is_empty():
 		var room: Dictionary = rooms[rooms.size() - 1]
@@ -106,6 +110,21 @@ func _close_room_timer() -> void:
 		return
 	rooms[rooms.size() - 1]["ms"] = Time.get_ticks_msec() - _room_started_ms
 	_room_started_ms = 0
+
+func _build_hint() -> String:
+	var tree := get_tree()
+	if tree == null:
+		return ""
+	var weapons := tree.get_first_node_in_group("weapon_manager")
+	if weapons != null and weapons.has_method("next_build_hint"):
+		return String(weapons.next_build_hint())
+	return ""
+
+func _dodge_advice() -> String:
+	var ranged := ["skeleton", "skeleton_archer", "vampire_mage", "lantern_wraith", "alchemist_pitcher", "moon_wing", "resonance_mage", "blood_priest"]
+	if last_hit_source in ranged:
+		return "这一下是直线弹道，横向走开比站着打更有用"
+	return "给自己留一条后退的路，别贴着%s" % last_hit_source
 
 func _top_key(book: Dictionary) -> String:
 	var best := ""
