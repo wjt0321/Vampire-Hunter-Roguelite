@@ -58,6 +58,22 @@ signal portal_entered
 signal portal_chosen(room_type: String)
 
 const DoorLabelScript = preload("res://scripts/map/door_label.gd")
+const PropIdleAnimScript = preload("res://scripts/map/prop_idle_anim.gd")
+
+## 单帧道具的程序动效风格（见 prop_idle_anim.gd）。没有序列帧文件的道具
+## 靠这个获得一点活气；不在表里的道具保持静止（石头缝、地面痕迹那种）。
+const PROP_ANIM_STYLES: Dictionary = {
+	"shop_sign": "swing",
+	"gold_pile": "shimmer",
+	"altar": "glow",
+	"blood_splatter": "alpha_pulse",
+	"coffin": "breathe",
+	"bookshelf": "breathe",
+	"statue": "breathe",
+	"broken_pillar": "breathe",
+	"bedroll": "breathe",
+	"cobweb": "sway",
+}
 var _choice_taken: bool = false
 var _portal_used: bool = false
 
@@ -810,7 +826,18 @@ func _make_prop_visual(prop_name: String, texture: Texture2D) -> Node2D:
 					return anim
 	var spr := Sprite2D.new()
 	spr.texture = texture
+	_attach_idle_anim(spr, prop_name)
 	return spr
+
+
+func _attach_idle_anim(node: Node2D, prop_name: String) -> void:
+	## 给单帧道具贴图挂程序动效。set_script 之后才赋值 anim_style：
+	## 脚本里的 _ready 在入树时才跑，那时位置/缩放已最终确定，基准值不会抓到半初始化状态。
+	var style: String = String(PROP_ANIM_STYLES.get(prop_name, ""))
+	if style == "":
+		return
+	node.set_script(PropIdleAnimScript)
+	node.set("anim_style", style)
 
 
 func _create_merchant(pos: Vector2) -> void:

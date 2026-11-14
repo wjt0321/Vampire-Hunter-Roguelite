@@ -221,7 +221,8 @@ func _refresh_codex() -> void:
 			String(info.get("name", eid)),
 			String(info.get("blurb", "")),
 			_first_frame(slots.enemy_texture(eid, "idle"), 56),
-			_codex_known(saves, "enemy", eid))
+			_codex_known(saves, "enemy", eid),
+			slots.codex_meta_line(eid))
 
 	_codex_section(codex_list, "Boss")
 	for boss_id in slots.BOSSES.keys():
@@ -231,7 +232,8 @@ func _refresh_codex() -> void:
 			String(info.get("name", bid)),
 			String(info.get("blurb", "")),
 			_first_frame(slots.boss_texture(bid, "idle"), 128),
-			_codex_known(saves, "boss", bid))
+			_codex_known(saves, "boss", bid),
+			slots.codex_meta_line(bid))
 
 	_codex_section(codex_list, "武器")
 	for weapon in catalog.WEAPONS:
@@ -241,7 +243,8 @@ func _refresh_codex() -> void:
 			text = String(weapon.get("desc", ""))
 		_codex_entry(codex_list, String(weapon.get("name", wid)), text,
 			catalog.get_icon_texture(wid, "weapon"),
-			_codex_known(saves, "weapon", wid))
+			_codex_known(saves, "weapon", wid),
+			"获得：升级三选一 / 两把武器融合")
 
 	_codex_section(codex_list, "被动")
 	for passive in catalog.PASSIVES:
@@ -251,7 +254,8 @@ func _refresh_codex() -> void:
 			text = String(passive.get("desc", ""))
 		_codex_entry(codex_list, String(passive.get("name", pid)), text,
 			catalog.get_icon_texture(pid, "passive"),
-			_codex_known(saves, "passive", pid))
+			_codex_known(saves, "passive", pid),
+			"获得：升级三选一")
 
 func _codex_known(saves: Node, kind: String, entry_id: String) -> bool:
 	if saves == null or not saves.has_method("codex_known"):
@@ -268,7 +272,7 @@ func _codex_section(parent: VBoxContainer, title_text: String) -> void:
 	parent.add_child(sep)
 
 func _codex_entry(parent: VBoxContainer, display_name: String, blurb: String,
-		icon: Texture2D, known: bool) -> void:
+		icon: Texture2D, known: bool, meta_line: String = "") -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	parent.add_child(row)
@@ -280,12 +284,16 @@ func _codex_entry(parent: VBoxContainer, display_name: String, blurb: String,
 	slot_style.border_color = Color(0.42, 0.34, 0.22, 0.9)
 	slot_style.set_border_width_all(1)
 	slot.add_theme_stylebox_override("panel", slot_style)
-	if known and icon != null:
+	if icon != null:
 		var tr := TextureRect.new()
 		tr.texture = icon
 		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		tr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		if not known:
+			# 剪影：没解锁时不显示真图（保留"要亲自遭遇"的收集感），
+			# 但给一个深色轮廓，比光秃秃的问号更像"图鉴里有这么个东西"。
+			tr.modulate = Color(0.09, 0.08, 0.12, 0.92)
 		slot.add_child(tr)
 	else:
 		var q := Label.new()
@@ -317,6 +325,14 @@ func _codex_entry(parent: VBoxContainer, display_name: String, blurb: String,
 	desc.add_theme_color_override("font_color",
 		Color(0.76, 0.73, 0.68) if known else Color(0.4, 0.38, 0.43))
 	info.add_child(desc)
+
+	if known and meta_line != "":
+		var meta := Label.new()
+		meta.text = meta_line
+		meta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		meta.add_theme_font_size_override("font_size", 12)
+		meta.add_theme_color_override("font_color", Color(0.62, 0.55, 0.38))
+		info.add_child(meta)
 
 func _first_frame(tex: Texture2D, cell: int) -> Texture2D:
 	## 精灵表是一整条横带，图鉴里只要第一格。

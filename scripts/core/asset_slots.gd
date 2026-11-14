@@ -161,3 +161,56 @@ static func blurb(kind: String, entry_id: String) -> String:
 		"passive":
 			return String(PASSIVES.get(entry_id, ""))
 	return ""
+
+## 图鉴加深数据：出现楼层 / 弱点 / 特殊掉落。
+## 楼层口径来自 DungeonManager.floors_data 的敌人池；弱点写的是真实机制反制，
+## 不和 blurb 重复（blurb 讲行为，weak 讲怎么打）。掉落只记特殊项，
+## 没写的条目图鉴里默认显示「经验宝石、银币」。
+const CODEX_META := {
+	"shield_guard": {"floors": "第1层", "weak": "绕到侧面或背后打"},
+	"blood_hound": {"floors": "第1层", "weak": "横向躲开直线扑击再反打"},
+	"blood_priest": {"floors": "第2层", "weak": "隔墙断治疗，或先杀祭司"},
+	"web_weaver": {"floors": "第2层", "weak": "地上的网可以直接打掉"},
+	"burrower": {"floors": "第2层", "weak": "钻地时无敌，照着落点标记集火"},
+	"gem_leech": {"floors": "第3层", "weak": "追上去杀掉，把被吞的经验吐出来", "drops": "被吞经验（击杀追回）、银币"},
+	"coffin_guard": {"floors": "第3层", "weak": "倒地后先打棺材，别让它爬起来", "drops": "经验宝石、银币（不打断会复活）"},
+	"lantern_wraith": {"floors": "第3层", "weak": "光束被墙挡住就照不到你"},
+	"alchemist_pitcher": {"floors": "第4层", "weak": "药液敌我不分，往怪群里引"},
+	"furnace_golem": {"floors": "第4层", "weak": "外甲碎掉后变快也变脆，集火"},
+	"resonance_mage": {"floors": "第4层", "weak": "先杀术士，伤害分摊就断了"},
+	"moon_wing": {"floors": "第5层", "weak": "俯冲落地后的空档反打"},
+	"blood_larva": {"floors": "第2层 Boss 战", "weak": "皮薄，别让它贴住"},
+	"bat": {"floors": "第1~2层", "weak": "血薄，优先清掉以免被缠住"},
+	"vampire": {"floors": "第1~2层", "weak": "没有远程，拉开距离打"},
+	"zombie": {"floors": "第1~3层", "weak": "极慢，别被它挡了走位"},
+	"skeleton_archer": {"floors": "第1~3层", "weak": "近身打断拉弓，或借墙挡箭"},
+	"werewolf": {"floors": "第1~2层", "weak": "冲锋是直线，横向躲开"},
+	"exploder": {"floors": "第2、4层", "weak": "可引到怪堆里炸伤同伴"},
+	"summoner": {"floors": "第3、5层", "weak": "本体皮薄，先杀它再清召唤物"},
+	"vampire_mage": {"floors": "第2、4、5层", "weak": "弹道是直线，横向走开"},
+	"gargoyle": {"floors": "第3、5层", "weak": "等它落地或苏醒的空档"},
+	"elite_vampire": {"floors": "第4~5层", "weak": "看清精英词缀再应对"},
+	"vampire_prince": {"floors": "第5层", "weak": "冲刺是直线，横向躲开"},
+	"blood_lord": {"floors": "第1层 Boss", "weak": "正面盾挡，冲锋撞墙会眩晕"},
+	"blood_matriarch": {"floors": "第2层 Boss", "weak": "先清卵巢和幼虫，再贴脸打"},
+	"tomb_warden": {"floors": "第3层 Boss", "weak": "打掉结界就停止复苏"},
+	"alchemist_prince": {"floors": "第4层 Boss", "weak": "药液敌我不分，引到巨像脚下"},
+	"alchemist_colossus": {"floors": "第4层 Boss", "weak": "体型大，横向躲开砸地"},
+	"eclipse_queen": {"floors": "第5层 Boss", "weak": "换位落点提前标出，走出标记区"},
+}
+
+static func codex_meta(entry_id: String) -> Dictionary:
+	return CODEX_META.get(entry_id, {})
+
+static func codex_meta_line(entry_id: String) -> String:
+	## 图鉴条目第二行：出现楼层 / 弱点 / 掉落。没有登记就返回空串，UI 跳过。
+	var meta: Dictionary = CODEX_META.get(entry_id, {})
+	if meta.is_empty():
+		return ""
+	var parts: Array = []
+	if meta.has("floors"):
+		parts.append("出现：" + String(meta["floors"]))
+	if meta.has("weak"):
+		parts.append("弱点：" + String(meta["weak"]))
+	parts.append("掉落：" + String(meta.get("drops", "经验宝石、银币")))
+	return " ｜ ".join(parts)
