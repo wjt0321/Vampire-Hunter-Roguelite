@@ -13,11 +13,8 @@
 - [素材来源清单](asset-source-list.md) — 可用素材站、包、作者链接汇总
 - [武器变种与融合方案](superpowers/specs/2026-11-13-weapon-variant-fusion-design.md) — 下一轮玩法的唯一方案。未确认前不实现，也不要在根目录或 GDD 里再写一份
 
-## 历史报告
+## 历史与归档
 
-`reports/` 目录存放素材采集与整理的历史报告：
-
-- 采集报告：音频、Boss、角色、字体/特效、瓦片、UI、武器
-- 整理计划与报告：2026-06-15 素材整理执行计划/报告
+- **[归档文档](archive/README.md)** — 已不再维护的历史文档（素材采集报告、音频前修复记录、旧代码审核、重构规划），保留供追溯，不作为当前依据。
 
 `asset-inventory.md` 是早期素材缺口清单（历史记录）；当前动画迭代以 `animation-asset-inventory.md` 为准。

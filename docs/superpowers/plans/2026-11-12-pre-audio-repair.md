@@ -1,6 +1,6 @@
 # 音频适配前全项目修复实施计划
 
-> 完成状态：50/50关闭，修后全量35/35通过，整分支独立审查PASS；详情见 docs/qa/pre-audio/validation.md。
+> 完成状态：50/50关闭，修后全量35/35通过，整分支独立审查PASS；详情见 docs/archive/qa/validation.md。
 
 > 执行方式：按批次实现、独立审查、回归；本文件同时是进度账本。用户已授权自主完成，不在批次间等待确认。
 
@@ -154,7 +154,7 @@ assert(is_equal_approx(xp_separate, xp_merged))
 
 ## Task 5：总回归与交付
 
-**Files:** tools/run_pre_audio_regression.py（可重复执行、超时与日志错误检查）、本文、docs/qa/pre-audio/validation.md；启动脚本仅在确证需要时修复。
+**Files:** tools/run_pre_audio_regression.py（可重复执行、超时与日志错误检查）、本文、docs/archive/qa/validation.md；启动脚本仅在确证需要时修复。
 
 - [x] 校验官方便携引擎 SHA256，运行版本检查、导入/解析基线，记录失败。
   - 实际版本：4.7.2.stable.official.ed1daf0bf；ZIP SHA256 与官方一致。首次导入缺少字体缓存，导入结束后第二次执行同一 --headless --editor --path .tools/baseline --import 命令，退出0且无 ERROR/Parse Error。
@@ -168,13 +168,13 @@ assert(is_equal_approx(xp_separate, xp_merged))
 - 2026-11-12：计划落盘。基线仅有原有未跟踪 nul。创建 repair/pre-audio-20261112 分支。尚无修复或引擎测试结果。
 - 官方便携引擎：Godot 4.7.2-stable Windows x64，发布 URL https://github.com/godotengine/godot-builds/releases/tag/4.7.2-stable 。ZIP SHA256：731980f9608d61333e5baf54a2ef17210acc7a538446c0cb9969f002aca1e953。
 
-- 第一批：20项修复及8套回归完成。独立审查发现两项P2遗漏，经第1轮修复与5套回归（集成67项）后限定复审Spec/Quality PASS，第一批关闭。证据 docs/qa/pre-audio/task1-combat.md 与 .tools/qa/task1-review-r1-green/。第二批已启动。
+- 第一批：20项修复及8套回归完成。独立审查发现两项P2遗漏，经第1轮修复与5套回归（集成67项）后限定复审Spec/Quality PASS，第一批关闭。证据 docs/archive/qa/task1-combat.md 与 .tools/qa/task1-review-r1-green/。第二批已启动。
 
-- 第二批：8项修复完成，经济52项、要求六套及readability共7/7通过；生产独立审查Spec/Quality PASS。交叉回归定位两处旧测试抽牌入口，修正后build_enemy_rules 96/96及相关4/4套通过，限定复审ADDRESSED、Spec/Quality PASS。第二批关闭（累计28/50），第三批已启动。证据 docs/qa/pre-audio/task2-economy.md 与 .tools/qa/task2-cross-fix/。
+- 第二批：8项修复完成，经济52项、要求六套及readability共7/7通过；生产独立审查Spec/Quality PASS。交叉回归定位两处旧测试抽牌入口，修正后build_enemy_rules 96/96及相关4/4套通过，限定复审ADDRESSED、Spec/Quality PASS。第二批关闭（累计28/50），第三批已启动。证据 docs/archive/qa/task2-economy.md 与 .tools/qa/task2-cross-fix/。
 
 - 第三批阶段进展：.tools/qa/task3-final-guard-regression/ 九套exit0、errors=[]；生命周期69项、隔离42项、三层真实计时/物理触门/伤害击杀smoke通过。仍未关闭：父会话发现分类累计成就、结算血晶记账、主档缺失时备份恢复缺口及若干明确要求的行为测试不足，已以 .tools/qa/task3-closeout-brief.md 交新实现者集中收尾。独立审查尚未开始，完成数仍28/50。
 
-- 第三批收尾实现完成：10/10套回归通过，先前分类累计/结算收入/缺主档恢复及专项测试缺口均已补齐，报告见 docs/qa/pre-audio/task3-lifecycle-save.md 第119行起。整批独立审查复现两项P2遗漏：最终Boss真实经验仍触发升级暂停胜利、未开局主菜单累计有效时间并解锁生存成就。已交唯一实现者整改，仍标实现待验，未关闭19项。七套交叉回归中六套直接通过，ui_interaction旧文案改为精确检查“出口已开启 · 走传送门”后单套通过（task3-cross-ui-copy-fix），独立限定复审PASS；两项生产P2现已整改：完整红测74通过/29失败，修后终态时钟103/0及相关5/5套通过（task3-review-r1-green）；独立限定复审进行中，未提前关闭。
+- 第三批收尾实现完成：10/10套回归通过，先前分类累计/结算收入/缺主档恢复及专项测试缺口均已补齐，报告见 docs/archive/qa/task3-lifecycle-save.md 第119行起。整批独立审查复现两项P2遗漏：最终Boss真实经验仍触发升级暂停胜利、未开局主菜单累计有效时间并解锁生存成就。已交唯一实现者整改，仍标实现待验，未关闭19项。七套交叉回归中六套直接通过，ui_interaction旧文案改为精确检查“出口已开启 · 走传送门”后单套通过（task3-cross-ui-copy-fix），独立限定复审PASS；两项生产P2现已整改：完整红测74通过/29失败，修后终态时钟103/0及相关5/5套通过（task3-review-r1-green）；独立限定复审进行中，未提前关闭。
 
 - 第三批关闭：限定复审VERDICT/Spec/Quality均PASS，两项P2均ADDRESSED；此前整批认可结论与UI测试复审复用。完整红测74/29→103/0，相关5/5套通过（task3-review-r1-green）。19项全部回归通过，累计47/50；第四批ID43–45音频已启动。直接restart/深渊continue本次仅静态核对，人工视听未验收。
 

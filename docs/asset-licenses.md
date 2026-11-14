@@ -724,7 +724,7 @@
 
 - 状态：已替换（Phase 12 第二轮）
 - 风险：低；素材来自项目自身 `assets-downloaded/` 采集包与本机参考图生成
-- 来源 A（18 张）：`assets-downloaded/sprites/` 的成套像素帧——Gothicvania patreon collection（hero idle/run/attack/hurt、demon、ghost、hell-hound、wolf、fire-skull）、`pixel-skeleton`、`vampire-1.1`、`zombie-1.1`、`bat-1.3`、`gargoyle.png`、`mage`/`NecroGuy` 等；对应第三方授权见本文件各采集包条目与 `docs/reports/collection-report-characters.md`
+- 来源 A（18 张）：`assets-downloaded/sprites/` 的成套像素帧——Gothicvania patreon collection（hero idle/run/attack/hurt、demon、ghost、hell-hound、wolf、fire-skull）、`pixel-skeleton`、`vampire-1.1`、`zombie-1.1`、`bat-1.3`、`gargoyle.png`、`mage`/`NecroGuy` 等；对应第三方授权见本文件各采集包条目与 `docs/archive/reports/collection-report-characters.md`
 - 来源 B（14 张）：`图片_Qwen-Image2.1_图像编辑.json` 参考图生成；参考图取自本仓库已完成 MVP 的原有精灵（`.workbuddy/backup/sprites/`），只改动作、不改造型配色
 - 线上补缺：Scrapling 0.4.10（代理 127.0.0.1:10808）抓取 OGA / CraftPix 共 3 页，所得 `vampire1.zip`、`vampire-1.1.zip` 项目内已存在，CraftPix 免费包需登录，未引入新素材
 - 修改记录：取帧 → 裁透明边 → 整数倍 NEAREST 缩放 → 复用 `tools/build_pose_strips.py` 错帧/淡出/石化手法 → 拼 48×48（Boss 96×96）RGBA 横条

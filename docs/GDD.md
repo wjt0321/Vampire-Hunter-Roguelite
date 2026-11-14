@@ -1035,7 +1035,7 @@ VampireHunter/
 │   └── fonts/                 # 字体
 ├── docs/                      # 文档
 │   ├── GDD.md                 # 本文档
-│   ├── gdd-revision-plan.md   # 重构规划
+│   ├── archive/               # 已归档的历史文档（不再维护）
 │   ├── art-assets-requirements.md
 │   └── ROADMAP.md
 └── project.godot
